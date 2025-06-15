@@ -62,23 +62,23 @@ const MedicationReminders = () => {
   };
 
   return (
-    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-      <CardHeader className="pb-3">
+    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-fit">
+      <CardHeader className="pb-3 px-4 sm:px-6">
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-blue-900">
-            <Pill className="h-5 w-5" />
+          <div className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
+            <Pill className="h-4 w-4 sm:h-5 sm:w-5" />
             Medicamentos
           </div>
-          <Button variant="ghost" size="sm" className="text-blue-600">
+          <Button variant="ghost" size="sm" className="text-blue-600 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3">
             Gerenciar
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
         {medications.map((medication) => (
           <div
             key={medication.id}
-            className={`p-4 rounded-xl border transition-all ${
+            className={`p-3 sm:p-4 rounded-xl border transition-all ${
               medication.status === 'atrasado' 
                 ? 'bg-red-50 border-red-200' 
                 : medication.status === 'tomado'
@@ -86,43 +86,45 @@ const MedicationReminders = () => {
                   : 'bg-yellow-50 border-yellow-200'
             }`}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start gap-3">
-                <div className="mt-1">
+            <div className="flex items-start justify-between mb-2 sm:mb-3">
+              <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="mt-1 flex-shrink-0">
                   {getStatusIcon(medication.status)}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                     {medication.name}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {medication.dosage} • {medication.frequency}
                   </p>
                 </div>
               </div>
-              <Badge className={`${getStatusColor(medication.status)} border-0`}>
+              <Badge className={`${getStatusColor(medication.status)} border-0 text-xs flex-shrink-0 ml-2`}>
                 {getStatusText(medication.status)}
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
                 <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{medication.time}</span>
                 </div>
-                <span>Próxima: {medication.nextDose}</span>
+                <span className="text-xs sm:text-sm">Próxima: {medication.nextDose}</span>
               </div>
-              {medication.status === 'pendente' && (
-                <Button size="sm" className="h-8 px-3 bg-green-500 hover:bg-green-600">
-                  Marcar como tomado
-                </Button>
-              )}
-              {medication.status === 'atrasado' && (
-                <Button size="sm" variant="outline" className="h-8 px-3 border-red-200 text-red-600 hover:bg-red-50">
-                  Tomar agora
-                </Button>
-              )}
+              <div className="w-full sm:w-auto">
+                {medication.status === 'pendente' && (
+                  <Button size="sm" className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-green-500 hover:bg-green-600 w-full sm:w-auto">
+                    Marcar como tomado
+                  </Button>
+                )}
+                {medication.status === 'atrasado' && (
+                  <Button size="sm" variant="outline" className="h-7 sm:h-8 px-2 sm:px-3 text-xs border-red-200 text-red-600 hover:bg-red-50 w-full sm:w-auto">
+                    Tomar agora
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -130,7 +132,7 @@ const MedicationReminders = () => {
         {/* Add Medication Button */}
         <Button 
           variant="outline" 
-          className="w-full mt-4 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50"
+          className="w-full mt-3 sm:mt-4 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 h-10 sm:h-11 text-sm"
         >
           <Pill className="h-4 w-4 mr-2" />
           Adicionar Medicamento
