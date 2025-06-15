@@ -49,18 +49,18 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-      <CardContent className="p-6">
-        <h2 className="text-xl font-semibold text-blue-900 mb-4">
+      <CardContent className="p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-blue-900 mb-3 sm:mb-4">
           Ações Rápidas
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {actions.map((action, index) => (
             <Button
               key={index}
               onClick={() => onAction(action.action)}
-              className={`${action.color} text-white flex flex-col items-center gap-2 h-auto py-4 px-3 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105`}
+              className={`${action.color} text-white flex flex-col items-center gap-1 sm:gap-2 h-auto py-3 sm:py-4 px-2 sm:px-3 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105`}
             >
-              <action.icon className="h-6 w-6" />
+              <action.icon className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="text-xs font-medium text-center leading-tight">
                 {action.label}
               </span>
