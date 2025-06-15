@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import QuickActions from "@/components/QuickActions";
 import UpcomingAppointments from "@/components/UpcomingAppointments";
@@ -13,12 +14,21 @@ import { useToast } from "@/hooks/use-toast";
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleQuickAction = (action: string) => {
-    toast({
-      title: "Ação realizada!",
-      description: `${action} executada com sucesso`,
-    });
+    if (action === "Agendamento de consulta") {
+      navigate("/agendamento");
+    } else {
+      toast({
+        title: "Ação realizada!",
+        description: `${action} executada com sucesso`,
+      });
+    }
+  };
+
+  const handleNavigation = (route: string) => {
+    navigate(route);
   };
 
   return (
@@ -109,15 +119,18 @@ const Index = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden">
         <div className="flex justify-around items-center max-w-md mx-auto">
           {[
-            { id: 'home', icon: Heart, label: 'Início' },
-            { id: 'calendar', icon: Calendar, label: 'Agenda' },
-            { id: 'add', icon: Plus, label: 'Agendar', isMain: true },
-            { id: 'reminders', icon: Bell, label: 'Lembretes' },
-            { id: 'profile', icon: User, label: 'Perfil' },
+            { id: 'home', icon: Heart, label: 'Início', route: '/' },
+            { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agendamento' },
+            { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento' },
+            { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico' },
+            { id: 'profile', icon: User, label: 'Perfil', route: '/perfil' },
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (item.route) handleNavigation(item.route);
+              }}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                 item.isMain
                   ? 'bg-blue-500 text-white shadow-lg scale-110'
