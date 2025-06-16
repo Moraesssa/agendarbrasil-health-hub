@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Agendamento from "./pages/Agendamento";
+import AgendaPaciente from "./pages/AgendaPaciente";
 import Historico from "./pages/Historico";
 import Perfil from "./pages/Perfil";
 import Login from "./pages/Login";
@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/cadastro-medico" element={<CadastroMedico />} />
           <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
           <Route path="/agendamento" element={<Agendamento />} />
+          <Route path="/agenda-paciente" element={<AgendaPaciente />} />
           <Route path="/historico" element={<Historico />} />
           <Route path="/perfil" element={<Perfil />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

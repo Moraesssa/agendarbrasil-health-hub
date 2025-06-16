@@ -120,7 +120,7 @@ const Index = () => {
         <div className="flex justify-around items-center max-w-md mx-auto">
           {[
             { id: 'home', icon: Heart, label: 'Início', route: '/' },
-            { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agendamento' },
+            { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente' },
             { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento' },
             { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico' },
             { id: 'profile', icon: User, label: 'Perfil', route: '/perfil' },
