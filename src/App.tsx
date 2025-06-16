@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import Agendamento from "./pages/Agendamento";
 import AgendaPaciente from "./pages/AgendaPaciente";
 import Historico from "./pages/Historico";
 import Perfil from "./pages/Perfil";
+import PerfilMedico from "./pages/PerfilMedico";
 import Login from "./pages/Login";
 import Cadastrar from "./pages/Cadastrar";
 import CadastroMedico from "./pages/CadastroMedico";
@@ -32,6 +34,7 @@ const App = () => (
           <Route path="/agenda-paciente" element={<AgendaPaciente />} />
           <Route path="/historico" element={<Historico />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/perfil-medico" element={<PerfilMedico />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
