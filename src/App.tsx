@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Agendamento from "./pages/Agendamento";
 import AgendaPaciente from "./pages/AgendaPaciente";
 import AgendaMedico from "./pages/AgendaMedico";
+import DashboardMedico from "./pages/DashboardMedico";
 import Historico from "./pages/Historico";
 import Perfil from "./pages/Perfil";
 import PerfilMedico from "./pages/PerfilMedico";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/agendamento" element={<Agendamento />} />
           <Route path="/agenda-paciente" element={<AgendaPaciente />} />
           <Route path="/agenda-medico" element={<AgendaMedico />} />
+          <Route path="/dashboard-medico" element={<DashboardMedico />} />
           <Route path="/historico" element={<Historico />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/perfil-medico" element={<PerfilMedico />} />
