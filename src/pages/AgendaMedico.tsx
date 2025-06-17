@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Calendar, Clock, User, MapPin, Phone, ChevronLeft, ChevronRight, Plus, Edit } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, ChevronLeft, ChevronRight, Plus, Edit, Filter, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -149,15 +148,15 @@ const AgendaMedico = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmado":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 border-green-200";
       case "pendente":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "reagendado":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "cancelado":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 border-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -184,128 +183,185 @@ const AgendaMedico = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50">
       <Header />
       
-      <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-7xl">
-        {/* Header da página */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-green-100">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-green-900 mb-2">
-              Agenda Médica
-            </h1>
-            <p className="text-gray-600">
-              Gerencie suas consultas e horários de atendimento
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={viewMode === "list" ? "default" : "outline"}
-              onClick={() => setViewMode("list")}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Lista
-            </Button>
-            <Button 
-              variant={viewMode === "calendar" ? "default" : "outline"}
-              onClick={() => setViewMode("calendar")}
-              size="sm"
-            >
-              Calendário
-            </Button>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Horário
-            </Button>
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 max-w-7xl">
+        {/* Enhanced Header */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 to-blue-600/10 rounded-2xl"></div>
+          <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-green-100/50 p-6">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                      Agenda Médica
+                    </h1>
+                    <p className="text-gray-600 text-lg">
+                      Gerencie suas consultas e horários de atendimento
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <Button 
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    onClick={() => setViewMode("list")}
+                    size="sm"
+                    className={viewMode === "list" ? "bg-green-600 hover:bg-green-700 text-white shadow-sm" : ""}
+                  >
+                    Lista
+                  </Button>
+                  <Button 
+                    variant={viewMode === "calendar" ? "default" : "ghost"}
+                    onClick={() => setViewMode("calendar")}
+                    size="sm"
+                    className={viewMode === "calendar" ? "bg-green-600 hover:bg-green-700 text-white shadow-sm" : ""}
+                  >
+                    Calendário
+                  </Button>
+                </div>
+                <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Horário
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Resumo rápido */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-0 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{todayAppointments.length}</div>
-              <div className="text-sm text-gray-600">Hoje</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-0 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{upcomingAppointments.length}</div>
-              <div className="text-sm text-gray-600">Próximas</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-0 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {appointments.filter(a => a.status === "pendente").length}
+        {/* Enhanced Statistics Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold text-green-700 mb-1">{todayAppointments.length}</div>
+                  <div className="text-sm font-medium text-green-600">Consultas Hoje</div>
+                </div>
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <div className="text-sm text-gray-600">Pendentes</div>
             </CardContent>
           </Card>
-          <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-0 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {appointments.filter(a => a.status === "cancelado").length}
+          
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold text-blue-700 mb-1">{upcomingAppointments.length}</div>
+                  <div className="text-sm font-medium text-blue-600">Próximas</div>
+                </div>
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <div className="text-sm text-gray-600">Canceladas</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold text-yellow-700 mb-1">
+                    {appointments.filter(a => a.status === "pendente").length}
+                  </div>
+                  <div className="text-sm font-medium text-yellow-600">Pendentes</div>
+                </div>
+                <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold text-red-700 mb-1">
+                    {appointments.filter(a => a.status === "cancelado").length}
+                  </div>
+                  <div className="text-sm font-medium text-red-600">Canceladas</div>
+                </div>
+                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Consultas de hoje */}
-        <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-green-900">
-              <Calendar className="h-5 w-5" />
-              Consultas de Hoje ({todayAppointments.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Enhanced Today's Appointments */}
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-blue-500 p-1">
+            <CardHeader className="bg-white rounded-t-lg pb-4">
+              <CardTitle className="flex items-center gap-3 text-gray-900">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-white" />
+                </div>
+                <span>Consultas de Hoje ({todayAppointments.length})</span>
+              </CardTitle>
+            </CardHeader>
+          </div>
+          <CardContent className="p-6">
             {todayAppointments.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Nenhuma consulta agendada para hoje</p>
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-10 w-10 text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-lg">Nenhuma consulta agendada para hoje</p>
+                <p className="text-gray-400 text-sm mt-2">Aproveite para organizar sua agenda</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {todayAppointments.map((appointment) => (
-                  <div key={appointment.id} className="p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all duration-200 hover:border-green-200">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User className="h-5 w-5 text-green-600" />
+                  <div key={appointment.id} className="group p-5 rounded-xl border border-gray-200 bg-gradient-to-r from-white to-gray-50 hover:shadow-lg transition-all duration-300 hover:border-green-300">
+                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <User className="h-7 w-7 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900 truncate">{appointment.patient}</h3>
-                            <Badge className={getStatusColor(appointment.status)}>
+                          <div className="flex flex-wrap items-center gap-3 mb-2">
+                            <h3 className="font-bold text-gray-900 text-lg">{appointment.patient}</h3>
+                            <Badge className={`${getStatusColor(appointment.status)} border font-medium`}>
                               {appointment.status}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {appointment.time}
+                          <div className="flex flex-wrap items-center gap-6 text-gray-600 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-green-600" />
+                              <span className="font-medium">{appointment.time}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {appointment.phone}
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-blue-600" />
+                              <span>{appointment.phone}</span>
                             </div>
-                            <span>{appointment.type}</span>
+                            <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                              {appointment.type}
+                            </span>
                           </div>
                           {appointment.notes && (
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{appointment.notes}</p>
+                            <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border-l-4 border-green-500">
+                              {appointment.notes}
+                            </p>
                           )}
                         </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <Button variant="outline" size="sm" className="hover:bg-green-50">
-                          <Edit className="h-3 w-3 mr-1" />
+                        <Button variant="outline" size="sm" className="hover:bg-green-50 hover:border-green-300 transition-colors">
+                          <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </Button>
-                        <Button variant="outline" size="sm" className="hover:bg-blue-50">
-                          <Phone className="h-3 w-3 mr-1" />
+                        <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                          <Phone className="h-4 w-4 mr-2" />
                           Ligar
                         </Button>
                       </div>
@@ -317,61 +373,73 @@ const AgendaMedico = () => {
           </CardContent>
         </Card>
 
-        {/* Todas as consultas em formato de tabela com paginação */}
-        <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center justify-between text-green-900">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Todas as Consultas
+        {/* Enhanced All Appointments Table */}
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-blue-500 p-1">
+            <CardHeader className="bg-white rounded-t-lg pb-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <CardTitle className="flex items-center gap-3 text-gray-900">
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <span>Todas as Consultas</span>
+                </CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded-lg">
+                    {appointments.length} consultas no total
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtrar
+                  </Button>
+                </div>
               </div>
-              <div className="text-sm font-normal text-gray-600">
-                {appointments.length} consultas no total
-              </div>
-            </CardTitle>
-          </CardHeader>
+            </CardHeader>
+          </div>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/50">
-                    <TableHead className="font-semibold">Data</TableHead>
-                    <TableHead className="font-semibold">Horário</TableHead>
-                    <TableHead className="font-semibold">Paciente</TableHead>
-                    <TableHead className="font-semibold">Tipo</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Telefone</TableHead>
-                    <TableHead className="font-semibold text-center">Ações</TableHead>
+                  <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150">
+                    <TableHead className="font-bold text-gray-700 h-14">Data</TableHead>
+                    <TableHead className="font-bold text-gray-700">Horário</TableHead>
+                    <TableHead className="font-bold text-gray-700">Paciente</TableHead>
+                    <TableHead className="font-bold text-gray-700">Tipo</TableHead>
+                    <TableHead className="font-bold text-gray-700">Status</TableHead>
+                    <TableHead className="font-bold text-gray-700">Telefone</TableHead>
+                    <TableHead className="font-bold text-gray-700 text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentAppointments.map((appointment) => (
-                    <TableRow key={appointment.id} className="hover:bg-green-50/50">
-                      <TableCell className="font-medium">
+                  {currentAppointments.map((appointment, index) => (
+                    <TableRow key={appointment.id} className={`hover:bg-gradient-to-r hover:from-green-50 hover:to-blue-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                      <TableCell className="font-semibold text-gray-900 py-4">
                         {new Date(appointment.date).toLocaleDateString('pt-BR')}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-gray-500" />
-                          {appointment.time}
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full w-fit">
+                          <Clock className="h-3 w-3 text-green-600" />
+                          <span className="font-medium text-green-700">{appointment.time}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">{appointment.patient}</TableCell>
-                      <TableCell>
-                        <span className="text-sm">{appointment.type}</span>
+                      <TableCell className="font-semibold text-gray-900 py-4">{appointment.patient}</TableCell>
+                      <TableCell className="py-4">
+                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                          {appointment.type}
+                        </span>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(appointment.status)}>
+                      <TableCell className="py-4">
+                        <Badge className={`${getStatusColor(appointment.status)} border font-medium`}>
                           {appointment.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{appointment.phone}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 justify-center">
-                          <Button variant="outline" size="sm" className="hover:bg-green-50">
+                      <TableCell className="text-gray-600 py-4 font-medium">{appointment.phone}</TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex gap-2 justify-center">
+                          <Button variant="outline" size="sm" className="hover:bg-green-50 hover:border-green-300">
                             <Edit className="h-3 w-3" />
                           </Button>
-                          <Button variant="outline" size="sm" className="hover:bg-blue-50">
+                          <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-300">
                             <Phone className="h-3 w-3" />
                           </Button>
                         </div>
@@ -382,18 +450,18 @@ const AgendaMedico = () => {
               </Table>
             </div>
             
-            {/* Paginação */}
+            {/* Enhanced Pagination */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-gray-50/50">
-                <div className="text-sm text-gray-600">
-                  Mostrando {startIndex + 1} a {Math.min(endIndex, appointments.length)} de {appointments.length} consultas
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-t">
+                <div className="text-sm text-gray-600 font-medium">
+                  Mostrando <span className="font-bold text-gray-900">{startIndex + 1}</span> a <span className="font-bold text-gray-900">{Math.min(endIndex, appointments.length)}</span> de <span className="font-bold text-gray-900">{appointments.length}</span> consultas
                 </div>
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious 
                         onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        className={`${currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-green-50"} transition-colors`}
                       />
                     </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -401,7 +469,7 @@ const AgendaMedico = () => {
                         <PaginationLink
                           onClick={() => handlePageChange(page)}
                           isActive={currentPage === page}
-                          className="cursor-pointer"
+                          className={`cursor-pointer transition-colors ${currentPage === page ? 'bg-green-600 text-white hover:bg-green-700' : 'hover:bg-green-50'}`}
                         >
                           {page}
                         </PaginationLink>
@@ -410,7 +478,7 @@ const AgendaMedico = () => {
                     <PaginationItem>
                       <PaginationNext 
                         onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        className={`${currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-green-50"} transition-colors`}
                       />
                     </PaginationItem>
                   </PaginationContent>
@@ -421,7 +489,7 @@ const AgendaMedico = () => {
         </Card>
 
         {/* Bottom spacing for mobile navigation */}
-        <div className="h-20 sm:hidden"></div>
+        <div className="h-24 sm:hidden"></div>
       </main>
     </div>
   );
