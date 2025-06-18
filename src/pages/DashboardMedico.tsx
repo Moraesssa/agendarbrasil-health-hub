@@ -8,8 +8,30 @@ import { ConsultasChart } from "@/components/dashboard/ConsultasChart";
 import { TiposConsultaChart } from "@/components/dashboard/TiposConsultaChart";
 import { PacientesRecentes } from "@/components/dashboard/PacientesRecentes";
 import { AlertsSection } from "@/components/dashboard/AlertsSection";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const DashboardMedico = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Mensagem de boas-vindas quando o médico acessa o dashboard
+    toast({
+      title: "Bem-vindo ao Dashboard Médico!",
+      description: "Aqui você pode gerenciar suas consultas e acompanhar métricas importantes.",
+    });
+  }, [toast]);
+
+  const handleQuickNavigation = (route: string, title: string) => {
+    navigate(route);
+    toast({
+      title: `Navegando para ${title}`,
+      description: "Carregando página...",
+    });
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
@@ -33,6 +55,31 @@ const DashboardMedico = () => {
 
           <main className="flex-1 overflow-auto">
             <div className="container max-w-7xl mx-auto p-6 space-y-8">
+              {/* Quick Navigation Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div 
+                  className="p-4 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors shadow-lg"
+                  onClick={() => handleQuickNavigation("/agenda-medico", "Agenda Médica")}
+                >
+                  <h3 className="font-semibold">Agenda do Dia</h3>
+                  <p className="text-sm opacity-90">Visualizar consultas de hoje</p>
+                </div>
+                <div 
+                  className="p-4 bg-green-500 text-white rounded-lg cursor-pointer hover:bg-green-600 transition-colors shadow-lg"
+                  onClick={() => handleQuickNavigation("/agendamento", "Novo Agendamento")}
+                >
+                  <h3 className="font-semibold">Nova Consulta</h3>
+                  <p className="text-sm opacity-90">Agendar para paciente</p>
+                </div>
+                <div 
+                  className="p-4 bg-purple-500 text-white rounded-lg cursor-pointer hover:bg-purple-600 transition-colors shadow-lg"
+                  onClick={() => handleQuickNavigation("/historico", "Histórico")}
+                >
+                  <h3 className="font-semibold">Histórico</h3>
+                  <p className="text-sm opacity-90">Ver atendimentos anteriores</p>
+                </div>
+              </div>
+
               <MetricsCards />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

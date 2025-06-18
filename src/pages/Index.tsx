@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck } from "lucide-react";
+import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -19,43 +19,63 @@ const Index = () => {
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "Agendamento de consulta":
+        toast({
+          title: "Redirecionando para agendamento",
+          description: "Vamos ajudá-lo a marcar sua consulta",
+        });
         navigate("/agendamento");
         break;
       case "Reagendar consulta":
+        toast({
+          title: "Acessando sua agenda",
+          description: "Você pode reagendar suas consultas existentes",
+        });
         navigate("/agenda-paciente");
         break;
       case "Ver histórico médico":
+        toast({
+          title: "Carregando histórico",
+          description: "Visualize seu histórico completo de consultas",
+        });
         navigate("/historico");
         break;
       case "Atualizar perfil":
+        toast({
+          title: "Acessando perfil",
+          description: "Mantenha seus dados sempre atualizados",
+        });
         navigate("/perfil");
         break;
       case "Lembrete de medicamento":
         toast({
           title: "Lembrete configurado!",
-          description: "Você receberá notificações sobre seus medicamentos",
+          description: "Você receberá notificações sobre seus medicamentos nos horários programados",
         });
         break;
       case "Agendamento de check-up":
+        toast({
+          title: "Agendando check-up",
+          description: "Exames preventivos são importantes para sua saúde",
+        });
         navigate("/agendamento");
         break;
       case "Consulta por telemedicina":
         toast({
-          title: "Telemedicina",
-          description: "Funcionalidade em breve! Você será notificado quando estiver disponível",
+          title: "Telemedicina em breve!",
+          description: "Esta funcionalidade estará disponível em breve. Você será notificado quando estiver pronta",
         });
         break;
       case "Agendamento urgente":
         toast({
-          title: "Urgência",
-          description: "Para emergências, ligue 192 (SAMU) ou procure o pronto-socorro mais próximo",
+          title: "Urgência Médica",
+          description: "Para emergências, ligue 192 (SAMU) ou procure o pronto-socorro mais próximo imediatamente",
           variant: "destructive"
         });
         break;
       case "Agendamento familiar":
         toast({
           title: "Agendamento Familiar",
-          description: "Funcionalidade em desenvolvimento para gerenciar consultas da família",
+          description: "Em breve você poderá gerenciar consultas de toda a família em um só lugar",
         });
         break;
       default:
@@ -66,8 +86,43 @@ const Index = () => {
     }
   };
 
-  const handleNavigation = (route: string) => {
+  const handleNavigation = (route: string, title?: string) => {
+    if (title) {
+      toast({
+        title: `Navegando para ${title}`,
+        description: "Carregando página...",
+      });
+    }
     navigate(route);
+  };
+
+  const handleEmergencyContact = () => {
+    toast({
+      title: "Contatos de Emergência",
+      description: "SAMU: 192 | Bombeiros: 193 | Polícia: 190",
+      variant: "destructive"
+    });
+  };
+
+  const handleDayClick = (day: number, hasAppointment: boolean, hasMedication: boolean) => {
+    if (hasAppointment) {
+      toast({
+        title: "Consulta agendada",
+        description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
+      });
+      navigate("/agenda-paciente");
+    } else if (hasMedication) {
+      toast({
+        title: "Lembrete de medicamento",
+        description: `Você tem medicamentos programados para o dia ${day}`,
+      });
+    } else if (day > 0 && day <= 31) {
+      toast({
+        title: "Agendar consulta",
+        description: `Gostaria de agendar uma consulta para o dia ${day}?`,
+      });
+      navigate("/agendamento");
+    }
   };
 
   return (
@@ -87,30 +142,43 @@ const Index = () => {
           {/* Quick Access Buttons */}
           <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6">
             <Button 
-              onClick={() => navigate("/agendamento")}
+              onClick={() => handleNavigation("/agendamento", "Agendamento")}
               className="bg-blue-500 hover:bg-blue-600 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all"
               size="sm"
+              title="Agende uma nova consulta médica"
             >
               <Plus className="h-4 w-4 mr-2" />
               Agendar Consulta
             </Button>
             <Button 
-              onClick={() => navigate("/agenda-paciente")}
+              onClick={() => handleNavigation("/agenda-paciente", "Minha Agenda")}
               variant="outline"
               className="text-sm sm:text-base border-blue-200 hover:bg-blue-50 hover:border-blue-300"
               size="sm"
+              title="Visualize suas consultas agendadas"
             >
               <Calendar className="h-4 w-4 mr-2" />
               Minha Agenda
             </Button>
             <Button 
-              onClick={() => navigate("/historico")}
+              onClick={() => handleNavigation("/historico", "Histórico Médico")}
               variant="outline"
               className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300"
               size="sm"
+              title="Veja seu histórico médico completo"
             >
               <CalendarCheck className="h-4 w-4 mr-2" />
               Histórico
+            </Button>
+            <Button 
+              onClick={handleEmergencyContact}
+              variant="outline"
+              className="text-sm sm:text-base border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+              size="sm"
+              title="Contatos de emergência"
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              Emergência
             </Button>
           </div>
         </div>
@@ -135,8 +203,9 @@ const Index = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => navigate("/agenda-paciente")}
+                    onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
                     className="text-blue-600 hover:text-blue-700"
+                    title="Ver agenda completa"
                   >
                     Ver detalhes
                   </Button>
@@ -166,20 +235,10 @@ const Index = () => {
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'hover:bg-gray-100'
                         }`}
-                        onClick={() => {
-                          if (hasAppointment) {
-                            navigate("/agenda-paciente");
-                            toast({
-                              title: "Consulta agendada",
-                              description: `Você tem uma consulta marcada para o dia ${day}`,
-                            });
-                          } else if (day > 0 && day <= 31) {
-                            navigate("/agendamento");
-                          }
-                        }}
+                        onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
                         title={
                           hasAppointment 
-                            ? `Consulta agendada para o dia ${day}` 
+                            ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
                             : hasMedication 
                               ? `Lembrete de medicamento para o dia ${day}`
                               : day > 0 && day <= 31 
@@ -218,17 +277,17 @@ const Index = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden shadow-lg">
         <div className="flex justify-around items-center max-w-md mx-auto">
           {[
-            { id: 'home', icon: Heart, label: 'Início', route: '/' },
-            { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente' },
-            { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento' },
-            { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico' },
-            { id: 'profile', icon: User, label: 'Perfil', route: '/perfil' },
+            { id: 'home', icon: Heart, label: 'Início', route: '/', description: 'Página inicial' },
+            { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente', description: 'Ver suas consultas' },
+            { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento', description: 'Agendar nova consulta' },
+            { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico', description: 'Histórico médico' },
+            { id: 'profile', icon: User, label: 'Perfil', route: '/perfil', description: 'Configurações do perfil' },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id);
-                if (item.route) handleNavigation(item.route);
+                if (item.route) handleNavigation(item.route, item.label);
               }}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                 item.isMain
@@ -237,6 +296,7 @@ const Index = () => {
                     ? 'text-blue-600 bg-blue-50'
                     : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
               }`}
+              title={item.description}
             >
               <item.icon className={`h-4 w-4 ${item.isMain ? 'h-5 w-5' : ''}`} />
               <span className="text-xs font-medium">{item.label}</span>

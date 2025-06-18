@@ -16,32 +16,38 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const mainMenuItems = [
   {
     title: "Dashboard",
     url: "/dashboard-medico",
     icon: BarChart3,
+    description: "Visão geral da prática médica"
   },
   {
     title: "Agenda",
     url: "/agenda-medico",
     icon: Calendar,
+    description: "Gerenciar consultas e horários"
   },
   {
     title: "Pacientes",
     url: "/agenda-paciente",
     icon: Users,
+    description: "Lista de pacientes"
   },
   {
     title: "Consultas",
     url: "/agendamento",
     icon: Stethoscope,
+    description: "Agendar novas consultas"
   },
   {
     title: "Histórico",
     url: "/historico",
     icon: FileText,
+    description: "Histórico de atendimentos"
   }
 ];
 
@@ -50,19 +56,42 @@ const settingsItems = [
     title: "Perfil",
     url: "/perfil-medico",
     icon: User,
+    description: "Configurações do perfil médico"
   },
   {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
+    description: "Configurações do sistema"
   }
 ];
 
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+
+  const handleNavigation = (url: string, title: string) => {
+    if (url === "/settings") {
+      toast({
+        title: "Configurações",
+        description: "Página em desenvolvimento. Em breve você poderá configurar suas preferências.",
+      });
+      return;
+    }
+    
+    navigate(url);
+    toast({
+      title: `Navegando para ${title}`,
+      description: "Carregando página...",
+    });
+  };
 
   const handleLogout = () => {
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso",
+    });
     navigate("/login");
   };
 
@@ -98,8 +127,12 @@ export function AppSidebar() {
                     asChild
                     isActive={location.pathname === item.url}
                     className="hover:bg-blue-50 hover:text-blue-700 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-800 data-[active=true]:font-semibold"
+                    title={item.description}
                   >
-                    <button onClick={() => navigate(item.url)} className="flex items-center gap-3 w-full">
+                    <button 
+                      onClick={() => handleNavigation(item.url, item.title)} 
+                      className="flex items-center gap-3 w-full"
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </button>
@@ -124,8 +157,12 @@ export function AppSidebar() {
                     asChild
                     isActive={location.pathname === item.url}
                     className="hover:bg-blue-50 hover:text-blue-700 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-800"
+                    title={item.description}
                   >
-                    <button onClick={() => navigate(item.url)} className="flex items-center gap-3 w-full">
+                    <button 
+                      onClick={() => handleNavigation(item.url, item.title)} 
+                      className="flex items-center gap-3 w-full"
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </button>
@@ -159,6 +196,7 @@ export function AppSidebar() {
           size="sm" 
           onClick={handleLogout}
           className="w-full justify-start text-gray-600 hover:text-red-600 hover:bg-red-50"
+          title="Sair da conta"
         >
           <LogOut className="h-4 w-4 mr-2" />
           Sair
