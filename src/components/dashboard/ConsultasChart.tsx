@@ -27,14 +27,14 @@ const chartConfig = {
 
 export function ConsultasChart() {
   return (
-    <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-      <CardHeader>
+    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-transparent">
         <CardTitle className="flex items-center gap-2 text-gray-800">
           <BarChart3 className="h-5 w-5 text-blue-600" />
           Consultas da Semana
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         <ChartContainer config={chartConfig} className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={consultasSemanais}>
@@ -42,7 +42,7 @@ export function ConsultasChart() {
               <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="consultas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="consultas" fill="#3b82f6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
