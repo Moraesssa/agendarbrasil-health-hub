@@ -30,6 +30,34 @@ const Index = () => {
       case "Atualizar perfil":
         navigate("/perfil");
         break;
+      case "Lembrete de medicamento":
+        toast({
+          title: "Lembrete configurado!",
+          description: "Você receberá notificações sobre seus medicamentos",
+        });
+        break;
+      case "Agendamento de check-up":
+        navigate("/agendamento");
+        break;
+      case "Consulta por telemedicina":
+        toast({
+          title: "Telemedicina",
+          description: "Funcionalidade em breve! Você será notificado quando estiver disponível",
+        });
+        break;
+      case "Agendamento urgente":
+        toast({
+          title: "Urgência",
+          description: "Para emergências, ligue 192 (SAMU) ou procure o pronto-socorro mais próximo",
+          variant: "destructive"
+        });
+        break;
+      case "Agendamento familiar":
+        toast({
+          title: "Agendamento Familiar",
+          description: "Funcionalidade em desenvolvimento para gerenciar consultas da família",
+        });
+        break;
       default:
         toast({
           title: "Ação realizada!",
@@ -60,7 +88,7 @@ const Index = () => {
           <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6">
             <Button 
               onClick={() => navigate("/agendamento")}
-              className="bg-blue-500 hover:bg-blue-600 text-sm sm:text-base"
+              className="bg-blue-500 hover:bg-blue-600 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all"
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -69,7 +97,7 @@ const Index = () => {
             <Button 
               onClick={() => navigate("/agenda-paciente")}
               variant="outline"
-              className="text-sm sm:text-base"
+              className="text-sm sm:text-base border-blue-200 hover:bg-blue-50 hover:border-blue-300"
               size="sm"
             >
               <Calendar className="h-4 w-4 mr-2" />
@@ -78,7 +106,7 @@ const Index = () => {
             <Button 
               onClick={() => navigate("/historico")}
               variant="outline"
-              className="text-sm sm:text-base"
+              className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300"
               size="sm"
             >
               <CalendarCheck className="h-4 w-4 mr-2" />
@@ -99,10 +127,20 @@ const Index = () => {
             {/* Calendar Overview */}
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-3 px-4 sm:px-6">
-                <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
-                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Agenda do Mês
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Agenda do Mês
+                  </CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate("/agenda-paciente")}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Ver detalhes
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
@@ -123,18 +161,31 @@ const Index = () => {
                           day < 1 || day > 31 
                             ? 'text-gray-300' 
                             : hasAppointment 
-                              ? 'bg-blue-500 text-white font-medium' 
+                              ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
                               : hasMedication
-                                ? 'bg-green-100 text-green-700'
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'hover:bg-gray-100'
                         }`}
                         onClick={() => {
                           if (hasAppointment) {
                             navigate("/agenda-paciente");
+                            toast({
+                              title: "Consulta agendada",
+                              description: `Você tem uma consulta marcada para o dia ${day}`,
+                            });
                           } else if (day > 0 && day <= 31) {
                             navigate("/agendamento");
                           }
                         }}
+                        title={
+                          hasAppointment 
+                            ? `Consulta agendada para o dia ${day}` 
+                            : hasMedication 
+                              ? `Lembrete de medicamento para o dia ${day}`
+                              : day > 0 && day <= 31 
+                                ? 'Clique para agendar uma consulta'
+                                : ''
+                        }
                       >
                         {day > 0 && day <= 31 ? day : ''}
                       </div>
@@ -164,7 +215,7 @@ const Index = () => {
       </main>
 
       {/* Bottom Navigation - Mobile Only */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden shadow-lg">
         <div className="flex justify-around items-center max-w-md mx-auto">
           {[
             { id: 'home', icon: Heart, label: 'Início', route: '/' },
@@ -181,7 +232,7 @@ const Index = () => {
               }}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                 item.isMain
-                  ? 'bg-blue-500 text-white shadow-lg scale-110'
+                  ? 'bg-blue-500 text-white shadow-lg scale-110 hover:bg-blue-600'
                   : activeTab === item.id
                     ? 'text-blue-600 bg-blue-50'
                     : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
