@@ -17,13 +17,24 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleQuickAction = (action: string) => {
-    if (action === "Agendamento de consulta") {
-      navigate("/agendamento");
-    } else {
-      toast({
-        title: "Ação realizada!",
-        description: `${action} executada com sucesso`,
-      });
+    switch (action) {
+      case "Agendamento de consulta":
+        navigate("/agendamento");
+        break;
+      case "Reagendar consulta":
+        navigate("/agenda-paciente");
+        break;
+      case "Ver histórico médico":
+        navigate("/historico");
+        break;
+      case "Atualizar perfil":
+        navigate("/perfil");
+        break;
+      default:
+        toast({
+          title: "Ação realizada!",
+          description: `${action} executada com sucesso`,
+        });
     }
   };
 
@@ -44,6 +55,36 @@ const Index = () => {
           <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Sua saúde na palma da mão - rápido, seguro e sempre disponível
           </p>
+          
+          {/* Quick Access Buttons */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6">
+            <Button 
+              onClick={() => navigate("/agendamento")}
+              className="bg-blue-500 hover:bg-blue-600 text-sm sm:text-base"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agendar Consulta
+            </Button>
+            <Button 
+              onClick={() => navigate("/agenda-paciente")}
+              variant="outline"
+              className="text-sm sm:text-base"
+              size="sm"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Minha Agenda
+            </Button>
+            <Button 
+              onClick={() => navigate("/historico")}
+              variant="outline"
+              className="text-sm sm:text-base"
+              size="sm"
+            >
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              Histórico
+            </Button>
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -87,6 +128,13 @@ const Index = () => {
                                 ? 'bg-green-100 text-green-700'
                                 : 'hover:bg-gray-100'
                         }`}
+                        onClick={() => {
+                          if (hasAppointment) {
+                            navigate("/agenda-paciente");
+                          } else if (day > 0 && day <= 31) {
+                            navigate("/agendamento");
+                          }
+                        }}
                       >
                         {day > 0 && day <= 31 ? day : ''}
                       </div>

@@ -23,11 +23,20 @@ const Login = () => {
     // Simulação de login
     setTimeout(() => {
       if (email && password) {
+        // Simulação: determinar tipo de usuário baseado no email
+        const isMedico = email.includes('medico') || email.includes('doctor') || email.includes('dr');
+        
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao AgendarBrasil",
         });
-        navigate("/");
+        
+        // Redirecionar baseado no tipo de usuário
+        if (isMedico) {
+          navigate("/dashboard-medico");
+        } else {
+          navigate("/"); // Dashboard do paciente (página inicial)
+        }
       } else {
         toast({
           title: "Erro no login",
@@ -132,12 +141,7 @@ const Login = () => {
               <p className="text-sm text-gray-600">
                 Não tem uma conta?{" "}
                 <button
-                  onClick={() => {
-                    toast({
-                      title: "Cadastro",
-                      description: "Funcionalidade em desenvolvimento",
-                    });
-                  }}
+                  onClick={() => navigate("/cadastrar")}
                   className="text-blue-600 hover:text-blue-500 font-medium"
                 >
                   Cadastre-se
