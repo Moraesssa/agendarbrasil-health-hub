@@ -1,52 +1,44 @@
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Chrome } from "lucide-react";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { signInWithGoogle, user, userData, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulação de login
-    setTimeout(() => {
-      if (email && password) {
-        // Simulação: determinar tipo de usuário baseado no email
-        const isMedico = email.includes('medico') || email.includes('doctor') || email.includes('dr');
-        
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao AgendarBrasil",
-        });
-        
+  useEffect(() => {
+    if (user && userData) {
+      if (!userData.onboardingCompleted) {
+        navigate("/onboarding");
+      } else {
         // Redirecionar baseado no tipo de usuário
-        if (isMedico) {
+        if (userData.userType === 'medico') {
           navigate("/dashboard-medico");
         } else {
-          navigate("/"); // Dashboard do paciente (página inicial)
+          navigate("/");
         }
-      } else {
-        toast({
-          title: "Erro no login",
-          description: "Por favor, preencha todos os campos",
-          variant: "destructive",
-        });
       }
-      setIsLoading(false);
-    }, 1000);
+    }
+  }, [user, userData, navigate]);
+
+  const handleGoogleLogin = async () => {
+    await signInWithGoogle();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
@@ -65,104 +57,33 @@ const Login = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">Entrar</CardTitle>
             <CardDescription className="text-center">
-              Digite suas credenciais para acessar sua conta
+              Faça login com sua conta Google
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={handleGoogleLogin}
+              className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+              disabled={loading}
+            >
+              <Chrome className="w-5 h-5 mr-2" />
+              Continuar com Google
+            </Button>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Sua senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2 text-sm">
-                  <input type="checkbox" className="rounded" />
-                  <span>Lembrar de mim</span>
-                </label>
-                <button
-                  type="button"
-                  className="text-sm text-blue-600 hover:text-blue-500"
-                  onClick={() => {
-                    toast({
-                      title: "Recuperar senha",
-                      description: "Funcionalidade em desenvolvimento",
-                    });
-                  }}
-                >
-                  Esqueceu a senha?
-                </button>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
-                disabled={isLoading}
-              >
-                {isLoading ? "Entrando..." : "Entrar"}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Não tem uma conta?{" "}
-                <button
-                  onClick={() => navigate("/cadastrar")}
-                  className="text-blue-600 hover:text-blue-500 font-medium"
-                >
-                  Cadastre-se
+            <div className="text-center text-sm text-gray-600">
+              <p>Ao entrar, você concorda com nossos</p>
+              <p>
+                <button className="text-blue-600 hover:text-blue-500">
+                  Termos de Uso
+                </button>{" "}
+                e{" "}
+                <button className="text-blue-600 hover:text-blue-500">
+                  Política de Privacidade
                 </button>
               </p>
             </div>
           </CardContent>
         </Card>
-
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Ao entrar, você concorda com nossos</p>
-          <p>
-            <button className="text-blue-600 hover:text-blue-500">
-              Termos de Uso
-            </button>{" "}
-            e{" "}
-            <button className="text-blue-600 hover:text-blue-500">
-              Política de Privacidade
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   );
