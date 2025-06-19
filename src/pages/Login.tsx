@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,39 +15,37 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, userProfile } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      await login(email, password);
-      
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao AgendarBrasil",
-      });
-      
-      // Redirecionar baseado no tipo de usuário após o login
-      setTimeout(() => {
-        if (userProfile?.tipo === 'medico') {
+    // Simulação de login
+    setTimeout(() => {
+      if (email && password) {
+        // Simulação: determinar tipo de usuário baseado no email
+        const isMedico = email.includes('medico') || email.includes('doctor') || email.includes('dr');
+        
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao AgendarBrasil",
+        });
+        
+        // Redirecionar baseado no tipo de usuário
+        if (isMedico) {
           navigate("/dashboard-medico");
         } else {
-          navigate("/"); // Dashboard do paciente
+          navigate("/"); // Dashboard do paciente (página inicial)
         }
-      }, 100);
-      
-    } catch (error: any) {
-      console.error('Erro no login:', error);
-      toast({
-        title: "Erro no login",
-        description: error.message || "Verifique suas credenciais",
-        variant: "destructive",
-      });
-    } finally {
+      } else {
+        toast({
+          title: "Erro no login",
+          description: "Por favor, preencha todos os campos",
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   return (

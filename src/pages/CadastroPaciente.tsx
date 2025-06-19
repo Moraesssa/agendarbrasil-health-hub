@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, ArrowLeft, UserCheck, User, Mail, Phone, MapPin, Heart, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 
 const CadastroPaciente = () => {
   const [formData, setFormData] = useState({
@@ -35,7 +34,6 @@ const CadastroPaciente = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,30 +49,15 @@ const CadastroPaciente = () => {
       return;
     }
 
-    try {
-      await register(formData.email, formData.senha, {
-        nome: formData.nome,
-        tipo: 'paciente',
-        telefone: formData.telefone,
-        cpf: formData.cpf,
-        dataNascimento: formData.dataNascimento
-      });
-
+    // Simulação de cadastro
+    setTimeout(() => {
       toast({
         title: "Cadastro realizado com sucesso!",
         description: "Bem-vindo ao AgendarBrasil, " + formData.nome,
       });
       navigate("/login");
-    } catch (error: any) {
-      console.error('Erro no cadastro:', error);
-      toast({
-        title: "Erro no cadastro",
-        description: error.message || "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
       setIsLoading(false);
-    }
+    }, 1500);
   };
 
   const handleInputChange = (field: string, value: string) => {
