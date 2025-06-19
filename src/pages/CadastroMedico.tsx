@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, EyeOff, ArrowLeft, Stethoscope, User, Mail, Phone, MapPin, FileText, GraduationCap } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Stethoscope, User, Mail, Phone, MapPin, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CadastroMedico = () => {
   const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ const CadastroMedico = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,15 +47,30 @@ const CadastroMedico = () => {
       return;
     }
 
-    // Simulação de cadastro
-    setTimeout(() => {
+    try {
+      await register(formData.email, formData.senha, {
+        nome: formData.nome,
+        tipo: 'medico',
+        telefone: formData.telefone,
+        crm: formData.crm,
+        especialidade: formData.especialidade
+      });
+
       toast({
         title: "Cadastro realizado com sucesso!",
         description: "Bem-vindo ao AgendarBrasil, Dr(a). " + formData.nome,
       });
       navigate("/login");
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      toast({
+        title: "Erro no cadastro",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
