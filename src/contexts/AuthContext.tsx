@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { BaseUser, UserType, OnboardingStatus } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -254,14 +255,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       if (userData) {
-        setUserData({ ...userData, onboardingCompleted: true });
+        const updatedUserData = { ...userData, onboardingCompleted: true };
+        setUserData(updatedUserData);
+        
+        toast({
+          title: "Cadastro concluído!",
+          description: "Bem-vindo ao AgendarBrasil",
+        });
+
+        // Redirecionar para o perfil apropriado após completar onboarding
+        setTimeout(() => {
+          if (updatedUserData.userType === 'medico') {
+            window.location.href = '/perfil-medico';
+          } else {
+            window.location.href = '/perfil';
+          }
+        }, 1000);
       }
       setOnboardingStatus(null);
-
-      toast({
-        title: "Cadastro concluído!",
-        description: "Bem-vindo ao AgendarBrasil",
-      });
     } catch (error) {
       console.error('Erro ao completar onboarding:', error);
     }

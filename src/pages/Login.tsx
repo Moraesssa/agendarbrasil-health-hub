@@ -13,13 +13,19 @@ const Login = () => {
   useEffect(() => {
     if (user && userData) {
       if (!userData.onboardingCompleted) {
-        navigate("/onboarding");
-      } else {
-        // Redirecionar baseado no tipo de usuário
-        if (userData.userType === 'medico') {
-          navigate("/dashboard-medico");
+        // Se não tem tipo de usuário, vai para seleção de tipo
+        if (!userData.userType) {
+          navigate("/user-type");
         } else {
-          navigate("/");
+          // Se tem tipo mas não completou onboarding, vai para onboarding
+          navigate("/onboarding");
+        }
+      } else {
+        // Onboarding completo - redirecionar baseado no tipo de usuário
+        if (userData.userType === 'medico') {
+          navigate("/perfil-medico");
+        } else {
+          navigate("/perfil");
         }
       }
     }
