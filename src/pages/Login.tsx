@@ -11,21 +11,35 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && userData) {
-      if (!userData.onboardingCompleted) {
-        // Se não tem tipo de usuário, vai para seleção de tipo
-        if (!userData.userType) {
-          navigate("/user-type");
-        } else {
-          // Se tem tipo mas não completou onboarding, vai para onboarding
-          navigate("/onboarding");
-        }
+    // Só redirecionar se tiver usuário logado
+    if (user) {
+      // Se não tem userData ainda, aguardar um pouco para carregar
+      if (userData === null) {
+        // Aguardar 2 segundos para tentar carregar o userData
+        const timer = setTimeout(() => {
+          // Se depois de 2 segundos ainda não tem userData, significa que é usuário novo
+          if (userData === null) {
+            console.log('Novo usuário detectado, redirecionando para user-type');
+            navigate("/user-type");
+          }
+        }, 2000);
+        
+        return () => clearTimeout(timer);
       } else {
-        // Onboarding completo - redirecionar baseado no tipo de usuário
-        if (userData.userType === 'medico') {
-          navigate("/perfil-medico");
+        // Tem userData, aplicar lógica de redirecionamento
+        if (!userData.onboardingCompleted) {
+          if (!userData.userType) {
+            navigate("/user-type");
+          } else {
+            navigate("/onboarding");
+          }
         } else {
-          navigate("/perfil");
+          // Onboarding completo - redirecionar baseado no tipo de usuário
+          if (userData.userType === 'medico') {
+            navigate("/perfil-medico");
+          } else {
+            navigate("/perfil");
+          }
         }
       }
     }

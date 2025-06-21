@@ -4,7 +4,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { BaseUser, UserType, OnboardingStatus } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -85,6 +84,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (error) {
         console.error('Erro ao carregar dados do usuário:', error);
+        // Se não encontrar perfil, isso é normal para novos usuários
+        if (error.code === 'PGRST116') {
+          console.log('Novo usuário - perfil não encontrado');
+          setUserData(null);
+        }
         return;
       }
 
@@ -99,7 +103,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         let parsedPreferences = defaultPreferences;
         if (profile.preferences && typeof profile.preferences === 'object') {
           try {
-            // Validate the structure of preferences
             const prefs = profile.preferences as any;
             if (typeof prefs.notifications === 'boolean' && 
                 (prefs.theme === 'light' || prefs.theme === 'dark') &&
@@ -149,7 +152,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}/user-type`
         }
       });
 
@@ -189,33 +192,59 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Primeiro, criar ou atualizar o perfil do usuário
+      const { error: upsertError } = await supabase
         .from('profiles')
-        .update({ 
+        .upsert({ 
+          id: user.id,
+          email: user.email,
+          display_name: user.user_metadata?.full_name || user.email,
+          photo_url: user.user_metadata?.avatar_url || '',
           user_type: type,
-          last_login: new Date().toISOString()
-        })
-        .eq('id', user.id);
+          onboarding_completed: false,
+          last_login: new Date().toISOString(),
+          is_active: true,
+          preferences: {
+            notifications: true,
+            theme: 'light',
+            language: 'pt-BR'
+          }
+        });
 
-      if (error) {
-        console.error('Erro ao definir tipo de usuário:', error);
+      if (upsertError) {
+        console.error('Erro ao definir tipo de usuário:', upsertError);
         return;
       }
 
-      if (userData) {
-        const updatedData = { ...userData, userType: type };
-        setUserData(updatedData);
-        
-        // Atualizar status de onboarding
-        const totalSteps = type === 'medico' ? 7 : 5;
-        setOnboardingStatus({
-          currentStep: 2,
-          completedSteps: [1],
-          totalSteps,
-          canProceed: true,
-          errors: []
-        });
-      }
+      // Atualizar o estado local
+      const updatedUserData: BaseUser = {
+        uid: user.id,
+        email: user.email || '',
+        displayName: user.user_metadata?.full_name || user.email || '',
+        photoURL: user.user_metadata?.avatar_url || '',
+        userType: type,
+        onboardingCompleted: false,
+        createdAt: new Date(),
+        lastLogin: new Date(),
+        isActive: true,
+        preferences: {
+          notifications: true,
+          theme: 'light',
+          language: 'pt-BR'
+        }
+      };
+
+      setUserData(updatedUserData);
+      
+      // Atualizar status de onboarding
+      const totalSteps = type === 'medico' ? 7 : 5;
+      setOnboardingStatus({
+        currentStep: 2,
+        completedSteps: [1],
+        totalSteps,
+        canProceed: true,
+        errors: []
+      });
     } catch (error) {
       console.error('Erro ao definir tipo de usuário:', error);
     }
@@ -262,15 +291,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           title: "Cadastro concluído!",
           description: "Bem-vindo ao AgendarBrasil",
         });
-
-        // Redirecionar para o perfil apropriado após completar onboarding
-        setTimeout(() => {
-          if (updatedUserData.userType === 'medico') {
-            window.location.href = '/perfil-medico';
-          } else {
-            window.location.href = '/perfil';
-          }
-        }, 1000);
       }
       setOnboardingStatus(null);
     } catch (error) {
