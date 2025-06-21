@@ -9,7 +9,145 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      medicos: {
+        Row: {
+          configuracoes: Json
+          created_at: string
+          crm: string
+          dados_profissionais: Json
+          endereco: Json
+          especialidades: string[]
+          id: string
+          registro_especialista: string | null
+          telefone: string
+          updated_at: string
+          user_id: string
+          verificacao: Json
+          whatsapp: string | null
+        }
+        Insert: {
+          configuracoes?: Json
+          created_at?: string
+          crm: string
+          dados_profissionais?: Json
+          endereco?: Json
+          especialidades?: string[]
+          id?: string
+          registro_especialista?: string | null
+          telefone: string
+          updated_at?: string
+          user_id: string
+          verificacao?: Json
+          whatsapp?: string | null
+        }
+        Update: {
+          configuracoes?: Json
+          created_at?: string
+          crm?: string
+          dados_profissionais?: Json
+          endereco?: Json
+          especialidades?: string[]
+          id?: string
+          registro_especialista?: string | null
+          telefone?: string
+          updated_at?: string
+          user_id?: string
+          verificacao?: Json
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pacientes: {
+        Row: {
+          contato: Json
+          convenio: Json
+          created_at: string
+          dados_medicos: Json
+          dados_pessoais: Json
+          endereco: Json
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contato?: Json
+          convenio?: Json
+          created_at?: string
+          dados_medicos?: Json
+          dados_pessoais?: Json
+          endereco?: Json
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contato?: Json
+          convenio?: Json
+          created_at?: string
+          dados_medicos?: Json
+          dados_pessoais?: Json
+          endereco?: Json
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacientes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          is_active: boolean
+          last_login: string | null
+          onboarding_completed: boolean
+          photo_url: string | null
+          preferences: Json | null
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+          is_active?: boolean
+          last_login?: string | null
+          onboarding_completed?: boolean
+          photo_url?: string | null
+          preferences?: Json | null
+          user_type?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          onboarding_completed?: boolean
+          photo_url?: string | null
+          preferences?: Json | null
+          user_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
