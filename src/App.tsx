@@ -5,18 +5,28 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+
+// Páginas - Rotas Públicas
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+
+// Páginas - Configuração Inicial
+import UserTypeSelection from "./pages/UserTypeSelection";
+import Onboarding from "./pages/Onboarding";
+
+// Páginas - Paciente
 import Agendamento from "./pages/Agendamento";
 import AgendaPaciente from "./pages/AgendaPaciente";
-import AgendaMedico from "./pages/AgendaMedico";
-import DashboardMedico from "./pages/DashboardMedico";
-import Historico from "./pages/Historico";
 import Perfil from "./pages/Perfil";
+import Historico from "./pages/Historico";
+
+// Páginas - Médico
+import DashboardMedico from "./pages/DashboardMedico";
+import AgendaMedico from "./pages/AgendaMedico";
 import PerfilMedico from "./pages/PerfilMedico";
-import Login from "./pages/Login";
-import Onboarding from "./pages/Onboarding";
-import UserTypeSelection from "./pages/UserTypeSelection";
+
+// Páginas - Sistema
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -28,17 +38,26 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Rotas Públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            
+            {/* Configuração Inicial */}
             <Route path="/user-type" element={<UserTypeSelection />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            
+            {/* Rotas do Paciente */}
             <Route path="/agendamento" element={<Agendamento />} />
             <Route path="/agenda-paciente" element={<AgendaPaciente />} />
-            <Route path="/agenda-medico" element={<AgendaMedico />} />
-            <Route path="/dashboard-medico" element={<DashboardMedico />} />
-            <Route path="/historico" element={<Historico />} />
             <Route path="/perfil" element={<Perfil />} />
+            <Route path="/historico" element={<Historico />} />
+            
+            {/* Rotas do Médico */}
+            <Route path="/dashboard-medico" element={<DashboardMedico />} />
+            <Route path="/agenda-medico" element={<AgendaMedico />} />
             <Route path="/perfil-medico" element={<PerfilMedico />} />
+            
+            {/* Sistema */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
