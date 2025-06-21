@@ -23,6 +23,24 @@ export const useOnboarding = () => {
         .eq('user_id', user.id)
         .single();
 
+      // Convert Date objects to ISO strings for JSON compatibility
+      const processVerificacao = (verificacao: any) => {
+        if (!verificacao) return {
+          crmVerificado: false,
+          documentosEnviados: false,
+          aprovado: false
+        };
+        
+        return {
+          ...verificacao,
+          dataAprovacao: verificacao.dataAprovacao 
+            ? verificacao.dataAprovacao instanceof Date 
+              ? verificacao.dataAprovacao.toISOString()
+              : verificacao.dataAprovacao
+            : undefined
+        };
+      };
+
       const medicoData = {
         user_id: user.id,
         crm: data.crm || '',
@@ -33,11 +51,7 @@ export const useOnboarding = () => {
         endereco: data.endereco || {},
         dados_profissionais: data.dadosProfissionais || {},
         configuracoes: data.configuracoes || {},
-        verificacao: data.verificacao || {
-          crmVerificado: false,
-          documentosEnviados: false,
-          aprovado: false
-        }
+        verificacao: processVerificacao(data.verificacao)
       };
 
       let error;
@@ -49,7 +63,7 @@ export const useOnboarding = () => {
       } else {
         ({ error } = await supabase
           .from('medicos')
-          .insert([medicoData]));
+          .insert(medicoData));
       }
 
       if (error) {
@@ -89,13 +103,27 @@ export const useOnboarding = () => {
         .eq('user_id', user.id)
         .single();
 
+      // Convert Date objects to ISO strings for JSON compatibility
+      const processConvenio = (convenio: any) => {
+        if (!convenio) return { temConvenio: false };
+        
+        return {
+          ...convenio,
+          validade: convenio.validade 
+            ? convenio.validade instanceof Date 
+              ? convenio.validade.toISOString()
+              : convenio.validade
+            : undefined
+        };
+      };
+
       const pacienteData = {
         user_id: user.id,
         dados_pessoais: data.dadosPessoais || {},
         contato: data.contato || {},
         endereco: data.endereco || {},
         dados_medicos: data.dadosMedicos || {},
-        convenio: data.convenio || { temConvenio: false }
+        convenio: processConvenio(data.convenio)
       };
 
       let error;
@@ -107,7 +135,7 @@ export const useOnboarding = () => {
       } else {
         ({ error } = await supabase
           .from('pacientes')
-          .insert([pacienteData]));
+          .insert(pacienteData));
       }
 
       if (error) {

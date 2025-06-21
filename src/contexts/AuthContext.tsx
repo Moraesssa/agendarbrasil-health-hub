@@ -88,6 +88,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       if (profile) {
+        // Safely parse preferences with fallback
+        const defaultPreferences = {
+          notifications: true,
+          theme: 'light' as const,
+          language: 'pt-BR' as const
+        };
+
+        let parsedPreferences = defaultPreferences;
+        if (profile.preferences && typeof profile.preferences === 'object') {
+          try {
+            // Validate the structure of preferences
+            const prefs = profile.preferences as any;
+            if (typeof prefs.notifications === 'boolean' && 
+                (prefs.theme === 'light' || prefs.theme === 'dark') &&
+                prefs.language === 'pt-BR') {
+              parsedPreferences = prefs;
+            }
+          } catch (e) {
+            console.warn('Invalid preferences format, using defaults');
+          }
+        }
+
         const baseUser: BaseUser = {
           uid: profile.id,
           email: profile.email,
@@ -98,11 +120,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           createdAt: new Date(profile.created_at),
           lastLogin: profile.last_login ? new Date(profile.last_login) : new Date(),
           isActive: profile.is_active,
-          preferences: profile.preferences || {
-            notifications: true,
-            theme: 'light',
-            language: 'pt-BR'
-          }
+          preferences: parsedPreferences
         };
 
         setUserData(baseUser);
