@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,54 +9,81 @@ import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
 import MedicationReminders from "@/components/MedicationReminders";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const requireAuth = (callback: () => void, actionName: string) => {
+    if (!user) {
+      toast({
+        title: "Login necessário",
+        description: `Para ${actionName.toLowerCase()}, você precisa fazer login primeiro`,
+        variant: "default",
+      });
+      navigate("/login");
+      return;
+    }
+    callback();
+  };
 
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "Agendamento de consulta":
-        toast({
-          title: "Redirecionando para agendamento",
-          description: "Vamos ajudá-lo a marcar sua consulta",
-        });
-        navigate("/agendamento");
+        requireAuth(() => {
+          toast({
+            title: "Redirecionando para agendamento",
+            description: "Vamos ajudá-lo a marcar sua consulta",
+          });
+          navigate("/agendamento");
+        }, "agendar consulta");
         break;
       case "Reagendar consulta":
-        toast({
-          title: "Acessando sua agenda",
-          description: "Você pode reagendar suas consultas existentes",
-        });
-        navigate("/agenda-paciente");
+        requireAuth(() => {
+          toast({
+            title: "Acessando sua agenda",
+            description: "Você pode reagendar suas consultas existentes",
+          });
+          navigate("/agenda-paciente");
+        }, "reagendar consulta");
         break;
       case "Ver histórico médico":
-        toast({
-          title: "Carregando histórico",
-          description: "Visualize seu histórico completo de consultas",
-        });
-        navigate("/historico");
+        requireAuth(() => {
+          toast({
+            title: "Carregando histórico",
+            description: "Visualize seu histórico completo de consultas",
+          });
+          navigate("/historico");
+        }, "ver histórico médico");
         break;
       case "Atualizar perfil":
-        toast({
-          title: "Acessando perfil",
-          description: "Mantenha seus dados sempre atualizados",
-        });
-        navigate("/perfil");
+        requireAuth(() => {
+          toast({
+            title: "Acessando perfil",
+            description: "Mantenha seus dados sempre atualizados",
+          });
+          navigate("/perfil");
+        }, "atualizar perfil");
         break;
       case "Lembrete de medicamento":
-        toast({
-          title: "Lembrete configurado!",
-          description: "Você receberá notificações sobre seus medicamentos nos horários programados",
-        });
+        requireAuth(() => {
+          toast({
+            title: "Lembrete configurado!",
+            description: "Você receberá notificações sobre seus medicamentos nos horários programados",
+          });
+        }, "configurar lembrete");
         break;
       case "Agendamento de check-up":
-        toast({
-          title: "Agendando check-up",
-          description: "Exames preventivos são importantes para sua saúde",
-        });
-        navigate("/agendamento");
+        requireAuth(() => {
+          toast({
+            title: "Agendando check-up",
+            description: "Exames preventivos são importantes para sua saúde",
+          });
+          navigate("/agendamento");
+        }, "agendar check-up");
         break;
       case "Consulta por telemedicina":
         toast({
@@ -73,10 +99,12 @@ const Index = () => {
         });
         break;
       case "Agendamento familiar":
-        toast({
-          title: "Agendamento Familiar",
-          description: "Em breve você poderá gerenciar consultas de toda a família em um só lugar",
-        });
+        requireAuth(() => {
+          toast({
+            title: "Agendamento Familiar",
+            description: "Em breve você poderá gerenciar consultas de toda a família em um só lugar",
+          });
+        }, "agendar para família");
         break;
       default:
         toast({
@@ -87,13 +115,28 @@ const Index = () => {
   };
 
   const handleNavigation = (route: string, title?: string) => {
-    if (title) {
-      toast({
-        title: `Navegando para ${title}`,
-        description: "Carregando página...",
-      });
+    // Rotas que requerem autenticação
+    const protectedRoutes = ["/agendamento", "/agenda-paciente", "/historico", "/perfil"];
+    
+    if (protectedRoutes.includes(route)) {
+      requireAuth(() => {
+        if (title) {
+          toast({
+            title: `Navegando para ${title}`,
+            description: "Carregando página...",
+          });
+        }
+        navigate(route);
+      }, title || "acessar esta página");
+    } else {
+      if (title) {
+        toast({
+          title: `Navegando para ${title}`,
+          description: "Carregando página...",
+        });
+      }
+      navigate(route);
     }
-    navigate(route);
   };
 
   const handleEmergencyContact = () => {
@@ -106,22 +149,26 @@ const Index = () => {
 
   const handleDayClick = (day: number, hasAppointment: boolean, hasMedication: boolean) => {
     if (hasAppointment) {
-      toast({
-        title: "Consulta agendada",
-        description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
-      });
-      navigate("/agenda-paciente");
+      requireAuth(() => {
+        toast({
+          title: "Consulta agendada",
+          description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
+        });
+        navigate("/agenda-paciente");
+      }, "ver detalhes da consulta");
     } else if (hasMedication) {
       toast({
         title: "Lembrete de medicamento",
         description: `Você tem medicamentos programados para o dia ${day}`,
       });
     } else if (day > 0 && day <= 31) {
-      toast({
-        title: "Agendar consulta",
-        description: `Gostaria de agendar uma consulta para o dia ${day}?`,
-      });
-      navigate("/agendamento");
+      requireAuth(() => {
+        toast({
+          title: "Agendar consulta",
+          description: `Gostaria de agendar uma consulta para o dia ${day}?`,
+        });
+        navigate("/agendamento");
+      }, "agendar consulta");
     }
   };
 

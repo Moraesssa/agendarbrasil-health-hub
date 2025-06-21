@@ -1,9 +1,22 @@
 
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuthAction = () => {
+    if (user) {
+      logout();
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
     <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50 border-b border-blue-100">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
@@ -29,17 +42,31 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-              <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-pink-500 text-xs font-bold animate-bounce">
-                3
-              </Badge>
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+            {user && (
+              <>
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-pink-500 text-xs font-bold animate-bounce">
+                    3
+                  </Badge>
+                </Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              </>
+            )}
+            
+            <Button 
+              onClick={handleAuthAction}
+              variant={user ? "outline" : "default"}
+              size="sm"
+              className={user ? "border-red-200 hover:bg-red-50 text-red-600" : "bg-blue-500 hover:bg-blue-600 text-white"}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              {user ? "Sair" : "Entrar"}
             </Button>
           </div>
         </div>
