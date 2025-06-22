@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { BaseUser, OnboardingStatus } from '@/types/user';
-import { authService } from '@/services/authService';
+import { supabase } from '@/integrations/supabase/client'; // Verifique se este caminho está correto
+import { BaseUser, OnboardingStatus, UserPreferences } from '@/types/user'; // Verifique se este caminho está correto
+import { authService } from '@/services/authService'; // Verifique se este caminho está correto
 
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -14,96 +13,74 @@ export const useAuthState = () => {
 
   const loadUserData = async (uid: string, retryCount = 0) => {
     try {
-      console.log(`Loading user data for: ${uid} (attempt ${retryCount + 1})`);
+      console.log(`Carregando dados para o usuário: ${uid} (tentativa ${retryCount + 1})`);
       
+      // A chamada ao seu serviço para buscar o perfil continua a mesma.
       const { profile, shouldRetry, error } = await authService.loadUserProfile(uid);
 
       if (error) {
-        console.error('Error loading user profile:', error);
+        console.error('Erro ao carregar o perfil do usuário:', error);
         setLoading(false);
         return;
       }
 
+      // A lógica de retentativa é uma boa prática e deve ser mantida.
+      // Ela dá tempo para o trigger do banco de dados executar.
       if (shouldRetry && retryCount < 5) {
-        // Retry up to 5 times with exponential backoff
         const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s, 8s, 16s
-        console.log(`Profile not found, retrying in ${delay}ms...`);
+        console.log(`Perfil não encontrado, tentando novamente em ${delay}ms...`);
         setTimeout(() => {
           loadUserData(uid, retryCount + 1);
         }, delay);
         return;
       }
 
-      // Use let to allow reassignment
-      let finalProfile = profile;
+      // =================================================================
+      // INÍCIO DA CORREÇÃO PRINCIPAL
+      // =================================================================
 
-      if (!finalProfile) {
-        console.log('Profile not found after retries, creating default profile...');
-        // If profile still doesn't exist after retries, create a basic one
-        // This handles edge cases where the trigger might not have fired
-        try {
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: uid,
-              email: user?.email || '',
-              display_name: user?.user_metadata?.full_name || user?.email || '',
-              photo_url: user?.user_metadata?.avatar_url || '',
-              user_type: null, // Don't set user type automatically - let user choose
-              onboarding_completed: false,
-              is_active: true,
-              preferences: {
-                notifications: true,
-                theme: 'light' as const,
-                language: 'pt-BR' as const
-              }
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            setLoading(false);
-            return;
-          }
-
-          // Use the newly created profile
-          console.log('Created new profile:', newProfile);
-          finalProfile = newProfile;
-        } catch (createError) {
-          console.error('Failed to create profile:', createError);
-          setLoading(false);
-          return;
-        }
+      // Se, após todas as tentativas, o perfil ainda não existir,
+      // nós consideramos isso um erro e paramos a execução, em vez de
+      // tentar criar um perfil aqui e causar a condição de corrida.
+      if (!profile) {
+        console.error(
+          'ERRO CRÍTICO: O perfil do usuário não foi encontrado no banco de dados, mesmo após várias tentativas. Verifique o trigger "on_auth_user_created" no Supabase.'
+        );
+        setLoading(false); // Para a tela de carregamento
+        return; // Interrompe a função para evitar mais erros
       }
+      
+      // =================================================================
+      // FIM DA CORREÇÃO PRINCIPAL
+      // =================================================================
+
+      const finalProfile = profile; // Usamos o perfil que foi encontrado com sucesso.
 
       // Safely parse preferences with fallback
-      const defaultPreferences = {
+      const defaultPreferences: UserPreferences = {
         notifications: true,
-        theme: 'light' as const,
-        language: 'pt-BR' as const
+        theme: 'light',
+        language: 'pt-BR'
       };
 
       let parsedPreferences = defaultPreferences;
       if (finalProfile.preferences && typeof finalProfile.preferences === 'object') {
-        try {
-          const prefs = finalProfile.preferences as any;
-          if (typeof prefs.notifications === 'boolean' && 
-              (prefs.theme === 'light' || prefs.theme === 'dark') &&
-              prefs.language === 'pt-BR') {
-            parsedPreferences = prefs;
-          }
-        } catch (e) {
-          console.warn('Invalid preferences format, using defaults');
-        }
+         try {
+           // Simplesmente assumimos que o formato é correto se for um objeto,
+           // você pode adicionar validações mais estritas se necessário.
+           parsedPreferences = { ...defaultPreferences, ...finalProfile.preferences };
+         } catch (e) {
+           console.warn('Formato de preferências inválido, usando padrões.');
+         }
       }
 
+      // Mapeia os dados do banco (snake_case) para o objeto do app (camelCase)
       const baseUser: BaseUser = {
         uid: finalProfile.id,
         email: finalProfile.email,
         displayName: finalProfile.display_name || '',
         photoURL: finalProfile.photo_url || '',
-        userType: finalProfile.user_type as any, // This will be null for new users
+        userType: finalProfile.user_type, // Será null para novos usuários, o que está correto
         onboardingCompleted: finalProfile.onboarding_completed,
         createdAt: new Date(finalProfile.created_at),
         lastLogin: finalProfile.last_login ? new Date(finalProfile.last_login) : new Date(),
@@ -111,12 +88,12 @@ export const useAuthState = () => {
         preferences: parsedPreferences
       };
 
-      console.log('Setting userData:', baseUser);
+      console.log('Dados do usuário definidos com sucesso:', baseUser);
       setUserData(baseUser);
       
-      // Load onboarding status if not completed and user type is set
+      // Carrega o status do onboarding se necessário
       if (!baseUser.onboardingCompleted && baseUser.userType) {
-        const totalSteps = baseUser.userType === 'medico' ? 7 : 5;
+        const totalSteps = baseUser.userType === 'medico' ? 7 : 5; // Exemplo
         setOnboardingStatus({
           currentStep: 2,
           completedSteps: [1],
@@ -128,24 +105,23 @@ export const useAuthState = () => {
       
       setLoading(false);
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('Erro inesperado na função loadUserData:', error);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener
+    // Listener para mudanças no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+      (event, session) => {
+        console.log('Auth state changed:', event);
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
         
-        if (session?.user) {
-          // Load user data when session is available
-          setTimeout(() => {
-            loadUserData(session.user.id);
-          }, 100); // Small delay to ensure trigger has time to execute
+        if (currentUser) {
+          // Pequeno delay para garantir que a sessão foi estabelecida antes de carregar os dados
+          setTimeout(() => loadUserData(currentUser.id), 100);
         } else {
           setUserData(null);
           setOnboardingStatus(null);
@@ -154,21 +130,23 @@ export const useAuthState = () => {
       }
     );
 
-    // Check for existing session
+    // Verificação da sessão inicial (não é mais estritamente necessária com o onAuthStateChange, mas não prejudica)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => {
-          loadUserData(session.user.id);
-        }, 100);
-      } else {
-        setLoading(false);
-      }
+       if (!user && session?.user) { // Apenas executa se o listener ainda não pegou
+           console.log("Sessão inicial encontrada.");
+           setSession(session);
+           setUser(session.user);
+           loadUserData(session.user.id);
+       } else if (!session) {
+           setLoading(false);
+       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      console.log("Limpando a inscrição do AuthState.");
+      subscription.unsubscribe();
+    };
+  }, []); // O array vazio [] garante que este efeito rode apenas uma vez
 
   return {
     user,
