@@ -34,7 +34,10 @@ export const useAuthState = () => {
         return;
       }
 
-      if (!profile) {
+      // Use let to allow reassignment
+      let finalProfile = profile;
+
+      if (!finalProfile) {
         console.log('Profile not found after retries, creating default profile...');
         // If profile still doesn't exist after retries, create a basic one
         // This handles edge cases where the trigger might not have fired
@@ -66,7 +69,7 @@ export const useAuthState = () => {
 
           // Use the newly created profile
           console.log('Created new profile:', newProfile);
-          profile = newProfile;
+          finalProfile = newProfile;
         } catch (createError) {
           console.error('Failed to create profile:', createError);
           setLoading(false);
@@ -82,9 +85,9 @@ export const useAuthState = () => {
       };
 
       let parsedPreferences = defaultPreferences;
-      if (profile.preferences && typeof profile.preferences === 'object') {
+      if (finalProfile.preferences && typeof finalProfile.preferences === 'object') {
         try {
-          const prefs = profile.preferences as any;
+          const prefs = finalProfile.preferences as any;
           if (typeof prefs.notifications === 'boolean' && 
               (prefs.theme === 'light' || prefs.theme === 'dark') &&
               prefs.language === 'pt-BR') {
@@ -96,15 +99,15 @@ export const useAuthState = () => {
       }
 
       const baseUser: BaseUser = {
-        uid: profile.id,
-        email: profile.email,
-        displayName: profile.display_name || '',
-        photoURL: profile.photo_url || '',
-        userType: profile.user_type as any,
-        onboardingCompleted: profile.onboarding_completed,
-        createdAt: new Date(profile.created_at),
-        lastLogin: profile.last_login ? new Date(profile.last_login) : new Date(),
-        isActive: profile.is_active,
+        uid: finalProfile.id,
+        email: finalProfile.email,
+        displayName: finalProfile.display_name || '',
+        photoURL: finalProfile.photo_url || '',
+        userType: finalProfile.user_type as any,
+        onboardingCompleted: finalProfile.onboarding_completed,
+        createdAt: new Date(finalProfile.created_at),
+        lastLogin: finalProfile.last_login ? new Date(finalProfile.last_login) : new Date(),
+        isActive: finalProfile.is_active,
         preferences: parsedPreferences
       };
 
