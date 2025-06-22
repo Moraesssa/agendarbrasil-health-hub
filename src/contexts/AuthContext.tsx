@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setOnboardingStatus
   );
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     userData,
