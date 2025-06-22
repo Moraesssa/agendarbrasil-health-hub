@@ -14,7 +14,7 @@ interface ConfiguracoesFormProps {
 export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProps) => {
   const [formData, setFormData] = useState({
     duracaoConsulta: initialData?.duracaoConsulta || 30,
-    valorConsulta: initial Data?.valorConsulta || '',
+    valorConsulta: initialData?.valorConsulta || '',
     aceitaConvenio: initialData?.aceitaConvenio || false,
     conveniosAceitos: initialData?.conveniosAceitos || []
   });
