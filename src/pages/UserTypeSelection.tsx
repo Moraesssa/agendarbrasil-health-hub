@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,25 +47,17 @@ const UserTypeSelection = () => {
         description: `Configurando sua conta como ${type}`,
       });
 
-      const success = await setUserType(type);
+      await setUserType(type);
       
-      if (success) {
-        toast({
-          title: "Tipo definido com sucesso!",
-          description: `Você agora é um ${type}. Vamos completar seu cadastro.`,
-        });
-        
-        // Aguardar um pouco para o userData ser atualizado
-        setTimeout(() => {
-          navigate("/onboarding");
-        }, 500);
-      } else {
-        toast({
-          title: "Erro ao definir tipo",
-          description: "Tente novamente em alguns segundos",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Tipo definido com sucesso!",
+        description: `Você agora é um ${type}. Vamos completar seu cadastro.`,
+      });
+      
+      // Aguardar um pouco para o userData ser atualizado
+      setTimeout(() => {
+        navigate("/onboarding");
+      }, 500);
     } catch (error) {
       console.error('Erro ao selecionar tipo:', error);
       toast({
