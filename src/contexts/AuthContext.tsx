@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,10 +48,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer profile loading to avoid blocking auth state change
-          setTimeout(() => {
-            loadUserData(session.user.id);
-          }, 0);
+          // Load user data immediately when session is available
+          loadUserData(session.user.id);
         } else {
           setUserData(null);
           setOnboardingStatus(null);
@@ -76,6 +73,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const loadUserData = async (uid: string) => {
     try {
+      console.log('Loading user data for:', uid);
+      
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -84,15 +83,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (error) {
         console.error('Erro ao carregar dados do usuário:', error);
-        // Se não encontrar perfil, isso é normal para novos usuários
+        
+        // Se perfil não existe, aguardar um pouco e tentar novamente (trigger pode estar processando)
         if (error.code === 'PGRST116') {
-          console.log('Novo usuário - perfil não encontrado');
-          setUserData(null);
+          console.log('Perfil não encontrado, aguardando criação automática...');
+          setTimeout(() => {
+            loadUserData(uid);
+          }, 1000);
         }
         return;
       }
 
       if (profile) {
+        console.log('Profile loaded:', profile);
+        
         // Safely parse preferences with fallback
         const defaultPreferences = {
           notifications: true,
@@ -127,14 +131,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           preferences: parsedPreferences
         };
 
+        console.log('Setting userData:', baseUser);
         setUserData(baseUser);
         
         // Carregar status de onboarding se não completado
         if (!baseUser.onboardingCompleted) {
           const totalSteps = baseUser.userType === 'medico' ? 7 : 5;
           setOnboardingStatus({
-            currentStep: 1,
-            completedSteps: [],
+            currentStep: baseUser.userType ? 2 : 1,
+            completedSteps: baseUser.userType ? [1] : [],
             totalSteps,
             canProceed: true,
             errors: []
@@ -149,10 +154,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
+      console.log('Iniciando login com Google...');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/user-type`
+          redirectTo: window.location.origin
         }
       });
 
@@ -192,59 +199,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!user) return;
 
     try {
-      // Primeiro, criar ou atualizar o perfil do usuário
-      const { error: upsertError } = await supabase
+      console.log('Setting user type:', type);
+      
+      const { error: updateError } = await supabase
         .from('profiles')
-        .upsert({ 
-          id: user.id,
-          email: user.email,
-          display_name: user.user_metadata?.full_name || user.email,
-          photo_url: user.user_metadata?.avatar_url || '',
+        .update({ 
           user_type: type,
-          onboarding_completed: false,
-          last_login: new Date().toISOString(),
-          is_active: true,
-          preferences: {
-            notifications: true,
-            theme: 'light',
-            language: 'pt-BR'
-          }
-        });
+          onboarding_completed: false
+        })
+        .eq('id', user.id);
 
-      if (upsertError) {
-        console.error('Erro ao definir tipo de usuário:', upsertError);
+      if (updateError) {
+        console.error('Erro ao definir tipo de usuário:', updateError);
         return;
       }
 
       // Atualizar o estado local
-      const updatedUserData: BaseUser = {
-        uid: user.id,
-        email: user.email || '',
-        displayName: user.user_metadata?.full_name || user.email || '',
-        photoURL: user.user_metadata?.avatar_url || '',
-        userType: type,
-        onboardingCompleted: false,
-        createdAt: new Date(),
-        lastLogin: new Date(),
-        isActive: true,
-        preferences: {
-          notifications: true,
-          theme: 'light',
-          language: 'pt-BR'
-        }
-      };
+      if (userData) {
+        const updatedUserData: BaseUser = {
+          ...userData,
+          userType: type,
+          onboardingCompleted: false
+        };
 
-      setUserData(updatedUserData);
-      
-      // Atualizar status de onboarding
-      const totalSteps = type === 'medico' ? 7 : 5;
-      setOnboardingStatus({
-        currentStep: 2,
-        completedSteps: [1],
-        totalSteps,
-        canProceed: true,
-        errors: []
-      });
+        setUserData(updatedUserData);
+        
+        // Atualizar status de onboarding
+        const totalSteps = type === 'medico' ? 7 : 5;
+        setOnboardingStatus({
+          currentStep: 2,
+          completedSteps: [1],
+          totalSteps,
+          canProceed: true,
+          errors: []
+        });
+      }
     } catch (error) {
       console.error('Erro ao definir tipo de usuário:', error);
     }

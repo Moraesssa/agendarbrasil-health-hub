@@ -11,45 +11,49 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Só redirecionar se tiver usuário logado
+    console.log('Login page - user:', !!user, 'userData:', !!userData, 'loading:', loading);
+
+    // Só processar redirecionamento se não estiver carregando
+    if (loading) return;
+
+    // Se usuário está logado
     if (user) {
-      // Se não tem userData ainda, aguardar um pouco para carregar
+      // Se userData está carregando ainda, aguardar
       if (userData === null) {
-        // Aguardar 2 segundos para tentar carregar o userData
-        const timer = setTimeout(() => {
-          // Se depois de 2 segundos ainda não tem userData, significa que é usuário novo
-          if (userData === null) {
-            console.log('Novo usuário detectado, redirecionando para user-type');
-            navigate("/user-type");
-          }
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      } else {
-        // Tem userData, aplicar lógica de redirecionamento
-        if (!userData.onboardingCompleted) {
-          if (!userData.userType) {
-            navigate("/user-type");
-          } else {
-            navigate("/onboarding");
-          }
+        console.log('User exists but userData is null, waiting...');
+        return;
+      }
+
+      console.log('Redirecting user based on userData:', userData);
+
+      // Verificar se precisa completar onboarding
+      if (!userData.onboardingCompleted) {
+        if (!userData.userType) {
+          console.log('No user type, redirecting to user-type selection');
+          navigate("/user-type");
         } else {
-          // Onboarding completo - redirecionar baseado no tipo de usuário
-          if (userData.userType === 'medico') {
-            navigate("/perfil-medico");
-          } else {
-            navigate("/perfil");
-          }
+          console.log('User type exists, redirecting to onboarding');
+          navigate("/onboarding");
+        }
+      } else {
+        // Onboarding completo - redirecionar para perfil
+        console.log('Onboarding complete, redirecting to profile');
+        if (userData.userType === 'medico') {
+          navigate("/perfil-medico");
+        } else {
+          navigate("/perfil");
         }
       }
     }
-  }, [user, userData, navigate]);
+  }, [user, userData, loading, navigate]);
 
   const handleGoogleLogin = async () => {
+    console.log('Attempting Google login...');
     await signInWithGoogle();
   };
 
-  if (loading) {
+  // Mostrar loading enquanto processa autenticação
+  if (loading || (user && userData === null)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <div className="text-center">
