@@ -1,5 +1,10 @@
-
 export type UserType = 'paciente' | 'medico';
+
+export interface UserPreferences {
+  notifications: boolean;
+  theme: 'light' | 'dark';
+  language: 'pt-BR';
+}
 
 export interface BaseUser {
   uid: string;
@@ -11,11 +16,7 @@ export interface BaseUser {
   createdAt: Date;
   lastLogin: Date;
   isActive: boolean;
-  preferences: {
-    notifications: boolean;
-    theme: 'light' | 'dark';
-    language: 'pt-BR';
-  };
+  preferences: UserPreferences;
 }
 
 export interface OnboardingStatus {
