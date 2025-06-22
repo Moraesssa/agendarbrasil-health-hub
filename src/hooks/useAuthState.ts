@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +48,7 @@ export const useAuthState = () => {
               email: user?.email || '',
               display_name: user?.user_metadata?.full_name || user?.email || '',
               photo_url: user?.user_metadata?.avatar_url || '',
-              user_type: 'paciente',
+              user_type: null, // Don't set user type automatically - let user choose
               onboarding_completed: false,
               is_active: true,
               preferences: {
@@ -103,7 +102,7 @@ export const useAuthState = () => {
         email: finalProfile.email,
         displayName: finalProfile.display_name || '',
         photoURL: finalProfile.photo_url || '',
-        userType: finalProfile.user_type as any,
+        userType: finalProfile.user_type as any, // This will be null for new users
         onboardingCompleted: finalProfile.onboarding_completed,
         createdAt: new Date(finalProfile.created_at),
         lastLogin: finalProfile.last_login ? new Date(finalProfile.last_login) : new Date(),
@@ -114,12 +113,12 @@ export const useAuthState = () => {
       console.log('Setting userData:', baseUser);
       setUserData(baseUser);
       
-      // Load onboarding status if not completed
-      if (!baseUser.onboardingCompleted) {
+      // Load onboarding status if not completed and user type is set
+      if (!baseUser.onboardingCompleted && baseUser.userType) {
         const totalSteps = baseUser.userType === 'medico' ? 7 : 5;
         setOnboardingStatus({
-          currentStep: baseUser.userType ? 2 : 1,
-          completedSteps: baseUser.userType ? [1] : [],
+          currentStep: 2,
+          completedSteps: [1],
           totalSteps,
           canProceed: true,
           errors: []

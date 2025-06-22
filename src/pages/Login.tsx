@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ const Login = () => {
 
   useEffect(() => {
     console.log('Login page - user:', !!user, 'userData:', !!userData, 'loading:', loading);
+    console.log('UserData details:', userData);
 
     // Only process redirection if not loading
     if (loading) return;
@@ -20,23 +20,26 @@ const Login = () => {
     if (user && userData) {
       console.log('Redirecting user based on userData:', userData);
 
+      // Check if user type is not set (new user needs to select type)
+      if (!userData.userType || userData.userType === null) {
+        console.log('No user type set, redirecting to user-type selection');
+        navigate("/user-type");
+        return;
+      }
+
       // Check if needs to complete onboarding
       if (!userData.onboardingCompleted) {
-        if (!userData.userType) {
-          console.log('No user type, redirecting to user-type selection');
-          navigate("/user-type");
-        } else {
-          console.log('User type exists, redirecting to onboarding');
-          navigate("/onboarding");
-        }
+        console.log('User type exists but onboarding not complete, redirecting to onboarding');
+        navigate("/onboarding");
+        return;
+      }
+
+      // Onboarding complete - redirect to profile
+      console.log('Onboarding complete, redirecting to profile');
+      if (userData.userType === 'medico') {
+        navigate("/perfil-medico");
       } else {
-        // Onboarding complete - redirect to profile
-        console.log('Onboarding complete, redirecting to profile');
-        if (userData.userType === 'medico') {
-          navigate("/perfil-medico");
-        } else {
-          navigate("/perfil");
-        }
+        navigate("/perfil");
       }
     }
     // If user exists but userData is null and we're not loading, wait a bit more
