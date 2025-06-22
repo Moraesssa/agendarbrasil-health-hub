@@ -1,227 +1,200 @@
 
-import { useState } from "react";
-import { ArrowLeft, User, Edit, Save, Camera } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import { Badge } from "@/components/ui/badge";
+import { User, Mail, Phone, MapPin, Heart, LogOut, Calendar, FileText } from "lucide-react";
 
 const Perfil = () => {
+  const { userData, user, loading, logout } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    nome: "João Silva",
-    email: "joao.silva@email.com",
-    telefone: "(11) 99999-9999",
-    cpf: "123.456.789-00",
-    dataNascimento: "1990-05-15",
-    endereco: "Rua das Flores, 123",
-    cidade: "São Paulo",
-    cep: "01234-567",
-    convenio: "Unimed",
-    numeroCarteirinha: "123456789",
-    contatoEmergencia: "Maria Silva - (11) 88888-8888"
-  });
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: "Perfil atualizado!",
-      description: "Suas informações foram salvas com sucesso."
-    });
+  useEffect(() => {
+    if (loading) return;
+
+    if (!user || !userData) {
+      navigate("/login");
+      return;
+    }
+
+    if (userData.userType !== 'paciente') {
+      navigate("/login");
+      return;
+    }
+
+    if (!userData.onboardingCompleted) {
+      navigate("/onboarding");
+      return;
+    }
+  }, [user, userData, loading, navigate]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
-  };
+  if (loading || !userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-blue-900">Meu Perfil</h1>
-              <p className="text-gray-600">Gerencie suas informações pessoais</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">A</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-blue-900">AgendarBrasil</h1>
+                <p className="text-sm text-gray-600">Perfil do Paciente</p>
+              </div>
             </div>
             <Button
-              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-200 hover:bg-red-50"
             >
-              {isEditing ? (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salvar
-                </>
-              ) : (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </>
-              )}
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Foto e Informações Básicas */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Perfil Principal */}
           <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-center">Foto do Perfil</CardTitle>
+            <CardHeader className="text-center pb-4">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="w-10 h-10 text-blue-600" />
+              </div>
+              <CardTitle className="text-2xl text-blue-900">{userData.displayName}</CardTitle>
+              <div className="flex justify-center gap-2 mt-2">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                  <Heart className="w-3 h-3 mr-1" />
+                  Paciente
+                </Badge>
+                <Badge variant="outline" className="border-green-200 text-green-700">
+                  Ativo
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="relative mx-auto w-32 h-32">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                  JS
-                </div>
-                {isEditing && (
-                  <Button
-                    size="sm"
-                    className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0"
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{profile.nome}</h3>
-                <p className="text-gray-600">{profile.email}</p>
-              </div>
-            </CardContent>
           </Card>
 
-          {/* Informações Pessoais */}
-          <Card className="shadow-lg lg:col-span-2">
+          {/* Informações Básicas */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  Informações de Contato
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Email</label>
+                  <p className="text-gray-900">{userData.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Membro desde</label>
+                  <p className="text-gray-900">
+                    {new Date(userData.createdAt).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Último acesso</label>
+                  <p className="text-gray-900">
+                    {new Date(userData.lastLogin).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Heart className="w-5 h-5 text-green-600" />
+                  Status da Conta
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Tipo de Usuário</label>
+                  <p className="text-gray-900 capitalize">{userData.userType}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Cadastro Completo</label>
+                  <p className="text-gray-900">
+                    {userData.onboardingCompleted ? 'Sim' : 'Não'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Conta Ativa</label>
+                  <p className="text-gray-900">
+                    {userData.isActive ? 'Sim' : 'Não'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Ações Rápidas */}
+          <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Informações Pessoais
-              </CardTitle>
+              <CardTitle className="text-lg">Ações Rápidas</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nome Completo</label>
-                  <input
-                    type="text"
-                    value={profile.nome}
-                    onChange={(e) => handleInputChange('nome', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Telefone</label>
-                  <input
-                    type="tel"
-                    value={profile.telefone}
-                    onChange={(e) => handleInputChange('telefone', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">CPF</label>
-                  <input
-                    type="text"
-                    value={profile.cpf}
-                    onChange={(e) => handleInputChange('cpf', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Data de Nascimento</label>
-                  <input
-                    type="date"
-                    value={profile.dataNascimento}
-                    onChange={(e) => handleInputChange('dataNascimento', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">CEP</label>
-                  <input
-                    type="text"
-                    value={profile.cep}
-                    onChange={(e) => handleInputChange('cep', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Endereço</label>
-                <input
-                  type="text"
-                  value={profile.endereco}
-                  onChange={(e) => handleInputChange('endereco', e.target.value)}
-                  disabled={!isEditing}
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Convênio</label>
-                  <input
-                    type="text"
-                    value={profile.convenio}
-                    onChange={(e) => handleInputChange('convenio', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Número da Carteirinha</label>
-                  <input
-                    type="text"
-                    value={profile.numeroCarteirinha}
-                    onChange={(e) => handleInputChange('numeroCarteirinha', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Contato de Emergência</label>
-                <input
-                  type="text"
-                  value={profile.contatoEmergencia}
-                  onChange={(e) => handleInputChange('contatoEmergencia', e.target.value)}
-                  disabled={!isEditing}
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                />
+            <CardContent>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Button
+                  onClick={() => navigate("/agendamento")}
+                  className="bg-blue-500 hover:bg-blue-600 h-auto py-4 flex-col gap-2"
+                >
+                  <Calendar className="w-6 h-6" />
+                  <span>Agendar Consulta</span>
+                </Button>
+                <Button
+                  onClick={() => navigate("/agenda-paciente")}
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 border-blue-200 hover:bg-blue-50"
+                >
+                  <Calendar className="w-6 h-6" />
+                  <span>Minha Agenda</span>
+                </Button>
+                <Button
+                  onClick={() => navigate("/historico")}
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 border-green-200 hover:bg-green-50"
+                >
+                  <FileText className="w-6 h-6" />
+                  <span>Histórico</span>
+                </Button>
+                <Button
+                  onClick={() => navigate("/")}
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 border-gray-200 hover:bg-gray-50"
+                >
+                  <Heart className="w-6 h-6" />
+                  <span>Página Inicial</span>
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

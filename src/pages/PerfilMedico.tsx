@@ -1,323 +1,230 @@
 
-import { useState } from "react";
-import { ArrowLeft, User, Edit, Save, Camera, Stethoscope, GraduationCap, MapPin, Clock } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import { Badge } from "@/components/ui/badge";
+import { Stethoscope, Mail, User, LogOut, Calendar, Users, BarChart3, Settings } from "lucide-react";
 
 const PerfilMedico = () => {
+  const { userData, user, loading, logout } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    nome: "Dr. Carlos Silva",
-    email: "dr.carlos@email.com",
-    telefone: "(11) 99999-9999",
-    cpf: "123.456.789-00",
-    dataNascimento: "1985-03-20",
-    crm: "123456/SP",
-    especialidade: "Cardiologia",
-    formacao: "Universidade de São Paulo - USP",
-    biografia: "Médico cardiologista com mais de 15 anos de experiência, especializado em procedimentos minimamente invasivos e prevenção cardiovascular.",
-    endereco: "Av. Paulista, 1000 - Sala 1205",
-    cidade: "São Paulo",
-    estado: "SP",
-    cep: "01310-100",
-    horarioAtendimento: "Segunda a Sexta: 08:00 - 18:00",
-    valorConsulta: "R$ 300,00",
-    convenios: ["Unimed", "Bradesco Saúde", "SulAmérica", "Amil"]
-  });
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: "Perfil atualizado!",
-      description: "Suas informações foram salvas com sucesso."
-    });
+  useEffect(() => {
+    if (loading) return;
+
+    if (!user || !userData) {
+      navigate("/login");
+      return;
+    }
+
+    if (userData.userType !== 'medico') {
+      navigate("/login");
+      return;
+    }
+
+    if (!userData.onboardingCompleted) {
+      navigate("/onboarding");
+      return;
+    }
+  }, [user, userData, loading, navigate]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
-  };
+  if (loading || !userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-green-900">Perfil Médico</h1>
-              <p className="text-gray-600">Gerencie suas informações profissionais</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">A</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-blue-900">AgendarBrasil</h1>
+                <p className="text-sm text-gray-600">Painel do Médico</p>
+              </div>
             </div>
             <Button
-              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-              className="bg-green-600 hover:bg-green-700"
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-200 hover:bg-red-50"
             >
-              {isEditing ? (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salvar
-                </>
-              ) : (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </>
-              )}
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Foto e Informações Básicas */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Perfil Principal */}
+          <Card className="shadow-lg">
+            <CardHeader className="text-center pb-4">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Stethoscope className="w-10 h-10 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl text-green-900">Dr(a). {userData.displayName}</CardTitle>
+              <div className="flex justify-center gap-2 mt-2">
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  <Stethoscope className="w-3 h-3 mr-1" />
+                  Médico
+                </Badge>
+                <Badge variant="outline" className="border-blue-200 text-blue-700">
+                  Verificado
+                </Badge>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Cards de Estatísticas */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="shadow-lg">
+              <CardContent className="p-6 text-center">
+                <Calendar className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <h3 className="text-2xl font-bold text-gray-900">24</h3>
+                <p className="text-sm text-gray-600">Consultas este mês</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+              <CardContent className="p-6 text-center">
+                <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <h3 className="text-2xl font-bold text-gray-900">156</h3>
+                <p className="text-sm text-gray-600">Pacientes ativos</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+              <CardContent className="p-6 text-center">
+                <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <h3 className="text-2xl font-bold text-gray-900">4.8</h3>
+                <p className="text-sm text-gray-600">Avaliação média</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+              <CardContent className="p-6 text-center">
+                <Settings className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+                <h3 className="text-2xl font-bold text-gray-900">85%</h3>
+                <p className="text-sm text-gray-600">Taxa de ocupação</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Informações do Médico */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="w-5 h-5 text-blue-600" />
+                  Informações Pessoais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Email</label>
+                  <p className="text-gray-900">{userData.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Cadastrado em</label>
+                  <p className="text-gray-900">
+                    {new Date(userData.createdAt).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Último acesso</label>
+                  <p className="text-gray-900">
+                    {new Date(userData.lastLogin).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Stethoscope className="w-5 h-5 text-green-600" />
+                  Status Profissional
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Especialidade</label>
+                  <p className="text-gray-900">Clínico Geral</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">CRM</label>
+                  <p className="text-gray-900">Em verificação</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <Badge variant="outline" className="border-green-200 text-green-700">
+                    Ativo
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Painel de Controle */}
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="text-center text-green-900">Foto do Perfil</CardTitle>
+              <CardTitle className="text-lg">Painel de Controle</CardTitle>
             </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="relative mx-auto w-32 h-32">
-                <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                  CS
-                </div>
-                {isEditing && (
-                  <Button
-                    size="sm"
-                    className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0 bg-green-600"
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{profile.nome}</h3>
-                <p className="text-gray-600">{profile.especialidade}</p>
-                <p className="text-sm text-gray-500">CRM: {profile.crm}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informações Pessoais */}
-          <Card className="shadow-lg lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-900">
-                <User className="h-5 w-5" />
-                Informações Pessoais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nome Completo</label>
-                  <input
-                    type="text"
-                    value={profile.nome}
-                    onChange={(e) => handleInputChange('nome', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Telefone</label>
-                  <input
-                    type="tel"
-                    value={profile.telefone}
-                    onChange={(e) => handleInputChange('telefone', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">CPF</label>
-                  <input
-                    type="text"
-                    value={profile.cpf}
-                    onChange={(e) => handleInputChange('cpf', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Data de Nascimento</label>
-                  <input
-                    type="date"
-                    value={profile.dataNascimento}
-                    onChange={(e) => handleInputChange('dataNascimento', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Valor da Consulta</label>
-                  <input
-                    type="text"
-                    value={profile.valorConsulta}
-                    onChange={(e) => handleInputChange('valorConsulta', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informações Profissionais */}
-          <Card className="shadow-lg lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-900">
-                <Stethoscope className="h-5 w-5" />
-                Informações Profissionais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">CRM</label>
-                  <input
-                    type="text"
-                    value={profile.crm}
-                    onChange={(e) => handleInputChange('crm', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Especialidade</label>
-                  <input
-                    type="text"
-                    value={profile.especialidade}
-                    onChange={(e) => handleInputChange('especialidade', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Horário de Atendimento</label>
-                  <input
-                    type="text"
-                    value={profile.horarioAtendimento}
-                    onChange={(e) => handleInputChange('horarioAtendimento', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Formação</label>
-                <input
-                  type="text"
-                  value={profile.formacao}
-                  onChange={(e) => handleInputChange('formacao', e.target.value)}
-                  disabled={!isEditing}
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Biografia Profissional</label>
-                <textarea
-                  value={profile.biografia}
-                  onChange={(e) => handleInputChange('biografia', e.target.value)}
-                  disabled={!isEditing}
-                  rows={4}
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Convênios Aceitos</label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {profile.convenios.map((convenio, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                    >
-                      {convenio}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Endereço do Consultório */}
-          <Card className="shadow-lg lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-900">
-                <MapPin className="h-5 w-5" />
-                Endereço do Consultório
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Endereço</label>
-                <input
-                  type="text"
-                  value={profile.endereco}
-                  onChange={(e) => handleInputChange('endereco', e.target.value)}
-                  disabled={!isEditing}
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Cidade</label>
-                  <input
-                    type="text"
-                    value={profile.cidade}
-                    onChange={(e) => handleInputChange('cidade', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Estado</label>
-                  <input
-                    type="text"
-                    value={profile.estado}
-                    onChange={(e) => handleInputChange('estado', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">CEP</label>
-                  <input
-                    type="text"
-                    value={profile.cep}
-                    onChange={(e) => handleInputChange('cep', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border rounded-lg disabled:bg-gray-50"
-                  />
-                </div>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Button
+                  onClick={() => navigate("/dashboard-medico")}
+                  className="bg-blue-500 hover:bg-blue-600 h-auto py-4 flex-col gap-2"
+                >
+                  <BarChart3 className="w-6 h-6" />
+                  <span>Dashboard</span>
+                </Button>
+                <Button
+                  onClick={() => navigate("/agenda-medico")}
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 border-green-200 hover:bg-green-50"
+                >
+                  <Calendar className="w-6 h-6" />
+                  <span>Agenda</span>
+                </Button>
+                <Button
+                  onClick={() => navigate("/pacientes")}
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 border-purple-200 hover:bg-purple-50"
+                >
+                  <Users className="w-6 h-6" />
+                  <span>Pacientes</span>
+                </Button>
+                <Button
+                  onClick={() => navigate("/")}
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 border-gray-200 hover:bg-gray-50"
+                >
+                  <Settings className="w-6 h-6" />
+                  <span>Configurações</span>
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

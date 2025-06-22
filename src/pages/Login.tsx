@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,56 +11,74 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Login page - user:', !!user, 'userData:', !!userData, 'loading:', loading);
-    console.log('UserData details:', userData);
+    console.log('Login page - Estado atual:', { 
+      user: !!user, 
+      userData: !!userData, 
+      loading,
+      userType: userData?.userType,
+      onboardingCompleted: userData?.onboardingCompleted
+    });
 
-    // Only process redirection if not loading
-    if (loading) return;
+    // Não fazer nada enquanto está carregando
+    if (loading) {
+      console.log('Ainda carregando, aguardando...');
+      return;
+    }
 
-    // If user is logged in and we have userData
+    // Se não tem usuário logado, fica na tela de login
+    if (!user) {
+      console.log('Usuário não logado, permanecendo no login');
+      return;
+    }
+
+    // Se tem usuário mas não tem userData ainda, aguardar mais um pouco
+    if (user && !userData) {
+      console.log('Usuário logado mas userData ainda não carregado, aguardando...');
+      return;
+    }
+
+    // Agora que temos user E userData, decidir o redirecionamento
     if (user && userData) {
-      console.log('Redirecting user based on userData:', userData);
+      console.log('Usuário e userData carregados, decidindo redirecionamento...');
 
-      // Check if user type is not set (new user needs to select type)
-      if (!userData.userType || userData.userType === null) {
-        console.log('No user type set, redirecting to user-type selection');
+      // Se não tem tipo de usuário, ir para seleção
+      if (!userData.userType) {
+        console.log('Sem tipo de usuário, redirecionando para user-type');
         navigate("/user-type");
         return;
       }
 
-      // Check if needs to complete onboarding
+      // Se tem tipo mas não completou onboarding
       if (!userData.onboardingCompleted) {
-        console.log('User type exists but onboarding not complete, redirecting to onboarding');
+        console.log('Onboarding não completo, redirecionando para onboarding');
         navigate("/onboarding");
         return;
       }
 
-      // Onboarding complete - redirect to profile
-      console.log('Onboarding complete, redirecting to profile');
+      // Se completou tudo, ir para o perfil apropriado
+      console.log('Tudo completo, redirecionando para perfil final');
       if (userData.userType === 'medico') {
         navigate("/perfil-medico");
       } else {
         navigate("/perfil");
       }
     }
-    // If user exists but userData is null and we're not loading, wait a bit more
-    else if (user && !userData && !loading) {
-      console.log('User exists but userData is null, will wait for profile creation...');
-    }
   }, [user, userData, loading, navigate]);
 
   const handleGoogleLogin = async () => {
-    console.log('Attempting Google login...');
+    console.log('Iniciando login com Google...');
     await signInWithGoogle();
   };
 
-  // Show loading while processing authentication or waiting for profile
+  // Mostrar loading enquanto processa autenticação ou carrega perfil
   if (loading || (user && !userData)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>{user && !userData ? 'Configurando seu perfil...' : 'Carregando...'}</p>
+          <p className="text-gray-600">
+            {user && !userData ? 'Configurando seu perfil...' : 'Carregando...'}
+          </p>
         </div>
       </div>
     );
