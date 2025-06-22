@@ -20,12 +20,13 @@ export const useAuthState = () => {
 
       if (error) {
         console.error('Error loading user profile:', error);
+        setLoading(false);
         return;
       }
 
-      if (shouldRetry && retryCount < 3) {
-        // Retry up to 3 times with exponential backoff
-        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+      if (shouldRetry && retryCount < 5) {
+        // Retry up to 5 times with exponential backoff
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s, 8s, 16s
         console.log(`Profile not found, retrying in ${delay}ms...`);
         setTimeout(() => {
           loadUserData(uid, retryCount + 1);
@@ -34,8 +35,43 @@ export const useAuthState = () => {
       }
 
       if (!profile) {
-        console.error('Profile not found after retries, user may need to complete signup');
-        return;
+        console.log('Profile not found after retries, creating default profile...');
+        // If profile still doesn't exist after retries, create a basic one
+        // This handles edge cases where the trigger might not have fired
+        try {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: uid,
+              email: user?.email || '',
+              display_name: user?.user_metadata?.full_name || user?.email || '',
+              photo_url: user?.user_metadata?.avatar_url || '',
+              user_type: 'paciente',
+              onboarding_completed: false,
+              is_active: true,
+              preferences: {
+                notifications: true,
+                theme: 'light' as const,
+                language: 'pt-BR' as const
+              }
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            setLoading(false);
+            return;
+          }
+
+          // Use the newly created profile
+          console.log('Created new profile:', newProfile);
+          profile = newProfile;
+        } catch (createError) {
+          console.error('Failed to create profile:', createError);
+          setLoading(false);
+          return;
+        }
       }
 
       // Safely parse preferences with fallback
@@ -86,8 +122,11 @@ export const useAuthState = () => {
           errors: []
         });
       }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error loading user data:', error);
+      setLoading(false);
     }
   };
 
@@ -101,12 +140,14 @@ export const useAuthState = () => {
         
         if (session?.user) {
           // Load user data when session is available
-          loadUserData(session.user.id);
+          setTimeout(() => {
+            loadUserData(session.user.id);
+          }, 100); // Small delay to ensure trigger has time to execute
         } else {
           setUserData(null);
           setOnboardingStatus(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
@@ -115,9 +156,12 @@ export const useAuthState = () => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        loadUserData(session.user.id);
+        setTimeout(() => {
+          loadUserData(session.user.id);
+        }, 100);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

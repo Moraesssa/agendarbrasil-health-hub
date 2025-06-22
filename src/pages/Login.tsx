@@ -16,23 +16,8 @@ const Login = () => {
     // Only process redirection if not loading
     if (loading) return;
 
-    // If user is logged in
-    if (user) {
-      // If userData is still loading, wait a bit more
-      if (userData === null) {
-        console.log('User exists but userData is null, waiting...');
-        // Give it a bit more time for the profile to be created/loaded
-        const timer = setTimeout(() => {
-          // If after additional wait userData is still null, redirect to user-type selection
-          if (userData === null) {
-            console.log('userData still null after wait, redirecting to user-type');
-            navigate("/user-type");
-          }
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      }
-
+    // If user is logged in and we have userData
+    if (user && userData) {
       console.log('Redirecting user based on userData:', userData);
 
       // Check if needs to complete onboarding
@@ -54,6 +39,10 @@ const Login = () => {
         }
       }
     }
+    // If user exists but userData is null and we're not loading, wait a bit more
+    else if (user && !userData && !loading) {
+      console.log('User exists but userData is null, will wait for profile creation...');
+    }
   }, [user, userData, loading, navigate]);
 
   const handleGoogleLogin = async () => {
@@ -61,13 +50,13 @@ const Login = () => {
     await signInWithGoogle();
   };
 
-  // Show loading while processing authentication
-  if (loading || (user && userData === null)) {
+  // Show loading while processing authentication or waiting for profile
+  if (loading || (user && !userData)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Carregando...</p>
+          <p>{user && !userData ? 'Configurando seu perfil...' : 'Carregando...'}</p>
         </div>
       </div>
     );
