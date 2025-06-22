@@ -120,7 +120,7 @@ export type Database = {
           onboarding_completed: boolean
           photo_url: string | null
           preferences: Json | null
-          user_type: string
+          user_type: string | null
         }
         Insert: {
           created_at?: string
@@ -132,7 +132,7 @@ export type Database = {
           onboarding_completed?: boolean
           photo_url?: string | null
           preferences?: Json | null
-          user_type?: string
+          user_type?: string | null
         }
         Update: {
           created_at?: string
@@ -144,7 +144,7 @@ export type Database = {
           onboarding_completed?: boolean
           photo_url?: string | null
           preferences?: Json | null
-          user_type?: string
+          user_type?: string | null
         }
         Relationships: []
       }
