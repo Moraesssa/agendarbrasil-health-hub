@@ -1,13 +1,18 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { OnboardingSteps } from "@/components/onboarding/OnboardingSteps";
+import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
 
 const Onboarding = () => {
-  const { userData } = useAuth();
+  const { userData, loading } = useAuth();
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
 
   useEffect(() => {
+    if (loading) return;
+
     if (!userData) {
       navigate("/login");
       return;
@@ -28,35 +33,56 @@ const Onboarding = () => {
       }
       return;
     }
+  }, [userData, loading, navigate]);
 
-    // Aqui seria implementado o fluxo de onboarding específico
-    // Por enquanto, vamos simular que o onboarding foi completado
-    // Em uma implementação real, haveria múltiplas etapas aqui
-    
-  }, [userData, navigate]);
-
-  if (!userData) {
+  if (loading || !userData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Redirecionando...</p>
+          <p>Carregando...</p>
         </div>
       </div>
     );
   }
 
+  const totalSteps = userData.userType === 'medico' ? 5 : 3;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-white font-bold text-2xl">A</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white font-bold text-2xl">A</span>
+            </div>
+            <h1 className="text-2xl font-bold text-blue-900 mb-2">
+              Complete seu cadastro
+            </h1>
+            <p className="text-gray-600">
+              {userData.userType === 'medico' 
+                ? 'Configure seu perfil médico para começar a atender pacientes' 
+                : 'Configure seu perfil para agendar consultas'
+              }
+            </p>
+          </div>
+
+          {/* Progress */}
+          <OnboardingProgress 
+            currentStep={currentStep} 
+            totalSteps={totalSteps}
+            userType={userData.userType}
+          />
+
+          {/* Steps */}
+          <OnboardingSteps
+            currentStep={currentStep}
+            setCurrentStep={setCurrentStep}
+            userType={userData.userType}
+            totalSteps={totalSteps}
+          />
         </div>
-        <h1 className="text-2xl font-bold text-blue-900 mb-4">Configurando seu perfil...</h1>
-        <p className="text-gray-600 mb-6">
-          Estamos preparando tudo para você como {userData.userType === 'medico' ? 'médico' : 'paciente'}.
-        </p>
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     </div>
   );
