@@ -12,79 +12,82 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
 
-  const loadUserData = async (uid: string) => {
+  const loadUserData = async (uid: string, retryCount = 0) => {
     try {
-      console.log('Loading user data for:', uid);
+      console.log(`Loading user data for: ${uid} (attempt ${retryCount + 1})`);
       
       const { profile, shouldRetry, error } = await authService.loadUserProfile(uid);
 
-      if (shouldRetry) {
-        console.log('Perfil não encontrado, aguardando criação automática...');
-        setTimeout(() => {
-          loadUserData(uid);
-        }, 1000);
-        return;
-      }
-
       if (error) {
-        console.error('Erro ao carregar dados do usuário:', error);
+        console.error('Error loading user profile:', error);
         return;
       }
 
-      if (profile) {
-        console.log('Profile loaded:', profile);
-        
-        // Safely parse preferences with fallback
-        const defaultPreferences = {
-          notifications: true,
-          theme: 'light' as const,
-          language: 'pt-BR' as const
-        };
+      if (shouldRetry && retryCount < 3) {
+        // Retry up to 3 times with exponential backoff
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`Profile not found, retrying in ${delay}ms...`);
+        setTimeout(() => {
+          loadUserData(uid, retryCount + 1);
+        }, delay);
+        return;
+      }
 
-        let parsedPreferences = defaultPreferences;
-        if (profile.preferences && typeof profile.preferences === 'object') {
-          try {
-            const prefs = profile.preferences as any;
-            if (typeof prefs.notifications === 'boolean' && 
-                (prefs.theme === 'light' || prefs.theme === 'dark') &&
-                prefs.language === 'pt-BR') {
-              parsedPreferences = prefs;
-            }
-          } catch (e) {
-            console.warn('Invalid preferences format, using defaults');
+      if (!profile) {
+        console.error('Profile not found after retries, user may need to complete signup');
+        return;
+      }
+
+      // Safely parse preferences with fallback
+      const defaultPreferences = {
+        notifications: true,
+        theme: 'light' as const,
+        language: 'pt-BR' as const
+      };
+
+      let parsedPreferences = defaultPreferences;
+      if (profile.preferences && typeof profile.preferences === 'object') {
+        try {
+          const prefs = profile.preferences as any;
+          if (typeof prefs.notifications === 'boolean' && 
+              (prefs.theme === 'light' || prefs.theme === 'dark') &&
+              prefs.language === 'pt-BR') {
+            parsedPreferences = prefs;
           }
+        } catch (e) {
+          console.warn('Invalid preferences format, using defaults');
         }
+      }
 
-        const baseUser: BaseUser = {
-          uid: profile.id,
-          email: profile.email,
-          displayName: profile.display_name || '',
-          photoURL: profile.photo_url || '',
-          userType: profile.user_type as any,
-          onboardingCompleted: profile.onboarding_completed,
-          createdAt: new Date(profile.created_at),
-          lastLogin: profile.last_login ? new Date(profile.last_login) : new Date(),
-          isActive: profile.is_active,
-          preferences: parsedPreferences
-        };
+      const baseUser: BaseUser = {
+        uid: profile.id,
+        email: profile.email,
+        displayName: profile.display_name || '',
+        photoURL: profile.photo_url || '',
+        userType: profile.user_type as any,
+        onboardingCompleted: profile.onboarding_completed,
+        createdAt: new Date(profile.created_at),
+        lastLogin: profile.last_login ? new Date(profile.last_login) : new Date(),
+        isActive: profile.is_active,
+        preferences: parsedPreferences
+      };
 
-        console.log('Setting userData:', baseUser);
-        setUserData(baseUser);
-        
-        // Carregar status de onboarding se não completado
-        if (!baseUser.onboardingCompleted) {
-          const totalSteps = baseUser.userType === 'medico' ? 7 : 5;
-          setOnboardingStatus({
-            currentStep: baseUser.userType ? 2 : 1,
-            completedSteps: baseUser.userType ? [1] : [],
-            totalSteps,
-            canProceed: true,
-            errors: []
-          });
-        }
+      console.log('Setting userData:', baseUser);
+      setUserData(baseUser);
+      
+      // Load onboarding status if not completed
+      if (!baseUser.onboardingCompleted) {
+        const totalSteps = baseUser.userType === 'medico' ? 7 : 5;
+        setOnboardingStatus({
+          currentStep: baseUser.userType ? 2 : 1,
+          completedSteps: baseUser.userType ? [1] : [],
+          totalSteps,
+          canProceed: true,
+          errors: []
+        });
       }
     } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
+      console.error('Error loading user data:', error);
     }
   };
 
@@ -97,7 +100,7 @@ export const useAuthState = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Load user data immediately when session is available
+          // Load user data when session is available
           loadUserData(session.user.id);
         } else {
           setUserData(null);

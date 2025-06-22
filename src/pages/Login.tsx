@@ -13,20 +13,29 @@ const Login = () => {
   useEffect(() => {
     console.log('Login page - user:', !!user, 'userData:', !!userData, 'loading:', loading);
 
-    // Só processar redirecionamento se não estiver carregando
+    // Only process redirection if not loading
     if (loading) return;
 
-    // Se usuário está logado
+    // If user is logged in
     if (user) {
-      // Se userData está carregando ainda, aguardar
+      // If userData is still loading, wait a bit more
       if (userData === null) {
         console.log('User exists but userData is null, waiting...');
-        return;
+        // Give it a bit more time for the profile to be created/loaded
+        const timer = setTimeout(() => {
+          // If after additional wait userData is still null, redirect to user-type selection
+          if (userData === null) {
+            console.log('userData still null after wait, redirecting to user-type');
+            navigate("/user-type");
+          }
+        }, 2000);
+        
+        return () => clearTimeout(timer);
       }
 
       console.log('Redirecting user based on userData:', userData);
 
-      // Verificar se precisa completar onboarding
+      // Check if needs to complete onboarding
       if (!userData.onboardingCompleted) {
         if (!userData.userType) {
           console.log('No user type, redirecting to user-type selection');
@@ -36,7 +45,7 @@ const Login = () => {
           navigate("/onboarding");
         }
       } else {
-        // Onboarding completo - redirecionar para perfil
+        // Onboarding complete - redirect to profile
         console.log('Onboarding complete, redirecting to profile');
         if (userData.userType === 'medico') {
           navigate("/perfil-medico");
@@ -52,7 +61,7 @@ const Login = () => {
     await signInWithGoogle();
   };
 
-  // Mostrar loading enquanto processa autenticação
+  // Show loading while processing authentication
   if (loading || (user && userData === null)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">

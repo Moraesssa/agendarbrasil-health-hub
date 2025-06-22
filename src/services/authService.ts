@@ -19,20 +19,28 @@ export const authService = {
   },
 
   async loadUserProfile(uid: string) {
+    console.log('Loading user profile for:', uid);
+    
+    // Use maybeSingle() instead of single() to handle cases where profile doesn't exist yet
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', uid)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      // Se perfil não existe, aguardar um pouco e tentar novamente (trigger pode estar processando)
-      if (error.code === 'PGRST116') {
-        return { profile: null, shouldRetry: true };
-      }
+      console.error('Error loading user profile:', error);
       return { profile: null, shouldRetry: false, error };
     }
 
+    if (!profile) {
+      // Profile doesn't exist yet - this can happen immediately after signup
+      // The trigger should create it, so we can retry a few times
+      console.log('Profile not found, will retry...');
+      return { profile: null, shouldRetry: true };
+    }
+
+    console.log('Profile loaded successfully:', profile);
     return { profile, shouldRetry: false };
   },
 
