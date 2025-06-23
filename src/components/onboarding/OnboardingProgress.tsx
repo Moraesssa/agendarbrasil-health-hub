@@ -11,8 +11,7 @@ export const OnboardingProgress = ({ currentStep, totalSteps, userType }: Onboar
   const getStepTitle = (step: number) => {
     if (userType === 'medico') {
       const titles = [
-        'Dados Pessoais',
-        'Dados Profissionais', 
+        'Dados Profissionais',
         'Endereço',
         'Configurações',
         'Finalização'

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useToast } from "@/hooks/use-toast";
-import { DadosPessoaisForm } from "./forms/DadosPessoaisForm";
 import { DadosProfissionaisForm } from "./forms/DadosProfissionaisForm";
 import { EnderecoForm } from "./forms/EnderecoForm";
 import { ConfiguracoesForm } from "./forms/ConfiguracoesForm";
@@ -63,27 +62,19 @@ export const MedicoOnboarding = ({
         );
       case 2:
         return (
-          <DadosPessoaisForm
-            onNext={handleNext}
-            initialData={medicoData.dadosProfissionais}
-            isMedico={true}
-          />
-        );
-      case 3:
-        return (
           <EnderecoForm
             onNext={handleNext}
             initialData={medicoData.endereco}
           />
         );
-      case 4:
+      case 3:
         return (
           <ConfiguracoesForm
             onNext={handleNext}
             initialData={medicoData.configuracoes}
           />
         );
-      case 5:
+      case 4:
         return (
           <Card>
             <CardHeader>
