@@ -9,6 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      consultas: {
+        Row: {
+          created_at: string
+          data_consulta: string
+          diagnostico: string | null
+          duracao_minutos: number
+          id: string
+          local_consulta: string | null
+          medico_id: string
+          motivo: string | null
+          notas_medico: string | null
+          paciente_id: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          tipo_consulta: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_consulta: string
+          diagnostico?: string | null
+          duracao_minutos?: number
+          id?: string
+          local_consulta?: string | null
+          medico_id: string
+          motivo?: string | null
+          notas_medico?: string | null
+          paciente_id: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          tipo_consulta?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_consulta?: string
+          diagnostico?: string | null
+          duracao_minutos?: number
+          id?: string
+          local_consulta?: string | null
+          medico_id?: string
+          motivo?: string | null
+          notas_medico?: string | null
+          paciente_id?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          tipo_consulta?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicos: {
         Row: {
           configuracoes: Json
@@ -156,7 +219,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      appointment_status:
+        | "agendada"
+        | "confirmada"
+        | "cancelada"
+        | "realizada"
+        | "pendente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -271,6 +339,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appointment_status: {
+        AGENDADA: "agendada",
+        CONFIRMADA: "confirmada",
+        CANCELADA: "cancelada",
+        REALIZADA: "realizada",
+        PENDENTE: "pendente",
+      },
+    },
   },
 } as const
