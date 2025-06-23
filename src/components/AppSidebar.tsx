@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut } from "lucide-react";
+import { Calendar, Home, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainMenuItems = [
   {
@@ -33,15 +34,15 @@ const mainMenuItems = [
   },
   {
     title: "Pacientes",
-    url: "/agenda-paciente",
+    url: "/pacientes-medico",
     icon: Users,
-    description: "Lista de pacientes"
+    description: "Lista de pacientes do médico"
   },
   {
-    title: "Consultas",
-    url: "/agendamento",
-    icon: Stethoscope,
-    description: "Agendar novas consultas"
+    title: "Encaminhamento",
+    url: "/encaminhamentos-medico",
+    icon: ArrowRightLeft,
+    description: "Encaminhamentos entre médicos"
   },
   {
     title: "Histórico",
@@ -70,6 +71,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { logout, userData } = useAuth();
 
   const handleNavigation = (url: string, title: string) => {
     if (url === "/settings") {
@@ -87,12 +89,21 @@ export function AppSidebar() {
     });
   };
 
-  const handleLogout = () => {
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso",
-    });
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+      });
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Tente novamente",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -177,14 +188,14 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t border-blue-100">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg" />
+            <AvatarImage src={userData?.photoURL} />
             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-green-500 text-white text-sm font-semibold">
               Dr
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              Dr. João Silva
+              Dr(a). {userData?.displayName || 'Médico'}
             </p>
             <p className="text-xs text-gray-500 truncate">
               Cardiologista
