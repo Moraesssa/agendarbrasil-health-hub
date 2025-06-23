@@ -1,14 +1,14 @@
-
 import { Bell, Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-
 const Header = () => {
-  const { user, logout } = useAuth();
+  const {
+    user,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
-
   const handleAuthAction = () => {
     if (user) {
       logout();
@@ -16,18 +16,12 @@ const Header = () => {
       navigate("/login");
     }
   };
-
-  return (
-    <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50 border-b border-blue-100">
+  return <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50 border-b border-blue-100">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <img 
-              src="/android-icon-192x192.png" 
-              alt="AgendarBrasil Logo" 
-              className="w-10 h-10 sm:w-12 sm:h-12" 
-            />
+            <img alt="AgendarBrasil Logo" src="/lovable-uploads/8d717286-a0a1-4d97-a4d0-2451a9c5d001.png" className="w-10 h-10 sm:w-12 sm:h-12 object-cover" />
             <div className="relative">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent leading-tight">
                 AgendarBrasil
@@ -41,8 +35,7 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
-            {user && (
-              <>
+            {user && <>
                 <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                   <Search className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
@@ -55,15 +48,9 @@ const Header = () => {
                 <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                   <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
-              </>
-            )}
+              </>}
             
-            <Button 
-              onClick={handleAuthAction}
-              variant={user ? "outline" : "default"}
-              size="sm"
-              className={user ? "border-red-200 hover:bg-red-50 text-red-600" : "bg-blue-500 hover:bg-blue-600 text-white"}
-            >
+            <Button onClick={handleAuthAction} variant={user ? "outline" : "default"} size="sm" className={user ? "border-red-200 hover:bg-red-50 text-red-600" : "bg-blue-500 hover:bg-blue-600 text-white"}>
               <LogIn className="h-4 w-4 mr-2" />
               {user ? "Sair" : "Entrar"}
             </Button>
@@ -73,8 +60,6 @@ const Header = () => {
       
       {/* Decorative bottom border */}
       <div className="h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-green-500"></div>
-    </header>
-  );
+    </header>;
 };
-
 export default Header;
