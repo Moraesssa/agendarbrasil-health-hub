@@ -110,11 +110,15 @@ export function AppSidebar() {
     <Sidebar className="border-r border-blue-100 bg-gradient-to-b from-white to-blue-50/30">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
-            alt="AgendarBrasil Logo" 
-            className="w-10 h-10" 
-          />
+          <div className="relative group">
+            <img 
+              src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
+              alt="AgendarBrasil Logo" 
+              className="w-14 h-14 object-cover rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-200/40" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/15 to-green-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-green-600 rounded-xl opacity-15 group-hover:opacity-25 blur-sm transition-all duration-300"></div>
+          </div>
           <div>
             <h2 className="text-lg font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">
               AgendarBrasil

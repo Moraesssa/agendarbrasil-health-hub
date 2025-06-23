@@ -53,12 +53,14 @@ const Perfil = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="group">
+              <div className="relative group">
                 <img 
                   src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
                   alt="AgendarBrasil Logo" 
-                  className="w-16 h-16 transition-all duration-300 hover:scale-110 shadow-md hover:shadow-xl rounded-xl p-1 bg-gradient-to-br from-blue-50 to-green-50" 
+                  className="w-24 h-24 object-cover rounded-2xl shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-blue-200/30 p-1 bg-gradient-to-br from-blue-50 to-green-50" 
                 />
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-green-600 rounded-2xl opacity-20 group-hover:opacity-30 blur-sm transition-all duration-500"></div>
               </div>
               <div>
                 <h1 className="text-xl font-bold text-blue-900">AgendarBrasil</h1>
