@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,10 +51,8 @@ const Perfil = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <img src="/android-icon-96x96.png" alt="AgendarBrasil Logo" className="w-10 h-10" />
               <div>
                 <h1 className="text-xl font-bold text-blue-900">AgendarBrasil</h1>
                 <p className="text-sm text-gray-600">Perfil do Paciente</p>

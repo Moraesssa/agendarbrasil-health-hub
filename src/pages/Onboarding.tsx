@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,9 +53,7 @@ const Onboarding = () => {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl">A</span>
-            </div>
+            <img src="/android-icon-144x144.png" alt="AgendarBrasil Logo" className="w-20 h-20 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-blue-900 mb-2">
               Complete seu cadastro
             </h1>
