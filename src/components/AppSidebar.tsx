@@ -1,4 +1,3 @@
-
 import { Calendar, Home, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -198,7 +197,7 @@ export function AppSidebar() {
               Dr(a). {userData?.displayName || 'Médico'}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              Cardiologista
+              {userData?.especialidades?.[0] || 'Especialista'}
             </p>
           </div>
         </div>
