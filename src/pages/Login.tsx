@@ -1,3 +1,4 @@
+
 // src/pages/Login.tsx
 
 import { useEffect } from "react";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Chrome, ArrowLeft, Home } from "lucide-react";
+
 const Login = () => {
   const {
     signInWithGoogle,
@@ -22,9 +24,11 @@ const Login = () => {
       navigate("/");
     }
   }, [user, navigate]);
+
   const handleGoogleLogin = async () => {
     await signInWithGoogle();
   };
+
   const handleBackToHome = () => {
     navigate("/");
   };
@@ -38,6 +42,7 @@ const Login = () => {
         </div>
       </div>;
   }
+
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Navigation Header */}
@@ -52,11 +57,23 @@ const Login = () => {
           </Button>
         </div>
 
-        {/* Logo */}
+        {/* Logo Section - Professional Scale */}
         <div className="text-center mb-8">
-          <img alt="AgendarBrasil Logo" src="/lovable-uploads/02f3fe33-08a6-47d9-92c6-15cc5908aca4.png" className="-bottom-0 " />
-          <h1 className="text-2xl font-bold text-blue-900">AgendarBrasil</h1>
-          <p className="text-gray-600">Sua saúde em primeiro lugar</p>
+          <div className="flex justify-center mb-6">
+            <div className="relative group">
+              <img 
+                alt="AgendarBrasil Logo" 
+                src="/lovable-uploads/02f3fe33-08a6-47d9-92c6-15cc5908aca4.png" 
+                className="w-48 h-48 object-cover rounded-2xl shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-blue-200/30"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-green-600 rounded-2xl opacity-20 group-hover:opacity-30 blur-sm transition-all duration-500"></div>
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent mb-2">
+            AgendarBrasil
+          </h1>
+          <p className="text-lg text-gray-600 font-medium">Sua saúde em primeiro lugar</p>
         </div>
 
         {/* Login Form */}
@@ -115,4 +132,5 @@ const Login = () => {
       </div>
     </div>;
 };
+
 export default Login;
