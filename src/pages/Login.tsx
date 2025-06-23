@@ -1,4 +1,3 @@
-
 // src/pages/Login.tsx
 
 import { useEffect } from "react";
@@ -70,7 +69,7 @@ const Login = () => {
           <img 
             src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
             alt="AgendarBrasil Logo" 
-            className="w-20 h-20 mx-auto mb-4" 
+            className="w-32 h-32 mx-auto mb-4" 
           />
           <h1 className="text-2xl font-bold text-blue-900">AgendarBrasil</h1>
           <p className="text-gray-600">Sua saúde em primeiro lugar</p>
