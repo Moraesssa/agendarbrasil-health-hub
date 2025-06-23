@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -165,8 +164,8 @@ const PerfilMedico = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Especialidade</label>
-                  <p className="text-gray-900">Clínico Geral</p>
+                  <label className="text-sm font-medium text-gray-600">Especialidades</label>
+                  <p className="text-gray-900">{userData.especialidades?.join(', ') || 'Não informado'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">CRM</label>
