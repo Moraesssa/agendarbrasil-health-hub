@@ -35,24 +35,37 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
     const isPublicRoute = publicRoutes.includes(location.pathname);
 
     if (user && userData) {
+      // Se não tem tipo de usuário definido, vai para seleção
       if (!userType) {
         if (location.pathname !== '/user-type') navigate('/user-type');
         return;
       }
       
+      // Se não completou onboarding, vai para onboarding
       if (!onboardingCompleted) {
         if (location.pathname !== '/onboarding') navigate('/onboarding');
         return;
       }
 
-      if (onboardingCompleted && (isOnboardingRoute || location.pathname === '/login')) {
-        navigate(userType === 'medico' ? '/perfil-medico' : '/perfil');
+      // Se onboarding está completo, aplicar redirecionamentos específicos
+      if (onboardingCompleted) {
+        // Médicos não podem acessar a página inicial nem rotas de onboarding/login
+        if (userType === 'medico' && (location.pathname === '/' || isOnboardingRoute || location.pathname === '/login')) {
+          navigate('/dashboard-medico');
+          return;
+        }
+
+        // Pacientes podem acessar a página inicial, mas não rotas de onboarding/login
+        if (userType === 'paciente' && (isOnboardingRoute || location.pathname === '/login')) {
+          navigate('/');
+          return;
+        }
       }
     } 
     else if (!user && !isPublicRoute) {
+      // Se não está logado e tenta acessar rota protegida, vai para login
       navigate('/login');
     }
-  // Depender de valores primitivos é mais estável e evita loops de re-renderização
   }, [user, loading, userType, onboardingCompleted, navigate, location.pathname]);
 
   if (loading) {
