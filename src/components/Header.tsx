@@ -1,4 +1,3 @@
-
 import { Bell, Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +25,7 @@ const Header = () => {
             <div className="relative">
               <img 
                 alt="AgendarBrasil Logo" 
-                src="/lovable-uploads/8d717286-a0a1-4d97-a4d0-2451a9c5d001.png" 
+                src="/lovable-uploads/039fefff-9913-46a4-b55a-1fec50620ea4.png" 
                 className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-200/50" 
               />
               <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-blue-500/20 to-green-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
