@@ -109,7 +109,11 @@ export function AppSidebar() {
     <Sidebar className="border-r border-blue-100 bg-gradient-to-b from-white to-blue-50/30">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <img src="/android-icon-96x96.png" alt="AgendarBrasil Logo" className="w-10 h-10" />
+          <img 
+            src="/android-icon-192x192.png" 
+            alt="AgendarBrasil Logo" 
+            className="w-10 h-10" 
+          />
           <div>
             <h2 className="text-lg font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">
               AgendarBrasil

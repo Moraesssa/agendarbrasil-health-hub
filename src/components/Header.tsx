@@ -1,3 +1,4 @@
+
 import { Bell, Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,11 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <img src="/android-icon-96x96.png" alt="AgendarBrasil Logo" className="w-10 h-10 sm:w-12 sm:h-12" />
+            <img 
+              src="/android-icon-192x192.png" 
+              alt="AgendarBrasil Logo" 
+              className="w-10 h-10 sm:w-12 sm:h-12" 
+            />
             <div className="relative">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent leading-tight">
                 AgendarBrasil

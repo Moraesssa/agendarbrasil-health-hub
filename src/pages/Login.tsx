@@ -1,3 +1,4 @@
+
 // src/pages/Login.tsx
 
 import { useEffect } from "react";
@@ -66,7 +67,11 @@ const Login = () => {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/android-icon-144x144.png" alt="AgendarBrasil Logo" className="w-20 h-20 mx-auto mb-4" />
+          <img 
+            src="/android-icon-192x192.png" 
+            alt="AgendarBrasil Logo" 
+            className="w-20 h-20 mx-auto mb-4" 
+          />
           <h1 className="text-2xl font-bold text-blue-900">AgendarBrasil</h1>
           <p className="text-gray-600">Sua saúde em primeiro lugar</p>
         </div>
