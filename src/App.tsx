@@ -1,3 +1,4 @@
+// src/App.tsx
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -5,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthRedirectController } from "@/components/AuthRedirectController"; // <<-- IMPORTE O NOVO COMPONENTE
 
 // Páginas - Rotas Públicas
 import Index from "./pages/Index";
@@ -37,29 +39,32 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Rotas Públicas */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            
-            {/* Configuração Inicial */}
-            <Route path="/user-type" element={<UserTypeSelection />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            
-            {/* Rotas do Paciente */}
-            <Route path="/agendamento" element={<Agendamento />} />
-            <Route path="/agenda-paciente" element={<AgendaPaciente />} />
-            <Route path="/perfil" element={<Perfil />} />
-            <Route path="/historico" element={<Historico />} />
-            
-            {/* Rotas do Médico */}
-            <Route path="/dashboard-medico" element={<DashboardMedico />} />
-            <Route path="/agenda-medico" element={<AgendaMedico />} />
-            <Route path="/perfil-medico" element={<PerfilMedico />} />
-            
-            {/* Sistema */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          {/* O AuthRedirectController agora envolve as rotas */}
+          <AuthRedirectController>
+            <Routes>
+              {/* Rotas Públicas */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              
+              {/* Configuração Inicial */}
+              <Route path="/user-type" element={<UserTypeSelection />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              
+              {/* Rotas do Paciente */}
+              <Route path="/agendamento" element={<Agendamento />} />
+              <Route path="/agenda-paciente" element={<AgendaPaciente />} />
+              <Route path="/perfil" element={<Perfil />} />
+              <Route path="/historico" element={<Historico />} />
+              
+              {/* Rotas do Médico */}
+              <Route path="/dashboard-medico" element={<DashboardMedico />} />
+              <Route path="/agenda-medico" element={<AgendaMedico />} />
+              <Route path="/perfil-medico" element={<PerfilMedico />} />
+              
+              {/* Sistema */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthRedirectController>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
