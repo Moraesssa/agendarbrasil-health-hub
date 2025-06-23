@@ -205,7 +205,7 @@ const EncaminhamentosMedico = () => {
                                 </Badge>
                                 <Button 
                                   size="sm"
-                                  onClick={() => handleAceitarEncaminhamento(encaminhamento.id, encaminhamento.pac)}
+                                  onClick={() => handleAceitarEncaminhamento(encaminhamento.id, encaminhamento.paciente)}
                                 >
                                   Aceitar
                                 </Button>
