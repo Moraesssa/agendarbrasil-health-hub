@@ -54,7 +54,7 @@ const Login = () => {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <img alt="AgendarBrasil Logo" className="" src="/lovable-uploads/02f3fe33-08a6-47d9-92c6-15cc5908aca4.png" />
+          <img alt="AgendarBrasil Logo" src="/lovable-uploads/02f3fe33-08a6-47d9-92c6-15cc5908aca4.png" className="object-scale-down" />
           <h1 className="text-2xl font-bold text-blue-900">AgendarBrasil</h1>
           <p className="text-gray-600">Sua saúde em primeiro lugar</p>
         </div>
