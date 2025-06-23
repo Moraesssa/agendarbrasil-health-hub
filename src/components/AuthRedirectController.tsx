@@ -49,7 +49,7 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
 
       // Se onboarding está completo, aplicar redirecionamentos específicos
       if (onboardingCompleted) {
-        // Médicos não podem acessar a página inicial nem rotas de onboarding/login
+        // Médicos não podem acessar a página inicial, login ou rotas de onboarding
         if (userType === 'medico' && (location.pathname === '/' || isOnboardingRoute || location.pathname === '/login')) {
           navigate('/dashboard-medico');
           return;
