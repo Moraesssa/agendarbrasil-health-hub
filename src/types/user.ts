@@ -19,6 +19,7 @@ export interface BaseUser {
   preferences: UserPreferences;
   // Doctor specific fields
   especialidades?: string[];
+  crm?: string;
 }
 
 export interface OnboardingStatus {
