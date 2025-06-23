@@ -1,3 +1,4 @@
+// src/pages/Login.tsx
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,78 +8,30 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Chrome } from "lucide-react";
 
 const Login = () => {
-  const { signInWithGoogle, user, userData, loading } = useAuth();
+  const { signInWithGoogle, user, loading } = useAuth();
   const navigate = useNavigate();
 
+  // A única lógica que precisamos aqui é: se o usuário JÁ ESTIVER LOGADO
+  // e tentar acessar a página de login, redirecione-o para a página inicial.
+  // O AuthRedirectController cuidará do resto.
   useEffect(() => {
-    console.log('Login page - Estado atual:', { 
-      user: !!user, 
-      userData: !!userData, 
-      loading,
-      userType: userData?.userType,
-      onboardingCompleted: userData?.onboardingCompleted
-    });
-
-    // Não fazer nada enquanto está carregando
-    if (loading) {
-      console.log('Ainda carregando, aguardando...');
-      return;
+    if (user) {
+      navigate("/");
     }
+  }, [user, navigate]);
 
-    // Se não tem usuário logado, fica na tela de login
-    if (!user) {
-      console.log('Usuário não logado, permanecendo no login');
-      return;
-    }
-
-    // Se tem usuário mas não tem userData ainda, aguardar mais um pouco
-    if (user && !userData) {
-      console.log('Usuário logado mas userData ainda não carregado, aguardando...');
-      return;
-    }
-
-    // Agora que temos user E userData, decidir o redirecionamento
-    if (user && userData) {
-      console.log('Usuário e userData carregados, decidindo redirecionamento...');
-
-      // Se não tem tipo de usuário, ir para seleção
-      if (!userData.userType) {
-        console.log('Sem tipo de usuário, redirecionando para user-type');
-        navigate("/user-type");
-        return;
-      }
-
-      // Se tem tipo mas não completou onboarding
-      if (!userData.onboardingCompleted) {
-        console.log('Onboarding não completo, redirecionando para onboarding');
-        navigate("/onboarding");
-        return;
-      }
-
-      // Se completou tudo, ir para o perfil apropriado
-      console.log('Tudo completo, redirecionando para perfil final');
-      if (userData.userType === 'medico') {
-        navigate("/perfil-medico");
-      } else {
-        navigate("/perfil");
-      }
-    }
-  }, [user, userData, loading, navigate]);
 
   const handleGoogleLogin = async () => {
-    console.log('Iniciando login com Google...');
     await signInWithGoogle();
   };
 
-  // Mostrar loading enquanto processa autenticação ou carrega perfil
-  if (loading || (user && !userData)) {
+  // Mantemos uma tela de loading simples para o caso do clique no botão
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {user && !userData ? 'Configurando seu perfil...' : 'Carregando...'}
-          </p>
+          <p className="text-gray-600">Processando...</p>
         </div>
       </div>
     );
@@ -113,7 +66,6 @@ const Login = () => {
               <Chrome className="w-5 h-5 mr-2" />
               Continuar com Google
             </Button>
-
             <div className="text-center text-sm text-gray-600">
               <p>Ao entrar, você concorda com nossos</p>
               <p>
