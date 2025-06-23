@@ -17,6 +17,8 @@ export interface BaseUser {
   lastLogin: Date;
   isActive: boolean;
   preferences: UserPreferences;
+  // Doctor specific fields
+  especialidades?: string[];
 }
 
 export interface OnboardingStatus {
