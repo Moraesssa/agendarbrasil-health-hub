@@ -68,7 +68,7 @@ const Login = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <img 
-            src="/android-icon-192x192.png" 
+            src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
             alt="AgendarBrasil Logo" 
             className="w-20 h-20 mx-auto mb-4" 
           />

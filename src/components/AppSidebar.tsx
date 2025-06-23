@@ -1,3 +1,4 @@
+
 import { Calendar, Home, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -110,7 +111,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
           <img 
-            src="/android-icon-192x192.png" 
+            src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
             alt="AgendarBrasil Logo" 
             className="w-10 h-10" 
           />
