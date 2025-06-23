@@ -49,6 +49,22 @@ export const useAuthState = () => {
       return;
     }
 
+    let roleData = {};
+    if (profile.user_type === 'medico') {
+      // Após carregar o perfil, buscamos os dados específicos do médico
+      const { data: medicoData, error: medicoError } = await supabase
+        .from('medicos')
+        .select('especialidades')
+        .eq('user_id', uid)
+        .single();
+      
+      if (medicoError) {
+        console.error("Erro ao buscar dados do médico:", medicoError);
+      } else if (medicoData) {
+        roleData = medicoData;
+      }
+    }
+
     console.log('✅ Perfil carregado com sucesso:', profile);
     const baseUser: BaseUser = {
       uid: profile.id,
@@ -66,6 +82,7 @@ export const useAuthState = () => {
         language: 'pt-BR',
         ...profile.preferences,
       },
+      ...roleData,
     };
 
     console.log('🎯 UserData definido:', { 
