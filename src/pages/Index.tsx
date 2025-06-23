@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone } from "lucide-react";
+import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import QuickActions from "@/components/QuickActions";
@@ -233,124 +233,177 @@ const Index = () => {
         {/* Quick Actions */}
         <QuickActions onAction={handleQuickAction} />
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Column - Appointments */}
-          <div className="xl:col-span-2 space-y-4 sm:space-y-6">
-            <UpcomingAppointments />
-            
-            {/* Calendar Overview */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3 px-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
-                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Agenda do Mês
-                  </CardTitle>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
-                    className="text-blue-600 hover:text-blue-700"
-                    title="Ver agenda completa"
-                  >
-                    Ver detalhes
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                    <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
-                      {day}
-                    </div>
-                  ))}
-                  {Array.from({ length: 35 }, (_, i) => {
-                    const day = i - 6;
-                    const hasAppointment = [5, 12, 18, 25].includes(day);
-                    const hasMedication = [3, 8, 15, 22, 29].includes(day);
-                    
-                    return (
-                      <div
-                        key={i}
-                        className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
-                          day < 1 || day > 31 
-                            ? 'text-gray-300' 
-                            : hasAppointment 
-                              ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
-                              : hasMedication
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'hover:bg-gray-100'
-                        }`}
-                        onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
-                        title={
-                          hasAppointment 
-                            ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
-                            : hasMedication 
-                              ? `Lembrete de medicamento para o dia ${day}`
-                              : day > 0 && day <= 31 
-                                ? 'Clique para agendar uma consulta'
-                                : ''
-                        }
+        {user ? (
+          <>
+            {/* Main Content Grid - Logged In */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+              {/* Left Column - Appointments */}
+              <div className="xl:col-span-2 space-y-4 sm:space-y-6">
+                <UpcomingAppointments />
+                
+                {/* Calendar Overview */}
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                        Agenda do Mês
+                      </CardTitle>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
+                        className="text-blue-600 hover:text-blue-700"
+                        title="Ver agenda completa"
                       >
-                        {day > 0 && day <= 31 ? day : ''}
+                        Ver detalhes
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-4 sm:px-6">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
+                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                        <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
+                          {day}
+                        </div>
+                      ))}
+                      {Array.from({ length: 35 }, (_, i) => {
+                        const day = i - 6;
+                        const hasAppointment = [5, 12, 18, 25].includes(day);
+                        const hasMedication = [3, 8, 15, 22, 29].includes(day);
+                        
+                        return (
+                          <div
+                            key={i}
+                            className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
+                              day < 1 || day > 31 
+                                ? 'text-gray-300' 
+                                : hasAppointment 
+                                  ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
+                                  : hasMedication
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
+                            title={
+                              hasAppointment 
+                                ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
+                                : hasMedication 
+                                  ? `Lembrete de medicamento para o dia ${day}`
+                                  : day > 0 && day <= 31 
+                                    ? 'Clique para agendar uma consulta'
+                                    : ''
+                            }
+                          >
+                            {day > 0 && day <= 31 ? day : ''}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                        <span>Consultas</span>
                       </div>
-                    );
-                  })}
-                </div>
-                <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>Consultas</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-400 rounded"></div>
-                    <span>Medicamentos</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-400 rounded"></div>
+                        <span>Medicamentos</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* Right Column - Health & Reminders */}
-          <div className="space-y-4 sm:space-y-6">
-            <HealthSummary />
-            <MedicationReminders />
-          </div>
-        </div>
+              {/* Right Column - Health & Reminders */}
+              <div className="space-y-4 sm:space-y-6">
+                <HealthSummary />
+                <MedicationReminders />
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Call to Action for Logged-Out Users */
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl text-center text-blue-900">
+                Gerenciamento completo da sua saúde
+              </CardTitle>
+              <CardDescription className="text-center text-gray-600 max-w-xl mx-auto">
+                Crie sua conta ou faça login para acessar todas as funcionalidades e cuidar da sua saúde de forma integrada e digital.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <CalendarCheck className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Agende Consultas</h3>
+                  <p className="text-sm text-gray-500">Encontre especialistas e marque consultas online com facilidade.</p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <Pill className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Controle Medicamentos</h3>
+                  <p className="text-sm text-gray-500">Receba lembretes e nunca mais se esqueça de um horário.</p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Acesse seu Histórico</h3>
+                  <p className="text-sm text-gray-500">Tenha todos os seus exames e diagnósticos em um só lugar.</p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button onClick={() => navigate('/login')} size="lg" className="bg-blue-500 hover:bg-blue-600">
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Entrar
+                </Button>
+                <Button onClick={() => navigate('/login')} variant="outline" size="lg">
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  Criar Conta Grátis
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       {/* Bottom Navigation - Mobile Only */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden shadow-lg">
-        <div className="flex justify-around items-center max-w-md mx-auto">
-          {[
-            { id: 'home', icon: Heart, label: 'Início', route: '/', description: 'Página inicial' },
-            { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente', description: 'Ver suas consultas' },
-            { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento', description: 'Agendar nova consulta' },
-            { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico', description: 'Histórico médico' },
-            { id: 'profile', icon: User, label: 'Perfil', route: '/perfil', description: 'Configurações do perfil' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                if (item.route) handleNavigation(item.route, item.label);
-              }}
-              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                item.isMain
-                  ? 'bg-blue-500 text-white shadow-lg scale-110 hover:bg-blue-600'
-                  : activeTab === item.id
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-              title={item.description}
-            >
-              <item.icon className={`h-4 w-4 ${item.isMain ? 'h-5 w-5' : ''}`} />
-              <span className="text-xs font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {user && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden shadow-lg">
+          <div className="flex justify-around items-center max-w-md mx-auto">
+            {[
+              { id: 'home', icon: Heart, label: 'Início', route: '/', description: 'Página inicial' },
+              { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente', description: 'Ver suas consultas' },
+              { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento', description: 'Agendar nova consulta' },
+              { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico', description: 'Histórico médico' },
+              { id: 'profile', icon: User, label: 'Perfil', route: '/perfil', description: 'Configurações do perfil' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (item.route) handleNavigation(item.route, item.label);
+                }}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                  item.isMain
+                    ? 'bg-blue-500 text-white shadow-lg scale-110 hover:bg-blue-600'
+                    : activeTab === item.id
+                      ? 'text-blue-600 bg-blue-50'
+                      : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+                title={item.description}
+              >
+                <item.icon className={`h-4 w-4 ${item.isMain ? 'h-5 w-5' : ''}`} />
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
 
       {/* Bottom spacing for mobile navigation */}
       <div className="h-20 sm:hidden"></div>
