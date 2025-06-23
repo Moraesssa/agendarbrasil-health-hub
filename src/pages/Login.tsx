@@ -1,3 +1,4 @@
+
 // src/pages/Login.tsx
 
 import { useEffect } from "react";
@@ -5,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { Chrome } from "lucide-react";
+import { Chrome, ArrowLeft, Home } from "lucide-react";
 
 const Login = () => {
   const { signInWithGoogle, user, loading } = useAuth();
@@ -20,9 +21,12 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-
   const handleGoogleLogin = async () => {
     await signInWithGoogle();
+  };
+
+  const handleBackToHome = () => {
+    navigate("/");
   };
 
   // Mantemos uma tela de loading simples para o caso do clique no botão
@@ -40,6 +44,27 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="ghost"
+            onClick={handleBackToHome}
+            className="flex items-center gap-2 text-gray-600 hover:text-blue-600"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBackToHome}
+            className="flex items-center gap-2"
+          >
+            <Home className="w-4 h-4" />
+            Início
+          </Button>
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -54,7 +79,7 @@ const Login = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">Entrar</CardTitle>
             <CardDescription className="text-center">
-              Faça login com sua conta Google
+              Faça login com sua conta Google para continuar
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -66,6 +91,17 @@ const Login = () => {
               <Chrome className="w-5 h-5 mr-2" />
               Continuar com Google
             </Button>
+            
+            {/* Info Box */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+              <h4 className="font-semibold text-blue-900 mb-2">Após fazer login:</h4>
+              <ul className="text-blue-800 space-y-1">
+                <li>• Escolha se você é paciente ou médico</li>
+                <li>• Complete seu cadastro rapidamente</li>
+                <li>• Comece a usar o AgendarBrasil</li>
+              </ul>
+            </div>
+
             <div className="text-center text-sm text-gray-600">
               <p>Ao entrar, você concorda com nossos</p>
               <p>
@@ -80,6 +116,21 @@ const Login = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Help Section */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600 mb-4">
+            Precisa de ajuda? Entre em contato conosco
+          </p>
+          <div className="flex justify-center gap-4">
+            <Button variant="ghost" size="sm" className="text-gray-500">
+              Suporte
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-500">
+              FAQ
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
