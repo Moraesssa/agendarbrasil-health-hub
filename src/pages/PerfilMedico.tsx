@@ -137,6 +137,10 @@ const PerfilMedico = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
+                  <label className="text-sm font-medium text-gray-600">Nome Completo</label>
+                  <p className="text-gray-900">{userData.displayName}</p>
+                </div>
+                <div>
                   <label className="text-sm font-medium text-gray-600">Email</label>
                   <p className="text-gray-900">{userData.email}</p>
                 </div>
@@ -169,7 +173,7 @@ const PerfilMedico = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">CRM</label>
-                  <p className="text-gray-900">Em verificação</p>
+                  <p className="text-gray-900">{userData.crm || 'Não informado'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>
@@ -204,7 +208,7 @@ const PerfilMedico = () => {
                   <span>Agenda</span>
                 </Button>
                 <Button
-                  onClick={() => navigate("/pacientes")}
+                  onClick={() => navigate("/pacientes-medico")}
                   variant="outline"
                   className="h-auto py-4 flex-col gap-2 border-purple-200 hover:bg-purple-50"
                 >
