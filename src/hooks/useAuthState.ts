@@ -54,7 +54,7 @@ export const useAuthState = () => {
       // Após carregar o perfil, buscamos os dados específicos do médico
       const { data: medicoData, error: medicoError } = await supabase
         .from('medicos')
-        .select('especialidades')
+        .select('especialidades, crm')
         .eq('user_id', uid)
         .single();
       
