@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-
 const Header = () => {
   const {
     user,
@@ -23,12 +22,8 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
             <div className="relative">
-              <img 
-                alt="AgendarBrasil Logo" 
-                src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
-                className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-200/50" 
-              />
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-blue-500/20 to-green-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <img alt="AgendarBrasil Logo" src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-200/50" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-green-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-bl-lg rounded-bl-lg "></div>
             </div>
             <div className="relative">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent leading-tight group-hover:from-blue-900 group-hover:via-blue-700 group-hover:to-green-700 transition-all duration-300">
@@ -70,5 +65,4 @@ const Header = () => {
       <div className="h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-green-500"></div>
     </header>;
 };
-
 export default Header;
