@@ -1,53 +1,140 @@
-
-import { useState } from "react";
-import { Calendar, Clock, MapPin, User, ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Clock, MapPin, User, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+// Tipagem para os médicos que virão do banco
+interface Medico {
+  id: string;
+  display_name: string;
+}
 
 const Agendamento = () => {
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");
-  const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  const { user } = useAuth(); // Hook para pegar o usuário logado
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Estados do componente
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState(""); // Agora vai armazenar o ID do médico
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+
+  const [doctors, setDoctors] = useState<Medico[]>([]); // Lista de médicos buscada do DB
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Dados que antes eram fixos
   const specialties = [
     "Cardiologia", "Dermatologia", "Endocrinologia", "Gastroenterologia",
     "Ginecologia", "Neurologia", "Oftalmologia", "Ortopedia", "Pediatria", "Psiquiatria"
   ];
-
-  const doctors = {
-    "Cardiologia": ["Dr. Ana Silva", "Dr. João Costa", "Dra. Maria Santos"],
-    "Dermatologia": ["Dr. Pedro Lima", "Dra. Sofia Oliveira"],
-    "Endocrinologia": ["Dra. Carla Ferreira", "Dr. Miguel Rodrigues"]
-  };
 
   const availableTimes = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
     "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
   ];
 
-  const handleAgendamento = () => {
-    if (!selectedSpecialty || !selectedDoctor || !selectedDate || !selectedTime) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos",
-        variant: "destructive"
-      });
+  // Efeito para buscar médicos sempre que a especialidade mudar
+  useEffect(() => {
+    if (!selectedSpecialty) {
+      setDoctors([]);
+      setSelectedDoctor("");
       return;
     }
 
-    toast({
-      title: "Consulta Agendada!",
-      description: `${selectedDoctor} - ${selectedDate} às ${selectedTime}`
-    });
-    
-    navigate("/");
+    const fetchDoctors = async () => {
+      setIsLoadingDoctors(true);
+      try {
+        // Busca médicos (profiles) que possuem a especialidade selecionada na tabela 'medicos'
+        const { data, error } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            display_name,
+            medicos!inner(especialidades)
+          `)
+          .eq('user_type', 'medico')
+          .contains('medicos.especialidades', [selectedSpecialty]);
+
+        if (error) throw error;
+
+        // Formata os dados para o formato que o componente espera
+        const formattedDoctors = data.map(profile => ({
+          id: profile.id,
+          display_name: profile.display_name || "Médico sem nome"
+        }));
+        setDoctors(formattedDoctors);
+      } catch (error) {
+        console.error("Erro ao buscar médicos:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível buscar os médicos. Tente novamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingDoctors(false);
+      }
+    };
+
+    fetchDoctors();
+  }, [selectedSpecialty, toast]);
+
+
+  // Função para lidar com o agendamento final
+  const handleAgendamento = async () => {
+    if (!user) {
+      toast({ title: "Erro", description: "Você precisa estar logado para agendar.", variant: "destructive" });
+      return;
+    }
+    if (!selectedSpecialty || !selectedDoctor || !selectedDate || !selectedTime) {
+      toast({ title: "Erro", description: "Por favor, preencha todos os campos", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const dataHoraConsulta = new Date(`${selectedDate}T${selectedTime}:00`);
+
+    try {
+      const { error } = await supabase
+        .from('consultas')
+        .insert({
+          paciente_id: user.id,
+          medico_id: selectedDoctor, // selectedDoctor agora é o ID
+          data_consulta: dataHoraConsulta.toISOString(),
+          status: 'agendada',
+          motivo: 'Consulta solicitada via plataforma.',
+          tipo_consulta: selectedSpecialty
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Consulta Agendada!",
+        description: `Sua consulta foi agendada com sucesso para ${selectedDate} às ${selectedTime}.`
+      });
+      
+      navigate("/agenda-paciente"); // Navega para a página de agenda do paciente
+
+    } catch (error) {
+      console.error("Erro ao agendar consulta:", error);
+      toast({
+        title: "Erro no Agendamento",
+        description: "Não foi possível agendar sua consulta. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+  
+  const selectedDoctorName = doctors.find(doc => doc.id === selectedDoctor)?.display_name;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -96,16 +183,24 @@ const Agendamento = () => {
               {selectedSpecialty && (
                 <div>
                   <label className="block text-sm font-medium mb-2">Médico</label>
-                  <select 
-                    className="w-full p-3 border rounded-lg"
-                    value={selectedDoctor}
-                    onChange={(e) => setSelectedDoctor(e.target.value)}
-                  >
-                    <option value="">Selecione um médico</option>
-                    {(doctors[selectedSpecialty as keyof typeof doctors] || []).map(doctor => (
-                      <option key={doctor} value={doctor}>{doctor}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select 
+                      className="w-full p-3 border rounded-lg appearance-none"
+                      value={selectedDoctor}
+                      onChange={(e) => setSelectedDoctor(e.target.value)}
+                      disabled={isLoadingDoctors || doctors.length === 0}
+                    >
+                      <option value="">
+                        {isLoadingDoctors 
+                          ? "Carregando médicos..." 
+                          : "Selecione um médico"}
+                      </option>
+                      {doctors.map(doctor => (
+                        <option key={doctor.id} value={doctor.id}>{doctor.display_name}</option>
+                      ))}
+                    </select>
+                    {isLoadingDoctors && <Loader2 className="animate-spin absolute right-3 top-3.5 h-5 w-5 text-gray-400" />}
+                  </div>
                 </div>
               )}
 
@@ -125,7 +220,7 @@ const Agendamento = () => {
               {selectedDate && (
                 <div>
                   <label className="block text-sm font-medium mb-2">Horário</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {availableTimes.map(time => (
                       <Button
                         key={time}
@@ -145,8 +240,10 @@ const Agendamento = () => {
                 onClick={handleAgendamento}
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 size="lg"
+                disabled={isSubmitting}
               >
-                Confirmar Agendamento
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting ? "Agendando..." : "Confirmar Agendamento"}
               </Button>
             </CardContent>
           </Card>
@@ -171,7 +268,7 @@ const Agendamento = () => {
                     <User className="h-5 w-5 text-green-600" />
                     <div>
                       <p className="font-medium">Médico</p>
-                      <p className="text-sm text-gray-600">{selectedDoctor}</p>
+                      <p className="text-sm text-gray-600">{selectedDoctorName}</p>
                     </div>
                   </div>
                 )}
@@ -182,7 +279,7 @@ const Agendamento = () => {
                     <div>
                       <p className="font-medium">Data</p>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedDate).toLocaleDateString('pt-BR')}
+                        {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                   </div>
