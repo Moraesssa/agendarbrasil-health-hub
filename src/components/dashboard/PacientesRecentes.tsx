@@ -6,18 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// Tipagem simplificada para as consultas com dados do paciente
+// Simplified type for recent appointments with patient info
 type RecentAppointment = {
   id: string;
   status: string;
   data_consulta: string;
   pacientes: {
     display_name: string | null;
-    pacientes: {
-      dados_pessoais: {
-        dataNascimento: string | null;
-      } | null;
-    }[] | null;
   } | null;
 };
 
@@ -40,10 +35,7 @@ export function PacientesRecentes() {
             id,
             status,
             data_consulta,
-            pacientes:paciente_id!inner (
-              display_name,
-              pacientes (dados_pessoais)
-            )
+            pacientes:profiles!consultas_paciente_id_fkey (display_name)
           `)
           .eq('medico_id', user.id)
           .order('data_consulta', { ascending: false })
@@ -61,12 +53,6 @@ export function PacientesRecentes() {
     fetchRecentAppointments();
   }, [user]);
 
-  const getPatientAge = (birthDate: string | null) => {
-    if (!birthDate) return 'N/A';
-    const age = new Date().getFullYear() - new Date(birthDate).getFullYear();
-    return `${age} anos`;
-  }
-  
   const getStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
       'confirmada': 'Confirmada',
@@ -107,7 +93,7 @@ export function PacientesRecentes() {
                   <div>
                     <h4 className="font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{consulta.pacientes?.display_name || "Paciente"}</h4>
                     <p className="text-sm text-gray-600">
-                      {getPatientAge(consulta.pacientes?.pacientes?.[0]?.dados_pessoais?.dataNascimento || null)}
+                      Paciente
                     </p>
                   </div>
                 </div>

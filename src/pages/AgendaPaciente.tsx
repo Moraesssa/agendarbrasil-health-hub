@@ -11,13 +11,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Tipo simplificado para as consultas com dados do médico
+// Simplified type for appointments with doctor info
 type AppointmentWithDoctor = Tables<'consultas'> & {
   medicos: {
     display_name: string | null;
-    medicos: {
-      telefone: string | null;
-    }[] | null;
   } | null;
 };
 
@@ -41,13 +38,10 @@ const AgendaPaciente = () => {
           .from("consultas")
           .select(`
             *,
-            medicos:medico_id!inner (
-              display_name,
-              medicos (telefone)
-            )
+            medicos:profiles!consultas_medico_id_fkey (display_name)
           `)
           .eq("paciente_id", user.id)
-          .order("data_consulta", { ascending: false }); // Ordena da mais recente para a mais antiga
+          .order("data_consulta", { ascending: false });
 
         if (error) throw error;
         
@@ -245,6 +239,52 @@ const AgendaPaciente = () => {
       <div className="h-20 sm:hidden"></div>
     </div>
   );
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'confirmada':
+      case 'realizada': return 'bg-green-100 text-green-800 border-green-200';
+      case 'agendada':
+      case 'pendente': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'cancelada': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  }
+  
+  function getStatusText(status: string) {
+    const statusMap: { [key: string]: string } = {
+      'confirmada': 'Confirmada',
+      'agendada': 'Agendada',
+      'pendente': 'Pendente',
+      'cancelada': 'Cancelada',
+      'realizada': 'Realizada'
+    };
+    return statusMap[status] || status;
+  }
+
+  function handleReschedule(appointmentId: string) {
+    navigate("/agendamento");
+  }
+
+  async function handleCancel(appointmentId: string) {
+    try {
+      const { error } = await supabase
+        .from('consultas')
+        .update({ status: 'cancelada' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      
+      setAppointments(prev => prev.map(apt => apt.id === appointmentId ? {...apt, status: 'cancelada'} : apt));
+
+      toast({
+        title: "Consulta cancelada",
+        description: "Sua consulta foi cancelada com sucesso",
+      });
+    } catch (error) {
+      toast({ title: "Erro", description: "Não foi possível cancelar a consulta.", variant: "destructive"});
+    }
+  }
 };
 
 export default AgendaPaciente;

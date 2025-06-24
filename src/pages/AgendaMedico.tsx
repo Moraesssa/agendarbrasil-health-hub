@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, Phone, Plus, Filter, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,18 +12,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Tipo simplificado para as consultas com dados do paciente
+// Simplified type for appointments with patient info
 type AppointmentWithPatient = Tables<'consultas'> & {
   pacientes: {
     display_name: string | null;
-    pacientes: {
-      dados_pessoais: {
-        dataNascimento: string | null;
-      } | null;
-      contato: {
-        telefone: string | null;
-      } | null;
-    }[] | null;
   } | null;
 };
 
@@ -57,10 +48,7 @@ const AgendaMedico = () => {
           .from('consultas')
           .select(`
             *,
-            pacientes:paciente_id!inner (
-              display_name,
-              pacientes (dados_pessoais, contato)
-            )
+            pacientes:profiles!consultas_paciente_id_fkey (display_name)
           `)
           .eq('medico_id', user.id)
           .gte('data_consulta', startDate.toISOString())
@@ -80,7 +68,6 @@ const AgendaMedico = () => {
 
     fetchAppointments();
   }, [user, selectedDate, toast]);
-
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -195,9 +182,6 @@ const AgendaMedico = () => {
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                   <h3 className="font-semibold text-gray-900">{appointment.pacientes?.display_name || "Paciente"}</h3>
-                                  <span className="text-sm text-gray-500">
-                                    ({getPatientAge(appointment.pacientes?.pacientes?.[0]?.dados_pessoais?.dataNascimento || null)})
-                                  </span>
                                   <Badge className={`${getStatusColor(appointment.status)} border`}>
                                     {getStatusText(appointment.status)}
                                   </Badge>
@@ -210,7 +194,7 @@ const AgendaMedico = () => {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <Phone className="h-3 w-3" />
-                                    {appointment.pacientes?.pacientes?.[0]?.contato?.telefone || "Não informado"}
+                                    Contato disponível
                                   </div>
                                 </div>
                                 <p className="text-xs text-gray-400 mt-1">{appointment.motivo}</p>
@@ -223,7 +207,7 @@ const AgendaMedico = () => {
                               size="sm"
                               onClick={() => handleContactPatient({
                                 name: appointment.pacientes?.display_name,
-                                phone: appointment.pacientes?.pacientes?.[0]?.contato?.telefone
+                                phone: "Disponível"
                               })}
                             >
                               <Phone className="h-3 w-3 mr-1" />
