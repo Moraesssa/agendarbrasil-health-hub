@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, ArrowLeft, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,13 +10,8 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { generateTimeSlots, getDefaultWorkingHours, type TimeSlot, type DoctorConfig } from "@/utils/timeSlotUtils";
-import { logger } from "@/utils/logger"; // Adicionando o logger para melhor depuração
-
-// Interface para o médico, refletindo o que esperamos do Supabase
-interface Medico {
-  id: string; // user_id do perfil
-  display_name: string | null;
-}
+import { logger } from "@/utils/logger";
+import { appointmentService, type Medico } from "@/services/appointmentService";
 
 const Agendamento = () => {
   const { user, userData } = useAuth();
@@ -40,18 +36,17 @@ const Agendamento = () => {
     queryFn: async () => {
       logger.info("Fetching specialties for appointment scheduling", "Agendamento");
       try {
-        const { data, error } = await supabase.rpc('get_specialties'); // Usando uma RPC para buscar especialidades
+        const { data, error } = await supabase.rpc('get_specialties');
 
         if (error) throw error;
         
-        // Certificando que os dados são um array de strings
         return (data as string[] || []).sort();
       } catch (err) {
         logger.error("Error fetching specialties", "Agendamento", err);
-        throw err; // Propaga o erro para o React Query
+        throw err;
       }
     },
-    staleTime: Infinity, // Especialidades raramente mudam
+    staleTime: Infinity,
   });
 
   // Busca de médicos por especialidade selecionada
@@ -66,7 +61,7 @@ const Agendamento = () => {
       if (!selectedSpecialty) return [];
       return appointmentService.getDoctorsBySpecialty(selectedSpecialty);
     },
-    enabled: !!selectedSpecialty, // Só executa se a especialidade for selecionada
+    enabled: !!selectedSpecialty,
   });
 
   // Busca de horários disponíveis para médico e data selecionados
@@ -81,7 +76,7 @@ const Agendamento = () => {
       if (!selectedDoctor || !selectedDate) return [];
       return appointmentService.getAvailableTimeSlots(selectedDoctor, selectedDate);
     },
-    enabled: !!selectedDoctor && !!selectedDate, // Só executa se médico e data forem selecionados
+    enabled: !!selectedDoctor && !!selectedDate,
   });
 
   // Mutação para agendar a consulta
@@ -92,7 +87,6 @@ const Agendamento = () => {
         title: "Consulta Agendada!",
         description: `Sua consulta foi agendada com sucesso para ${selectedDate} às ${selectedTime}.`,
       });
-      // Invalida o cache da lista de consultas para que a agenda do paciente seja atualizada
       queryClient.invalidateQueries({ queryKey: ['consultas'] }); 
       navigate("/agenda-paciente");
     },
@@ -112,7 +106,6 @@ const Agendamento = () => {
     setSelectedDoctor("");
     setSelectedDate("");
     setSelectedTime("");
-    setAvailableTimeSlots([]); // Limpa os horários
   };
 
   // Handler para resetar data e horário quando médico muda
@@ -120,14 +113,12 @@ const Agendamento = () => {
     setSelectedDoctor(doctorId);
     setSelectedDate("");
     setSelectedTime("");
-    setAvailableTimeSlots([]); // Limpa os horários
   };
 
   // Handler para resetar horário quando a data muda
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     setSelectedTime("");
-    setAvailableTimeSlots([]); // Limpa os horários
   };
 
   // Handler para agendar a consulta
@@ -221,7 +212,7 @@ const Agendamento = () => {
                     className="w-full p-3 border rounded-lg" 
                     value={selectedDate} 
                     onChange={(e) => handleDateChange(e.target.value)} 
-                    min={new Date().toISOString().split('T')[0]} // Não permitir datas passadas
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
               )}
@@ -255,7 +246,7 @@ const Agendamento = () => {
                 onClick={handleAgendamento} 
                 className="w-full bg-blue-600 hover:bg-blue-700" 
                 size="lg" 
-                disabled={isSubmitting || !selectedTime} // Desabilita se nenhum horário foi selecionado
+                disabled={isSubmitting || !selectedTime}
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? "Agendando..." : "Confirmar Agendamento"}
