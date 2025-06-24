@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Clock, User, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Import the new components
+// Importe o AppointmentSkeleton
 import AppointmentSkeleton from "./appointments/AppointmentSkeleton";
 import ErrorCard from "./appointments/ErrorCard";
 import EmptyStateCard from "./appointments/EmptyStateCard";
@@ -41,17 +40,15 @@ const UpcomingAppointments = () => {
     setError(null);
     
     try {
-      // Com RLS habilitado, não precisamos mais filtrar por paciente_id
-      // O Supabase automaticamente retornará apenas as consultas do paciente logado
       const { data, error } = await supabase
         .from("consultas")
         .select(`
           *,
           doctor_profile:profiles!consultas_medico_id_fkey (display_name)
         `)
-        .gte("data_consulta", new Date().toISOString())
+        .gte("data_consulta", new Date().toISOString()) // Apenas consultas futuras
         .order("data_consulta", { ascending: true })
-        .limit(3);
+        .limit(3); // Pegar apenas as 3 próximas
 
       if (error) throw error;
       
@@ -90,6 +87,7 @@ const UpcomingAppointments = () => {
 
       if (error) throw error;
 
+      // Atualiza o estado local para refletir a confirmação
       setAppointments(prev => prev.map(apt => 
         apt.id === appointmentId ? {...apt, status: 'confirmada'} : apt
       ));
@@ -147,19 +145,20 @@ const UpcomingAppointments = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          // Show 3 skeleton cards while loading
+          // Renderiza skeletons enquanto carrega
           <>
             <AppointmentSkeleton />
             <AppointmentSkeleton />
             <AppointmentSkeleton />
           </>
         ) : error ? (
-          // Show error card if there's an error
+          // Renderiza um card de erro se houver falha
           <ErrorCard onRetry={handleRetry} />
         ) : appointments.length === 0 ? (
-          // Improved Empty State
+          // Renderiza um card de "empty state" se não houver consultas
           <EmptyStateCard onSchedule={handleScheduleAppointment} />
         ) : (
+          // Renderiza as consultas encontradas
           appointments.map((appointment) => (
             <AppointmentCard
               key={appointment.id}
