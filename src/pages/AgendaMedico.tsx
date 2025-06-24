@@ -44,13 +44,14 @@ const AgendaMedico = () => {
       endDate.setUTCHours(23, 59, 59, 999);
 
       try {
+        // Com RLS habilitado, não precisamos mais filtrar por medico_id
+        // O Supabase automaticamente retornará apenas as consultas do médico logado
         const { data, error } = await supabase
           .from('consultas')
           .select(`
             *,
             pacientes:profiles!consultas_paciente_id_fkey (display_name)
           `)
-          .eq('medico_id', user.id)
           .gte('data_consulta', startDate.toISOString())
           .lte('data_consulta', endDate.toISOString())
           .order('data_consulta', { ascending: true });
@@ -205,7 +206,7 @@ const AgendaMedico = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleContactPatient({
+                              onClick={()=> handleContactPatient({
                                 name: appointment.pacientes?.display_name,
                                 phone: "Disponível"
                               })}

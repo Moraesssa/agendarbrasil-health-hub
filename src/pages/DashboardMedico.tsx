@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -55,10 +56,11 @@ const DashboardMedico = () => {
       endOfWeek.setUTCHours(23, 59, 59, 999);
 
       try {
+        // Com RLS habilitado, não precisamos mais filtrar por medico_id
+        // O Supabase automaticamente retornará apenas as consultas do médico logado
         const { data: weeklyAppointments, error } = await supabase
           .from('consultas')
-          .select('data_consulta, tipo_consulta, status, medico_id, medicos!inner(configuracoes)')
-          .eq('medico_id', user.id)
+          .select('data_consulta, tipo_consulta, status')
           .gte('data_consulta', startOfWeek.toISOString())
           .lte('data_consulta', endOfWeek.toISOString());
         

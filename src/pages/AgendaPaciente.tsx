@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, MapPin, ChevronLeft, ChevronRight, Navigation, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,13 +33,14 @@ const AgendaPaciente = () => {
       }
       setLoading(true);
       try {
+        // Com RLS habilitado, não precisamos mais filtrar por paciente_id
+        // O Supabase automaticamente retornará apenas as consultas do usuário logado
         const { data, error } = await supabase
           .from("consultas")
           .select(`
             *,
             doctor_profile:profiles!consultas_medico_id_fkey (display_name)
           `)
-          .eq("paciente_id", user.id)
           .order("data_consulta", { ascending: false });
 
         if (error) throw error;

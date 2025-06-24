@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Stethoscope, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +32,8 @@ export function PacientesRecentes() {
       logger.info("Fetching recent appointments", "PacientesRecentes", { userId: user.id });
       
       try {
+        // Com RLS habilitado, não precisamos mais filtrar por medico_id
+        // O Supabase automaticamente retornará apenas as consultas do médico logado
         const { data, error } = await supabase
           .from('consultas')
           .select(`
@@ -41,7 +42,6 @@ export function PacientesRecentes() {
             data_consulta,
             patient_profile:profiles!consultas_paciente_id_fkey (display_name)
           `)
-          .eq('medico_id', user.id)
           .order('data_consulta', { ascending: false })
           .limit(4);
 
