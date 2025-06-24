@@ -1,15 +1,17 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, Mail, User, LogOut, Calendar, Users, BarChart3, Settings } from "lucide-react";
+import { EditProfileDialog } from "@/components/EditProfileDialog";
 
 const PerfilMedico = () => {
   const { userData, user, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (loading) return;
@@ -33,6 +35,12 @@ const PerfilMedico = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleProfileUpdate = () => {
+    // Force re-render to update displayed data
+    setRefreshKey(prev => prev + 1);
+    // In a real app, you might want to refetch user data here
   };
 
   if (loading || !userData) {
@@ -67,15 +75,21 @@ const PerfilMedico = () => {
                 <p className="text-sm text-gray-600">Painel do Médico</p>
               </div>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            <div className="flex items-center gap-3">
+              <EditProfileDialog 
+                userData={userData} 
+                onProfileUpdate={handleProfileUpdate}
+              />
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </div>
         </div>
       </div>
