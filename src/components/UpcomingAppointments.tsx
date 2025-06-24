@@ -216,56 +216,6 @@ const UpcomingAppointments = () => {
       </CardContent>
     </Card>
   );
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'confirmada': return 'bg-green-100 text-green-700 border-green-200';
-      case 'agendada':
-      case 'pendente': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  }
-
-  function getStatusText(status: string) {
-    const statusMap: { [key: string]: string } = {
-      'confirmada': 'Confirmada',
-      'agendada': 'Agendada',
-      'pendente': 'Pendente',
-      'cancelada': 'Cancelada',
-      'realizada': 'Realizada'
-    };
-    return statusMap[status] || status;
-  }
-
-  function handleConfirmAppointment(appointmentId: string) {
-    toast({
-      title: "Consulta confirmada!",
-      description: "Você receberá um lembrete antes da consulta",
-    });
-  }
-
-  function handleViewDetails(appointment: AppointmentWithDoctor) {
-    if (appointment.tipo_consulta === 'Online') {
-      toast({
-        title: "Link da consulta",
-        description: "O link será enviado por SMS e email 30 minutos antes da consulta",
-      });
-    } else {
-      toast({
-        title: "Detalhes da consulta",
-        description: `${appointment.medicos?.display_name} - ${appointment.local_consulta}`,
-      });
-    }
-  }
-
-  function handleGetDirections(appointment: AppointmentWithDoctor) {
-    if (appointment.tipo_consulta !== 'Online') {
-      toast({
-        title: "Abrindo mapa",
-        description: `Direções para ${appointment.local_consulta}`,
-      });
-    }
-  }
 };
 
 export default UpcomingAppointments;
