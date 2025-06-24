@@ -7,10 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Phone, MapPin, Heart, LogOut, Calendar, FileText } from "lucide-react";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { useToast } from "@/hooks/use-toast";
 
 const Perfil = () => {
   const { userData, user, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string>("");
 
   useEffect(() => {
@@ -42,6 +44,34 @@ const Perfil = () => {
 
   const handlePhotoUpdate = (newPhotoUrl: string) => {
     setCurrentPhotoUrl(newPhotoUrl);
+  };
+
+  const handleScheduleAppointment = () => {
+    toast({
+      title: "Redirecionando para agendamento",
+      description: "Vamos ajudá-lo a encontrar o médico ideal!",
+    });
+    navigate("/agendamento");
+  };
+
+  const handleViewSchedule = () => {
+    toast({
+      title: "Acessando sua agenda",
+      description: "Visualize suas consultas agendadas",
+    });
+    navigate("/agenda-paciente");
+  };
+
+  const handleViewHistory = () => {
+    toast({
+      title: "Carregando histórico",
+      description: "Visualize seu histórico completo de consultas",
+    });
+    navigate("/historico");
+  };
+
+  const handleGoHome = () => {
+    navigate("/");
   };
 
   if (loading || !userData) {
@@ -180,14 +210,14 @@ const Perfil = () => {
             <CardContent>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Button
-                  onClick={() => navigate("/agendamento")}
+                  onClick={handleScheduleAppointment}
                   className="bg-blue-500 hover:bg-blue-600 h-auto py-4 flex-col gap-2"
                 >
                   <Calendar className="w-6 h-6" />
                   <span>Agendar Consulta</span>
                 </Button>
                 <Button
-                  onClick={() => navigate("/agenda-paciente")}
+                  onClick={handleViewSchedule}
                   variant="outline"
                   className="h-auto py-4 flex-col gap-2 border-blue-200 hover:bg-blue-50"
                 >
@@ -195,7 +225,7 @@ const Perfil = () => {
                   <span>Minha Agenda</span>
                 </Button>
                 <Button
-                  onClick={() => navigate("/historico")}
+                  onClick={handleViewHistory}
                   variant="outline"
                   className="h-auto py-4 flex-col gap-2 border-green-200 hover:bg-green-50"
                 >
@@ -203,7 +233,7 @@ const Perfil = () => {
                   <span>Histórico</span>
                 </Button>
                 <Button
-                  onClick={() => navigate("/")}
+                  onClick={handleGoHome}
                   variant="outline"
                   className="h-auto py-4 flex-col gap-2 border-gray-200 hover:bg-gray-50"
                 >
