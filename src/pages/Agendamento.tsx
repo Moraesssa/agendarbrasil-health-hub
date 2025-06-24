@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { generateTimeSlots, getDefaultWorkingHours, type TimeSlot, type DoctorConfig } from "@/utils/timeSlotUtils";
 
 // Tipagem para os médicos que virão do banco
 interface Medico {
@@ -27,8 +28,11 @@ const Agendamento = () => {
 
   const [specialties, setSpecialties] = useState<string[]>([]); // Lista de especialidades agora é dinâmica
   const [doctors, setDoctors] = useState<Medico[]>([]); // Lista de médicos buscada do DB
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
+  
   const [isLoadingSpecialties, setIsLoadingSpecialties] = useState(true);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableTimes = [
@@ -106,6 +110,73 @@ const Agendamento = () => {
     fetchDoctors();
   }, [selectedSpecialty, toast]);
 
+  // New useEffect to fetch available time slots when doctor and date are selected
+  useEffect(() => {
+    if (!selectedDoctor || !selectedDate) {
+      setAvailableTimeSlots([]);
+      setSelectedTime("");
+      return;
+    }
+
+    const fetchAvailableTimeSlots = async () => {
+      setIsLoadingTimeSlots(true);
+      try {
+        // Fetch doctor configuration
+        const { data: doctorData, error: doctorError } = await supabase
+          .from('medicos')
+          .select('configuracoes')
+          .eq('user_id', selectedDoctor)
+          .single();
+
+        if (doctorError) throw doctorError;
+
+        // Fetch existing appointments for the selected date and doctor
+        const startOfDay = new Date(selectedDate + 'T00:00:00').toISOString();
+        const endOfDay = new Date(selectedDate + 'T23:59:59').toISOString();
+
+        const { data: appointmentsData, error: appointmentsError } = await supabase
+          .from('consultas')
+          .select('data_consulta')
+          .eq('medico_id', selectedDoctor)
+          .gte('data_consulta', startOfDay)
+          .lte('data_consulta', endOfDay)
+          .in('status', ['agendada', 'confirmada']);
+
+        if (appointmentsError) throw appointmentsError;
+
+        // Extract time strings from existing appointments
+        const existingAppointmentTimes = appointmentsData.map(appointment => {
+          const date = new Date(appointment.data_consulta);
+          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        });
+
+        // Get doctor configuration or use defaults
+        const doctorConfig: DoctorConfig = doctorData?.configuracoes || {
+          duracaoConsulta: 30,
+          horarioAtendimento: getDefaultWorkingHours()
+        };
+
+        // Generate available time slots
+        const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+        const timeSlots = generateTimeSlots(doctorConfig, selectedDateObj, existingAppointmentTimes);
+        
+        setAvailableTimeSlots(timeSlots);
+
+      } catch (error) {
+        console.error("Erro ao buscar horários disponíveis:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os horários disponíveis.",
+          variant: "destructive"
+        });
+        setAvailableTimeSlots([]);
+      } finally {
+        setIsLoadingTimeSlots(false);
+      }
+    };
+
+    fetchAvailableTimeSlots();
+  }, [selectedDoctor, selectedDate, toast]);
 
   // Função para lidar com o agendamento final
   const handleAgendamento = async () => {
@@ -243,22 +314,39 @@ const Agendamento = () => {
               </div>
 
               {/* Horário */}
-              {selectedDate && (
+              {selectedDate && selectedDoctor && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Horário</label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {availableTimes.map(time => (
-                      <Button
-                        key={time}
-                        variant={selectedTime === time ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedTime(time)}
-                        className="text-sm"
-                      >
-                        {time}
-                      </Button>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium mb-2">
+                    Horário 
+                    {isLoadingTimeSlots && <span className="ml-2 text-xs text-gray-500">(Carregando...)</span>}
+                  </label>
+                  {isLoadingTimeSlots ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
+                    </div>
+                  ) : availableTimeSlots.length === 0 ? (
+                    <div className="text-center p-4 text-gray-500 bg-gray-50 rounded-lg">
+                      Nenhum horário disponível para esta data
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {availableTimeSlots.map(slot => (
+                        <Button
+                          key={slot.time}
+                          variant={selectedTime === slot.time ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSelectedTime(slot.time)}
+                          disabled={!slot.available}
+                          className={`text-sm ${!slot.available 
+                            ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400" 
+                            : ""
+                          }`}
+                        >
+                          {slot.time}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
