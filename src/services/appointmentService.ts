@@ -15,6 +15,12 @@ export interface AppointmentData {
   tipo_consulta: string;
 }
 
+// Type for doctor configuration from database
+interface DoctorDBConfig {
+  duracao_consulta?: number;
+  horario_atendimento?: Record<string, { inicio: string; fim: string; ativo: boolean }>;
+}
+
 export const appointmentService = {
   async getDoctorsBySpecialty(specialty: string): Promise<Medico[]> {
     logger.info(`Fetching doctors for specialty: ${specialty}`, "appointmentService");
@@ -69,10 +75,13 @@ export const appointmentService = {
         return `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
       });
 
+      // Parse and validate doctor configuration
+      const dbConfig = doctorData?.configuracoes as DoctorDBConfig | null;
+      
       // Configuração do médico ou padrão
       const doctorConfig: DoctorConfig = {
-        duracaoConsulta: doctorData?.configuracoes?.duracao_consulta || 30,
-        horarioAtendimento: doctorData?.configuracoes?.horario_atendimento || getDefaultWorkingHours()
+        duracaoConsulta: dbConfig?.duracao_consulta || 30,
+        horarioAtendimento: dbConfig?.horario_atendimento || getDefaultWorkingHours()
       };
 
       // Gerar slots disponíveis
