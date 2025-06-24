@@ -1,6 +1,6 @@
 
 import React, { ReactElement } from 'react'
-import { render, RenderOptions } from '@testing-library/react'
+import { render, RenderOptions, screen } from '@testing-library/react'
 
 // Custom render function that includes providers if needed
 const customRender = (
@@ -9,4 +9,4 @@ const customRender = (
 ) => render(ui, { ...options })
 
 export * from '@testing-library/react'
-export { customRender as render }
+export { customRender as render, screen }
