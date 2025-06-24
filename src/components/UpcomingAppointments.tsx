@@ -10,9 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Simplified type for appointments with doctor info
+// Type for appointments with doctor info from profiles table
 type AppointmentWithDoctor = Tables<'consultas'> & {
-  medicos: {
+  doctor_profile: {
     display_name: string | null;
   } | null;
 };
@@ -38,7 +38,7 @@ const UpcomingAppointments = () => {
           .from("consultas")
           .select(`
             *,
-            medicos:profiles!consultas_medico_id_fkey (display_name)
+            doctor_profile:profiles!consultas_medico_id_fkey (display_name)
           `)
           .eq("paciente_id", user.id)
           .gte("data_consulta", new Date().toISOString())
@@ -80,12 +80,27 @@ const UpcomingAppointments = () => {
     return statusMap[status] || status;
   };
 
-  const handleConfirmAppointment = (appointmentId: string) => {
-    // Lógica para confirmar consulta (a ser implementada)
-    toast({
-      title: "Consulta confirmada!",
-      description: "Você receberá um lembrete antes da consulta",
-    });
+  const handleConfirmAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('consultas')
+        .update({ status: 'confirmada' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      setAppointments(prev => prev.map(apt => 
+        apt.id === appointmentId ? {...apt, status: 'confirmada'} : apt
+      ));
+
+      toast({
+        title: "Consulta confirmada!",
+        description: "Você receberá um lembrete antes da consulta",
+      });
+    } catch (error) {
+      console.error("Erro ao confirmar consulta:", error);
+      toast({ title: "Erro", description: "Não foi possível confirmar a consulta.", variant: "destructive" });
+    }
   };
 
   const handleViewDetails = (appointment: AppointmentWithDoctor) => {
@@ -97,7 +112,7 @@ const UpcomingAppointments = () => {
     } else {
       toast({
         title: "Detalhes da consulta",
-        description: `${appointment.medicos?.display_name} - ${appointment.local_consulta}`,
+        description: `${appointment.doctor_profile?.display_name} - ${appointment.local_consulta}`,
       });
     }
   };
@@ -152,12 +167,12 @@ const UpcomingAppointments = () => {
               className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-white to-blue-50 border border-blue-100 hover:shadow-md transition-all"
             >
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base flex-shrink-0">
-                {appointment.medicos?.display_name?.split(' ').map(n => n[0]).join('') || 'Dr'}
+                {appointment.doctor_profile?.display_name?.split(' ').map(n => n[0]).join('') || 'Dr'}
               </div>
 
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-                  {appointment.medicos?.display_name || "Médico"}
+                  {appointment.doctor_profile?.display_name || "Médico"}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600">
                   {appointment.tipo_consulta}

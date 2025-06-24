@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// Simplified type for recent appointments with patient info
+// Type for recent appointments with patient info from profiles table
 type RecentAppointment = {
   id: string;
   status: string;
   data_consulta: string;
-  pacientes: {
+  patient_profile: {
     display_name: string | null;
   } | null;
 };
@@ -35,7 +35,7 @@ export function PacientesRecentes() {
             id,
             status,
             data_consulta,
-            pacientes:profiles!consultas_paciente_id_fkey (display_name)
+            patient_profile:profiles!consultas_paciente_id_fkey (display_name)
           `)
           .eq('medico_id', user.id)
           .order('data_consulta', { ascending: false })
@@ -84,14 +84,14 @@ export function PacientesRecentes() {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
-                      {consulta.pacientes?.display_name?.split(' ').map(n => n[0]).join('') || 'P'}
+                      {consulta.patient_profile?.display_name?.split(' ').map(n => n[0]).join('') || 'P'}
                     </div>
                     {consulta.status === "agendada" && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{consulta.pacientes?.display_name || "Paciente"}</h4>
+                    <h4 className="font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{consulta.patient_profile?.display_name || "Paciente"}</h4>
                     <p className="text-sm text-gray-600">
                       Paciente
                     </p>

@@ -11,9 +11,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Simplified type for appointments with doctor info
+// Type for appointments with doctor info from profiles table
 type AppointmentWithDoctor = Tables<'consultas'> & {
-  medicos: {
+  doctor_profile: {
     display_name: string | null;
   } | null;
 };
@@ -38,7 +38,7 @@ const AgendaPaciente = () => {
           .from("consultas")
           .select(`
             *,
-            medicos:profiles!consultas_medico_id_fkey (display_name)
+            doctor_profile:profiles!consultas_medico_id_fkey (display_name)
           `)
           .eq("paciente_id", user.id)
           .order("data_consulta", { ascending: false });
@@ -160,7 +160,7 @@ const AgendaPaciente = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-gray-900">{appointment.medicos?.display_name || "Médico"}</h3>
+                                <h3 className="font-semibold text-gray-900">{appointment.doctor_profile?.display_name || "Médico"}</h3>
                                 <Badge className={`${getStatusColor(appointment.status)} border`}>
                                   {getStatusText(appointment.status)}
                                 </Badge>
@@ -220,7 +220,7 @@ const AgendaPaciente = () => {
                     <div key={appointment.id} className="p-4 rounded-lg border border-gray-200 bg-white/50 opacity-80">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-gray-800">{appointment.medicos?.display_name || "Médico"}</h3>
+                          <h3 className="font-semibold text-gray-800">{appointment.doctor_profile?.display_name || "Médico"}</h3>
                           <p className="text-sm text-gray-500">{new Date(appointment.data_consulta).toLocaleDateString('pt-BR')}</p>
                         </div>
                         <Badge className={`${getStatusColor(appointment.status)} border`}>
