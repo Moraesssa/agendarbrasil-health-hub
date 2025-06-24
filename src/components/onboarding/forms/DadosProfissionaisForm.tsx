@@ -20,7 +20,9 @@ const dadosProfissionaisSchema = z.object({
     .min(5, "CRM deve ter no mínimo 5 caracteres")
     .nonempty("CRM é obrigatório"),
   especialidades: z.array(
-    z.string().min(1, "Especialidade não pode estar vazia")
+    z.object({
+      value: z.string().min(1, "Especialidade não pode estar vazia")
+    })
   ).min(1, "Pelo menos uma especialidade é obrigatória"),
   telefone: z.string()
     .min(10, "Telefone deve ter no mínimo 10 caracteres")
@@ -40,7 +42,9 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
     resolver: zodResolver(dadosProfissionaisSchema),
     defaultValues: {
       crm: initialData?.crm || '',
-      especialidades: initialData?.especialidades?.length > 0 ? initialData.especialidades : [''],
+      especialidades: initialData?.especialidades?.length > 0 
+        ? initialData.especialidades.map((esp: string) => ({ value: esp }))
+        : [{ value: '' }],
       telefone: initialData?.telefone || '',
       whatsapp: initialData?.whatsapp || ''
     }
@@ -54,14 +58,14 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
   const onSubmit = (data: DadosProfissionaisFormData) => {
     onNext({
       crm: data.crm,
-      especialidades: data.especialidades.filter(e => e.trim()),
+      especialidades: data.especialidades.map(esp => esp.value).filter(e => e.trim()),
       telefone: data.telefone,
       whatsapp: data.whatsapp || null
     });
   };
 
   const addEspecialidade = () => {
-    append('');
+    append({ value: '' });
   };
 
   const removeEspecialidade = (index: number) => {
@@ -101,7 +105,7 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
                 <FormField
                   key={field.id}
                   control={form.control}
-                  name={`especialidades.${index}`}
+                  name={`especialidades.${index}.value`}
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex gap-2">
