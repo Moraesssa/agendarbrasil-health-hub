@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { User, Mail, Phone, MapPin, Heart, LogOut, Calendar, FileText } from "lucide-react";
-import { AvatarUpload } from "@/components/AvatarUpload";
+import { Calendar, FileText, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileActions } from "@/components/profile/ProfileActions";
+import { ContactInfoCard } from "@/components/profile/ContactInfoCard";
+import { StatusCard } from "@/components/profile/StatusCard";
+import { PageHeader } from "@/components/profile/PageHeader";
 
 const Perfil = () => {
   const { userData, user, loading, logout } = useAuth();
@@ -85,164 +86,61 @@ const Perfil = () => {
     );
   }
 
+  const profileActions = [
+    {
+      label: "Agendar Consulta",
+      icon: Calendar,
+      onClick: handleScheduleAppointment,
+      variant: 'default' as const,
+      className: "bg-blue-500 hover:bg-blue-600"
+    },
+    {
+      label: "Minha Agenda",
+      icon: Calendar,
+      onClick: handleViewSchedule,
+      variant: 'outline' as const,
+      className: "border-blue-200 hover:bg-blue-50"
+    },
+    {
+      label: "Histórico",
+      icon: FileText,
+      onClick: handleViewHistory,
+      variant: 'outline' as const,
+      className: "border-green-200 hover:bg-green-50"
+    },
+    {
+      label: "Página Inicial",
+      icon: Heart,
+      onClick: handleGoHome,
+      variant: 'outline' as const,
+      className: "border-gray-200 hover:bg-gray-50"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <img 
-                  src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
-                  alt="AgendarBrasil Logo" 
-                  className="w-24 h-24 object-cover rounded-2xl shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-blue-200/30 p-1 bg-gradient-to-br from-blue-50 to-green-50" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-green-600 rounded-2xl opacity-20 group-hover:opacity-30 blur-sm transition-all duration-500"></div>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-blue-900">AgendarBrasil</h1>
-                <p className="text-sm text-gray-600">Perfil do Paciente</p>
-              </div>
-            </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="AgendarBrasil"
+        subtitle="Perfil do Paciente"
+        onLogout={handleLogout}
+      />
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Perfil Principal */}
-          <Card className="shadow-lg">
-            <CardHeader className="text-center pb-4">
-              <div className="flex justify-center mb-4">
-                <AvatarUpload
-                  currentPhotoUrl={currentPhotoUrl}
-                  userId={userData.uid}
-                  displayName={userData.displayName}
-                  onPhotoUpdate={handlePhotoUpdate}
-                />
-              </div>
-              <CardTitle className="text-2xl text-blue-900">{userData.displayName}</CardTitle>
-              <div className="flex justify-center gap-2 mt-2">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                  <Heart className="w-3 h-3 mr-1" />
-                  Paciente
-                </Badge>
-                <Badge variant="outline" className="border-green-200 text-green-700">
-                  Ativo
-                </Badge>
-              </div>
-            </CardHeader>
-          </Card>
+          <ProfileHeader
+            displayName={userData.displayName}
+            userType="paciente"
+            currentPhotoUrl={currentPhotoUrl}
+            userId={userData.uid}
+            onPhotoUpdate={handlePhotoUpdate}
+          />
 
-          {/* Informações Básicas */}
           <div className="grid md:grid-cols-2 gap-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                  Informações de Contato
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Email</label>
-                  <p className="text-gray-900">{userData.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Membro desde</label>
-                  <p className="text-gray-900">
-                    {new Date(userData.createdAt).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Último acesso</label>
-                  <p className="text-gray-900">
-                    {new Date(userData.lastLogin).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Heart className="w-5 h-5 text-green-600" />
-                  Status da Conta
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Tipo de Usuário</label>
-                  <p className="text-gray-900 capitalize">{userData.userType}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Cadastro Completo</label>
-                  <p className="text-gray-900">
-                    {userData.onboardingCompleted ? 'Sim' : 'Não'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Conta Ativa</label>
-                  <p className="text-gray-900">
-                    {userData.isActive ? 'Sim' : 'Não'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <ContactInfoCard userData={userData} />
+            <StatusCard userData={userData} />
           </div>
 
-          {/* Ações Rápidas */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">Ações Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button
-                  onClick={handleScheduleAppointment}
-                  className="bg-blue-500 hover:bg-blue-600 h-auto py-4 flex-col gap-2"
-                >
-                  <Calendar className="w-6 h-6" />
-                  <span>Agendar Consulta</span>
-                </Button>
-                <Button
-                  onClick={handleViewSchedule}
-                  variant="outline"
-                  className="h-auto py-4 flex-col gap-2 border-blue-200 hover:bg-blue-50"
-                >
-                  <Calendar className="w-6 h-6" />
-                  <span>Minha Agenda</span>
-                </Button>
-                <Button
-                  onClick={handleViewHistory}
-                  variant="outline"
-                  className="h-auto py-4 flex-col gap-2 border-green-200 hover:bg-green-50"
-                >
-                  <FileText className="w-6 h-6" />
-                  <span>Histórico</span>
-                </Button>
-                <Button
-                  onClick={handleGoHome}
-                  variant="outline"
-                  className="h-auto py-4 flex-col gap-2 border-gray-200 hover:bg-gray-50"
-                >
-                  <Heart className="w-6 h-6" />
-                  <span>Página Inicial</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ProfileActions actions={profileActions} />
         </div>
       </div>
     </div>

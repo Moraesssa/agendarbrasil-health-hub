@@ -216,7 +216,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_specialties: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
     }
     Enums: {
       appointment_status:
