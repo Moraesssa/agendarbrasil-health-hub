@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Phone, MapPin, Heart, LogOut, Calendar, FileText } from "lucide-react";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 const Perfil = () => {
   const { userData, user, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string>("");
 
   useEffect(() => {
     if (loading) return;
@@ -28,11 +30,18 @@ const Perfil = () => {
       navigate("/onboarding");
       return;
     }
+
+    // Inicializar a foto de perfil atual
+    setCurrentPhotoUrl(userData.photoUrl || "");
   }, [user, userData, loading, navigate]);
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handlePhotoUpdate = (newPhotoUrl: string) => {
+    setCurrentPhotoUrl(newPhotoUrl);
   };
 
   if (loading || !userData) {
@@ -85,8 +94,13 @@ const Perfil = () => {
           {/* Perfil Principal */}
           <Card className="shadow-lg">
             <CardHeader className="text-center pb-4">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-10 h-10 text-blue-600" />
+              <div className="flex justify-center mb-4">
+                <AvatarUpload
+                  currentPhotoUrl={currentPhotoUrl}
+                  userId={userData.uid}
+                  displayName={userData.displayName}
+                  onPhotoUpdate={handlePhotoUpdate}
+                />
               </div>
               <CardTitle className="text-2xl text-blue-900">{userData.displayName}</CardTitle>
               <div className="flex justify-center gap-2 mt-2">
