@@ -340,13 +340,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      appointment_status: {
-        AGENDADA: "agendada",
-        CONFIRMADA: "confirmada",
-        CANCELADA: "cancelada",
-        REALIZADA: "realizada",
-        PENDENTE: "pendente",
-      },
+      appointment_status: [
+        "agendada",
+        "confirmada",
+        "cancelada",
+        "realizada",
+        "pendente",
+      ],
     },
   },
 } as const

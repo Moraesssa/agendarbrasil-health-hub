@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Calendar, Clock, MapPin, Phone, MoreVertical, Navigation, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Tipo para as consultas com dados do médico
+// Tipo para as consultas com dados do médico - simplificado
 type AppointmentWithDoctor = Tables<'consultas'> & {
   medicos: {
     display_name: string | null;
@@ -37,7 +38,7 @@ const UpcomingAppointments = () => {
           .from("consultas")
           .select(`
             *,
-            medicos:medico_id (display_name)
+            medicos:medico_id!inner (display_name)
           `)
           .eq("paciente_id", user.id)
           .gte("data_consulta", new Date().toISOString()) // Apenas consultas futuras
@@ -46,7 +47,7 @@ const UpcomingAppointments = () => {
 
         if (error) throw error;
         
-        setAppointments(data as AppointmentWithDoctor[]);
+        setAppointments(data || []);
 
       } catch (error) {
         console.error("Erro ao buscar consultas:", error);

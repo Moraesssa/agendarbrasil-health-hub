@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Stethoscope, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// Tipagem para as consultas com dados do paciente
+// Tipagem simplificada para as consultas com dados do paciente
 type RecentAppointment = {
   id: string;
   status: string;
@@ -39,9 +40,9 @@ export function PacientesRecentes() {
             id,
             status,
             data_consulta,
-            pacientes:paciente_id (
+            pacientes:paciente_id!inner (
               display_name,
-              pacientes (dados_pessoais->dataNascimento)
+              pacientes (dados_pessoais)
             )
           `)
           .eq('medico_id', user.id)
@@ -49,7 +50,7 @@ export function PacientesRecentes() {
           .limit(4);
 
         if (error) throw error;
-        setRecentAppointments(data as RecentAppointment[]);
+        setRecentAppointments(data || []);
       } catch (error) {
         console.error("Erro ao buscar pacientes recentes:", error);
       } finally {

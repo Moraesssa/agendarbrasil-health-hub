@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, MapPin, ChevronLeft, ChevronRight, Navigation, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Tipo para as consultas com dados do médico
+// Tipo simplificado para as consultas com dados do médico
 type AppointmentWithDoctor = Tables<'consultas'> & {
   medicos: {
     display_name: string | null;
@@ -40,7 +41,7 @@ const AgendaPaciente = () => {
           .from("consultas")
           .select(`
             *,
-            medicos:medico_id (
+            medicos:medico_id!inner (
               display_name,
               medicos (telefone)
             )
@@ -50,7 +51,7 @@ const AgendaPaciente = () => {
 
         if (error) throw error;
         
-        setAppointments(data as AppointmentWithDoctor[]);
+        setAppointments(data || []);
       } catch (error) {
         console.error("Erro ao buscar agenda:", error);
         toast({ title: "Erro", description: "Não foi possível carregar sua agenda.", variant: "destructive" });
