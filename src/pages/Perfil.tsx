@@ -31,8 +31,8 @@ const Perfil = () => {
       return;
     }
 
-    // Inicializar a foto de perfil atual
-    setCurrentPhotoUrl(userData.photoUrl || "");
+    // Inicializar a foto de perfil atual usando photoURL
+    setCurrentPhotoUrl(userData.photoURL || "");
   }, [user, userData, loading, navigate]);
 
   const handleLogout = async () => {
