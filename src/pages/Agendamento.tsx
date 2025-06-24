@@ -25,20 +25,43 @@ const Agendamento = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
+  const [specialties, setSpecialties] = useState<string[]>([]); // Lista de especialidades agora é dinâmica
   const [doctors, setDoctors] = useState<Medico[]>([]); // Lista de médicos buscada do DB
+  const [isLoadingSpecialties, setIsLoadingSpecialties] = useState(true);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Dados que antes eram fixos
-  const specialties = [
-    "Cardiologia", "Dermatologia", "Endocrinologia", "Gastroenterologia",
-    "Ginecologia", "Neurologia", "Oftalmologia", "Ortopedia", "Pediatria", "Psiquiatria"
-  ];
 
   const availableTimes = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
     "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
   ];
+
+  // Efeito para buscar todas as especialidades disponíveis na plataforma
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      setIsLoadingSpecialties(true);
+      try {
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('especialidades');
+
+        if (error) throw error;
+
+        // Processa para criar uma lista única de especialidades
+        const allSpecialties = data.flatMap(medico => medico.especialidades);
+        const uniqueSpecialties = [...new Set(allSpecialties)].sort(); // Remove duplicatas e ordena
+        setSpecialties(uniqueSpecialties);
+        
+      } catch (error) {
+        console.error("Erro ao buscar especialidades:", error);
+        toast({ title: "Erro", description: "Não foi possível carregar as especialidades.", variant: "destructive"});
+      } finally {
+        setIsLoadingSpecialties(false);
+      }
+    };
+    fetchSpecialties();
+  }, [toast]);
+
 
   // Efeito para buscar médicos sempre que a especialidade mudar
   useEffect(() => {
@@ -51,7 +74,6 @@ const Agendamento = () => {
     const fetchDoctors = async () => {
       setIsLoadingDoctors(true);
       try {
-        // Busca médicos (profiles) que possuem a especialidade selecionada na tabela 'medicos'
         const { data, error } = await supabase
           .from('profiles')
           .select(`
@@ -64,7 +86,6 @@ const Agendamento = () => {
 
         if (error) throw error;
 
-        // Formata os dados para o formato que o componente espera
         const formattedDoctors = data.map(profile => ({
           id: profile.id,
           display_name: profile.display_name || "Médico sem nome"
@@ -120,7 +141,7 @@ const Agendamento = () => {
         description: `Sua consulta foi agendada com sucesso para ${selectedDate} às ${selectedTime}.`
       });
       
-      navigate("/agenda-paciente"); // Navega para a página de agenda do paciente
+      navigate("/agenda-paciente");
 
     } catch (error) {
       console.error("Erro ao agendar consulta:", error);
@@ -171,8 +192,11 @@ const Agendamento = () => {
                   className="w-full p-3 border rounded-lg"
                   value={selectedSpecialty}
                   onChange={(e) => setSelectedSpecialty(e.target.value)}
+                  disabled={isLoadingSpecialties}
                 >
-                  <option value="">Selecione uma especialidade</option>
+                  <option value="">
+                    {isLoadingSpecialties ? "Carregando..." : "Selecione uma especialidade"}
+                  </option>
                   {specialties.map(specialty => (
                     <option key={specialty} value={specialty}>{specialty}</option>
                   ))}
@@ -193,7 +217,9 @@ const Agendamento = () => {
                       <option value="">
                         {isLoadingDoctors 
                           ? "Carregando médicos..." 
-                          : "Selecione um médico"}
+                          : doctors.length === 0
+                            ? "Nenhum médico encontrado"
+                            : "Selecione um médico"}
                       </option>
                       {doctors.map(doctor => (
                         <option key={doctor.id} value={doctor.id}>{doctor.display_name}</option>
