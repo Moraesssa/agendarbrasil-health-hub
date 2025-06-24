@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -218,6 +219,16 @@ const Index = () => {
               Histórico
             </Button>
             <Button 
+              onClick={() => handleNavigation("/perfil", "Meu Perfil")}
+              variant="outline"
+              className="text-sm sm:text-base border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+              size="sm"
+              title="Acesse e edite seu perfil"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Perfil
+            </Button>
+            <Button 
               onClick={handleEmergencyContact}
               variant="outline"
               className="text-sm sm:text-base border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
@@ -322,7 +333,7 @@ const Index = () => {
             </div>
           </>
         ) : (
-          /* Call to Action for Logged-Out Users */
+          /* ... keep existing code (Call to Action for Logged-Out Users) */
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl text-center text-blue-900">
