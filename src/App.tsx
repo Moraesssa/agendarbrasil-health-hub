@@ -119,9 +119,6 @@ const queryClient = new QueryClient({
         logger.warn(`Query failed, attempt ${failureCount + 1}`, "ReactQuery", error);
         return failureCount < 3;
       },
-      onError: (error) => {
-        logger.error("Query error", "ReactQuery", error);
-      },
     },
     mutations: {
       onError: (error) => {
