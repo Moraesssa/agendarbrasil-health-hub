@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 // Type for recent appointments with patient info from profiles table
 type RecentAppointment = {
@@ -27,7 +28,10 @@ export function PacientesRecentes() {
         setLoading(false);
         return;
       }
+      
       setLoading(true);
+      logger.info("Fetching recent appointments", "PacientesRecentes", { userId: user.id });
+      
       try {
         const { data, error } = await supabase
           .from('consultas')
@@ -41,10 +45,17 @@ export function PacientesRecentes() {
           .order('data_consulta', { ascending: false })
           .limit(4);
 
-        if (error) throw error;
+        if (error) {
+          logger.error("Failed to fetch recent appointments", "PacientesRecentes", error);
+          throw error;
+        }
+        
+        logger.info("Recent appointments fetched successfully", "PacientesRecentes", { 
+          count: data?.length || 0 
+        });
         setRecentAppointments(data || []);
       } catch (error) {
-        console.error("Erro ao buscar pacientes recentes:", error);
+        logger.error("Error fetching recent appointments", "PacientesRecentes", error);
       } finally {
         setLoading(false);
       }
