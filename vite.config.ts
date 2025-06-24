@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Production optimizations
     target: 'es2015',
-    minify: 'terser',
+    minify: mode === 'production' ? 'terser' : false,
     sourcemap: mode === 'development',
     rollupOptions: {
       output: {
