@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Calendar, Clock, MapPin, Phone, MoreVertical, Navigation, Loader2 } from "lucide-react";
+import { Calendar, Clock, MapPin, Phone, MoreVertical, Navigation, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +17,54 @@ type AppointmentWithDoctor = Tables<'consultas'> & {
   } | null;
 };
 
+// Skeleton component for appointment cards
+const AppointmentSkeleton = () => (
+  <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-white to-blue-50 border border-blue-100">
+    <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0" />
+    
+    <div className="flex-1 min-w-0 space-y-2">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-3 w-20" />
+      
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 my-2">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-3 w-12" />
+      </div>
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+        <Skeleton className="h-5 w-20" />
+        <div className="flex gap-2">
+          <Skeleton className="h-7 w-16" />
+          <Skeleton className="h-7 w-12" />
+          <Skeleton className="h-7 w-16" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Error card component
+const ErrorCard = ({ onRetry }: { onRetry: () => void }) => (
+  <div className="text-center py-8">
+    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <AlertCircle className="h-8 w-8 text-red-500" />
+    </div>
+    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+      Não foi possível carregar suas consultas
+    </h3>
+    <p className="text-gray-600 mb-4">
+      Verifique sua conexão com a internet e tente novamente.
+    </p>
+    <Button 
+      onClick={onRetry}
+      className="bg-blue-500 hover:bg-blue-600"
+    >
+      <RefreshCw className="h-4 w-4 mr-2" />
+      Tentar Novamente
+    </Button>
+  </div>
+);
+
 const UpcomingAppointments = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,42 +72,49 @@ const UpcomingAppointments = () => {
   
   const [appointments, setAppointments] = useState<AppointmentWithDoctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAppointments = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Com RLS habilitado, não precisamos mais filtrar por paciente_id
+      // O Supabase automaticamente retornará apenas as consultas do paciente logado
+      const { data, error } = await supabase
+        .from("consultas")
+        .select(`
+          *,
+          doctor_profile:profiles!consultas_medico_id_fkey (display_name)
+        `)
+        .gte("data_consulta", new Date().toISOString())
+        .order("data_consulta", { ascending: true })
+        .limit(3);
+
+      if (error) throw error;
+      
+      setAppointments(data || []);
+
+    } catch (error) {
+      console.error("Erro ao buscar consultas:", error);
+      setError("Erro ao carregar consultas");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        // Com RLS habilitado, não precisamos mais filtrar por paciente_id
-        // O Supabase automaticamente retornará apenas as consultas do paciente logado
-        const { data, error } = await supabase
-          .from("consultas")
-          .select(`
-            *,
-            doctor_profile:profiles!consultas_medico_id_fkey (display_name)
-          `)
-          .gte("data_consulta", new Date().toISOString())
-          .order("data_consulta", { ascending: true })
-          .limit(3);
-
-        if (error) throw error;
-        
-        setAppointments(data || []);
-
-      } catch (error) {
-        console.error("Erro ao buscar consultas:", error);
-        toast({ title: "Erro", description: "Não foi possível carregar as próximas consultas.", variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAppointments();
-  }, [user, toast]);
+  }, [user]);
+
+  const handleRetry = () => {
+    fetchAppointments();
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -146,9 +202,15 @@ const UpcomingAppointments = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          </div>
+          // Show 3 skeleton cards while loading
+          <>
+            <AppointmentSkeleton />
+            <AppointmentSkeleton />
+            <AppointmentSkeleton />
+          </>
+        ) : error ? (
+          // Show error card if there's an error
+          <ErrorCard onRetry={handleRetry} />
         ) : appointments.length === 0 ? (
           <div className="text-center py-8">
             <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
