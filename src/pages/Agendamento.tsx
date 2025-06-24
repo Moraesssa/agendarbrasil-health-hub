@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, User, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -150,11 +151,23 @@ const Agendamento = () => {
           return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         });
 
-        // Get doctor configuration or use defaults
-        const doctorConfig: DoctorConfig = doctorData?.configuracoes || {
-          duracaoConsulta: 30,
-          horarioAtendimento: getDefaultWorkingHours()
-        };
+        // Get doctor configuration or use defaults with proper type checking
+        let doctorConfig: DoctorConfig;
+        
+        if (doctorData?.configuracoes && typeof doctorData.configuracoes === 'object' && doctorData.configuracoes !== null) {
+          // Type-safe casting with validation
+          const config = doctorData.configuracoes as any;
+          doctorConfig = {
+            duracaoConsulta: config.duracaoConsulta || 30,
+            horarioAtendimento: config.horarioAtendimento || getDefaultWorkingHours()
+          };
+        } else {
+          // Use default configuration
+          doctorConfig = {
+            duracaoConsulta: 30,
+            horarioAtendimento: getDefaultWorkingHours()
+          };
+        }
 
         // Generate available time slots
         const selectedDateObj = new Date(selectedDate + 'T00:00:00');
