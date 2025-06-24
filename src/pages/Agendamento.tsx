@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, User, ArrowLeft, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, ArrowLeft, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -9,190 +9,129 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { generateTimeSlots, getDefaultWorkingHours, type TimeSlot, type DoctorConfig } from "@/utils/timeSlotUtils";
+import { logger } from "@/utils/logger"; // Adicionando o logger para melhor depuração
 
-// Tipagem para os médicos que virão do banco
+// Interface para o médico, refletindo o que esperamos do Supabase
 interface Medico {
-  id: string;
-  display_name: string;
+  id: string; // user_id do perfil
+  display_name: string | null;
 }
 
 const Agendamento = () => {
-  const { user } = useAuth(); // Hook para pegar o usuário logado
+  const { user, userData } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  // Estados do componente
+  // Estados do formulário
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
-  const [selectedDoctor, setSelectedDoctor] = useState(""); // Agora vai armazenar o ID do médico
+  const [selectedDoctor, setSelectedDoctor] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
-  const [specialties, setSpecialties] = useState<string[]>([]); // Lista de especialidades agora é dinâmica
-  const [doctors, setDoctors] = useState<Medico[]>([]); // Lista de médicos buscada do DB
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
-  
-  const [isLoadingSpecialties, setIsLoadingSpecialties] = useState(true);
-  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
-  const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const availableTimes = [
-    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
-  ];
-
-  // Efeito para buscar todas as especialidades disponíveis na plataforma
-  useEffect(() => {
-    const fetchSpecialties = async () => {
-      setIsLoadingSpecialties(true);
+  // Buscando especialidades
+  const {
+    data: specialties,
+    isLoading: isLoadingSpecialties,
+    isError: isErrorSpecialties,
+    error: errorSpecialties
+  } = useQuery<string[], Error>({
+    queryKey: ['specialties'],
+    queryFn: async () => {
+      logger.info("Fetching specialties for appointment scheduling", "Agendamento");
       try {
-        const { data, error } = await supabase
-          .from('medicos')
-          .select('especialidades');
+        const { data, error } = await supabase.rpc('get_specialties'); // Usando uma RPC para buscar especialidades
 
         if (error) throw error;
-
-        // Processa para criar uma lista única de especialidades
-        const allSpecialties = data.flatMap(medico => medico.especialidades);
-        const uniqueSpecialties = [...new Set(allSpecialties)].sort(); // Remove duplicatas e ordena
-        setSpecialties(uniqueSpecialties);
         
-      } catch (error) {
-        console.error("Erro ao buscar especialidades:", error);
-        toast({ title: "Erro", description: "Não foi possível carregar as especialidades.", variant: "destructive"});
-      } finally {
-        setIsLoadingSpecialties(false);
+        // Certificando que os dados são um array de strings
+        return (data as string[] || []).sort();
+      } catch (err) {
+        logger.error("Error fetching specialties", "Agendamento", err);
+        throw err; // Propaga o erro para o React Query
       }
-    };
-    fetchSpecialties();
-  }, [toast]);
+    },
+    staleTime: Infinity, // Especialidades raramente mudam
+  });
 
+  // Busca de médicos por especialidade selecionada
+  const {
+    data: doctors,
+    isLoading: isLoadingDoctors,
+    isError: isErrorDoctors,
+    error: errorDoctors
+  } = useQuery<Medico[], Error>({
+    queryKey: ['doctors', selectedSpecialty],
+    queryFn: () => {
+      if (!selectedSpecialty) return [];
+      return appointmentService.getDoctorsBySpecialty(selectedSpecialty);
+    },
+    enabled: !!selectedSpecialty, // Só executa se a especialidade for selecionada
+  });
 
-  // Efeito para buscar médicos sempre que a especialidade mudar
-  useEffect(() => {
-    if (!selectedSpecialty) {
-      setDoctors([]);
-      setSelectedDoctor("");
-      return;
+  // Busca de horários disponíveis para médico e data selecionados
+  const {
+    data: availableTimeSlots,
+    isLoading: isLoadingTimeSlots,
+    isError: isErrorTimeSlots,
+    error: errorTimeSlots
+  } = useQuery<TimeSlot[], Error>({
+    queryKey: ['timeSlots', selectedDoctor, selectedDate],
+    queryFn: () => {
+      if (!selectedDoctor || !selectedDate) return [];
+      return appointmentService.getAvailableTimeSlots(selectedDoctor, selectedDate);
+    },
+    enabled: !!selectedDoctor && !!selectedDate, // Só executa se médico e data forem selecionados
+  });
+
+  // Mutação para agendar a consulta
+  const { mutate: scheduleAppointment, isPending: isSubmitting } = useMutation({
+    mutationFn: appointmentService.scheduleAppointment,
+    onSuccess: () => {
+      toast({
+        title: "Consulta Agendada!",
+        description: `Sua consulta foi agendada com sucesso para ${selectedDate} às ${selectedTime}.`,
+      });
+      // Invalida o cache da lista de consultas para que a agenda do paciente seja atualizada
+      queryClient.invalidateQueries({ queryKey: ['consultas'] }); 
+      navigate("/agenda-paciente");
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao agendar consulta:", error);
+      toast({
+        title: "Erro no Agendamento",
+        description: error.message || "Não foi possível agendar sua consulta. Tente novamente.",
+        variant: "destructive",
+      });
     }
+  });
 
-    const fetchDoctors = async () => {
-      setIsLoadingDoctors(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            display_name,
-            medicos!inner(especialidades)
-          `)
-          .eq('user_type', 'medico')
-          .contains('medicos.especialidades', [selectedSpecialty]);
+  // Handler para resetar seleções quando especialidade muda
+  const handleSpecialtyChange = (specialty: string) => {
+    setSelectedSpecialty(specialty);
+    setSelectedDoctor("");
+    setSelectedDate("");
+    setSelectedTime("");
+    setAvailableTimeSlots([]); // Limpa os horários
+  };
 
-        if (error) throw error;
+  // Handler para resetar data e horário quando médico muda
+  const handleDoctorChange = (doctorId: string) => {
+    setSelectedDoctor(doctorId);
+    setSelectedDate("");
+    setSelectedTime("");
+    setAvailableTimeSlots([]); // Limpa os horários
+  };
 
-        const formattedDoctors = data.map(profile => ({
-          id: profile.id,
-          display_name: profile.display_name || "Médico sem nome"
-        }));
-        setDoctors(formattedDoctors);
-      } catch (error) {
-        console.error("Erro ao buscar médicos:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível buscar os médicos. Tente novamente.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoadingDoctors(false);
-      }
-    };
+  // Handler para resetar horário quando a data muda
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    setSelectedTime("");
+    setAvailableTimeSlots([]); // Limpa os horários
+  };
 
-    fetchDoctors();
-  }, [selectedSpecialty, toast]);
-
-  // New useEffect to fetch available time slots when doctor and date are selected
-  useEffect(() => {
-    if (!selectedDoctor || !selectedDate) {
-      setAvailableTimeSlots([]);
-      setSelectedTime("");
-      return;
-    }
-
-    const fetchAvailableTimeSlots = async () => {
-      setIsLoadingTimeSlots(true);
-      try {
-        // Fetch doctor configuration
-        const { data: doctorData, error: doctorError } = await supabase
-          .from('medicos')
-          .select('configuracoes')
-          .eq('user_id', selectedDoctor)
-          .single();
-
-        if (doctorError) throw doctorError;
-
-        // Fetch existing appointments for the selected date and doctor
-        const startOfDay = new Date(selectedDate + 'T00:00:00').toISOString();
-        const endOfDay = new Date(selectedDate + 'T23:59:59').toISOString();
-
-        const { data: appointmentsData, error: appointmentsError } = await supabase
-          .from('consultas')
-          .select('data_consulta')
-          .eq('medico_id', selectedDoctor)
-          .gte('data_consulta', startOfDay)
-          .lte('data_consulta', endOfDay)
-          .in('status', ['agendada', 'confirmada']);
-
-        if (appointmentsError) throw appointmentsError;
-
-        // Extract time strings from existing appointments
-        const existingAppointmentTimes = appointmentsData.map(appointment => {
-          const date = new Date(appointment.data_consulta);
-          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        });
-
-        // Get doctor configuration or use defaults with proper type checking
-        let doctorConfig: DoctorConfig;
-        
-        if (doctorData?.configuracoes && typeof doctorData.configuracoes === 'object' && doctorData.configuracoes !== null) {
-          // Type-safe casting with validation
-          const config = doctorData.configuracoes as any;
-          doctorConfig = {
-            duracaoConsulta: config.duracaoConsulta || 30,
-            horarioAtendimento: config.horarioAtendimento || getDefaultWorkingHours()
-          };
-        } else {
-          // Use default configuration
-          doctorConfig = {
-            duracaoConsulta: 30,
-            horarioAtendimento: getDefaultWorkingHours()
-          };
-        }
-
-        // Generate available time slots
-        const selectedDateObj = new Date(selectedDate + 'T00:00:00');
-        const timeSlots = generateTimeSlots(doctorConfig, selectedDateObj, existingAppointmentTimes);
-        
-        setAvailableTimeSlots(timeSlots);
-
-      } catch (error) {
-        console.error("Erro ao buscar horários disponíveis:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os horários disponíveis.",
-          variant: "destructive"
-        });
-        setAvailableTimeSlots([]);
-      } finally {
-        setIsLoadingTimeSlots(false);
-      }
-    };
-
-    fetchAvailableTimeSlots();
-  }, [selectedDoctor, selectedDate, toast]);
-
-  // Função para lidar com o agendamento final
-  const handleAgendamento = async () => {
+  // Handler para agendar a consulta
+  const handleAgendamento = () => {
     if (!user) {
       toast({ title: "Erro", description: "Você precisa estar logado para agendar.", variant: "destructive" });
       return;
@@ -202,56 +141,28 @@ const Agendamento = () => {
       return;
     }
 
-    setIsSubmitting(true);
-
     const dataHoraConsulta = new Date(`${selectedDate}T${selectedTime}:00`);
-
-    try {
-      const { error } = await supabase
-        .from('consultas')
-        .insert({
-          paciente_id: user.id,
-          medico_id: selectedDoctor, // selectedDoctor agora é o ID
-          data_consulta: dataHoraConsulta.toISOString(),
-          status: 'agendada',
-          motivo: 'Consulta solicitada via plataforma.',
-          tipo_consulta: selectedSpecialty
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Consulta Agendada!",
-        description: `Sua consulta foi agendada com sucesso para ${selectedDate} às ${selectedTime}.`
-      });
-      
-      navigate("/agenda-paciente");
-
-    } catch (error) {
-      console.error("Erro ao agendar consulta:", error);
-      toast({
-        title: "Erro no Agendamento",
-        description: "Não foi possível agendar sua consulta. Tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    scheduleAppointment({
+      paciente_id: user.id,
+      medico_id: selectedDoctor,
+      data_consulta: dataHoraConsulta.toISOString(),
+      tipo_consulta: selectedSpecialty
+    });
   };
   
-  const selectedDoctorName = doctors.find(doc => doc.id === selectedDoctor)?.display_name;
+  const selectedDoctorName = doctors?.find(doc => doc.id === selectedDoctor)?.display_name;
+
+  // Tratamento de erros nas buscas
+  if (isErrorSpecialties) return <div className="text-red-500">Erro ao carregar especialidades: {(errorSpecialties as Error).message}</div>;
+  if (isErrorDoctors) return <div className="text-red-500">Erro ao carregar médicos: {(errorDoctors as Error).message}</div>;
+  if (isErrorTimeSlots) return <div className="text-red-500">Erro ao carregar horários: {(errorTimeSlots as Error).message}</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
       <Header />
-      
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
+          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
@@ -260,7 +171,6 @@ const Agendamento = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Formulário de Agendamento */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -273,17 +183,13 @@ const Agendamento = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Especialidade</label>
                 <select 
-                  className="w-full p-3 border rounded-lg"
-                  value={selectedSpecialty}
-                  onChange={(e) => setSelectedSpecialty(e.target.value)}
+                  className="w-full p-3 border rounded-lg" 
+                  value={selectedSpecialty} 
+                  onChange={(e) => handleSpecialtyChange(e.target.value)} 
                   disabled={isLoadingSpecialties}
                 >
-                  <option value="">
-                    {isLoadingSpecialties ? "Carregando..." : "Selecione uma especialidade"}
-                  </option>
-                  {specialties.map(specialty => (
-                    <option key={specialty} value={specialty}>{specialty}</option>
-                  ))}
+                  <option value="">{isLoadingSpecialties ? "Carregando..." : "Selecione uma especialidade"}</option>
+                  {specialties?.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 
@@ -293,21 +199,13 @@ const Agendamento = () => {
                   <label className="block text-sm font-medium mb-2">Médico</label>
                   <div className="relative">
                     <select 
-                      className="w-full p-3 border rounded-lg appearance-none"
-                      value={selectedDoctor}
-                      onChange={(e) => setSelectedDoctor(e.target.value)}
-                      disabled={isLoadingDoctors || doctors.length === 0}
+                      className="w-full p-3 border rounded-lg appearance-none" 
+                      value={selectedDoctor} 
+                      onChange={(e) => handleDoctorChange(e.target.value)} 
+                      disabled={isLoadingDoctors || !doctors || doctors.length === 0}
                     >
-                      <option value="">
-                        {isLoadingDoctors 
-                          ? "Carregando médicos..." 
-                          : doctors.length === 0
-                            ? "Nenhum médico encontrado"
-                            : "Selecione um médico"}
-                      </option>
-                      {doctors.map(doctor => (
-                        <option key={doctor.id} value={doctor.id}>{doctor.display_name}</option>
-                      ))}
+                      <option value="">{isLoadingDoctors ? "Carregando médicos..." : doctors?.length === 0 ? "Nenhum médico encontrado" : "Selecione um médico"}</option>
+                      {doctors?.map(d => <option key={d.id} value={d.id}>{d.display_name}</option>)}
                     </select>
                     {isLoadingDoctors && <Loader2 className="animate-spin absolute right-3 top-3.5 h-5 w-5 text-gray-400" />}
                   </div>
@@ -315,45 +213,35 @@ const Agendamento = () => {
               )}
 
               {/* Data */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Data</label>
-                <input 
-                  type="date"
-                  className="w-full p-3 border rounded-lg"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
+              {selectedDoctor && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Data</label>
+                  <input 
+                    type="date" 
+                    className="w-full p-3 border rounded-lg" 
+                    value={selectedDate} 
+                    onChange={(e) => handleDateChange(e.target.value)} 
+                    min={new Date().toISOString().split('T')[0]} // Não permitir datas passadas
+                  />
+                </div>
+              )}
 
               {/* Horário */}
               {selectedDate && selectedDoctor && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Horário 
-                    {isLoadingTimeSlots && <span className="ml-2 text-xs text-gray-500">(Carregando...)</span>}
-                  </label>
+                  <label className="block text-sm font-medium mb-2">Horário {isLoadingTimeSlots && "(Carregando...)"}</label>
                   {isLoadingTimeSlots ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
-                    </div>
-                  ) : availableTimeSlots.length === 0 ? (
-                    <div className="text-center p-4 text-gray-500 bg-gray-50 rounded-lg">
-                      Nenhum horário disponível para esta data
-                    </div>
+                    <div className="flex justify-center p-4"><Loader2 className="animate-spin h-6 w-6 text-blue-600" /></div>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {availableTimeSlots.map(slot => (
-                        <Button
-                          key={slot.time}
-                          variant={selectedTime === slot.time ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedTime(slot.time)}
+                      {availableTimeSlots?.length === 0 ? <p className="col-span-full text-center text-gray-500">Nenhum horário disponível.</p> : null}
+                      {availableTimeSlots?.map((slot: TimeSlot) => (
+                        <Button 
+                          key={slot.time} 
+                          variant={selectedTime === slot.time ? "default" : "outline"} 
+                          onClick={() => setSelectedTime(slot.time)} 
                           disabled={!slot.available}
-                          className={`text-sm ${!slot.available 
-                            ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400" 
-                            : ""
-                          }`}
+                          className={`text-sm ${!slot.available ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400" : ""}`}
                         >
                           {slot.time}
                         </Button>
@@ -362,12 +250,12 @@ const Agendamento = () => {
                   )}
                 </div>
               )}
-
+              
               <Button 
-                onClick={handleAgendamento}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                size="lg"
-                disabled={isSubmitting}
+                onClick={handleAgendamento} 
+                className="w-full bg-blue-600 hover:bg-blue-700" 
+                size="lg" 
+                disabled={isSubmitting || !selectedTime} // Desabilita se nenhum horário foi selecionado
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? "Agendando..." : "Confirmar Agendamento"}
@@ -376,51 +264,14 @@ const Agendamento = () => {
           </Card>
 
           {/* Resumo */}
-          {selectedSpecialty && (
+          {selectedSpecialty && selectedDoctor && selectedDate && selectedTime && (
             <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Resumo do Agendamento</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Resumo do Agendamento</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium">Especialidade</p>
-                    <p className="text-sm text-gray-600">{selectedSpecialty}</p>
-                  </div>
-                </div>
-
-                {selectedDoctor && (
-                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                    <User className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">Médico</p>
-                      <p className="text-sm text-gray-600">{selectedDoctorName}</p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedDate && (
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-                    <Calendar className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="font-medium">Data</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedTime && (
-                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Horário</p>
-                      <p className="text-sm text-gray-600">{selectedTime}</p>
-                    </div>
-                  </div>
-                )}
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg"><User className="h-5 w-5 text-blue-600" /><div><p className="font-medium">Especialidade</p><p className="text-sm text-gray-600">{selectedSpecialty}</p></div></div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg"><User className="h-5 w-5 text-green-600" /><div><p className="font-medium">Médico</p><p className="text-sm text-gray-600">{selectedDoctorName}</p></div></div>
+                <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg"><Calendar className="h-5 w-5 text-orange-600" /><div><p className="font-medium">Data</p><p className="text-sm text-gray-600">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}</p></div></div>
+                <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg"><Clock className="h-5 w-5 text-purple-600" /><div><p className="font-medium">Horário</p><p className="text-sm text-gray-600">{selectedTime}</p></div></div>
               </CardContent>
             </Card>
           )}
