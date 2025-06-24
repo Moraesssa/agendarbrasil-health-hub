@@ -1,6 +1,7 @@
 
 import React, { ReactElement } from 'react'
-import { render, RenderOptions, screen } from '@testing-library/react'
+import { render, RenderOptions } from '@testing-library/react'
+import { screen } from '@testing-library/dom'
 
 // Custom render function that includes providers if needed
 const customRender = (
