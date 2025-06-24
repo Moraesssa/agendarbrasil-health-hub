@@ -3,7 +3,7 @@ import { generateTimeSlots, getDefaultWorkingHours, DoctorConfig, TimeSlot } fro
 import { logger } from '@/utils/logger';
 
 // Interface para o médico, refletindo o que esperamos do Supabase
-interface Medico {
+export interface Medico {
   id: string; // user_id do perfil
   display_name: string | null;
 }

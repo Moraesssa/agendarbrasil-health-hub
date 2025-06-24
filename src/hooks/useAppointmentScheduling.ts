@@ -29,17 +29,7 @@ export const useAppointmentScheduling = () => {
     error: errorSpecialties
   } = useQuery<string[], Error>({
     queryKey: ['specialties'],
-    queryFn: async () => {
-      logger.info("Fetching specialties for appointment scheduling", "useAppointmentScheduling");
-      try {
-        const { data, error } = await supabase.rpc('get_specialties');
-        if (error) throw error;
-        return (data as string[] || []).sort();
-      } catch (err) {
-        logger.error("Error fetching specialties", "useAppointmentScheduling", err);
-        throw err;
-      }
-    },
+    queryFn: appointmentService.getSpecialties,
     staleTime: Infinity,
   });
 
@@ -75,7 +65,12 @@ export const useAppointmentScheduling = () => {
 
   // Mutação para agendar a consulta
   const { mutate: scheduleAppointment, isPending: isSubmitting } = useMutation({
-    mutationFn: appointmentService.scheduleAppointment,
+    mutationFn: (appointmentData: {
+      paciente_id: string;
+      medico_id: string;
+      data_consulta: string;
+      tipo_consulta: string;
+    }) => appointmentService.scheduleAppointment(appointmentData),
     onSuccess: () => {
       toast({
         title: "Consulta Agendada!",

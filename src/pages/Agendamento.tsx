@@ -1,152 +1,52 @@
-import { useState, useEffect } from "react";
-import { Calendar, Clock, User, ArrowLeft, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { generateTimeSlots, getDefaultWorkingHours, type TimeSlot, type DoctorConfig } from "@/utils/timeSlotUtils";
-import { logger } from "@/utils/logger";
-
-// Interface para o médico, refletindo o que esperamos do Supabase
-interface Medico {
-  id: string; // user_id do perfil
-  display_name: string | null;
-}
+import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
+import { SpecialtySelect } from "@/components/scheduling/SpecialtySelect";
+import { DoctorSelect } from "@/components/scheduling/DoctorSelect";
+import { DateSelect } from "@/components/scheduling/DateSelect";
+import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
+import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
 
 const Agendamento = () => {
-  const { user, userData } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  // Estados do formulário
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");
-  const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-
-  // Busca de especialidades com React Query
   const {
-    data: specialties,
-    isLoading: isLoadingSpecialties,
-    isError: isErrorSpecialties,
-    error: errorSpecialties
-  } = useQuery<string[], Error>({
-    queryKey: ['specialties'],
-    queryFn: async () => {
-      logger.info("Fetching specialties for appointment scheduling", "Agendamento");
-      try {
-        // Assumindo que existe uma RPC no Supabase para retornar as especialidades
-        // Se não houver, você pode buscar diretamente da tabela 'medicos' e processar
-        const { data, error } = await supabase.rpc('get_specialties');
-
-        if (error) throw error;
-        
-        return (data as string[] || []).sort();
-      } catch (err) {
-        logger.error("Error fetching specialties", "Agendamento", err);
-        throw err;
-      }
-    },
-    staleTime: Infinity, // Especialidades raramente mudam
-    enabled: !userData, // Só busca se o usuário não estiver carregado com tipo
-  });
-
-  // Busca de médicos por especialidade selecionada
-  const {
-    data: doctors,
-    isLoading: isLoadingDoctors,
-    isError: isErrorDoctors,
-    error: errorDoctors
-  } = useQuery<Medico[], Error>({
-    queryKey: ['doctors', selectedSpecialty],
-    queryFn: () => {
-      if (!selectedSpecialty) return [];
-      return appointmentService.getDoctorsBySpecialty(selectedSpecialty);
-    },
-    enabled: !!selectedSpecialty, 
-  });
-
-  // Busca de horários disponíveis para médico e data selecionados
-  const {
-    data: availableTimeSlots,
-    isLoading: isLoadingTimeSlots,
-    isError: isErrorTimeSlots,
-    error: errorTimeSlots
-  } = useQuery<TimeSlot[], Error>({
-    queryKey: ['timeSlots', selectedDoctor, selectedDate],
-    queryFn: () => {
-      if (!selectedDoctor || !selectedDate) return [];
-      return appointmentService.getAvailableTimeSlots(selectedDoctor, selectedDate);
-    },
-    enabled: !!selectedDoctor && !!selectedDate,
-  });
-
-  // Mutação para agendar a consulta
-  const { mutate: scheduleAppointment, isPending: isSubmitting } = useMutation({
-    mutationFn: appointmentService.scheduleAppointment,
-    onSuccess: () => {
-      toast({
-        title: "Consulta Agendada!",
-        description: `Sua consulta foi agendada com sucesso para ${selectedDate} às ${selectedTime}.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['consultas'] }); 
-      navigate("/agenda-paciente");
-    },
-    onError: (error: Error) => {
-      console.error("Erro ao agendar consulta:", error);
-      toast({
-        title: "Erro no Agendamento",
-        description: error.message || "Não foi possível agendar sua consulta. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Handlers para resetar seleções ao mudar de campo
-  const handleSpecialtyChange = (specialty: string) => {
-    setSelectedSpecialty(specialty);
-    setSelectedDoctor("");
-    setSelectedDate("");
-    setSelectedTime("");
-    // Não precisa limpar availableTimeSlots aqui, pois o query é desabilitado
-  };
-
-  const handleDoctorChange = (doctorId: string) => {
-    setSelectedDoctor(doctorId);
-    setSelectedDate("");
-    setSelectedTime("");
-  };
-
-  const handleDateChange = (date: string) => {
-    setSelectedDate(date);
-    setSelectedTime("");
-  };
-
-  const handleAgendamento = () => {
-    if (!user) {
-      toast({ title: "Erro", description: "Você precisa estar logado para agendar.", variant: "destructive" });
-      return;
-    }
-    if (!selectedSpecialty || !selectedDoctor || !selectedDate || !selectedTime) {
-      toast({ title: "Erro", description: "Por favor, preencha todos os campos", variant: "destructive" });
-      return;
-    }
-
-    const dataHoraConsulta = new Date(`${selectedDate}T${selectedTime}:00`);
-    scheduleAppointment({
-      paciente_id: user.id,
-      medico_id: selectedDoctor,
-      data_consulta: dataHoraConsulta.toISOString(),
-      tipo_consulta: selectedSpecialty,
-    });
-  };
-  
-  const selectedDoctorName = doctors?.find(doc => doc.id === selectedDoctor)?.display_name;
+    // State
+    selectedSpecialty,
+    selectedDoctor,
+    selectedDate,
+    selectedTime,
+    selectedDoctorName,
+    
+    // Data
+    specialties,
+    doctors,
+    availableTimeSlots,
+    
+    // Loading states
+    isLoadingSpecialties,
+    isLoadingDoctors,
+    isLoadingTimeSlots,
+    isSubmitting,
+    
+    // Error states
+    isErrorSpecialties,
+    isErrorDoctors,
+    isErrorTimeSlots,
+    errorSpecialties,
+    errorDoctors,
+    errorTimeSlots,
+    
+    // Handlers
+    handleSpecialtyChange,
+    handleDoctorChange,
+    handleDateChange,
+    setSelectedTime,
+    handleAgendamento,
+  } = useAppointmentScheduling();
 
   // Tratamento de erros nas buscas
   if (isErrorSpecialties) return <div className="text-red-500 text-center p-8">Erro ao carregar especialidades: {(errorSpecialties as Error).message}</div>;
@@ -170,92 +70,46 @@ const Agendamento = () => {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5" />
                 Dados da Consulta
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Especialidade */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Especialidade</label>
-                <select 
-                  className="w-full p-3 border rounded-lg" 
-                  value={selectedSpecialty} 
-                  onChange={(e) => handleSpecialtyChange(e.target.value)} 
-                  disabled={isLoadingSpecialties}
-                >
-                  <option value="">{isLoadingSpecialties ? "Carregando..." : "Selecione uma especialidade"}</option>
-                  {specialties?.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+              <SpecialtySelect
+                specialties={specialties}
+                selectedSpecialty={selectedSpecialty}
+                isLoading={isLoadingSpecialties}
+                onChange={handleSpecialtyChange}
+              />
 
-              {/* Médico */}
-              {selectedSpecialty && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Médico</label>
-                  <div className="relative">
-                    <select 
-                      className="w-full p-3 border rounded-lg appearance-none" 
-                      value={selectedDoctor} 
-                      onChange={(e) => handleDoctorChange(e.target.value)} 
-                      disabled={isLoadingDoctors || !doctors || doctors.length === 0}
-                    >
-                      <option value="">{isLoadingDoctors ? "Carregando médicos..." : doctors?.length === 0 ? "Nenhum médico encontrado" : "Selecione um médico"}</option>
-                      {doctors?.map(d => <option key={d.id} value={d.id}>{d.display_name}</option>)}
-                    </select>
-                    {isLoadingDoctors && <Loader2 className="animate-spin absolute right-3 top-3.5 h-5 w-5 text-gray-400" />}
-                  </div>
-                </div>
-              )}
+              <DoctorSelect
+                doctors={doctors}
+                selectedDoctor={selectedDoctor}
+                selectedSpecialty={selectedSpecialty}
+                isLoading={isLoadingDoctors}
+                onChange={handleDoctorChange}
+              />
 
-              {/* Data */}
-              {selectedDoctor && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Data</label>
-                  <input 
-                    type="date" 
-                    className="w-full p-3 border rounded-lg" 
-                    value={selectedDate} 
-                    onChange={(e) => handleDateChange(e.target.value)} 
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-              )}
+              <DateSelect
+                selectedDate={selectedDate}
+                selectedDoctor={selectedDoctor}
+                onChange={handleDateChange}
+              />
 
-              {/* Horário */}
-              {selectedDate && selectedDoctor && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Horário {isLoadingTimeSlots && "(Carregando...)"}
-                  </label>
-                  {isLoadingTimeSlots ? (
-                    <div className="flex justify-center p-4"><Loader2 className="animate-spin h-6 w-6 text-blue-600" /></div>
-                  ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {availableTimeSlots?.length === 0 && !isLoadingTimeSlots && (
-                        <p className="col-span-full text-center text-gray-500">Nenhum horário disponível.</p>
-                      )}
-                      {availableTimeSlots?.map((slot: TimeSlot) => (
-                        <Button 
-                          key={slot.time} 
-                          variant={selectedTime === slot.time ? "default" : "outline"} 
-                          onClick={() => setSelectedTime(slot.time)} 
-                          disabled={!slot.available}
-                          className={`text-sm ${!slot.available ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400" : ""}`}
-                        >
-                          {slot.time}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              <TimeSlotGrid
+                timeSlots={availableTimeSlots}
+                selectedTime={selectedTime}
+                selectedDate={selectedDate}
+                selectedDoctor={selectedDoctor}
+                isLoading={isLoadingTimeSlots}
+                onChange={setSelectedTime}
+              />
               
               <Button 
                 onClick={handleAgendamento} 
                 className="w-full bg-blue-600 hover:bg-blue-700" 
                 size="lg" 
-                disabled={isSubmitting || !selectedTime} // Desabilita se nenhum horário foi selecionado
+                disabled={isSubmitting || !selectedTime}
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? "Agendando..." : "Confirmar Agendamento"}
@@ -263,18 +117,12 @@ const Agendamento = () => {
             </CardContent>
           </Card>
 
-          {/* Resumo */}
-          {(selectedSpecialty && selectedDoctor && selectedDate && selectedTime) && (
-            <Card className="shadow-lg">
-              <CardHeader><CardTitle>Resumo do Agendamento</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg"><User className="h-5 w-5 text-blue-600" /><div><p className="font-medium">Especialidade</p><p className="text-sm text-gray-600">{selectedSpecialty}</p></div></div>
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg"><User className="h-5 w-5 text-green-600" /><div><p className="font-medium">Médico</p><p className="text-sm text-gray-600">{selectedDoctorName}</p></div></div>
-                <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg"><Calendar className="h-5 w-5 text-orange-600" /><div><p className="font-medium">Data</p><p className="text-sm text-gray-600">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}</p></div></div>
-                <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg"><Clock className="h-5 w-5 text-purple-600" /><div><p className="font-medium">Horário</p><p className="text-sm text-gray-600">{selectedTime}</p></div></div>
-              </CardContent>
-            </Card>
-          )}
+          <AppointmentSummary
+            selectedSpecialty={selectedSpecialty}
+            selectedDoctorName={selectedDoctorName}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+          />
         </div>
       </main>
     </div>
