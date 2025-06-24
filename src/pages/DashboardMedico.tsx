@@ -1,5 +1,5 @@
-
-import { Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -10,27 +10,118 @@ import { PacientesRecentes } from "@/components/dashboard/PacientesRecentes";
 import { AlertsSection } from "@/components/dashboard/AlertsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+// Tipagem para os dados do dashboard
+interface DashboardData {
+  metrics: {
+    pacientesHoje: number;
+    receitaSemanal: number;
+    proximasConsultas: number;
+    tempoMedio: number;
+  };
+  consultasChart: { dia: string; consultas: number }[];
+  tiposConsultaChart: { tipo: string; valor: number; cor: string }[];
+}
 
 const DashboardMedico = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, userData } = useAuth();
+  
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mensagem de boas-vindas quando o médico acessa o dashboard
     toast({
       title: "Bem-vindo ao Dashboard Médico!",
       description: "Aqui você pode gerenciar suas consultas e acompanhar métricas importantes.",
     });
   }, [toast]);
+  
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user || !userData) return;
+      setLoading(true);
 
-  const handleQuickNavigation = (route: string, title: string) => {
-    navigate(route);
-    toast({
-      title: `Navegando para ${title}`,
-      description: "Carregando página...",
-    });
-  };
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Inicia na segunda
+      startOfWeek.setUTCHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setUTCHours(23, 59, 59, 999);
+
+      try {
+        const { data: weeklyAppointments, error } = await supabase
+          .from('consultas')
+          .select('data_consulta, tipo_consulta, status, medico_id, medicos!inner(configuracoes)')
+          .eq('medico_id', user.id)
+          .gte('data_consulta', startOfWeek.toISOString())
+          .lte('data_consulta', endOfWeek.toISOString());
+        
+        if (error) throw error;
+
+        // Processar dados para as métricas
+        const todayString = new Date().toISOString().split('T')[0];
+        const todayAppointments = weeklyAppointments.filter(c => c.data_consulta.startsWith(todayString));
+        
+        const valorConsulta = (userData as any).configuracoes?.valorConsulta || 100;
+        const receitaSemanal = weeklyAppointments
+          .filter(c => c.status === 'realizada' || c.status === 'confirmada')
+          .length * valorConsulta;
+
+        const proximasConsultas = todayAppointments.filter(c => new Date(c.data_consulta) > new Date()).length;
+
+        const metrics = {
+          pacientesHoje: todayAppointments.length,
+          receitaSemanal,
+          proximasConsultas,
+          tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 30,
+        };
+
+        // Processar dados para o gráfico de consultas
+        const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+        const consultasSemanais = weekDays.map(dia => ({ dia, consultas: 0 }));
+        weeklyAppointments.forEach(c => {
+          const dayIndex = new Date(c.data_consulta).getDay();
+          consultasSemanais[dayIndex].consultas++;
+        });
+
+        // Processar dados para o gráfico de tipos de consulta
+        const tiposMap: { [key: string]: number } = {};
+        weeklyAppointments.forEach(c => {
+          const tipo = c.tipo_consulta || 'Outro';
+          tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
+        });
+
+        const totalConsultas = weeklyAppointments.length;
+        const colors = ["#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#f97316"];
+        const tiposConsultaChart = Object.entries(tiposMap).map(([tipo, valor], index) => ({
+          tipo,
+          valor: totalConsultas > 0 ? parseFloat(((valor / totalConsultas) * 100).toFixed(2)) : 0,
+          cor: colors[index % colors.length]
+        }));
+        
+        setDashboardData({
+          metrics,
+          consultasChart: consultasSemanais.slice(1).concat(consultasSemanais.slice(0, 1)), // Começar na Segunda
+          tiposConsultaChart
+        });
+        
+      } catch (error) {
+        console.error("Erro ao buscar dados do dashboard:", error);
+        toast({ title: "Erro", description: "Não foi possível carregar os dados do dashboard.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, [user, userData, toast]);
+
 
   return (
     <SidebarProvider>
@@ -55,36 +146,11 @@ const DashboardMedico = () => {
 
           <main className="flex-1 overflow-auto">
             <div className="container max-w-7xl mx-auto p-6 space-y-8">
-              {/* Quick Navigation Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div 
-                  className="p-4 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors shadow-lg"
-                  onClick={() => handleQuickNavigation("/agenda-medico", "Agenda Médica")}
-                >
-                  <h3 className="font-semibold">Agenda do Dia</h3>
-                  <p className="text-sm opacity-90">Visualizar consultas de hoje</p>
-                </div>
-                <div 
-                  className="p-4 bg-green-500 text-white rounded-lg cursor-pointer hover:bg-green-600 transition-colors shadow-lg"
-                  onClick={() => handleQuickNavigation("/agendamento", "Novo Agendamento")}
-                >
-                  <h3 className="font-semibold">Nova Consulta</h3>
-                  <p className="text-sm opacity-90">Agendar para paciente</p>
-                </div>
-                <div 
-                  className="p-4 bg-purple-500 text-white rounded-lg cursor-pointer hover:bg-purple-600 transition-colors shadow-lg"
-                  onClick={() => handleQuickNavigation("/historico", "Histórico")}
-                >
-                  <h3 className="font-semibold">Histórico</h3>
-                  <p className="text-sm opacity-90">Ver atendimentos anteriores</p>
-                </div>
-              </div>
-
-              <MetricsCards />
+              <MetricsCards data={dashboardData?.metrics} loading={loading} />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <ConsultasChart />
-                <TiposConsultaChart />
+                <ConsultasChart data={dashboardData?.consultasChart} loading={loading} />
+                <TiposConsultaChart data={dashboardData?.tiposConsultaChart} loading={loading} />
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
