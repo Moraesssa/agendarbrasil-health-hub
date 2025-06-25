@@ -15,7 +15,6 @@ interface Doctor {
   // Assumimos que a busca no perfil via chave estrangeira retorna este objeto
   profiles: {
     display_name: string | null;
-    email: string;
   } | null;
 }
 
@@ -40,8 +39,8 @@ export const useAppointmentScheduling = () => {
 
   // Estados principais
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
-  const [selectedState, setSelectedState] = useState<string>(""); // NOVO ESTADO
-  const [selectedCity, setSelectedCity] = useState<string>(""); // NOVO ESTADO
+  const [selectedState, setSelectedState] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("");
   const [selectedDoctor, setSelectedDoctor] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
@@ -49,14 +48,14 @@ export const useAppointmentScheduling = () => {
 
   // Dados para os seletores
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [states, setStates] = useState<StateInfo[]>([]); // NOVO ESTADO
-  const [cities, setCities] = useState<CityInfo[]>([]); // NOVO ESTADO
+  const [states, setStates] = useState<StateInfo[]>([]);
+  const [cities, setCities] = useState<CityInfo[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
 
   // Estados de loading
   const [isLoadingSpecialties, setIsLoadingSpecialties] = useState(false);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false); // NOVO ESTADO
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,7 +71,6 @@ export const useAppointmentScheduling = () => {
     if (selectedState) {
       loadAvailableCities(selectedState);
     }
-    // Limpar seleções seguintes ao trocar de estado
     setSelectedCity("");
     setDoctors([]);
     setSelectedDoctor("");
@@ -85,7 +83,6 @@ export const useAppointmentScheduling = () => {
     } else {
       setDoctors([]);
     }
-    // Limpar seleções seguintes ao trocar de filtro
     setSelectedDoctor("");
   }, [selectedSpecialty, selectedState, selectedCity]);
 
@@ -101,7 +98,7 @@ export const useAppointmentScheduling = () => {
     setIsLoadingSpecialties(true);
     try {
       const specialtiesData = await specialtyService.getAllSpecialties();
-      if (specialtiesData.length === 0) throw new Error("Nenhuma especialidade encontrada.");
+      if (!specialtiesData || specialtiesData.length === 0) throw new Error("Nenhuma especialidade encontrada.");
       setSpecialties(specialtiesData);
     } catch (error) {
       toast({ title: "Erro ao carregar especialidades", description: (error as Error).message, variant: "destructive" });
@@ -110,7 +107,6 @@ export const useAppointmentScheduling = () => {
     }
   };
   
-  // NOVA FUNÇÃO para carregar estados disponíveis
   const loadAvailableStates = async () => {
     setIsLoadingLocations(true);
     try {
@@ -124,9 +120,9 @@ export const useAppointmentScheduling = () => {
     }
   };
 
-  // NOVA FUNÇÃO para carregar cidades de um estado
   const loadAvailableCities = async (stateUf: string) => {
     setIsLoadingLocations(true);
+    setCities([]);
     try {
       const { data, error } = await supabase.rpc('get_available_cities', { state_uf: stateUf });
       if (error) throw error;
@@ -138,26 +134,44 @@ export const useAppointmentScheduling = () => {
     }
   };
   
-  // FUNÇÃO MODIFICADA para incluir filtros de localização
   const loadDoctors = async (specialty: string, state: string, city: string) => {
     console.log(`🔍 Carregando médicos para ${specialty} em ${city}, ${state}`);
     setIsLoadingDoctors(true);
     setDoctors([]);
     try {
-      let query = supabase
+      const { data: doctorsData, error } = await supabase
         .from('medicos')
-        .select(`id, user_id, especialidades, telefone, crm, profiles!medicos_user_id_fkey(display_name, email)`)
+        .select(`
+          id,
+          user_id,
+          especialidades,
+          telefone,
+          crm,
+          profiles!medicos_user_id_fkey (
+            display_name
+          )
+        `) // ===== CORREÇÃO AQUI: removido o campo 'email' =====
         .contains('especialidades', [specialty])
         .eq('endereco->>uf', state)
         .eq('endereco->>cidade', city);
-
-      const { data: doctorsData, error } = await query;
       
-      if (error) throw new Error(`Erro ao carregar médicos: ${error.message}`);
-      if (!doctorsData || doctorsData.length === 0) {
-        throw new Error(`Nenhum médico encontrado para "${specialty}" em ${city}, ${state}.`);
+      if (error) {
+        throw new Error(`Erro de rede ou permissão: ${error.message}`);
       }
-      setDoctors(doctorsData as Doctor[]);
+
+      if (!doctorsData || doctorsData.length === 0) {
+        // Isso agora é tratado com uma mensagem amigável, não um erro
+        toast({
+          title: "Nenhum resultado",
+          description: `Não foram encontrados médicos para "${specialty}" em ${city}, ${state}.`,
+          variant: "default",
+        });
+        setDoctors([]); // Garante que a lista está vazia
+      } else {
+        console.log("👨‍⚕️ Médicos da especialidade:", doctorsData);
+        setDoctors(doctorsData as Doctor[]);
+      }
+
     } catch (error) {
       toast({ title: "Erro ao carregar médicos", description: (error as Error).message, variant: "destructive" });
     } finally {
@@ -166,24 +180,36 @@ export const useAppointmentScheduling = () => {
   };
 
   const loadAvailableTimeSlots = async (doctorId: string, date: string) => {
-    // (Esta função permanece a mesma, sem alterações)
-    // ...
+    // ...código sem alteração...
   };
 
   const handleAgendamento = async () => {
-    // (Esta função permanece a mesma, sem alterações)
-    // ...
+    // ...código sem alteração...
   };
 
-  // Handlers para os novos selects
   const handleStateChange = (state: string) => {
     setSelectedState(state);
-    // Demais resets já são feitos pelo useEffect
   };
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
-    // Demais resets já são feitos pelo useEffect
+  };
+
+  const handleDoctorChange = (doctorId: string) => {
+    setSelectedDoctor(doctorId);
+    const doctor = doctors.find(d => d.user_id === doctorId);
+    if (doctor?.profiles?.display_name) {
+      setSelectedDoctorName(doctor.profiles.display_name);
+    }
+    setSelectedDate("");
+  };
+
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+  };
+  
+  const handleSpecialtyChange = (specialty: string) => {
+    setSelectedSpecialty(specialty);
   };
 
   return {
@@ -199,12 +225,13 @@ export const useAppointmentScheduling = () => {
     isLoadingSpecialties, isLoadingLocations, isLoadingDoctors, isLoadingTimeSlots, isSubmitting,
     
     // Handlers
-    handleSpecialtyChange: setSelectedSpecialty,
+    handleSpecialtyChange,
     handleStateChange,
     handleCityChange,
-    handleDoctorChange: setSelectedDoctor,
-    handleDateChange: setSelectedDate,
+    handleDoctorChange,
+    handleDateChange,
     setSelectedTime,
     handleAgendamento,
   };
 };
+
