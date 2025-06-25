@@ -49,9 +49,62 @@ const Agendamento = () => {
   } = useAppointmentScheduling();
 
   // Tratamento de erros nas buscas
-  if (isErrorSpecialties) return <div className="text-red-500 text-center p-8">Erro ao carregar especialidades: {(errorSpecialties as Error).message}</div>;
-  if (isErrorDoctors) return <div className="text-red-500 text-center p-8">Erro ao carregar médicos: {(errorDoctors as Error).message}</div>;
-  if (isErrorTimeSlots) return <div className="text-red-500 text-center p-8">Erro ao carregar horários: {(errorTimeSlots as Error).message}</div>;
+  if (isErrorSpecialties) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+        <Header />
+        <div className="container mx-auto px-4 py-6">
+          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
+            <h2 className="text-xl font-semibold mb-2">Erro ao carregar especialidades</h2>
+            <p>{(errorSpecialties as Error)?.message || "Erro desconhecido"}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isErrorDoctors) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+        <Header />
+        <div className="container mx-auto px-4 py-6">
+          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
+            <h2 className="text-xl font-semibold mb-2">Erro ao carregar médicos</h2>
+            <p>{(errorDoctors as Error)?.message || "Erro desconhecido"}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isErrorTimeSlots) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+        <Header />
+        <div className="container mx-auto px-4 py-6">
+          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
+            <h2 className="text-xl font-semibold mb-2">Erro ao carregar horários</h2>
+            <p>{(errorTimeSlots as Error)?.message || "Erro desconhecido"}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Verifica se todos os campos obrigatórios estão preenchidos
+  const isFormComplete = selectedSpecialty && selectedDoctor && selectedDate && selectedTime;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -109,7 +162,7 @@ const Agendamento = () => {
                 onClick={handleAgendamento} 
                 className="w-full bg-blue-600 hover:bg-blue-700" 
                 size="lg" 
-                disabled={isSubmitting || !selectedTime}
+                disabled={isSubmitting || !isFormComplete}
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? "Agendando..." : "Confirmar Agendamento"}
