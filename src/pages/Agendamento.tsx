@@ -1,137 +1,34 @@
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
 import { SpecialtySelect } from "@/components/scheduling/SpecialtySelect";
+import { StateSelect } from "@/components/scheduling/StateSelect"; // NOVO
+import { CitySelect } from "@/components/scheduling/CitySelect";   // NOVO
 import { DoctorSelect } from "@/components/scheduling/DoctorSelect";
 import { DateSelect } from "@/components/scheduling/DateSelect";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
 import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
-import { AuthDebugInfo } from "@/components/AuthDebugInfo";
 
 const Agendamento = () => {
   const navigate = useNavigate();
   const {
-    // State
-    selectedSpecialty,
-    selectedDoctor,
-    selectedDate,
-    selectedTime,
-    selectedDoctorName,
+    // Estados
+    selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedDoctorName,
     
-    // Data
-    specialties,
-    doctors,
-    availableTimeSlots,
+    // Dados
+    specialties, states, cities, doctors, availableTimeSlots,
     
-    // Loading states
-    isLoadingSpecialties,
-    isLoadingDoctors,
-    isLoadingTimeSlots,
-    isSubmitting,
-    
-    // Error states
-    isErrorSpecialties,
-    isErrorDoctors,
-    isErrorTimeSlots,
-    errorSpecialties,
-    errorDoctors,
-    errorTimeSlots,
+    // Loading
+    isLoadingSpecialties, isLoadingLocations, isLoadingDoctors, isLoadingTimeSlots, isSubmitting,
     
     // Handlers
-    handleSpecialtyChange,
-    handleDoctorChange,
-    handleDateChange,
-    setSelectedTime,
-    handleAgendamento,
+    handleSpecialtyChange, handleStateChange, handleCityChange, handleDoctorChange, handleDateChange, setSelectedTime, handleAgendamento,
   } = useAppointmentScheduling();
 
-  // Tratamento de erros nas buscas
-  if (isErrorSpecialties) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-        <Header />
-        <div className="container mx-auto px-4 py-6">
-          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <AuthDebugInfo />
-          <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
-            <h2 className="text-xl font-semibold mb-2">Erro ao carregar especialidades</h2>
-            <p className="mb-4">{(errorSpecialties as Error)?.message || "Erro desconhecido"}</p>
-            <div className="text-sm text-gray-600">
-              <p>Possíveis causas:</p>
-              <ul className="list-disc list-inside mt-2">
-                <li>Você não está logado no sistema</li>
-                <li>Não há médicos cadastrados com especialidades</li>
-                <li>Problema de conexão com o banco de dados</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isErrorDoctors) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-        <Header />
-        <div className="container mx-auto px-4 py-6">
-          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <AuthDebugInfo />
-          <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
-            <h2 className="text-xl font-semibold mb-2">Erro ao carregar médicos</h2>
-            <p className="mb-4">{(errorDoctors as Error)?.message || "Erro desconhecido"}</p>
-            <div className="text-sm text-gray-600">
-              <p>Possíveis causas:</p>
-              <ul className="list-disc list-inside mt-2">
-                <li>Nenhum médico encontrado para a especialidade selecionada</li>
-                <li>Problema de permissão para acessar dados dos médicos</li>
-                <li>Especialidade selecionada não possui médicos cadastrados</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isErrorTimeSlots) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-        <Header />
-        <div className="container mx-auto px-4 py-6">
-          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <AuthDebugInfo />
-          <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
-            <h2 className="text-xl font-semibold mb-2">Erro ao carregar horários</h2>
-            <p className="mb-4">{(errorTimeSlots as Error)?.message || "Erro desconhecido"}</p>
-            <div className="text-sm text-gray-600">
-              <p>Possíveis causas:</p>
-              <ul className="list-disc list-inside mt-2">
-                <li>Médico não configurou horários de atendimento</li>
-                <li>Data selecionada não possui horários disponíveis</li>
-                <li>Problema ao acessar configurações do médico</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Verifica se todos os campos obrigatórios estão preenchidos
-  const isFormComplete = selectedSpecialty && selectedDoctor && selectedDate && selectedTime;
+  const isFormComplete = selectedSpecialty && selectedState && selectedCity && selectedDoctor && selectedDate && selectedTime;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -143,17 +40,15 @@ const Agendamento = () => {
             Voltar
           </Button>
           <h1 className="text-3xl font-bold text-blue-900">Agendar Consulta</h1>
-          <p className="text-gray-600">Escolha a especialidade, médico e horário</p>
+          <p className="text-gray-600">Encontre o profissional ideal para você</p>
         </div>
-
-        <AuthDebugInfo />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowLeft className="h-5 w-5" />
-                Dados da Consulta
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                Filtrar e Agendar
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -163,28 +58,45 @@ const Agendamento = () => {
                 isLoading={isLoadingSpecialties}
                 onChange={handleSpecialtyChange}
               />
+              
+              {/* --- NOVOS COMPONENTES DE LOCALIZAÇÃO --- */}
+              <StateSelect
+                states={states}
+                selectedState={selectedState}
+                isLoading={isLoadingLocations}
+                onChange={handleStateChange}
+                disabled={!selectedSpecialty}
+              />
+
+              <CitySelect
+                cities={cities}
+                selectedCity={selectedCity}
+                isLoading={isLoadingLocations}
+                onChange={handleCityChange}
+                disabled={!selectedState}
+              />
+              {/* -------------------------------------- */}
 
               <DoctorSelect
                 doctors={doctors}
                 selectedDoctor={selectedDoctor}
-                selectedSpecialty={selectedSpecialty}
                 isLoading={isLoadingDoctors}
                 onChange={handleDoctorChange}
+                disabled={!selectedCity}
               />
 
               <DateSelect
                 selectedDate={selectedDate}
-                selectedDoctor={selectedDoctor}
                 onChange={handleDateChange}
+                disabled={!selectedDoctor}
               />
 
               <TimeSlotGrid
                 timeSlots={availableTimeSlots}
                 selectedTime={selectedTime}
-                selectedDate={selectedDate}
-                selectedDoctor={selectedDoctor}
                 isLoading={isLoadingTimeSlots}
                 onChange={setSelectedTime}
+                disabled={!selectedDate}
               />
               
               <Button 
@@ -204,6 +116,8 @@ const Agendamento = () => {
             selectedDoctorName={selectedDoctorName}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
+            selectedCity={selectedCity} // Passa a cidade para o resumo
+            selectedState={selectedState} // Passa o estado para o resumo
           />
         </div>
       </main>
