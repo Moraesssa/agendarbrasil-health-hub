@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
 import { SpecialtySelect } from "@/components/scheduling/SpecialtySelect";
-import { StateSelect } from "@/components/scheduling/StateSelect"; // NOVO
-import { CitySelect } from "@/components/scheduling/CitySelect";   // NOVO
+// import { StateSelect } from "@/components/scheduling/StateSelect"; // TEMPORARIAMENTE DESATIVADO
+// import { CitySelect } from "@/components/scheduling/CitySelect";   // TEMPORARIAMENTE DESATIVADO
 import { DoctorSelect } from "@/components/scheduling/DoctorSelect";
 import { DateSelect } from "@/components/scheduling/DateSelect";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
@@ -28,7 +28,8 @@ const Agendamento = () => {
     handleSpecialtyChange, handleStateChange, handleCityChange, handleDoctorChange, handleDateChange, setSelectedTime, handleAgendamento,
   } = useAppointmentScheduling();
 
-  const isFormComplete = selectedSpecialty && selectedState && selectedCity && selectedDoctor && selectedDate && selectedTime;
+  // ATENÇÃO: A condição foi simplificada para o teste
+  const isFormComplete = selectedSpecialty && selectedDoctor && selectedDate && selectedTime;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -39,7 +40,7 @@ const Agendamento = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-bold text-blue-900">Agendar Consulta</h1>
+          <h1 className="text-3xl font-bold text-blue-900">Agendar Consulta (MODO DE TESTE)</h1>
           <p className="text-gray-600">Encontre o profissional ideal para você</p>
         </div>
 
@@ -59,7 +60,8 @@ const Agendamento = () => {
                 onChange={handleSpecialtyChange}
               />
               
-              {/* --- NOVOS COMPONENTES DE LOCALIZAÇÃO --- */}
+              {/* --- COMPONENTES DE LOCALIZAÇÃO TEMPORARIAMENTE DESATIVADOS --- */}
+              {/*
               <StateSelect
                 states={states}
                 selectedState={selectedState}
@@ -75,6 +77,7 @@ const Agendamento = () => {
                 onChange={handleCityChange}
                 disabled={!selectedState}
               />
+              */}
               {/* -------------------------------------- */}
 
               <DoctorSelect
@@ -82,7 +85,7 @@ const Agendamento = () => {
                 selectedDoctor={selectedDoctor}
                 isLoading={isLoadingDoctors}
                 onChange={handleDoctorChange}
-                disabled={!selectedCity}
+                disabled={!selectedSpecialty} // Mudança temporária na condição
               />
 
               <DateSelect
@@ -116,8 +119,8 @@ const Agendamento = () => {
             selectedDoctorName={selectedDoctorName}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            selectedCity={selectedCity} // Passa a cidade para o resumo
-            selectedState={selectedState} // Passa o estado para o resumo
+            selectedCity={"(Teste)"}
+            selectedState={"(Teste)"}
           />
         </div>
       </main>
