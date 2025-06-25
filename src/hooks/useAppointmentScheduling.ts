@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,13 +93,31 @@ export const useAppointmentScheduling = () => {
         throw new Error(`Erro ao carregar especialidades: ${specialtiesError.message}`);
       }
 
-      console.log("🏥 Especialidades encontradas:", specialtiesData);
+      console.log("🏥 Especialidades RPC response:", specialtiesData, "Tipo:", typeof specialtiesData);
 
-      if (!specialtiesData || specialtiesData.length === 0) {
+      // Tratamento defensivo para garantir que sempre temos um array
+      let processedSpecialties: string[] = [];
+      
+      if (specialtiesData) {
+        if (Array.isArray(specialtiesData)) {
+          // Se já é um array, usar diretamente
+          processedSpecialties = specialtiesData.filter(Boolean);
+        } else if (typeof specialtiesData === 'string') {
+          // Se é uma string, converter para array
+          processedSpecialties = [specialtiesData];
+        } else {
+          console.warn("⚠️ Tipo inesperado de dados de especialidades:", typeof specialtiesData, specialtiesData);
+          processedSpecialties = [];
+        }
+      }
+
+      console.log("🏥 Especialidades processadas:", processedSpecialties);
+
+      if (processedSpecialties.length === 0) {
         throw new Error("Nenhuma especialidade encontrada. Verifique se há médicos com especialidades cadastradas.");
       }
 
-      setSpecialties(specialtiesData);
+      setSpecialties(processedSpecialties.sort());
 
     } catch (error) {
       console.error("❌ Erro completo:", error);
