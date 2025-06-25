@@ -86,39 +86,21 @@ export const useAppointmentScheduling = () => {
     setErrorSpecialties(null);
 
     try {
-      // Primeiro, vamos verificar se há médicos cadastrados
-      const { data: medicosData, error: medicosError } = await supabase
-        .from('medicos')
-        .select('especialidades')
-        .not('especialidades', 'is', null);
+      // Usar a função RPC para obter especialidades
+      const { data: specialtiesData, error: specialtiesError } = await supabase.rpc('get_specialties');
 
-      if (medicosError) {
-        console.error("❌ Erro ao buscar médicos:", medicosError);
-        throw new Error(`Erro ao carregar médicos: ${medicosError.message}`);
+      if (specialtiesError) {
+        console.error("❌ Erro ao buscar especialidades:", specialtiesError);
+        throw new Error(`Erro ao carregar especialidades: ${specialtiesError.message}`);
       }
 
-      console.log("👨‍⚕️ Médicos encontrados:", medicosData);
+      console.log("🏥 Especialidades encontradas:", specialtiesData);
 
-      if (!medicosData || medicosData.length === 0) {
-        throw new Error("Nenhum médico cadastrado no sistema. Verifique se há médicos com especialidades definidas.");
+      if (!specialtiesData || specialtiesData.length === 0) {
+        throw new Error("Nenhuma especialidade encontrada. Verifique se há médicos com especialidades cadastradas.");
       }
 
-      // Extrair especialidades únicas
-      const allSpecialties: string[] = [];
-      medicosData.forEach(medico => {
-        if (medico.especialidades && Array.isArray(medico.especialidades)) {
-          allSpecialties.push(...medico.especialidades);
-        }
-      });
-
-      const uniqueSpecialties = [...new Set(allSpecialties)].filter(Boolean);
-      console.log("🏥 Especialidades encontradas:", uniqueSpecialties);
-
-      if (uniqueSpecialties.length === 0) {
-        throw new Error("Nenhuma especialidade encontrada. Verifique se os médicos têm especialidades cadastradas.");
-      }
-
-      setSpecialties(uniqueSpecialties);
+      setSpecialties(specialtiesData);
 
     } catch (error) {
       console.error("❌ Erro completo:", error);
@@ -212,7 +194,7 @@ export const useAppointmentScheduling = () => {
       const { data: doctorConfig, error: configError } = await supabase
         .from('medicos')
         .select('configuracoes')
-        .eq('id', doctorId)
+        .eq('user_id', doctorId)
         .single();
 
       if (configError) {
@@ -292,7 +274,7 @@ export const useAppointmentScheduling = () => {
     setSelectedDoctor(doctorId);
     
     // Encontrar o nome do médico
-    const doctor = doctors.find(d => d.id === doctorId);
+    const doctor = doctors.find(d => d.user_id === doctorId);
     if (doctor?.profiles?.display_name) {
       setSelectedDoctorName(doctor.profiles.display_name);
     }
@@ -435,9 +417,12 @@ export const useAppointmentScheduling = () => {
     selectedTime,
     selectedDoctorName,
     
-    // Dados
+    // Dados - Convert doctors to the expected format for DoctorSelect
     specialties,
-    doctors,
+    doctors: doctors.map(doctor => ({
+      id: doctor.user_id, // Use user_id as the id for selection
+      display_name: doctor.profiles?.display_name || "Médico sem nome"
+    })),
     availableTimeSlots,
     
     // Estados de loading
