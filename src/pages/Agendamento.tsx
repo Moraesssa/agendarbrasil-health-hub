@@ -15,16 +15,9 @@ import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
 const Agendamento = () => {
   const navigate = useNavigate();
   const {
-    // Estados
     selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedDoctorName,
-    
-    // Dados
     specialties, states, cities, doctors, availableTimeSlots,
-    
-    // Loading
     isLoadingSpecialties, isLoadingLocations, isLoadingDoctors, isLoadingTimeSlots, isSubmitting,
-    
-    // Handlers
     handleSpecialtyChange, handleStateChange, handleCityChange, handleDoctorChange, handleDateChange, setSelectedTime, handleAgendamento,
   } = useAppointmentScheduling();
 
