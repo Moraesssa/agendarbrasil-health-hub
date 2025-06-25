@@ -312,7 +312,9 @@ export const useAppointmentScheduling = () => {
     setIsSubmitting(true);
 
     try {
-      // Verificar se o paciente existe na tabela pacientes
+      // A busca na tabela 'pacientes' pode ser removida se não for usada para outros fins,
+      // pois agora estamos usando user.id diretamente para a criação da consulta.
+      // Mantida por enquanto, caso seja usada em outra lógica não visível aqui.
       const { data: patientData, error: patientError } = await supabase
         .from('pacientes')
         .select('id')
@@ -323,31 +325,11 @@ export const useAppointmentScheduling = () => {
         throw new Error(`Erro ao verificar dados do paciente: ${patientError.message}`);
       }
 
-      let patientId = patientData?.id;
-
-      // Se o paciente não existe, criar registro
+      // Se o paciente não existe na tabela 'pacientes', ele ainda pode agendar.
+      // A lógica para criar um registro em 'pacientes' pode ser mantida se for um requisito.
       if (!patientData) {
-        console.log("👤 Criando registro de paciente...");
-        const { data: newPatient, error: createPatientError } = await supabase
-          .from('pacientes')
-          .insert({
-            user_id: user.id,
-            dados_pessoais: {
-              nome: userData.displayName || user.email,
-              email: user.email
-            },
-            contato: {
-              email: user.email
-            }
-          })
-          .select('id')
-          .single();
-
-        if (createPatientError) {
-          throw new Error(`Erro ao criar registro do paciente: ${createPatientError.message}`);
-        }
-
-        patientId = newPatient.id;
+        console.log("👤 Paciente não encontrado na tabela 'pacientes', mas prosseguindo com agendamento.");
+        // A lógica de criação de paciente pode ser mantida ou removida, dependendo da regra de negócio.
       }
 
       // Criar a consulta
@@ -356,7 +338,11 @@ export const useAppointmentScheduling = () => {
       const { data: appointment, error: appointmentError } = await supabase
         .from('consultas')
         .insert({
-          paciente_id: patientId,
+          // ===== A CORREÇÃO ESTÁ AQUI =====
+          // A RLS espera o ID do usuário autenticado (auth.uid()),
+          // que no código corresponde a `user.id`.
+          paciente_id: user.id,
+          // ================================
           medico_id: selectedDoctor,
           data_consulta: appointmentDateTime,
           tipo_consulta: selectedSpecialty,
