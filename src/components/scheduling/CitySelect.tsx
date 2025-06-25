@@ -15,7 +15,7 @@ export const CitySelect = ({ cities, selectedCity, isLoading, onChange, disabled
     <div className="space-y-2">
       <Label htmlFor="city-select">Cidade</Label>
       <div className="flex items-center gap-2">
-        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
         <Select
           value={selectedCity}
           onValueChange={onChange}
