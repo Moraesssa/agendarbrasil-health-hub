@@ -1,5 +1,14 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { generateTimeSlots, getDefaultWorkingHours, DoctorConfig, TimeSlot } from '@/utils/timeSlotUtils';
+import { 
+  generateTimeSlots, 
+  getDefaultWorkingHours, 
+  validateDoctorConfig,
+  normalizeToStartOfDay,
+  DoctorConfig, 
+  TimeSlot,
+  ExistingAppointment
+} from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
 // Interface para o médico, refletindo o que esperamos do Supabase
@@ -14,7 +23,6 @@ export const appointmentService = {
     logger.info("Fetching specialties", "AppointmentService");
     try {
       // Usando uma função de banco de dados (RPC) para retornar as especialidades
-      // Se não tiver essa função no Supabase, você precisará adaptar
       const { data, error } = await supabase.rpc('get_specialties');
 
       if (error) throw error;
@@ -39,7 +47,7 @@ export const appointmentService = {
           medicos!inner(especialidades)
         `)
         .eq('user_type', 'medico')
-        .contains('medicos.especialidades', [specialty]); // Busca médicos que contenham essa especialidade
+        .contains('medicos.especialidades', [specialty]);
 
       if (error) throw error;
       
@@ -59,57 +67,91 @@ export const appointmentService = {
     logger.info("Fetching available time slots", "AppointmentService", { doctorId, date });
     
     try {
-      // Busca a configuração do médico (horários, duração da consulta)
+      // Normaliza a data para evitar problemas de timezone
+      const normalizedDate = normalizeToStartOfDay(date);
+      
+      // Busca a configuração do médico
       const { data: doctorData, error: doctorError } = await supabase
         .from('medicos')
         .select('configuracoes')
         .eq('user_id', doctorId)
         .single();
 
-      if (doctorError) throw doctorError;
+      if (doctorError && doctorError.code !== 'PGRST116') { // PGRST116 = not found
+        throw doctorError;
+      }
 
-      // Define o início e o fim do dia para filtrar as consultas
-      const startOfDay = new Date(`${date}T00:00:00.000Z`); // Usando UTC para consistência
-      const endOfDay = new Date(`${date}T23:59:59.999Z`);
+      // Define o início e o fim do dia em UTC para filtrar as consultas
+      const startOfDay = new Date(normalizedDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(normalizedDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
       
       // Busca consultas existentes para o médico e a data selecionada
       const { data: appointments, error: appointmentsError } = await supabase
         .from('consultas')
-        .select('data_consulta') // Apenas a data/hora da consulta é necessária
+        .select('data_consulta, duracao_minutos')
         .eq('medico_id', doctorId)
         .gte('data_consulta', startOfDay.toISOString())
         .lte('data_consulta', endOfDay.toISOString())
-        .in('status', ['agendada', 'confirmada']); // Considera apenas consultas que ocupam horário
+        .in('status', ['agendada', 'confirmada']);
 
-      if (appointmentsError) throw appointmentsError;
+      if (appointmentsError) {
+        logger.error("Failed to fetch existing appointments", "AppointmentService", appointmentsError);
+        throw appointmentsError;
+      }
 
-      // Extrai os horários das consultas existentes para verificar a ocupação
-      const existingTimes = appointments.map(apt => {
-        const d = new Date(apt.data_consulta);
-        // Formata para HH:MM no fuso local da execução, ou pode ser UTC se preferir consistência
-        // Aqui usaremos local, pois o input date é baseado no fuso do navegador.
-        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-      });
+      // Converte para o formato esperado pelo utilitário
+      const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
+        data_consulta: apt.data_consulta,
+        duracao_minutos: apt.duracao_minutos || 30
+      }));
 
       // Obtém a configuração do médico, ou usa os padrões se não configurado
       const config = doctorData?.configuracoes as DoctorConfig | null;
       const doctorConfig: DoctorConfig = {
-        duracaoConsulta: config?.duracaoConsulta || 30, // Padrão 30 minutos
+        duracaoConsulta: config?.duracaoConsulta || 30,
         horarioAtendimento: config?.horarioAtendimento || getDefaultWorkingHours(),
+        timezone: config?.timezone || 'America/Sao_Paulo',
+        bufferMinutos: config?.bufferMinutos || 0,
       };
 
+      // Valida a configuração do médico
+      const validation = validateDoctorConfig(doctorConfig);
+      if (!validation.isValid) {
+        logger.error("Invalid doctor configuration", "AppointmentService", { 
+          doctorId, 
+          errors: validation.errors 
+        });
+        
+        // Retorna slots vazios se a configuração for inválida
+        return [];
+      }
+
       // Gera os slots de tempo disponíveis
-      const slots = generateTimeSlots(doctorConfig, startOfDay, existingTimes);
+      const slots = generateTimeSlots(doctorConfig, normalizedDate, existingAppointments);
+      
+      logger.info("Generated time slots", "AppointmentService", { 
+        doctorId, 
+        date, 
+        totalSlots: slots.length,
+        availableSlots: slots.filter(s => s.available).length 
+      });
       
       return slots;
 
     } catch (error) {
-      logger.error("Error fetching available time slots", "AppointmentService", error);
-      throw error; // Propaga o erro para o React Query
+      logger.error("Error fetching available time slots", "AppointmentService", { 
+        doctorId, 
+        date, 
+        error 
+      });
+      throw error;
     }
   },
 
-  // Cria uma nova consulta
+  // Cria uma nova consulta com validação de conflitos
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
@@ -118,20 +160,52 @@ export const appointmentService = {
   }) {
     logger.info("Scheduling new appointment", "AppointmentService", { data: appointmentData });
     
-    const { error } = await supabase
-      .from('consultas')
-      .insert({
-        ...appointmentData,
-        status: 'agendada', // Novo agendamento inicia como 'agendada'
-        motivo: 'Consulta solicitada via plataforma.', // Pode ser passado como parâmetro se necessário
-        duracao_minutos: 30 // Default, ou buscar da config do médico
+    try {
+      // Verifica disponibilidade do horário antes de agendar (double-check)
+      const appointmentDate = new Date(appointmentData.data_consulta);
+      const dateString = appointmentDate.toISOString().split('T')[0];
+      const timeString = `${appointmentDate.getUTCHours().toString().padStart(2, '0')}:${appointmentDate.getUTCMinutes().toString().padStart(2, '0')}`;
+      
+      const availableSlots = await this.getAvailableTimeSlots(appointmentData.medico_id, dateString);
+      const requestedSlot = availableSlots.find(slot => slot.time === timeString);
+      
+      if (!requestedSlot || !requestedSlot.available) {
+        throw new Error('Horário não está mais disponível. Por favor, selecione outro horário.');
+      }
+
+      // Insere a consulta no banco
+      const { error } = await supabase
+        .from('consultas')
+        .insert({
+          ...appointmentData,
+          status: 'agendada',
+          motivo: 'Consulta solicitada via plataforma.',
+          duracao_minutos: 30 // Pode ser parametrizado futuramente
+        });
+
+      if (error) {
+        logger.error("Failed to schedule appointment", "AppointmentService", { error });
+        
+        // Tratamento específico para conflitos de horário
+        if (error.code === '23505') { // Unique constraint violation
+          throw new Error('Este horário já foi agendado por outro paciente. Por favor, selecione outro horário.');
+        }
+        
+        throw error;
+      }
+
+      logger.info("Appointment scheduled successfully", "AppointmentService", { 
+        appointmentData 
       });
 
-    if (error) {
-      logger.error("Failed to schedule appointment", "AppointmentService", { error });
+      return { success: true };
+      
+    } catch (error) {
+      logger.error("Error scheduling appointment", "AppointmentService", { 
+        appointmentData, 
+        error 
+      });
       throw error;
     }
-
-    return { success: true }; // Retorna sucesso se não houver erro
   }
 };
