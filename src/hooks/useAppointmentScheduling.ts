@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { specialtyService } from "@/services/specialtyService";
 
 interface Doctor {
   id: string;
@@ -85,42 +86,17 @@ export const useAppointmentScheduling = () => {
     setErrorSpecialties(null);
 
     try {
-      // Usar a função RPC para obter especialidades
-      const { data: specialtiesData, error: specialtiesError } = await supabase.rpc('get_specialties');
+      const specialtiesData = await specialtyService.getAllSpecialties();
+      console.log("🏥 Especialidades carregadas:", specialtiesData);
 
-      if (specialtiesError) {
-        console.error("❌ Erro ao buscar especialidades:", specialtiesError);
-        throw new Error(`Erro ao carregar especialidades: ${specialtiesError.message}`);
-      }
-
-      console.log("🏥 Especialidades RPC response:", specialtiesData, "Tipo:", typeof specialtiesData);
-
-      // Tratamento defensivo para garantir que sempre temos um array
-      let processedSpecialties: string[] = [];
-      
-      if (specialtiesData) {
-        if (Array.isArray(specialtiesData)) {
-          // Se já é um array, usar diretamente
-          processedSpecialties = specialtiesData.filter(Boolean);
-        } else if (typeof specialtiesData === 'string') {
-          // Se é uma string, converter para array
-          processedSpecialties = [specialtiesData];
-        } else {
-          console.warn("⚠️ Tipo inesperado de dados de especialidades:", typeof specialtiesData, specialtiesData);
-          processedSpecialties = [];
-        }
-      }
-
-      console.log("🏥 Especialidades processadas:", processedSpecialties);
-
-      if (processedSpecialties.length === 0) {
+      if (specialtiesData.length === 0) {
         throw new Error("Nenhuma especialidade encontrada. Verifique se há médicos com especialidades cadastradas.");
       }
 
-      setSpecialties(processedSpecialties.sort());
+      setSpecialties(specialtiesData);
 
     } catch (error) {
-      console.error("❌ Erro completo:", error);
+      console.error("❌ Erro ao carregar especialidades:", error);
       setIsErrorSpecialties(true);
       setErrorSpecialties(error as Error);
       setSpecialties([]);

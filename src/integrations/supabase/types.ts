@@ -72,6 +72,36 @@ export type Database = {
           },
         ]
       }
+      especialidades_medicas: {
+        Row: {
+          ativa: boolean | null
+          codigo: string | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativa?: boolean | null
+          codigo?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativa?: boolean | null
+          codigo?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       medicos: {
         Row: {
           configuracoes: Json
@@ -216,6 +246,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_all_specialties: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       get_specialties: {
         Args: Record<PropertyKey, never>
         Returns: string[]
