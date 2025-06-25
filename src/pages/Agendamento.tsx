@@ -1,4 +1,3 @@
-
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { DoctorSelect } from "@/components/scheduling/DoctorSelect";
 import { DateSelect } from "@/components/scheduling/DateSelect";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
 import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
+import { AuthDebugInfo } from "@/components/AuthDebugInfo";
 
 const Agendamento = () => {
   const navigate = useNavigate();
@@ -58,9 +58,18 @@ const Agendamento = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
+          <AuthDebugInfo />
           <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
             <h2 className="text-xl font-semibold mb-2">Erro ao carregar especialidades</h2>
-            <p>{(errorSpecialties as Error)?.message || "Erro desconhecido"}</p>
+            <p className="mb-4">{(errorSpecialties as Error)?.message || "Erro desconhecido"}</p>
+            <div className="text-sm text-gray-600">
+              <p>Possíveis causas:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Você não está logado no sistema</li>
+                <li>Não há médicos cadastrados com especialidades</li>
+                <li>Problema de conexão com o banco de dados</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -76,9 +85,18 @@ const Agendamento = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
+          <AuthDebugInfo />
           <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
             <h2 className="text-xl font-semibold mb-2">Erro ao carregar médicos</h2>
-            <p>{(errorDoctors as Error)?.message || "Erro desconhecido"}</p>
+            <p className="mb-4">{(errorDoctors as Error)?.message || "Erro desconhecido"}</p>
+            <div className="text-sm text-gray-600">
+              <p>Possíveis causas:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Nenhum médico encontrado para a especialidade selecionada</li>
+                <li>Problema de permissão para acessar dados dos médicos</li>
+                <li>Especialidade selecionada não possui médicos cadastrados</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -94,9 +112,18 @@ const Agendamento = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
+          <AuthDebugInfo />
           <div className="text-red-500 text-center p-8 bg-red-50 rounded-lg border border-red-200">
             <h2 className="text-xl font-semibold mb-2">Erro ao carregar horários</h2>
-            <p>{(errorTimeSlots as Error)?.message || "Erro desconhecido"}</p>
+            <p className="mb-4">{(errorTimeSlots as Error)?.message || "Erro desconhecido"}</p>
+            <div className="text-sm text-gray-600">
+              <p>Possíveis causas:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Médico não configurou horários de atendimento</li>
+                <li>Data selecionada não possui horários disponíveis</li>
+                <li>Problema ao acessar configurações do médico</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -118,6 +145,8 @@ const Agendamento = () => {
           <h1 className="text-3xl font-bold text-blue-900">Agendar Consulta</h1>
           <p className="text-gray-600">Escolha a especialidade, médico e horário</p>
         </div>
+
+        <AuthDebugInfo />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="shadow-lg">
