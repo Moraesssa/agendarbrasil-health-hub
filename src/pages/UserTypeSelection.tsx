@@ -102,12 +102,42 @@ const UserTypeSelection = () => {
             </div>
           </div>
           
-          {/* Enhanced Title */}
-          <div className="relative mb-6">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-800 via-purple-600 to-green-600 bg-clip-text text-transparent mb-3 animate-fade-in">
-              Bem-vindo ao AgendarBrasil!
-            </h1>
-            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-blue-500 to-green-500 rounded-full opacity-60"></div>
+          {/* Enhanced Premium Typography */}
+          <div className="relative mb-8 overflow-hidden">
+            {/* Background text effect */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <h1 className="text-6xl md:text-7xl font-black text-gray-100 select-none pointer-events-none transform scale-110 blur-sm opacity-50">
+                AgendarBrasil
+              </h1>
+            </div>
+            
+            {/* Main title with advanced effects */}
+            <div className="relative z-10">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-4">
+                <span className="block">
+                  <span className="inline-block bg-gradient-to-r from-blue-800 via-blue-600 to-blue-800 bg-clip-text text-transparent animate-pulse">
+                    Bem-vindo ao
+                  </span>
+                </span>
+                <span className="block mt-2 relative">
+                  <span className="inline-block bg-gradient-to-r from-green-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-extrabold tracking-tight">
+                    AgendarBrasil!
+                  </span>
+                  {/* Decorative underline */}
+                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3/4 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full opacity-80 animate-pulse"></div>
+                  {/* Secondary underline for depth */}
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1/2 h-0.5 bg-gradient-to-r from-blue-300 to-green-300 rounded-full opacity-60 blur-sm"></div>
+                </span>
+              </h1>
+              
+              {/* Floating accent elements */}
+              <div className="absolute top-0 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-75"></div>
+              <div className="absolute top-1/2 right-1/4 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping opacity-75 animation-delay-300"></div>
+              <div className="absolute bottom-0 left-1/3 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-75 animation-delay-600"></div>
+            </div>
+            
+            {/* Ambient glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-green-500/10 blur-3xl rounded-full transform scale-150 opacity-50 animate-pulse"></div>
           </div>
           
           <p className="text-gray-600 text-lg mb-4 font-medium">Para começar, nos diga como você pretende usar nossa plataforma:</p>
