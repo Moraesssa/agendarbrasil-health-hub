@@ -33,6 +33,7 @@ export const specialtyService = {
         ];
       }
       
+      // A RPC agora retorna diretamente um array de strings
       const specialties = (data as string[] || []).sort();
       logger.info("All specialties fetched successfully", "SpecialtyService", { 
         count: specialties.length 

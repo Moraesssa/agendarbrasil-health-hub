@@ -49,6 +49,7 @@ export const useAppointmentScheduling = () => {
     try {
       const { data, error } = await supabase.rpc('get_all_specialties');
       if (error) throw error;
+      // A RPC agora retorna diretamente um array de strings
       setSpecialties(data || []);
     } catch (e) { 
       toast({ title: "Erro ao carregar especialidades", variant: "destructive" }); 
