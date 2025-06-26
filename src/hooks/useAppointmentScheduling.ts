@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +40,7 @@ export const useAppointmentScheduling = () => {
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsLoadingSubmitting] = useState(false);
 
   // --- Funções de Carregamento ---
   const loadSpecialties = useCallback(async () => {
@@ -49,8 +48,8 @@ export const useAppointmentScheduling = () => {
     try {
       const { data, error } = await supabase.rpc('get_all_specialties');
       if (error) throw error;
-      // A RPC agora retorna diretamente um array de strings
-      setSpecialties(data || []);
+      // A RPC retorna diretamente um array de strings
+      setSpecialties(Array.isArray(data) ? data : []);
     } catch (e) { 
       toast({ title: "Erro ao carregar especialidades", variant: "destructive" }); 
     }

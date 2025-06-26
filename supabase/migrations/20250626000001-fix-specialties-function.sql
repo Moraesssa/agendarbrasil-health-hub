@@ -1,4 +1,5 @@
 
+
 -- Corrigir a função get_all_specialties para retornar array de strings
 DROP FUNCTION IF EXISTS public.get_all_specialties();
 
@@ -42,3 +43,4 @@ BEGIN
   RETURN COALESCE(all_specs, '{}');
 END;
 $function$;
+
