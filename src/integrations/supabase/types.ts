@@ -248,7 +248,21 @@ export type Database = {
     Functions: {
       get_all_specialties: {
         Args: Record<PropertyKey, never>
-        Returns: string[]
+        Returns: {
+          specialty: string
+        }[]
+      }
+      get_available_cities: {
+        Args: { state_uf: string }
+        Returns: {
+          cidade: string
+        }[]
+      }
+      get_available_states: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          uf: string
+        }[]
       }
       get_specialties: {
         Args: Record<PropertyKey, never>

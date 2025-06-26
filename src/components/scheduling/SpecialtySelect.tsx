@@ -1,63 +1,54 @@
 
-import { Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Stethoscope } from "lucide-react";
 
 interface SpecialtySelectProps {
-  specialties: string[] | undefined;
+  specialties: string[];
   selectedSpecialty: string;
   isLoading: boolean;
-  isError?: boolean;
-  error?: Error | null;
   onChange: (specialty: string) => void;
+  disabled?: boolean;
 }
 
 export const SpecialtySelect = ({ 
   specialties, 
   selectedSpecialty, 
   isLoading, 
-  isError = false,
-  error = null,
-  onChange 
+  onChange,
+  disabled = false
 }: SpecialtySelectProps) => {
-  if (isError && error) {
-    return (
-      <div>
-        <label className="block text-sm font-medium mb-2">Especialidade</label>
-        <div className="w-full p-3 border border-red-300 rounded-lg bg-red-50">
-          <p className="text-sm text-red-600">
-            Erro ao carregar especialidades: {error.message}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <label className="block text-sm font-medium mb-2">
+    <div className="space-y-2">
+      <Label htmlFor="specialty-select" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <Stethoscope className="h-4 w-4 text-blue-600" />
         Especialidade
-        {isLoading && <Loader2 className="inline ml-2 h-4 w-4 animate-spin" />}
-      </label>
-      <select 
-        className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed" 
-        value={selectedSpecialty} 
-        onChange={(e) => onChange(e.target.value)} 
-        disabled={isLoading || isError}
-      >
-        <option value="">
-          {isLoading ? "Carregando especialidades..." : "Selecione uma especialidade"}
-        </option>
-        {specialties?.map(specialty => (
-          <option key={specialty} value={specialty}>
-            {specialty}
-          </option>
-        ))}
-      </select>
-      
-      {!isLoading && !isError && specialties && specialties.length === 0 && (
-        <p className="text-sm text-gray-500 mt-1">
-          Nenhuma especialidade disponível no momento.
-        </p>
-      )}
+      </Label>
+      <div className="flex items-center gap-2">
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+        <Select
+          value={selectedSpecialty}
+          onValueChange={onChange}
+          disabled={disabled || isLoading}
+        >
+          <SelectTrigger id="specialty-select" className="h-12">
+            <SelectValue placeholder="Selecione uma especialidade" />
+          </SelectTrigger>
+          <SelectContent className="max-h-60">
+            {specialties.length > 0 ? (
+              specialties.map((specialty) => (
+                <SelectItem key={specialty} value={specialty} className="py-3">
+                  {specialty}
+                </SelectItem>
+              ))
+            ) : (
+              <div className="p-3 text-sm text-gray-500">
+                {isLoading ? "Carregando especialidades..." : "Nenhuma especialidade disponível"}
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };

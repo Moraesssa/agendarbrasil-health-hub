@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,6 @@ interface Doctor {
 interface TimeSlot { time: string; available: boolean; }
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
-interface SpecialtyInfo { specialty: string; }
 
 export const useAppointmentScheduling = () => {
   const { user } = useAuth();
@@ -49,8 +49,10 @@ export const useAppointmentScheduling = () => {
     try {
       const { data, error } = await supabase.rpc('get_all_specialties');
       if (error) throw error;
-      setSpecialties(data?.map((item: SpecialtyInfo) => item.specialty) || []);
-    } catch (e) { toast({ title: "Erro ao carregar especialidades", variant: "destructive" }); }
+      setSpecialties(data || []);
+    } catch (e) { 
+      toast({ title: "Erro ao carregar especialidades", variant: "destructive" }); 
+    }
     finally { setIsLoadingSpecialties(false); }
   }, [toast]);
 
@@ -60,7 +62,9 @@ export const useAppointmentScheduling = () => {
       const { data, error } = await supabase.rpc('get_available_states');
       if (error) throw error;
       setStates(data || []);
-    } catch (e) { toast({ title: "Erro ao carregar estados", variant: "destructive" }); }
+    } catch (e) { 
+      toast({ title: "Erro ao carregar estados", variant: "destructive" }); 
+    }
     finally { setIsLoadingLocations(false); }
   }, [toast]);
 
@@ -71,7 +75,9 @@ export const useAppointmentScheduling = () => {
       const { data, error } = await supabase.rpc('get_available_cities', { state_uf: stateUf });
       if (error) throw error;
       setCities(data || []);
-    } catch (e) { toast({ title: "Erro ao carregar cidades", variant: "destructive" }); }
+    } catch (e) { 
+      toast({ title: "Erro ao carregar cidades", variant: "destructive" }); 
+    }
     finally { setIsLoadingLocations(false); }
   }, [toast]);
 
@@ -88,7 +94,9 @@ export const useAppointmentScheduling = () => {
       if (error) throw error;
       console.log(`👨‍⚕️ Médicos encontrados:`, data);
       setDoctors((Array.isArray(data) ? data : [data].filter(Boolean)) as Doctor[]);
-    } catch (e) { toast({ title: "Erro ao carregar médicos", variant: "destructive" }); }
+    } catch (e) { 
+      toast({ title: "Erro ao carregar médicos", variant: "destructive" }); 
+    }
     finally { setIsLoadingDoctors(false); }
   }, [toast]);
 
