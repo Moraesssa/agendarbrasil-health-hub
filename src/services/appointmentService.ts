@@ -10,15 +10,28 @@ import {
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
-// ... (o resto do ficheiro permanece igual, apenas a função getSpecialties é ajustada)
+export interface Medico {
+  id: string;
+  display_name: string | null;
+}
+
+// **A FUNÇÃO QUE ESTAVA EM FALTA ESTÁ AQUI**
+// Garante que o utilizador está autenticado antes de fazer qualquer chamada à API.
+const checkAuthentication = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    logger.error("User not authenticated", "AppointmentService", error);
+    throw new Error("Você precisa estar logado para realizar esta ação");
+  }
+  return user;
+};
 
 export const appointmentService = {
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
     try {
-      await checkAuthentication();
+      await checkAuthentication(); // Agora esta função existe
       
-      // A chamada RPC permanece a mesma, mas agora vai invocar a função corrigida
       const { data, error } = await supabase.rpc('get_specialties');
 
       if (error) {
@@ -26,7 +39,6 @@ export const appointmentService = {
         throw new Error(`Erro ao buscar especialidades: ${error.message}`);
       }
       
-      // A função retorna diretamente um array de strings, garantimos que seja ordenado
       return (data || []).sort();
     } catch (error) {
       logger.error("Failed to fetch specialties", "AppointmentService", error);
@@ -34,7 +46,6 @@ export const appointmentService = {
     }
   },
 
-// ... cole o restante do conteúdo do ficheiro aqui
   async getDoctorsBySpecialty(specialty: string): Promise<Medico[]> {
     logger.info("Fetching doctors by specialty", "AppointmentService", { specialty });
     try {
@@ -48,7 +59,7 @@ export const appointmentService = {
 
       if (error) throw new Error(`Erro ao buscar médicos: ${error.message}`);
       
-      return data.map((d: any) => ({
+      return (data || []).map((d: any) => ({
         id: d.user_id,
         display_name: d.profiles?.display_name || "Médico"
       }));
@@ -90,7 +101,7 @@ export const appointmentService = {
         logger.error("Invalid doctor configuration", "AppointmentService", { doctorId, errors: validation.errors });
         return [];
       }
-
+      
       const startOfDay = new Date(normalizedDate);
       startOfDay.setUTCHours(0, 0, 0, 0);
       const endOfDay = new Date(normalizedDate);
@@ -147,9 +158,3 @@ export const appointmentService = {
     }
   }
 };
-// ... (resto do código do appointmentService.ts)
-
-interface Medico {
-  id: string; 
-  display_name: string | null;
-}
