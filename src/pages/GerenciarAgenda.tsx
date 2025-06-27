@@ -28,8 +28,7 @@ interface HorarioConfig {
 
 interface MedicoConfiguracoes {
   horarioAtendimento?: Record<string, HorarioConfig>;
-  // Incluir outras possíveis configurações para não serem perdidas
-  [key: string]: any;
+  [key: string]: any; // Allow other properties
 }
 
 // --- Zod Schema for Validation ---
@@ -38,8 +37,8 @@ const horarioSchema = z.object({
   label: z.string(),
   index: z.number(),
   ativo: z.boolean(),
-  inicio: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido"),
-  fim: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido")
+  inicio: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato inválido"),
+  fim: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato inválido")
 }).refine(data => {
   if (!data.ativo) return true;
   return data.inicio < data.fim;
@@ -70,11 +69,11 @@ const GerenciarAgenda = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
+
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
     defaultValues: {
-      horarios: diasDaSemana.map(dia => ({ ...dia, ativo: false, inicio: '08:00', fim: '18:00' }))
+      horarios: diasDaSemana.map(dia => ({ ...dia, ativo: dia.key !== 'sabado' && dia.key !== 'domingo', inicio: '08:00', fim: '18:00' }))
     }
   });
 
@@ -87,15 +86,9 @@ const GerenciarAgenda = () => {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('medicos')
-        .select('configuracoes')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
+      const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
 
       const configuracoes = data?.configuracoes as MedicoConfiguracoes | null;
@@ -107,11 +100,10 @@ const GerenciarAgenda = () => {
         inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
         fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
       }));
-
       reset({ horarios: initialHorarios });
     } catch (error) {
       console.error('Erro ao carregar horários:', error);
-      toast({ title: "Erro ao carregar horários", variant: "destructive" });
+      toast({ title: "Erro ao carregar horários", description: "Não foi possível carregar seus horários de atendimento.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -120,42 +112,44 @@ const GerenciarAgenda = () => {
   useEffect(() => {
     fetchHorarios();
   }, [fetchHorarios]);
-
+  
   const onSubmit = async (data: AgendaFormData) => {
     if (!user?.id) {
-      toast({ title: "Erro de autenticação", variant: "destructive" });
+      toast({ title: "Erro de autenticação", description: "Usuário não encontrado.", variant: "destructive" });
       return;
     }
     setIsSubmitting(true);
-
-    const horarioAtendimento = data.horarios.reduce((acc, curr) => {
-      acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
-      return acc;
-    }, {} as Record<string, HorarioConfig>);
-
+  
     try {
       const { data: medicoData, error: fetchError } = await supabase
         .from('medicos')
         .select('configuracoes')
         .eq('user_id', user.id)
         .single();
-
+  
       if (fetchError) throw fetchError;
-
-      const newConfiguracoes: MedicoConfiguracoes = { 
-        ...(medicoData?.configuracoes || {}),
-        horarioAtendimento 
+  
+      const currentConfiguracoes = (medicoData.configuracoes as MedicoConfiguracoes) || {};
+  
+      const newHorarioAtendimento = data.horarios.reduce((acc, curr) => {
+        acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
+        return acc;
+      }, {} as Record<string, HorarioConfig>);
+  
+      const newConfiguracoes: MedicoConfiguracoes = {
+        ...currentConfiguracoes,
+        horarioAtendimento: newHorarioAtendimento,
       };
-      
+  
       const { error: updateError } = await supabase
         .from('medicos')
         .update({ configuracoes: newConfiguracoes })
         .eq('user_id', user.id);
-
+  
       if (updateError) throw updateError;
-
-      toast({ title: "Agenda atualizada!", description: "Seus horários foram salvos." });
-      reset(data); // Para resetar o estado 'isDirty' do formulário
+  
+      toast({ title: "Agenda atualizada!", description: "Seus horários de atendimento foram salvos com sucesso." });
+      reset(data); // Reseta o formulário para o novo estado salvo, limpando 'isDirty'
     } catch (error) {
       console.error('Erro ao salvar agenda:', error);
       toast({ title: "Erro ao salvar", description: "Não foi possível atualizar sua agenda.", variant: "destructive" });
@@ -163,13 +157,12 @@ const GerenciarAgenda = () => {
       setIsSubmitting(false);
     }
   };
-  
-  const selectedDayIndex = selectedDate ? selectedDate.getDay() : (new Date().getDay());
+
+  const selectedDayIndex = selectedDate ? selectedDate.getDay() : new Date().getDay();
   const selectedHorario = watchedHorarios?.[selectedDayIndex];
 
-  if (loading) {
-    return <PageLoader message="Carregando sua agenda..." />;
-  }
+  if (loading) return <PageLoader message="Carregando sua agenda..." />;
+  if (!user) return <div className="p-4">Você precisa estar logado.</div>;
 
   return (
     <SidebarProvider>
@@ -184,12 +177,11 @@ const GerenciarAgenda = () => {
               </h1>
               <p className="text-sm text-gray-600">
                 Selecione um dia e ajuste seus horários
-                {isDirty && (
-                  <span className="ml-2 text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>
-                )}
+                {isDirty && <span className="ml-2 text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>}
               </p>
             </div>
           </header>
+
           <main className="flex-1 overflow-auto p-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-6xl mx-auto">
@@ -198,15 +190,15 @@ const GerenciarAgenda = () => {
                     <Card>
                       <CardContent className="p-2 flex justify-center">
                         <DayPickerCalendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            locale={ptBR}
-                            modifiers={{ active: (date) => watchedHorarios?.[date.getDay()]?.ativo }}
-                            modifiersClassNames={{
-                                active: 'bg-green-100/70',
-                                selected: 'bg-blue-600 text-white focus:bg-blue-600 focus:text-white rounded-md',
-                            }}
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          locale={ptBR}
+                          modifiers={{ active: (date) => watchedHorarios?.[date.getDay()]?.ativo }}
+                          modifiersClassNames={{
+                            active: 'bg-green-100/70',
+                            selected: 'bg-blue-600 text-white focus:bg-blue-600 focus:text-white rounded-md',
+                          }}
                         />
                       </CardContent>
                     </Card>
@@ -214,33 +206,44 @@ const GerenciarAgenda = () => {
                   <div className="lg:col-span-1">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Editar Horário</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                          Editar Horário
+                          {selectedHorario?.ativo && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+                        </CardTitle>
                         <CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana.find(d => d.index === selectedDayIndex)?.label}</span></CardDescription>
                       </CardHeader>
                       <CardContent>
                         {selectedHorario && (
-                          <div className="space-y-6">
-                            <div className="flex items-center justify-between rounded-lg border p-4 bg-gray-50/50">
-                                <Label className="text-base font-semibold">Atender neste dia?</Label>
-                                <Switch
-                                    checked={selectedHorario.ativo}
+                          <FormField
+                            control={form.control}
+                            name={`horarios.${selectedDayIndex}`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-6">
+                                <div className="flex items-center justify-between rounded-lg border p-4">
+                                  <Label className="text-base font-semibold">Atender neste dia?</Label>
+                                  <Switch
+                                    checked={field.value.ativo}
                                     onCheckedChange={(checked) => setValue(`horarios.${selectedDayIndex}.ativo`, checked, { shouldValidate: true, shouldDirty: true })}
-                                />
-                            </div>
-                            {selectedHorario.ativo && (
-                                <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95">
-                                    <div className="space-y-2">
+                                  />
+                                </div>
+                                {field.value.ativo && (
+                                  <div className="space-y-4 animate-in fade-in-0 zoom-in-95">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
                                         <Label>Início</Label>
                                         <Input type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} />
-                                    </div>
-                                    <div className="space-y-2">
+                                      </div>
+                                      <div className="space-y-2">
                                         <Label>Fim</Label>
                                         <Input type="time" {...form.register(`horarios.${selectedDayIndex}.fim`)} />
+                                      </div>
                                     </div>
-                                </div>
+                                    {errors.horarios?.[selectedDayIndex] && <FormMessage>{errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
+                                  </div>
+                                )}
+                              </FormItem>
                             )}
-                            {errors.horarios?.[selectedDayIndex] && <FormMessage>{errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
-                          </div>
+                          />
                         )}
                       </CardContent>
                     </Card>
@@ -249,8 +252,8 @@ const GerenciarAgenda = () => {
                 
                 <div className="flex justify-center">
                   <Button type="submit" className="px-8 py-2 transition-all" disabled={isSubmitting || !isDirty}>
-                      {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                      {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                    {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                    {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
                   </Button>
                 </div>
               </form>
