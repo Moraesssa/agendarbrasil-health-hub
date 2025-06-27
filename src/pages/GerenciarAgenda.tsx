@@ -28,7 +28,6 @@ interface HorarioConfig {
 
 interface MedicoConfiguracoes {
   horarioAtendimento?: Record<string, HorarioConfig>;
-  [key: string]: any; // Allow other properties
 }
 
 // --- Zod Schema for Validation ---
@@ -37,13 +36,20 @@ const horarioSchema = z.object({
   label: z.string(),
   index: z.number(),
   ativo: z.boolean(),
-  inicio: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato inválido"),
-  fim: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato inválido")
+  inicio: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido"),
+  fim: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido")
 }).refine(data => {
   if (!data.ativo) return true;
-  return data.inicio < data.fim;
+  
+  const [inicioHora, inicioMinuto] = data.inicio.split(':').map(Number);
+  const [fimHora, fimMinuto] = data.fim.split(':').map(Number);
+  
+  const inicioTotal = inicioHora * 60 + inicioMinuto;
+  const fimTotal = fimHora * 60 + fimMinuto;
+  
+  return inicioTotal < fimTotal;
 }, {
-  message: "Início deve ser antes do fim",
+  message: "Horário de início deve ser anterior ao horário de fim",
   path: ["inicio"], 
 });
 
@@ -52,6 +58,7 @@ const agendaSchema = z.object({
 });
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
+type HorarioData = z.infer<typeof horarioSchema>;
 
 const diasDaSemana = [
   { key: "domingo", label: "Domingo", index: 0 },
@@ -69,11 +76,19 @@ const GerenciarAgenda = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
     defaultValues: {
-      horarios: diasDaSemana.map(dia => ({ ...dia, ativo: dia.key !== 'sabado' && dia.key !== 'domingo', inicio: '08:00', fim: '18:00' }))
+      horarios: diasDaSemana.map(dia => ({ 
+        dia: dia.key, 
+        label: dia.label, 
+        index: dia.index,
+        ativo: dia.key !== 'sabado' && dia.key !== 'domingo', 
+        inicio: '08:00', 
+        fim: '18:00' 
+      }))
     }
   });
 
@@ -81,29 +96,56 @@ const GerenciarAgenda = () => {
 
   const watchedHorarios = watch("horarios");
 
+  // Monitorar mudanças não salvas - usando uma abordagem mais direta
+  useEffect(() => {
+    const subscription = watch((value, { name, type }) => {
+      if (type === 'change' && name) {
+        setHasUnsavedChanges(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
   const fetchHorarios = useCallback(async () => {
     if (!user?.id) {
       setLoading(false);
       return;
     }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle();
-      if (error && error.code !== 'PGRST116') throw error;
+      const { data, error } = await supabase
+        .from('medicos')
+        .select('configuracoes')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao buscar horários:', error);
+        throw error;
+      }
 
       const configuracoes = data?.configuracoes as MedicoConfiguracoes | null;
       const horarioAtendimento = configuracoes?.horarioAtendimento;
 
-      const initialHorarios = diasDaSemana.map(dia => ({
-        ...dia,
+      const initialHorarios: HorarioData[] = diasDaSemana.map(dia => ({
+        dia: dia.key,
+        label: dia.label,
+        index: dia.index,
         ativo: horarioAtendimento?.[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
         inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
         fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
       }));
+
       reset({ horarios: initialHorarios });
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Erro ao carregar horários:', error);
-      toast({ title: "Erro ao carregar horários", description: "Não foi possível carregar seus horários de atendimento.", variant: "destructive" });
+      toast({ 
+        title: "Erro ao carregar horários", 
+        description: "Não foi possível carregar seus horários de atendimento.",
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -112,57 +154,141 @@ const GerenciarAgenda = () => {
   useEffect(() => {
     fetchHorarios();
   }, [fetchHorarios]);
-  
+
   const onSubmit = async (data: AgendaFormData) => {
+    console.log('Form submitted with data:', data); // Debug log
+    
     if (!user?.id) {
-      toast({ title: "Erro de autenticação", description: "Usuário não encontrado.", variant: "destructive" });
+      toast({
+        title: "Erro de autenticação",
+        description: "Usuário não encontrado. Faça login novamente.",
+        variant: "destructive"
+      });
       return;
     }
+
     setIsSubmitting(true);
-  
+
     try {
+      // Validar horários ativos
+      const horariosAtivos = data.horarios.filter(h => h.ativo);
+      if (horariosAtivos.length === 0) {
+        toast({
+          title: "Atenção",
+          description: "Você deve ter pelo menos um dia ativo para atendimento.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const horarioAtendimento = data.horarios.reduce((acc, curr) => {
+        acc[curr.dia] = { 
+          inicio: curr.inicio, 
+          fim: curr.fim, 
+          ativo: curr.ativo 
+        };
+        return acc;
+      }, {} as Record<string, HorarioConfig>);
+
+      // Buscar configurações atuais
       const { data: medicoData, error: fetchError } = await supabase
         .from('medicos')
         .select('configuracoes')
         .eq('user_id', user.id)
         .single();
-  
-      if (fetchError) throw fetchError;
-  
-      const currentConfiguracoes = (medicoData.configuracoes as MedicoConfiguracoes) || {};
-  
-      const newHorarioAtendimento = data.horarios.reduce((acc, curr) => {
-        acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
-        return acc;
-      }, {} as Record<string, HorarioConfig>);
-  
-      const newConfiguracoes: MedicoConfiguracoes = {
-        ...currentConfiguracoes,
-        horarioAtendimento: newHorarioAtendimento,
+
+      if (fetchError) {
+        console.error('Erro ao buscar dados do médico:', fetchError);
+        throw fetchError;
+      }
+
+      const currentConfiguracoes = (medicoData?.configuracoes as MedicoConfiguracoes) || {};
+      const newConfiguracoes: MedicoConfiguracoes = { 
+        ...currentConfiguracoes, 
+        horarioAtendimento 
       };
-  
+      
       const { error: updateError } = await supabase
         .from('medicos')
         .update({ configuracoes: newConfiguracoes })
         .eq('user_id', user.id);
-  
-      if (updateError) throw updateError;
-  
-      toast({ title: "Agenda atualizada!", description: "Seus horários de atendimento foram salvos com sucesso." });
-      reset(data); // Reseta o formulário para o novo estado salvo, limpando 'isDirty'
+
+      if (updateError) {
+        console.error('Erro ao atualizar configurações:', updateError);
+        throw updateError;
+      }
+
+      toast({ 
+        title: "Agenda atualizada!", 
+        description: "Seus horários de atendimento foram salvos com sucesso.",
+        duration: 5000
+      });
+
+      setHasUnsavedChanges(false);
+      // Resetar o form com os novos dados para limpar o estado dirty
+      reset(data, { keepValues: true });
+
     } catch (error) {
       console.error('Erro ao salvar agenda:', error);
-      toast({ title: "Erro ao salvar", description: "Não foi possível atualizar sua agenda.", variant: "destructive" });
+      toast({ 
+        title: "Erro ao salvar", 
+        description: "Não foi possível atualizar sua agenda. Tente novamente.",
+        variant: "destructive",
+        duration: 5000
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedDayIndex = selectedDate ? selectedDate.getDay() : new Date().getDay();
-  const selectedHorario = watchedHorarios?.[selectedDayIndex];
+  const handleSwitchChange = (dayIndex: number, checked: boolean) => {
+    setValue(`horarios.${dayIndex}.ativo`, checked, { 
+      shouldValidate: true, 
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    // Força a atualização do estado de mudanças
+    setHasUnsavedChanges(true);
+  };
 
-  if (loading) return <PageLoader message="Carregando sua agenda..." />;
-  if (!user) return <div className="p-4">Você precisa estar logado.</div>;
+  const handleTimeChange = (dayIndex: number, field: 'inicio' | 'fim', value: string) => {
+    setValue(`horarios.${dayIndex}.${field}`, value, { 
+      shouldValidate: true, 
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    // Força a atualização do estado de mudanças
+    setHasUnsavedChanges(true);
+  };
+
+  // Função para obter o dia selecionado de forma segura
+  const getSelectedDayInfo = () => {
+    const dayIndex = selectedDate ? selectedDate.getDay() : new Date().getDay();
+    const horario = getValues(`horarios.${dayIndex}`);
+    const diaInfo = diasDaSemana.find(d => d.index === dayIndex);
+    return { dayIndex, horario, diaInfo };
+  };
+
+  if (loading) {
+    return <PageLoader message="Carregando sua agenda..." />;
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-96">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
+            <p className="text-gray-600">Você precisa estar logado para acessar esta página.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { dayIndex, horario, diaInfo } = getSelectedDayInfo();
 
   return (
     <SidebarProvider>
@@ -176,8 +302,10 @@ const GerenciarAgenda = () => {
                 Gerenciar Agenda
               </h1>
               <p className="text-sm text-gray-600">
-                Selecione um dia e ajuste seus horários
-                {isDirty && <span className="ml-2 text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>}
+                Selecione um dia da semana para editar seus horários
+                {hasUnsavedChanges && (
+                  <span className="ml-2 text-amber-600 font-medium">• Alterações não salvas</span>
+                )}
               </p>
             </div>
           </header>
@@ -186,59 +314,122 @@ const GerenciarAgenda = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-6xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Calendário */}
                   <div className="lg:col-span-2">
                     <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          Calendário
+                          <span className="text-sm font-normal text-gray-500">
+                            (Dias em verde = ativos para atendimento)
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
                       <CardContent className="p-2 flex justify-center">
                         <DayPickerCalendar
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
                           locale={ptBR}
-                          modifiers={{ active: (date) => watchedHorarios?.[date.getDay()]?.ativo }}
+                          modifiers={{ 
+                            active: (date) => watchedHorarios?.[date.getDay()]?.ativo 
+                          }}
                           modifiersClassNames={{
-                            active: 'bg-green-100/70',
+                            active: 'bg-green-100/70 text-green-800',
                             selected: 'bg-blue-600 text-white focus:bg-blue-600 focus:text-white rounded-md',
                           }}
+                          className="rounded-md border"
                         />
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Edição de Horário */}
                   <div className="lg:col-span-1">
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           Editar Horário
-                          {selectedHorario?.ativo && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+                          {horario?.ativo && <CheckCircle2 className="w-5 h-5 text-green-600" />}
                         </CardTitle>
-                        <CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana.find(d => d.index === selectedDayIndex)?.label}</span></CardDescription>
+                        <CardDescription>
+                          Ajustes para: <span className="font-semibold text-blue-600">{diaInfo?.label}</span>
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {selectedHorario && (
+                        {horario && diaInfo && (
                           <FormField
                             control={form.control}
-                            name={`horarios.${selectedDayIndex}`}
+                            name={`horarios.${dayIndex}`}
                             render={({ field }) => (
                               <FormItem className="space-y-6">
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                  <Label className="text-base font-semibold">Atender neste dia?</Label>
+                                <div className="flex items-center justify-between rounded-lg border p-4 bg-gray-50/50">
+                                  <div>
+                                    <Label className="text-base font-semibold">Atender neste dia?</Label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      {field.value.ativo ? 'Ativo para atendimento' : 'Inativo'}
+                                    </p>
+                                  </div>
                                   <Switch
                                     checked={field.value.ativo}
-                                    onCheckedChange={(checked) => setValue(`horarios.${selectedDayIndex}.ativo`, checked, { shouldValidate: true, shouldDirty: true })}
+                                    onCheckedChange={(checked) => handleSwitchChange(dayIndex, checked)}
                                   />
                                 </div>
+
                                 {field.value.ativo && (
-                                  <div className="space-y-4 animate-in fade-in-0 zoom-in-95">
+                                  <div className="space-y-4 animate-in fade-in-0 zoom-in-95 duration-200">
                                     <div className="grid grid-cols-2 gap-4">
                                       <div className="space-y-2">
-                                        <Label>Início</Label>
-                                        <Input type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} />
+                                        <Label htmlFor={`inicio-${dayIndex}`}>Horário de Início</Label>
+                                        <Input 
+                                          id={`inicio-${dayIndex}`}
+                                          type="time" 
+                                          value={field.value.inicio}
+                                          onChange={(e) => handleTimeChange(dayIndex, 'inicio', e.target.value)}
+                                          className="font-mono"
+                                        />
                                       </div>
                                       <div className="space-y-2">
-                                        <Label>Fim</Label>
-                                        <Input type="time" {...form.register(`horarios.${selectedDayIndex}.fim`)} />
+                                        <Label htmlFor={`fim-${dayIndex}`}>Horário de Fim</Label>
+                                        <Input 
+                                          id={`fim-${dayIndex}`}
+                                          type="time" 
+                                          value={field.value.fim}
+                                          onChange={(e) => handleTimeChange(dayIndex, 'fim', e.target.value)}
+                                          className="font-mono"
+                                        />
                                       </div>
                                     </div>
-                                    {errors.horarios?.[selectedDayIndex] && <FormMessage>{errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
+                                    <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+                                      <strong>Duração do atendimento:</strong>{' '}
+                                      {(() => {
+                                        const [inicioH, inicioM] = field.value.inicio.split(':').map(Number);
+                                        const [fimH, fimM] = field.value.fim.split(':').map(Number);
+                                        const inicioMinutos = inicioH * 60 + inicioM;
+                                        const fimMinutos = fimH * 60 + fimM;
+                                        const duracao = fimMinutos - inicioMinutos;
+                                        const horas = Math.floor(duracao / 60);
+                                        const minutos = duracao % 60;
+                                        return `${horas}h${minutos > 0 ? ` ${minutos}min` : ''}`;
+                                      })()}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {errors.horarios?.[dayIndex] && (
+                                  <div className="space-y-1">
+                                    {errors.horarios[dayIndex]?.inicio?.message && (
+                                      <FormMessage className="flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.horarios[dayIndex]?.inicio?.message}
+                                      </FormMessage>
+                                    )}
+                                    {errors.horarios[dayIndex]?.fim?.message && (
+                                      <FormMessage className="flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.horarios[dayIndex]?.fim?.message}
+                                      </FormMessage>
+                                    )}
                                   </div>
                                 )}
                               </FormItem>
@@ -250,10 +441,63 @@ const GerenciarAgenda = () => {
                   </div>
                 </div>
                 
+                {/* Resumo dos horários */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resumo da Agenda</CardTitle>
+                    <CardDescription>Visão geral dos seus horários de atendimento</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {watchedHorarios.map((horario, index) => (
+                        <div 
+                          key={horario.dia} 
+                          className={cn(
+                            "p-3 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md",
+                            horario.ativo 
+                              ? "border-green-200 bg-green-50 hover:border-green-300" 
+                              : "border-gray-200 bg-gray-50 hover:border-gray-300",
+                            dayIndex === index && "ring-2 ring-blue-500 ring-offset-2"
+                          )}
+                          onClick={() => setSelectedDate(new Date(2024, 0, index))} // Hack para selecionar o dia
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-semibold text-sm">{horario.label}</span>
+                            {horario.ativo ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                            )}
+                          </div>
+                          {horario.ativo && (
+                            <div className="text-xs text-gray-600 font-mono">
+                              {horario.inicio} - {horario.fim}
+                            </div>
+                          )}
+                          {!horario.ativo && (
+                            <div className="text-xs text-gray-400">Inativo</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
                 <div className="flex justify-center">
-                  <Button type="submit" className="px-8 py-2 transition-all" disabled={isSubmitting || !isDirty}>
-                    {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                    {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                  <Button 
+                    type="submit" 
+                    className={cn(
+                      "px-8 py-2 transition-all",
+                      hasUnsavedChanges && "animate-pulse"
+                    )}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-5 h-5 mr-2" />
+                    )}
+                    {isSubmitting ? 'Salvando...' : hasUnsavedChanges ? 'Salvar Alterações' : 'Alterações Salvas'}
                   </Button>
                 </div>
               </form>
