@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoader } from "@/components/PageLoader";
+import { cn } from "@/lib/utils";
 
 // --- Zod Schema for Validation ---
 const horarioSchema = z.object({
@@ -86,9 +87,9 @@ const GerenciarAgenda = () => {
         if (horarioAtendimento) {
           const initialHorarios = diasDaSemana.map(dia => ({
             ...dia,
-            ativo: horarioAtendimento[dia.key]?.ativo ?? false,
-            inicio: horarioAtendimento[dia.key]?.inicio || '08:00',
-            fim: horarioAtendimento[dia.key]?.fim || '18:00',
+            ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
+            inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
+            fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
           }));
           form.reset({ horarios: initialHorarios });
         }
@@ -109,9 +110,9 @@ const GerenciarAgenda = () => {
   const onSubmit = async (data: AgendaFormData) => {
     if (!user) return;
     setIsSubmitting(true);
-    
+
     const horarioAtendimento = data.horarios.reduce((acc, curr) => {
-        acc[curr.dia] = {
+        acc[[curr.dia]] = {
           inicio: curr.inicio,
           fim: curr.fim,
           ativo: curr.ativo
@@ -132,7 +133,7 @@ const GerenciarAgenda = () => {
             ...medicoData.configuracoes,
             horarioAtendimento,
         };
-      
+
         const { error: updateError } = await supabase
             .from('medicos')
             .update({ configuracoes: newConfiguracoes })
@@ -154,7 +155,7 @@ const GerenciarAgenda = () => {
         setIsSubmitting(false);
     }
   };
-  
+
   if (loading) {
     return <PageLoader message="Carregando sua agenda..." />;
   }
@@ -190,23 +191,33 @@ const GerenciarAgenda = () => {
                         control={form.control}
                         name={`horarios.${index}`}
                         render={({ field }) => (
-                            <FormItem className="flex flex-col sm:flex-row items-center gap-3 p-3 border rounded-lg hover:bg-gray-50/50 transition-colors">
-                                <div className="flex items-center w-full sm:w-40">
-                                    <FormControl>
-                                        <Checkbox checked={field.value.ativo} onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked)} />
-                                    </FormControl>
-                                    <Label className="ml-3 font-medium">{item.label}</Label>
-                                </div>
-                                <div className="flex-1 w-full grid grid-cols-2 gap-3">
-                                    <FormControl>
-                                      <Input type="time" disabled={!field.value.ativo} {...form.register(`horarios.${index}.inicio`)} />
-                                    </FormControl>
-                                    <FormControl>
-                                      <Input type="time" disabled={!field.value.ativo} {...form.register(`horarios.${index}.fim`)} />
-                                    </FormControl>
-                                </div>
-                                <FormMessage>{form.formState.errors.horarios?.[index]?.inicio?.message}</FormMessage>
-                            </FormItem>
+                          <FormItem className={cn("flex flex-col sm:flex-row items-center gap-3 p-3 border rounded-lg transition-colors", field.value.ativo ? "bg-blue-50/50 border-blue-200" : "hover:bg-gray-50/50 border-gray-200")}>
+                            <div className="flex items-center w-full sm:w-40">
+                              <FormControl>
+                                <Checkbox checked={field.value.ativo} onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked)} />
+                              </FormControl>
+                              <Label className={cn("ml-3 font-medium", !field.value.ativo && "opacity-70")}>{item.label}</Label>
+                            </div>
+                            <div className="flex-1 w-full grid grid-cols-2 gap-3">
+                              <FormControl>
+                                <Input
+                                  type="time"
+                                  disabled={!field.value.ativo}
+                                  {...form.register(`horarios.${index}.inicio`)}
+                                  className={cn(!field.value.ativo && "opacity-70")}
+                                />
+                              </FormControl>
+                              <FormControl>
+                                <Input
+                                  type="time"
+                                  disabled={!field.value.ativo}
+                                  {...form.register(`horarios.${index}.fim`)}
+                                  className={cn(!field.value.ativo && "opacity-70")}
+                                />
+                              </FormControl>
+                            </div>
+                            <FormMessage>{form.formState.errors.horarios?.[index]?.inicio?.message}</FormMessage>
+                          </FormItem>
                         )}
                       />
                     ))}
