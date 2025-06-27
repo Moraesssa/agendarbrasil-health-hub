@@ -3,68 +3,47 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage
-} from "@/components/ui/form";
-import { Loader2, Save } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Clock, Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger
-} from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoader } from "@/components/PageLoader";
 import { cn } from "@/lib/utils";
 
+// --- Zod Schema for Validation ---
 const horarioSchema = z.object({
   dia: z.string(),
   label: z.string(),
   ativo: z.boolean(),
   inicio: z.string(),
   fim: z.string()
+}).refine(data => !data.ativo || data.inicio < data.fim, {
+  message: "O horário de início deve ser anterior ao de fim.",
+  path: ["inicio"], 
 });
 
 const agendaSchema = z.object({
-  horarios: z.array(horarioSchema).superRefine((horarios, ctx) => {
-    horarios.forEach((horario, index) => {
-      if (horario.ativo && horario.inicio >= horario.fim) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Início deve ser antes do fim.",
-          path: [index, "inicio"]
-        });
-      }
-    });
-  })
+  horarios: z.array(horarioSchema)
 });
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
 
 const diasDaSemana = [
-  { key: "segunda", label: "Segunda-feira" },
-  { key: "terca", label: "Terça-feira" },
-  { key: "quarta", label: "Quarta-feira" },
-  { key: "quinta", label: "Quinta-feira" },
-  { key: "sexta", label: "Sexta-feira" },
+  { key: "segunda", label: "Segunda" },
+  { key: "terca", label: "Terça" },
+  { key: "quarta", label: "Quarta" },
+  { key: "quinta", label: "Quinta" },
+  { key: "sexta", label: "Sexta" },
   { key: "sabado", label: "Sábado" },
-  { key: "domingo", label: "Domingo" }
+  { key: "domingo", label: "Domingo" },
 ];
 
 const GerenciarAgenda = () => {
@@ -76,11 +55,11 @@ const GerenciarAgenda = () => {
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
     defaultValues: {
-      horarios: diasDaSemana.map((dia) => ({
+      horarios: diasDaSemana.map(dia => ({
         ...dia,
         ativo: false,
-        inicio: "08:00",
-        fim: "18:00"
+        inicio: '08:00',
+        fim: '18:00'
       }))
     }
   });
@@ -91,24 +70,24 @@ const GerenciarAgenda = () => {
       setLoading(true);
       try {
         const { data, error } = await supabase
-          .from("medicos")
-          .select("configuracoes")
-          .eq("user_id", user.id)
+          .from('medicos')
+          .select('configuracoes')
+          .eq('user_id', user.id)
           .single();
 
         if (error) throw error;
 
         const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
         if (horarioAtendimento) {
-          const initialHorarios = diasDaSemana.map((dia) => ({
+          const initialHorarios = diasDaSemana.map(dia => ({
             ...dia,
             ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
-            inicio: horarioAtendimento?.[dia.key]?.inicio || "08:00",
-            fim: horarioAtendimento?.[dia.key]?.fim || "18:00"
+            inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
+            fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
           }));
           form.reset({ horarios: initialHorarios });
         }
-      } catch {
+      } catch (error) {
         toast({
           title: "Erro ao carregar horários",
           description: "Não foi possível buscar sua agenda atual.",
@@ -120,66 +99,73 @@ const GerenciarAgenda = () => {
     };
 
     fetchHorarios();
-  }, [user]);
+  }, [user, form, toast]);
 
   const onSubmit = async (data: AgendaFormData) => {
     if (!user) return;
     setIsSubmitting(true);
+
     const horarioAtendimento = data.horarios.reduce((acc, curr) => {
-      acc[curr.dia] = {
-        inicio: curr.inicio,
-        fim: curr.fim,
-        ativo: curr.ativo
-      };
-      return acc;
-    }, {} as Record<string, { inicio: string; fim: string; ativo: boolean }>);
+        acc[curr.dia] = {
+          inicio: curr.inicio,
+          fim: curr.fim,
+          ativo: curr.ativo
+        };
+        return acc;
+      }, {} as { [key: string]: { inicio: string; fim: string; ativo: boolean } });
 
     try {
-      const { data: medicoData, error: fetchError } = await supabase
-        .from("medicos")
-        .select("configuracoes")
-        .eq("user_id", user.id)
-        .single();
+        const { data: medicoData, error: fetchError } = await supabase
+            .from('medicos')
+            .select('configuracoes')
+            .eq('user_id', user.id)
+            .single();
 
-      if (fetchError) throw fetchError;
+        if (fetchError) throw fetchError;
 
-      const { error: updateError } = await supabase
-        .from("medicos")
-        .update({ configuracoes: {
-          ...medicoData.configuracoes,
-          horarioAtendimento
-        }})
-        .eq("user_id", user.id);
+        const newConfiguracoes = {
+            ...medicoData.configuracoes,
+            horarioAtendimento,
+        };
 
-      if (updateError) throw updateError;
+        const { error: updateError } = await supabase
+            .from('medicos')
+            .update({ configuracoes: newConfiguracoes })
+            .eq('user_id', user.id);
 
-      toast({
-        title: "Agenda atualizada!",
-        description: "Seus horários foram salvos com sucesso."
-      });
-    } catch {
-      toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível atualizar sua agenda.",
-        variant: "destructive"
-      });
+        if (updateError) throw updateError;
+
+        toast({
+            title: "Agenda atualizada!",
+            description: "Seus horários de atendimento foram salvos com sucesso.",
+        });
+    } catch (error) {
+        toast({
+            title: "Erro ao salvar",
+            description: "Não foi possível atualizar sua agenda. Tente novamente.",
+            variant: "destructive"
+        });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
 
-  if (loading) return <PageLoader message="Carregando sua agenda..." />;
+  if (loading) {
+    return <PageLoader message="Carregando sua agenda..." />;
+  }
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-green-50">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-40 flex h-16 items-center border-b bg-white/95 shadow-sm px-6">
+          <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-blue-100/50 bg-white/95 backdrop-blur-md shadow-sm px-6">
             <SidebarTrigger className="text-blue-600 hover:bg-blue-50 transition-colors" />
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-blue-800">Gerenciar Agenda</h1>
-              <p className="text-sm text-gray-600">Atualize seus dias e horários de atendimento</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
+                    Gerenciar Agenda
+                </h1>
+                <p className="text-sm text-gray-600">Atualize seus dias e horários de atendimento</p>
             </div>
           </header>
           <main className="flex-1 overflow-auto p-6">
@@ -187,64 +173,60 @@ const GerenciarAgenda = () => {
               <CardHeader>
                 <CardTitle>Meus Horários</CardTitle>
                 <CardDescription>
-                  Ative os dias que você atende e defina os horários de início e fim do expediente.
+                  Selecione um dia da semana e defina se você atende e em quais horários.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    {form.watch("horarios").map((item, index) => (
-                      <FormField
-                        key={item.dia}
-                        control={form.control}
-                        name={`horarios.${index}` as const}
-                        render={({ field }) => (
-                          <FormItem
-                            className={cn(
-                              "flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg transition-all cursor-pointer",
-                              field.value.ativo ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                            )}
-                            onClick={() =>
-                              form.setValue(`horarios.${index}.ativo`, !field.value.ativo, {
-                                shouldValidate: true
-                              })
-                            }
-                          >
-                            <div className="flex items-center w-full sm:w-48">
-                              <Switch checked={field.value.ativo} className="pointer-events-none" />
-                              <Label className={cn("ml-4 font-medium", field.value.ativo ? "text-gray-800" : "text-gray-500")}>{item.label}</Label>
-                            </div>
-
-                            {field.value.ativo ? (
-                              <div className="flex-1 grid grid-cols-2 gap-4" onClick={(e) => e.stopPropagation()}>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Início</Label>
-                                  <Input type="time" {...form.register(`horarios.${index}.inicio`)} />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Fim</Label>
-                                  <Input type="time" {...form.register(`horarios.${index}.fim`)} />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex-1" onClick={(e) => e.stopPropagation()}>
-                                <p className="text-sm text-gray-500">Fechado</p>
-                              </div>
-                            )}
-
-                            <FormMessage className="text-xs text-red-600">
-                              {form.formState.errors.horarios?.[index]?.inicio?.message}
-                            </FormMessage>
-                          </FormItem>
-                        )}
-                      />
-                    ))}
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Tabs defaultValue="segunda" className="w-full">
+                      <TabsList className="grid w-full grid-cols-7">
+                        {diasDaSemana.map((dia) => (
+                          <TabsTrigger key={dia.key} value={dia.key}>{dia.label}</TabsTrigger>
+                        ))}
+                      </TabsList>
+                      
+                      {form.getValues('horarios').map((item, index) => (
+                          <TabsContent key={item.dia} value={item.dia}>
+                              <FormField
+                                control={form.control}
+                                name={`horarios.${index}`}
+                                render={({ field }) => (
+                                  <Card className={cn("p-6 mt-2", field.value.ativo ? "bg-blue-50" : "bg-gray-50")}>
+                                      <FormItem className="space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor={`switch-${item.dia}`} className="text-lg font-semibold">{item.label}</Label>
+                                            <FormControl>
+                                                <Switch
+                                                    id={`switch-${item.dia}`}
+                                                    checked={field.value.ativo}
+                                                    onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked, { shouldValidate: true })}
+                                                />
+                                            </FormControl>
+                                        </div>
+                                        {field.value.ativo && (
+                                            <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`inicio-${item.dia}`}>Início</Label>
+                                                    <Input id={`inicio-${item.dia}`} type="time" {...form.register(`horarios.${index}.inicio`)} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`fim-${item.dia}`}>Fim</Label>
+                                                    <Input id={`fim-${item.dia}`} type="time" {...form.register(`horarios.${index}.fim`)} />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {form.formState.errors.horarios?.[index] && <FormMessage>{form.formState.errors.horarios[index]?.inicio?.message}</FormMessage>}
+                                      </FormItem>
+                                  </Card>
+                                )}
+                              />
+                          </TabsContent>
+                      ))}
+                    </Tabs>
+                    
                     <Button type="submit" className="w-full mt-8 py-3 text-base" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="w-5 h-5 mr-2" />
-                      )}
+                      {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
                       Salvar Alterações
                     </Button>
                   </form>
