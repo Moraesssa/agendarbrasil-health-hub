@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -105,6 +104,14 @@ const EncaminhamentosMedico = React.lazy(() =>
   })
 );
 
+// NOVA PÁGINA PARA GERENCIAR AGENDA
+const GerenciarAgenda = React.lazy(() => 
+  import("./pages/GerenciarAgenda").catch(err => {
+    logger.error("Failed to load GerenciarAgenda page", "App", err);
+    throw err;
+  })
+);
+
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").catch(err => {
     logger.error("Failed to load NotFound page", "App", err);
@@ -165,6 +172,7 @@ const App = () => {
                           <Route path="/perfil-medico" element={<PerfilMedico />} />
                           <Route path="/pacientes-medico" element={<PacientesMedico />} />
                           <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                          <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} /> {/* NOVA ROTA */}
                           
                           {/* Sistema */}
                           <Route path="*" element={<NotFound />} />
