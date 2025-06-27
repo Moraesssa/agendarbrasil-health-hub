@@ -17,7 +17,6 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoader } from "@/components/PageLoader";
 import { Calendar as DayPickerCalendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 
 // --- Interfaces e Tipos ---
 interface HorarioConfig {
@@ -41,7 +40,7 @@ const horarioSchema = z.object({
   fim: z.string(),
 }).refine(data => !data.ativo || data.inicio < data.fim, {
   message: "Início deve ser antes do fim.",
-  path: ["inicio"], 
+  path: ["inicio"],
 });
 
 const agendaSchema = z.object({
@@ -64,10 +63,10 @@ const diasDaSemana = [
 const GerenciarAgenda = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
+
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
     defaultValues: {
@@ -75,13 +74,15 @@ const GerenciarAgenda = () => {
     }
   });
 
-  const { reset, setValue, getValues, watch, formState: { errors, isDirty } } = form;
+  const { reset, watch, setValue, formState: { errors, isDirty } } = form;
   const watchedHorarios = watch("horarios");
 
-  const fetchHorarios = useCallback(async (showToast = false) => {
-    if (!user?.id) { setLoading(false); return; }
-    if (!loading) setLoading(true); // Só mostra o loader se não estiver carregando
-    
+  const fetchAndSetHorarios = useCallback(async (showToast = false) => {
+    if (!user?.id) {
+      setInitialLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
@@ -95,23 +96,24 @@ const GerenciarAgenda = () => {
         inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
         fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
       }));
+
       reset({ horarios: initialHorarios });
       if (showToast) toast({ title: "Alterações descartadas", description: "Seus horários foram revertidos para a última versão salva." });
     } catch (error) {
       toast({ title: "Erro ao carregar horários", variant: "destructive" });
-    } finally {
-      setLoading(false);
     }
-  }, [user?.id, reset, toast, loading]);
+  }, [user?.id, reset, toast]);
+
 
   useEffect(() => {
-    fetchHorarios();
-  }, [user?.id]); // Apenas na montagem inicial
+    setInitialLoading(true);
+    fetchAndSetHorarios().finally(() => setInitialLoading(false));
+  }, [fetchAndSetHorarios]);
 
   const onSubmit = async (data: AgendaFormData) => {
     if (!user?.id) return toast({ title: "Erro de autenticação", variant: "destructive" });
     setIsSubmitting(true);
-    
+
     try {
       const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
       if (fetchError) throw fetchError;
@@ -121,25 +123,25 @@ const GerenciarAgenda = () => {
         acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
         return acc;
       }, {} as Record<string, HorarioConfig>);
-      
+
       const newConfiguracoes = { ...currentConfiguracoes, horarioAtendimento: newHorarioAtendimento };
 
       const { error: updateError } = await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id);
       if (updateError) throw updateError;
 
       toast({ title: "Agenda atualizada com sucesso!" });
-      reset(data); // Atualiza o estado "limpo" do formulário para o novo estado salvo
+      reset(data);
     } catch (error) {
       toast({ title: "Erro ao salvar agenda", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   const selectedDayIndex = selectedDate ? selectedDate.getDay() : 0;
   const selectedHorario = watchedHorarios?.[selectedDayIndex];
 
-  if (loading) return <PageLoader message="Carregando sua agenda..." />;
+  if (initialLoading) return <PageLoader message="Carregando sua agenda..." />;
 
   return (
     <SidebarProvider>
@@ -202,7 +204,7 @@ const GerenciarAgenda = () => {
                     {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
                   </Button>
                   {isDirty && (
-                    <Button type="button" variant="ghost" onClick={() => fetchHorarios(true)}>
+                    <Button type="button" variant="ghost" onClick={() => fetchAndSetHorarios(true)}>
                       <Undo2 className="w-5 h-5 mr-2" />
                       Desfazer
                     </Button>
