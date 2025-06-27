@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, User, MapPin, ChevronLeft, ChevronRight, Navigation, MessageCircle, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,8 +33,6 @@ const AgendaPaciente = () => {
       }
       setLoading(true);
       try {
-        // Com RLS habilitado, não precisamos mais filtrar por paciente_id
-        // O Supabase automaticamente retornará apenas as consultas do usuário logado
         const { data, error } = await supabase
           .from("consultas")
           .select(`
@@ -56,6 +54,30 @@ const AgendaPaciente = () => {
 
     fetchAppointments();
   }, [user, toast]);
+  
+  // **NOVA FUNÇÃO ADICIONADA**
+  const handleConfirmAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('consultas')
+        .update({ status: 'confirmada' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      
+      // Atualiza o estado local para refletir a mudança imediatamente
+      setAppointments(prev => prev.map(apt => 
+        apt.id === appointmentId ? {...apt, status: 'confirmada'} : apt
+      ));
+      
+      toast({
+        title: "Consulta confirmada!",
+        description: "Obrigado por confirmar sua presença. O médico foi notificado.",
+      });
+    } catch (error) {
+      toast({ title: "Erro", description: "Não foi possível confirmar a consulta.", variant: "destructive"});
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -138,7 +160,6 @@ const AgendaPaciente = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Próximas Consultas */}
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-900">
@@ -181,6 +202,18 @@ const AgendaPaciente = () => {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          {/* **BOTÃO DE CONFIRMAR ADICIONADO AQUI** */}
+                          {appointment.status === 'agendada' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="border-green-300 text-green-700 hover:bg-green-50 font-semibold"
+                              onClick={() => handleConfirmAppointment(appointment.id)}
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              Confirmar
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -204,7 +237,6 @@ const AgendaPaciente = () => {
               </CardContent>
             </Card>
             
-            {/* Histórico de Consultas */}
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-900">
