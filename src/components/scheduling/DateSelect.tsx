@@ -49,6 +49,8 @@ export function DateSelect({ selectedDate, onChange, disabled = false }: DateSel
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
           <Calendar
+            // **CORREÇÃO PRINCIPAL AQUI**
+            locale={ptBR} // Adiciona a localização para o calendário
             mode="single"
             selected={dateValue}
             onSelect={handleDateSelect}
