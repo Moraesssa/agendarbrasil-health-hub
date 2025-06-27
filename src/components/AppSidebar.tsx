@@ -1,5 +1,4 @@
-
-import { Calendar, Home, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
+import { Calendar, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -58,6 +57,12 @@ const settingsItems = [
     url: "/perfil-medico",
     icon: User,
     description: "Configurações do perfil médico"
+  },
+  {
+    title: "Meus Horários",
+    url: "/gerenciar-agenda",
+    icon: Clock,
+    description: "Gerenciar dias e horários de atendimento"
   },
   {
     title: "Configurações",
