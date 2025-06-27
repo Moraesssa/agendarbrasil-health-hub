@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Calendar, Clock, Loader2, Save } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoader } from "@/components/PageLoader";
-import { Calendar as DayPickerCalendar } from "@/components/ui/calendar"; // Renomeando para evitar conflito
+import { Calendar as DayPickerCalendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +27,8 @@ const horarioSchema = z.object({
   inicio: z.string(),
   fim: z.string()
 }).refine(data => !data.ativo || data.inicio < data.fim, {
-  message: "Início deve ser antes do fim.",
-  path: ["inicio"],
+  message: "O horário de início deve ser anterior ao de fim.",
+  path: ["inicio"], 
 });
 
 const agendaSchema = z.object({
@@ -52,7 +52,8 @@ const GerenciarAgenda = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(1); // Começar com Segunda-feira
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay());
 
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
@@ -69,48 +70,44 @@ const GerenciarAgenda = () => {
   const watchedHorarios = useWatch({ control: form.control, name: "horarios" });
 
   useEffect(() => {
-    // ... (código de fetchHorarios permanece o mesmo)
     const fetchHorarios = async () => {
-        if (!user) return;
-        setLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('medicos')
-            .select('configuracoes')
-            .eq('user_id', user.id)
-            .single();
+      if (!user) return;
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('medicos')
+          .select('configuracoes')
+          .eq('user_id', user.id)
+          .single();
   
-          if (error) throw error;
+        if (error) throw error;
   
-          const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
-          if (horarioAtendimento) {
-            const initialHorarios = diasDaSemana.map(dia => ({
-              ...dia,
-              ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
-              inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
-              fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
-            }));
-            form.reset({ horarios: initialHorarios });
-          }
-        } catch (error) {
-          toast({
-            title: "Erro ao carregar horários",
-            description: "Não foi possível buscar sua agenda atual.",
-            variant: "destructive"
-          });
-        } finally {
-          setLoading(false);
+        const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
+        if (horarioAtendimento) {
+          const initialHorarios = diasDaSemana.map(dia => ({
+            ...dia,
+            ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
+            inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
+            fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
+          }));
+          form.reset({ horarios: initialHorarios });
         }
-      };
-  
-      fetchHorarios();
+      } catch (error) {
+        toast({
+          title: "Erro ao carregar horários",
+          description: "Não foi possível buscar sua agenda atual.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHorarios();
   }, [user, form, toast]);
 
   const onSubmit = async (data: AgendaFormData) => {
-    // ... (código de onSubmit permanece o mesmo)
     if (!user) return;
     setIsSubmitting(true);
-
     const horarioAtendimento = data.horarios.reduce((acc, curr) => {
         acc[curr.dia] = {
           inicio: curr.inicio,
@@ -129,11 +126,8 @@ const GerenciarAgenda = () => {
 
         if (fetchError) throw fetchError;
 
-        const newConfiguracoes = {
-            ...medicoData.configuracoes,
-            horarioAtendimento,
-        };
-
+        const newConfiguracoes = { ...medicoData.configuracoes, horarioAtendimento };
+      
         const { error: updateError } = await supabase
             .from('medicos')
             .update({ configuracoes: newConfiguracoes })
@@ -163,6 +157,12 @@ const GerenciarAgenda = () => {
   const dayPickerModifiersClassNames = {
     active: 'bg-green-100 text-green-800 border-green-200 rounded-md',
   };
+  
+  const handleDayClick = (day: Date | undefined) => {
+      if (!day) return;
+      setSelectedDate(day);
+      setSelectedDayIndex(day.getDay());
+  }
 
   if (loading) {
     return <PageLoader message="Carregando sua agenda..." />;
@@ -186,14 +186,13 @@ const GerenciarAgenda = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-6xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Coluna do Calendário */}
                   <div className="lg:col-span-2">
                     <Card>
-                      <CardContent className="p-2">
+                      <CardContent className="p-2 flex justify-center">
                         <DayPickerCalendar
                             mode="single"
-                            selected={new Date()}
-                            onDayClick={(day) => setSelectedDayIndex(day.getDay())}
+                            selected={selectedDate}
+                            onSelect={handleDayClick}
                             locale={ptBR}
                             modifiers={dayPickerModifiers}
                             modifiersClassNames={dayPickerModifiersClassNames}
@@ -202,12 +201,11 @@ const GerenciarAgenda = () => {
                     </Card>
                   </div>
 
-                  {/* Coluna de Edição */}
                   <div className="lg:col-span-1">
                     <Card>
                       <CardHeader>
                         <CardTitle>Editar Horário</CardTitle>
-                        <CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana[selectedDayIndex].label}</span></CardDescription>
+                        <CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana.find(d => d.index === selectedDayIndex)?.label}</span></CardDescription>
                       </CardHeader>
                       <CardContent>
                         <FormField
@@ -215,7 +213,7 @@ const GerenciarAgenda = () => {
                             name={`horarios.${selectedDayIndex}`}
                             render={({ field }) => (
                                 <FormItem className="space-y-6">
-                                    <div className="flex items-center justify-between rounded-lg border p-4" onClick={() => form.setValue(`horarios.${selectedDayIndex}.ativo`, !field.value.ativo, { shouldValidate: true })}>
+                                    <div className="flex items-center justify-between rounded-lg border p-4 cursor-pointer" onClick={() => form.setValue(`horarios.${selectedDayIndex}.ativo`, !field.value.ativo, { shouldValidate: true })}>
                                         <Label htmlFor={`switch-${field.value.dia}`} className="text-base font-semibold">Atender neste dia?</Label>
                                         <FormControl>
                                             <Switch
@@ -227,7 +225,7 @@ const GerenciarAgenda = () => {
                                     </div>
 
                                     {field.value.ativo && (
-                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95">
+                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95" onClick={(e) => e.stopPropagation()}>
                                             <div className="space-y-2">
                                                 <Label htmlFor={`inicio-${field.value.dia}`}>Início</Label>
                                                 <Input id={`inicio-${field.value.dia}`} type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} />
@@ -238,6 +236,7 @@ const GerenciarAgenda = () => {
                                             </div>
                                         </div>
                                     )}
+                                    {form.formState.errors.horarios?.[selectedDayIndex] && <FormMessage>{form.formState.errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
                                 </FormItem>
                             )}
                         />
