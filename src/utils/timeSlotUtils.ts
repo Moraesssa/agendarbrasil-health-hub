@@ -92,8 +92,9 @@ export const generateTimeSlots = (
   const dayName = getDayName(selectedDate);
   const workingHours = doctorConfig.horarioAtendimento?.[dayName];
 
-  // **CORREÇÃO CRÍTICA:** Verifica se o dia de trabalho está definido e ATIVO.
-  // Se não estiver ativo, retorna uma lista vazia, impedindo o agendamento.
+  // **CORREÇÃO CRÍTICA E DEFINITIVA:**
+  // Verifica PRIMEIRO se o dia de trabalho está definido e ATIVO.
+  // Se não estiver ativo, retorna uma lista vazia, o que impede o agendamento.
   if (!workingHours || !workingHours.ativo) {
     return [];
   }
@@ -114,7 +115,7 @@ export const generateTimeSlots = (
     const slotStart = minutes;
     const slotEnd = slotStart + consultationDuration;
 
-    // Verifica se o slot está dentro do horário de almoço
+    // Pula os horários que caem dentro do intervalo de almoço
     if (lunchStartMinutes && lunchEndMinutes && slotStart < lunchEndMinutes && slotEnd > lunchStartMinutes) {
       continue;
     }
