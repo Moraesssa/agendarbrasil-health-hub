@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Calendar, Clock, User, Check, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, Check, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,6 @@ const AgendaPaciente = () => {
     fetchAppointments();
   }, [user, toast]);
   
-  // **NOVA FUNÇÃO ADICIONADA**
   const handleConfirmAppointment = async (appointmentId: string) => {
     try {
       const { error } = await supabase
@@ -65,7 +65,6 @@ const AgendaPaciente = () => {
 
       if (error) throw error;
       
-      // Atualiza o estado local para refletir a mudança imediatamente
       setAppointments(prev => prev.map(apt => 
         apt.id === appointmentId ? {...apt, status: 'confirmada'} : apt
       ));
@@ -124,6 +123,10 @@ const AgendaPaciente = () => {
       toast({ title: "Erro", description: "Não foi possível cancelar a consulta.", variant: "destructive"});
     }
   };
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
   
   const upcomingAppointments = appointments.filter(
     (apt) => new Date(apt.data_consulta) >= new Date() && apt.status !== 'cancelada' && apt.status !== 'realizada'
@@ -138,13 +141,24 @@ const AgendaPaciente = () => {
       
       <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-blue-900 mb-2">
-              Minha Agenda
-            </h1>
-            <p className="text-gray-600">
-              Visualize e gerencie suas consultas agendadas
-            </p>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={handleGoBack}
+              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Voltar</span>
+            </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-blue-900 mb-2">
+                Minha Agenda
+              </h1>
+              <p className="text-gray-600">
+                Visualize e gerencie suas consultas agendadas
+              </p>
+            </div>
           </div>
           <Button 
             onClick={() => navigate("/agendamento")}
@@ -202,7 +216,6 @@ const AgendaPaciente = () => {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {/* **BOTÃO DE CONFIRMAR ADICIONADO AQUI** */}
                           {appointment.status === 'agendada' && (
                             <Button 
                               variant="outline" 
