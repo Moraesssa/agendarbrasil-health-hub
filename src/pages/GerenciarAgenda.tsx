@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useState, useEffect, useCallback } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +27,7 @@ const horarioSchema = z.object({
   inicio: z.string(),
   fim: z.string()
 }).refine(data => !data.ativo || data.inicio < data.fim, {
-  message: "O horário de início deve ser anterior ao de fim.",
+  message: "Início deve ser antes do fim.",
   path: ["inicio"], 
 });
 
@@ -52,117 +52,71 @@ const GerenciarAgenda = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay());
 
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
     defaultValues: {
-      horarios: diasDaSemana.map(dia => ({
-        ...dia,
-        ativo: false,
-        inicio: '08:00',
-        fim: '18:00'
-      }))
+      horarios: diasDaSemana.map(dia => ({ ...dia, ativo: false, inicio: '08:00', fim: '18:00' }))
     }
   });
-  
-  const watchedHorarios = useWatch({ control: form.control, name: "horarios" });
+
+  const { reset, setValue, getValues, formState: { errors } } = form;
+
+  const fetchHorarios = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('medicos')
+        .select('configuracoes')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
+      const initialHorarios = diasDaSemana.map(dia => ({
+        ...dia,
+        ativo: horarioAtendimento?.[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
+        inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
+        fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
+      }));
+      reset({ horarios: initialHorarios });
+    } catch (error) {
+      toast({ title: "Erro ao carregar horários", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, reset, toast]);
 
   useEffect(() => {
-    const fetchHorarios = async () => {
-      if (!user) return;
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('medicos')
-          .select('configuracoes')
-          .eq('user_id', user.id)
-          .single();
-  
-        if (error) throw error;
-  
-        const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
-        if (horarioAtendimento) {
-          const initialHorarios = diasDaSemana.map(dia => ({
-            ...dia,
-            ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
-            inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
-            fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
-          }));
-          form.reset({ horarios: initialHorarios });
-        }
-      } catch (error) {
-        toast({
-          title: "Erro ao carregar horários",
-          description: "Não foi possível buscar sua agenda atual.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchHorarios();
-  }, [user, form, toast]);
+  }, [fetchHorarios]);
 
   const onSubmit = async (data: AgendaFormData) => {
     if (!user) return;
     setIsSubmitting(true);
     const horarioAtendimento = data.horarios.reduce((acc, curr) => {
-        acc[curr.dia] = {
-          inicio: curr.inicio,
-          fim: curr.fim,
-          ativo: curr.ativo
-        };
+        acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
         return acc;
       }, {} as { [key: string]: { inicio: string; fim: string; ativo: boolean } });
 
     try {
-        const { data: medicoData, error: fetchError } = await supabase
-            .from('medicos')
-            .select('configuracoes')
-            .eq('user_id', user.id)
-            .single();
-
+        const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
         if (fetchError) throw fetchError;
-
         const newConfiguracoes = { ...medicoData.configuracoes, horarioAtendimento };
-      
-        const { error: updateError } = await supabase
-            .from('medicos')
-            .update({ configuracoes: newConfiguracoes })
-            .eq('user_id', user.id);
-
+        const { error: updateError } = await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id);
         if (updateError) throw updateError;
-
-        toast({
-            title: "Agenda atualizada!",
-            description: "Seus horários de atendimento foram salvos com sucesso.",
-        });
+        toast({ title: "Agenda atualizada com sucesso!" });
     } catch (error) {
-        toast({
-            title: "Erro ao salvar",
-            description: "Não foi possível atualizar sua agenda. Tente novamente.",
-            variant: "destructive"
-        });
+        toast({ title: "Erro ao salvar agenda", variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
   };
-
-  const dayPickerModifiers = {
-    active: (date: Date) => watchedHorarios?.[date.getDay()]?.ativo,
-  };
-
-  const dayPickerModifiersClassNames = {
-    active: 'bg-green-100 text-green-800 border-green-200 rounded-md',
-  };
   
-  const handleDayClick = (day: Date | undefined) => {
-      if (!day) return;
-      setSelectedDate(day);
-      setSelectedDayIndex(day.getDay());
-  }
+  const selectedHorario = getValues(`horarios.${selectedDayIndex}`);
 
   if (loading) {
     return <PageLoader message="Carregando sua agenda..." />;
@@ -191,11 +145,8 @@ const GerenciarAgenda = () => {
                       <CardContent className="p-2 flex justify-center">
                         <DayPickerCalendar
                             mode="single"
-                            selected={selectedDate}
-                            onSelect={handleDayClick}
+                            onDayClick={(day) => setSelectedDayIndex(day.getDay())}
                             locale={ptBR}
-                            modifiers={dayPickerModifiers}
-                            modifiersClassNames={dayPickerModifiersClassNames}
                         />
                       </CardContent>
                     </Card>
@@ -208,38 +159,31 @@ const GerenciarAgenda = () => {
                         <CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana.find(d => d.index === selectedDayIndex)?.label}</span></CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <FormField
-                            control={form.control}
-                            name={`horarios.${selectedDayIndex}`}
-                            render={({ field }) => (
-                                <FormItem className="space-y-6">
-                                    <div className="flex items-center justify-between rounded-lg border p-4 cursor-pointer" onClick={() => form.setValue(`horarios.${selectedDayIndex}.ativo`, !field.value.ativo, { shouldValidate: true })}>
-                                        <Label htmlFor={`switch-${field.value.dia}`} className="text-base font-semibold">Atender neste dia?</Label>
-                                        <FormControl>
-                                            <Switch
-                                                id={`switch-${field.value.dia}`}
-                                                checked={field.value.ativo}
-                                                className="pointer-events-none"
-                                            />
-                                        </FormControl>
-                                    </div>
+                        {selectedHorario && (
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                                <Label className="text-base font-semibold">Atender neste dia?</Label>
+                                <Switch
+                                    checked={selectedHorario.ativo}
+                                    onCheckedChange={(checked) => setValue(`horarios.${selectedDayIndex}.ativo`, checked, { shouldValidate: true, shouldDirty: true })}
+                                />
+                            </div>
 
-                                    {field.value.ativo && (
-                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95" onClick={(e) => e.stopPropagation()}>
-                                            <div className="space-y-2">
-                                                <Label htmlFor={`inicio-${field.value.dia}`}>Início</Label>
-                                                <Input id={`inicio-${field.value.dia}`} type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor={`fim-${field.value.dia}`}>Fim</Label>
-                                                <Input id={`fim-${field.value.dia}`} type="time" {...form.register(`horarios.${selectedDayIndex}.fim`)} />
-                                            </div>
-                                        </div>
-                                    )}
-                                    {form.formState.errors.horarios?.[selectedDayIndex] && <FormMessage>{form.formState.errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
-                                </FormItem>
+                            {selectedHorario.ativo && (
+                                <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95">
+                                    <div className="space-y-2">
+                                        <Label>Início</Label>
+                                        <Input type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Fim</Label>
+                                        <Input type="time" {...form.register(`horarios.${selectedDayIndex}.fim`)} />
+                                    </div>
+                                </div>
                             )}
-                        />
+                            {errors.horarios?.[selectedDayIndex] && <FormMessage>{errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
@@ -247,7 +191,7 @@ const GerenciarAgenda = () => {
                 
                 <Button type="submit" className="w-full max-w-xs mx-auto flex" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                    Salvar Alterações na Agenda
+                    Salvar Alterações
                 </Button>
               </form>
             </Form>
