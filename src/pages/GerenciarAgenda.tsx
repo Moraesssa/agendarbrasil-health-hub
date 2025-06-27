@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -7,141 +7,126 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, Save, Undo2 } from "lucide-react";
+import { Form, FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Loader2, Save, Undo2, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoader } from "@/components/PageLoader";
-import { Calendar as DayPickerCalendar } from "@/components/ui/calendar";
-import { ptBR } from "date-fns/locale";
+import { logger } from "@/utils/logger";
 
-// --- Interfaces e Tipos ---
-interface HorarioConfig {
-  inicio: string;
-  fim: string;
-  ativo: boolean;
-}
-
-interface MedicoConfiguracoes {
-  horarioAtendimento?: Record<string, HorarioConfig>;
-  [key: string]: any;
-}
-
-// --- Zod Schema for Validation ---
+// --- Tipos e Esquemas ---
 const horarioSchema = z.object({
-  dia: z.string(),
-  label: z.string(),
-  index: z.number(),
   ativo: z.boolean(),
   inicio: z.string(),
   fim: z.string(),
-}).refine(data => !data.ativo || data.inicio < data.fim, {
+}).refine(data => !data.ativo || (data.inicio && data.fim && data.inicio < data.fim), {
   message: "Início deve ser antes do fim.",
   path: ["inicio"],
 });
 
 const agendaSchema = z.object({
-  horarios: z.array(horarioSchema)
+  horarios: z.record(horarioSchema)
 });
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
+type HorarioConfig = z.infer<typeof horarioSchema>;
 
 const diasDaSemana = [
-  { key: "domingo", label: "Domingo", index: 0 },
-  { key: "segunda", label: "Segunda-feira", index: 1 },
-  { key: "terca", label: "Terça-feira", index: 2 },
-  { key: "quarta", label: "Quarta-feira", index: 3 },
-  { key: "quinta", label: "Quinta-feira", index: 4 },
-  { key: "sexta", label: "Sexta-feira", index: 5 },
-  { key: "sabado", label: "Sábado", index: 6 },
+  { key: "segunda", label: "Segunda-feira" },
+  { key: "terca", label: "Terça-feira" },
+  { key: "quarta", label: "Quarta-feira" },
+  { key: "quinta", label: "Quinta-feira" },
+  { key: "sexta", label: "Sexta-feira" },
+  { key: "sabado", label: "Sábado" },
+  { key: "domingo", label: "Domingo" },
 ] as const;
 
 // --- Componente Principal ---
 const GerenciarAgenda = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
     defaultValues: {
-      horarios: diasDaSemana.map(dia => ({ ...dia, ativo: false, inicio: '08:00', fim: '18:00' }))
+      horarios: diasDaSemana.reduce((acc, dia) => {
+        acc[dia.key] = { ativo: dia.key !== 'sabado' && dia.key !== 'domingo', inicio: '08:00', fim: '18:00' };
+        return acc;
+      }, {} as Record<string, HorarioConfig>)
     }
   });
 
-  const { reset, watch, setValue, formState: { errors, isDirty } } = form;
-  const watchedHorarios = watch("horarios");
+  const { reset, handleSubmit, control, formState: { isDirty, errors } } = form;
 
-  const fetchAndSetHorarios = useCallback(async (showToast = false) => {
+  const fetchHorarios = useCallback(async () => {
     if (!user?.id) {
-      setInitialLoading(false);
+      setLoading(false);
       return;
     }
-
+    logger.info("Buscando horários para o médico...", "GerenciarAgenda", { userId: user.id });
     try {
-      const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle();
-      if (error && error.code !== 'PGRST116') throw error;
+      const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
+      
+      if (error && error.code !== 'PGRST116') throw error; // Ignora erro de "não encontrado"
 
-      const configuracoes = data?.configuracoes as MedicoConfiguracoes | null;
-      const horarioAtendimento = configuracoes?.horarioAtendimento;
+      const horarioAtendimento = data?.configuracoes?.horarioAtendimento || {};
+      
+      const horariosParaForm = diasDaSemana.reduce((acc, dia) => {
+        acc[dia.key] = {
+          ativo: horarioAtendimento[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
+          inicio: horarioAtendimento[dia.key]?.inicio || '08:00',
+          fim: horarioAtendimento[dia.key]?.fim || '18:00',
+        };
+        return acc;
+      }, {} as Record<string, HorarioConfig>);
 
-      const initialHorarios = diasDaSemana.map(dia => ({
-        ...dia,
-        ativo: horarioAtendimento?.[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
-        inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
-        fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
-      }));
-
-      reset({ horarios: initialHorarios });
-      if (showToast) toast({ title: "Alterações descartadas", description: "Seus horários foram revertidos para a última versão salva." });
+      reset({ horarios: horariosParaForm });
     } catch (error) {
+      logger.error("Erro ao carregar horários", "GerenciarAgenda", error);
       toast({ title: "Erro ao carregar horários", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   }, [user?.id, reset, toast]);
 
-
   useEffect(() => {
-    setInitialLoading(true);
-    fetchAndSetHorarios().finally(() => setInitialLoading(false));
-  }, [fetchAndSetHorarios]);
+    fetchHorarios();
+  }, [fetchHorarios]);
 
   const onSubmit = async (data: AgendaFormData) => {
     if (!user?.id) return toast({ title: "Erro de autenticação", variant: "destructive" });
+    
     setIsSubmitting(true);
+    logger.info("Salvando horários...", "GerenciarAgenda", { userId: user.id });
 
     try {
       const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
       if (fetchError) throw fetchError;
 
-      const currentConfiguracoes = medicoData.configuracoes || {};
-      const newHorarioAtendimento = data.horarios.reduce((acc, curr) => {
-        acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
-        return acc;
-      }, {} as Record<string, HorarioConfig>);
-
-      const newConfiguracoes = { ...currentConfiguracoes, horarioAtendimento: newHorarioAtendimento };
+      const newConfiguracoes = {
+        ...medicoData.configuracoes,
+        horarioAtendimento: data.horarios
+      };
 
       const { error: updateError } = await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id);
       if (updateError) throw updateError;
 
       toast({ title: "Agenda atualizada com sucesso!" });
-      reset(data);
+      reset(data); // Atualiza o estado "limpo" do formulário para o novo estado salvo
     } catch (error) {
+      logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
       toast({ title: "Erro ao salvar agenda", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedDayIndex = selectedDate ? selectedDate.getDay() : 0;
-  const selectedHorario = watchedHorarios?.[selectedDayIndex];
-
-  if (initialLoading) return <PageLoader message="Carregando sua agenda..." />;
+  if (loading) return <PageLoader message="Carregando sua agenda..." />;
 
   return (
     <SidebarProvider>
@@ -150,68 +135,91 @@ const GerenciarAgenda = () => {
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-blue-100/50 bg-white/95 backdrop-blur-md shadow-sm px-6">
             <SidebarTrigger className="text-blue-600 hover:bg-blue-50" />
-            <div className="flex-1"><h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">Gerenciar Agenda</h1>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">Meus Horários</h1>
               <p className="text-sm text-gray-600">
-                Selecione um dia e ajuste seus horários
+                Defina sua disponibilidade semanal
                 {isDirty && <span className="ml-2 text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>}
               </p>
             </div>
           </header>
           <main className="flex-1 overflow-auto p-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-6xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                  <div className="lg:col-span-2">
-                    <Card>
-                      <CardContent className="p-2 flex justify-center">
-                        <DayPickerCalendar mode="single" selected={selectedDate} onSelect={setSelectedDate} locale={ptBR}
-                          modifiers={{ active: (date) => watchedHorarios?.[date.getDay()]?.ativo }}
-                          modifiersClassNames={{ active: 'bg-green-100/70', selected: 'bg-blue-600 text-white focus:bg-blue-600 focus:text-white rounded-md' }}/>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <div className="lg:col-span-1">
-                    <Card>
-                      <CardHeader><CardTitle>Editar Horário</CardTitle><CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana.find(d => d.index === selectedDayIndex)?.label}</span></CardDescription></CardHeader>
-                      <CardContent>
-                        {selectedHorario && (
-                          <FormField control={form.control} name={`horarios.${selectedDayIndex}`} render={({ field }) => (
-                              <FormItem className="space-y-6">
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                  <Label className="text-base font-semibold">Atender neste dia?</Label>
-                                  <Switch checked={field.value.ativo} onCheckedChange={(checked) => setValue(`horarios.${selectedDayIndex}.ativo`, checked, { shouldDirty: true, shouldValidate: true })} />
+            <Card className="max-w-4xl mx-auto shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  Horários de Atendimento
+                </CardTitle>
+                <CardDescription>
+                  Ative os dias que deseja atender e defina os horários de início e fim para cada um.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="space-y-4">
+                      {diasDaSemana.map((dia) => (
+                        <Card key={dia.key} className="p-4">
+                          <Controller
+                            name={`horarios.${dia.key}`}
+                            control={control}
+                            render={({ field }) => (
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <div className="flex items-center w-full sm:w-48">
+                                  <Switch
+                                    checked={field.value.ativo}
+                                    onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })}
+                                    id={`switch-${dia.key}`}
+                                  />
+                                  <Label htmlFor={`switch-${dia.key}`} className="ml-3 font-semibold text-base">
+                                    {dia.label}
+                                  </Label>
                                 </div>
-                                {field.value.ativo && (
-                                  <div className="space-y-4 animate-in fade-in-0">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div><Label>Início</Label><Input type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} /></div>
-                                      <div><Label>Fim</Label><Input type="time" {...form.register(`horarios.${selectedDayIndex}.fim`)} /></div>
-                                    </div>
-                                    {errors.horarios?.[selectedDayIndex]?.inicio && <FormMessage>{errors.horarios[selectedDayIndex]?.inicio?.message}</FormMessage>}
+                                <div className={`flex-1 w-full grid grid-cols-2 gap-4 transition-opacity ${field.value.ativo ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                                  <div>
+                                    <Label htmlFor={`inicio-${dia.key}`}>Início</Label>
+                                    <Input
+                                      id={`inicio-${dia.key}`}
+                                      type="time"
+                                      value={field.value.inicio}
+                                      onChange={(e) => field.onChange({ ...field.value, inicio: e.target.value })}
+                                      disabled={!field.value.ativo}
+                                    />
                                   </div>
-                                )}
-                              </FormItem>
+                                  <div>
+                                    <Label htmlFor={`fim-${dia.key}`}>Fim</Label>
+                                    <Input
+                                      id={`fim-${dia.key}`}
+                                      type="time"
+                                      value={field.value.fim}
+                                      onChange={(e) => field.onChange({ ...field.value, fim: e.target.value })}
+                                      disabled={!field.value.ativo}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           />
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-                <div className="flex justify-center items-center gap-4 pt-4">
-                  <Button type="submit" className="px-8 py-3 text-base" disabled={isSubmitting || !isDirty}>
-                    {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                    {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
-                  </Button>
-                  {isDirty && (
-                    <Button type="button" variant="ghost" onClick={() => fetchAndSetHorarios(true)}>
-                      <Undo2 className="w-5 h-5 mr-2" />
-                      Desfazer
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </Form>
+                           {errors.horarios?.[dia.key]?.inicio && <FormMessage className="mt-2">{errors.horarios?.[dia.key]?.inicio?.message}</FormMessage>}
+                        </Card>
+                      ))}
+                    </div>
+                    <div className="flex justify-end items-center gap-4 pt-4 border-t">
+                       {isDirty && (
+                        <Button type="button" variant="ghost" onClick={() => fetchHorarios(true)}>
+                          <Undo2 className="w-5 h-5 mr-2" />
+                          Desfazer
+                        </Button>
+                      )}
+                      <Button type="submit" className="px-8 py-3 text-base" disabled={isSubmitting || !isDirty}>
+                        {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                        {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
           </main>
         </SidebarInset>
       </div>
