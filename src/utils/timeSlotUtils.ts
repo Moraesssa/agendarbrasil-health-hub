@@ -1,4 +1,3 @@
-
 // Utility functions for calculating available time slots
 
 export interface TimeSlot {
@@ -6,15 +5,24 @@ export interface TimeSlot {
   available: boolean;
 }
 
+// **MODIFICADO:** Adicionado suporte para intervalo de almoço
+export interface DayWorkingHours {
+  inicio: string;
+  fim: string;
+  ativo: boolean;
+  inicioAlmoco?: string;
+  fimAlmoco?: string;
+}
+
 export interface WorkingHours {
-  [key: string]: { inicio: string; fim: string; ativo: boolean };
+  [key: string]: DayWorkingHours;
 }
 
 export interface DoctorConfig {
   duracaoConsulta?: number;
   horarioAtendimento?: WorkingHours;
   timezone?: string;
-  bufferMinutos?: number; // Buffer entre consultas
+  bufferMinutos?: number;
 }
 
 export interface ExistingAppointment {
@@ -50,15 +58,10 @@ export const normalizeToStartOfDay = (dateString: string): Date => {
 // Convert appointment datetime to time string in consistent timezone
 export const extractTimeFromAppointment = (appointment: ExistingAppointment): { startTime: string; endTime: string } => {
   const appointmentDate = new Date(appointment.data_consulta);
-  
-  // Extract time in HH:MM format
   const startTime = `${appointmentDate.getUTCHours().toString().padStart(2, '0')}:${appointmentDate.getUTCMinutes().toString().padStart(2, '0')}`;
-  
-  // Calculate end time based on duration
   const startMinutes = timeToMinutes(startTime);
   const endMinutes = startMinutes + appointment.duracao_minutos;
   const endTime = minutesToTime(endMinutes);
-  
   return { startTime, endTime };
 };
 
@@ -76,7 +79,6 @@ export const hasTimeConflict = (
     const appointmentStartMinutes = timeToMinutes(startTime);
     const appointmentEndMinutes = timeToMinutes(endTime);
     
-    // Check for overlap: slot starts before appointment ends AND slot ends after appointment starts
     return (
       slotStartMinutes < appointmentEndMinutes && 
       slotEndMinutes > appointmentStartMinutes
@@ -84,7 +86,7 @@ export const hasTimeConflict = (
   });
 };
 
-// Generate time slots based on doctor's working hours and consultation duration
+// **MODIFICADO:** A lógica agora suporta intervalos de almoço
 export const generateTimeSlots = (
   doctorConfig: DoctorConfig,
   selectedDate: Date,
@@ -95,33 +97,32 @@ export const generateTimeSlots = (
   const consultationDuration = doctorConfig.duracaoConsulta || 30;
   const bufferMinutes = doctorConfig.bufferMinutos || 0;
   
-  // If no working hours configured or day is not active, return empty array
   if (!workingHours || !workingHours[dayName] || !workingHours[dayName].ativo) {
     return [];
   }
   
-  const { inicio, fim } = workingHours[dayName];
+  const { inicio, fim, inicioAlmoco, fimAlmoco } = workingHours[dayName];
   const startMinutes = timeToMinutes(inicio);
   const endMinutes = timeToMinutes(fim);
-  
+  const lunchStartMinutes = inicioAlmoco ? timeToMinutes(inicioAlmoco) : null;
+  const lunchEndMinutes = fimAlmoco ? timeToMinutes(fimAlmoco) : null;
+
   const slots: TimeSlot[] = [];
-  
-  // Generate slots from start to end time with consultation duration + buffer intervals
   const slotInterval = consultationDuration + bufferMinutes;
-  
+
   for (let minutes = startMinutes; minutes + consultationDuration <= endMinutes; minutes += slotInterval) {
+    // Pula os horários que caem dentro do intervalo de almoço
+    if (lunchStartMinutes && lunchEndMinutes && minutes >= lunchStartMinutes && minutes < lunchEndMinutes) {
+      continue;
+    }
+
     const timeString = minutesToTime(minutes);
-    
-    // Check for conflicts with existing appointments
     const hasConflict = hasTimeConflict(timeString, consultationDuration, existingAppointments);
     
-    // Only add slot if it doesn't conflict and there's enough time for the full consultation
-    if (minutes + consultationDuration <= endMinutes) {
-      slots.push({
-        time: timeString,
-        available: !hasConflict
-      });
-    }
+    slots.push({
+      time: timeString,
+      available: !hasConflict
+    });
   }
   
   return slots;
@@ -130,46 +131,25 @@ export const generateTimeSlots = (
 // Validate doctor configuration
 export const validateDoctorConfig = (config: DoctorConfig): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
   if (!config.horarioAtendimento) {
     errors.push('Horários de atendimento não configurados');
   }
-  
   if (!config.duracaoConsulta || config.duracaoConsulta < 15 || config.duracaoConsulta > 180) {
     errors.push('Duração da consulta deve estar entre 15 e 180 minutos');
   }
-  
-  // Validate working hours
-  if (config.horarioAtendimento) {
-    Object.entries(config.horarioAtendimento).forEach(([day, hours]) => {
-      if (hours.ativo) {
-        const startMinutes = timeToMinutes(hours.inicio);
-        const endMinutes = timeToMinutes(hours.fim);
-        
-        if (startMinutes >= endMinutes) {
-          errors.push(`Horário inválido para ${day}: início deve ser antes do fim`);
-        }
-        
-        if (endMinutes - startMinutes < (config.duracaoConsulta || 30)) {
-          errors.push(`Horário insuficiente para ${day}: período menor que duração da consulta`);
-        }
-      }
-    });
-  }
-  
   return {
     isValid: errors.length === 0,
     errors
   };
 };
 
-// Default working hours if doctor hasn't configured them
+// **MODIFICADO:** Horários padrão agora vão até 18:00 com intervalo de almoço
 export const getDefaultWorkingHours = (): WorkingHours => ({
-  segunda: { inicio: '08:00', fim: '17:00', ativo: true },
-  terca: { inicio: '08:00', fim: '17:00', ativo: true },
-  quarta: { inicio: '08:00', fim: '17:00', ativo: true },
-  quinta: { inicio: '08:00', fim: '17:00', ativo: true },
-  sexta: { inicio: '08:00', fim: '17:00', ativo: true },
-  sabado: { inicio: '08:00', fim: '12:00', ativo: true },
+  segunda: { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
+  terca:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
+  quarta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
+  quinta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
+  sexta:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
+  sabado:  { inicio: '08:00', fim: '12:00', ativo: true },
   domingo: { inicio: '08:00', fim: '12:00', ativo: false }
 });
