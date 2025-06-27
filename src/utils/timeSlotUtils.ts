@@ -1,11 +1,10 @@
-// Utility functions for calculating available time slots
+// --- Interfaces e Tipos ---
 
 export interface TimeSlot {
   time: string;
   available: boolean;
 }
 
-// **MODIFICADO:** Adicionado suporte para intervalo de almoço
 export interface DayWorkingHours {
   inicio: string;
   fim: string;
@@ -21,7 +20,6 @@ export interface WorkingHours {
 export interface DoctorConfig {
   duracaoConsulta?: number;
   horarioAtendimento?: WorkingHours;
-  timezone?: string;
   bufferMinutos?: number;
 }
 
@@ -30,126 +28,109 @@ export interface ExistingAppointment {
   duracao_minutos: number;
 }
 
-// Convert time string (HH:MM) to minutes since midnight
+
+// --- Funções Auxiliares de Tempo ---
+
 export const timeToMinutes = (time: string): number => {
   const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
+  return (hours * 60) + minutes;
 };
 
-// Convert minutes since midnight to time string (HH:MM)
 export const minutesToTime = (minutes: number): string => {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 };
 
-// Get day name in Portuguese for the given date
 export const getDayName = (date: Date): string => {
   const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+  // getDay() retorna 0 para Domingo, 1 para Segunda, etc.
   return days[date.getDay()];
 };
 
-// Normalize date to start of day in UTC to avoid timezone issues
 export const normalizeToStartOfDay = (dateString: string): Date => {
-  const date = new Date(dateString + 'T00:00:00.000Z');
-  return date;
+  // Converte 'YYYY-MM-DD' para uma data UTC no início do dia
+  return new Date(`${dateString}T00:00:00.000Z`);
 };
 
-// Convert appointment datetime to time string in consistent timezone
-export const extractTimeFromAppointment = (appointment: ExistingAppointment): { startTime: string; endTime: string } => {
+export const extractTimeFromAppointment = (appointment: ExistingAppointment): { startMinutes: number; endMinutes: number } => {
   const appointmentDate = new Date(appointment.data_consulta);
-  const startTime = `${appointmentDate.getUTCHours().toString().padStart(2, '0')}:${appointmentDate.getUTCMinutes().toString().padStart(2, '0')}`;
-  const startMinutes = timeToMinutes(startTime);
-  const endMinutes = startMinutes + appointment.duracao_minutos;
-  const endTime = minutesToTime(endMinutes);
-  return { startTime, endTime };
+  const startMinutes = appointmentDate.getUTCHours() * 60 + appointmentDate.getUTCMinutes();
+  const endMinutes = startMinutes + (appointment.duracao_minutos || 30);
+  return { startMinutes, endMinutes };
 };
 
-// Check if a time slot conflicts with existing appointments considering duration
-export const hasTimeConflict = (
-  slotTime: string,
-  slotDuration: number,
-  existingAppointments: ExistingAppointment[]
-): boolean => {
-  const slotStartMinutes = timeToMinutes(slotTime);
-  const slotEndMinutes = slotStartMinutes + slotDuration;
-  
-  return existingAppointments.some(appointment => {
-    const { startTime, endTime } = extractTimeFromAppointment(appointment);
-    const appointmentStartMinutes = timeToMinutes(startTime);
-    const appointmentEndMinutes = timeToMinutes(endTime);
-    
-    return (
-      slotStartMinutes < appointmentEndMinutes && 
-      slotEndMinutes > appointmentStartMinutes
-    );
-  });
+
+// --- Validação e Lógica Principal ---
+
+export const validateDoctorConfig = (config: DoctorConfig): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    if (!config.horarioAtendimento) {
+        errors.push('Horários de atendimento não configurados.');
+    }
+    if (!config.duracaoConsulta || config.duracaoConsulta < 15) {
+        errors.push('Duração da consulta deve ser de pelo menos 15 minutos.');
+    }
+    return { isValid: errors.length === 0, errors };
 };
 
-// **MODIFICADO:** A lógica agora suporta intervalos de almoço
+export const getDefaultWorkingHours = (): WorkingHours => ({
+  segunda: { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
+  terca:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
+  quarta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
+  quinta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
+  sexta:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
+  sabado:  { inicio: '08:00', fim: '12:00', ativo: false },
+  domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+});
+
 export const generateTimeSlots = (
   doctorConfig: DoctorConfig,
   selectedDate: Date,
   existingAppointments: ExistingAppointment[] = []
 ): TimeSlot[] => {
   const dayName = getDayName(selectedDate);
-  const workingHours = doctorConfig.horarioAtendimento;
-  const consultationDuration = doctorConfig.duracaoConsulta || 30;
-  const bufferMinutes = doctorConfig.bufferMinutos || 0;
-  
-  if (!workingHours || !workingHours[dayName] || !workingHours[dayName].ativo) {
+  const workingHours = doctorConfig.horarioAtendimento?.[dayName];
+
+  // **CORREÇÃO CRÍTICA:** Verifica se o dia de trabalho está definido e ATIVO.
+  // Se não estiver ativo, retorna uma lista vazia, impedindo o agendamento.
+  if (!workingHours || !workingHours.ativo) {
     return [];
   }
-  
-  const { inicio, fim, inicioAlmoco, fimAlmoco } = workingHours[dayName];
-  const startMinutes = timeToMinutes(inicio);
-  const endMinutes = timeToMinutes(fim);
-  const lunchStartMinutes = inicioAlmoco ? timeToMinutes(inicioAlmoco) : null;
-  const lunchEndMinutes = fimAlmoco ? timeToMinutes(fimAlmoco) : null;
 
-  const slots: TimeSlot[] = [];
+  const consultationDuration = doctorConfig.duracaoConsulta || 30;
+  const bufferMinutes = doctorConfig.bufferMinutos || 0;
   const slotInterval = consultationDuration + bufferMinutes;
 
+  const startMinutes = timeToMinutes(workingHours.inicio);
+  const endMinutes = timeToMinutes(workingHours.fim);
+  const lunchStartMinutes = workingHours.inicioAlmoco ? timeToMinutes(workingHours.inicioAlmoco) : null;
+  const lunchEndMinutes = workingHours.fimAlmoco ? timeToMinutes(workingHours.fimAlmoco) : null;
+
+  const occupiedSlots = existingAppointments.map(extractTimeFromAppointment);
+  const slots: TimeSlot[] = [];
+
   for (let minutes = startMinutes; minutes + consultationDuration <= endMinutes; minutes += slotInterval) {
-    // Pula os horários que caem dentro do intervalo de almoço
-    if (lunchStartMinutes && lunchEndMinutes && minutes >= lunchStartMinutes && minutes < lunchEndMinutes) {
+    const slotStart = minutes;
+    const slotEnd = slotStart + consultationDuration;
+
+    // Verifica se o slot está dentro do horário de almoço
+    if (lunchStartMinutes && lunchEndMinutes && slotStart < lunchEndMinutes && slotEnd > lunchStartMinutes) {
       continue;
     }
-
-    const timeString = minutesToTime(minutes);
-    const hasConflict = hasTimeConflict(timeString, consultationDuration, existingAppointments);
     
-    slots.push({
-      time: timeString,
-      available: !hasConflict
-    });
+    // Verifica conflitos com agendamentos existentes
+    const isOccupied = occupiedSlots.some(
+      ({ startMinutes, endMinutes }) => slotStart < endMinutes && slotEnd > startMinutes
+    );
+
+    if (!isOccupied) {
+      slots.push({
+        time: minutesToTime(minutes),
+        available: true
+      });
+    }
   }
-  
+
   return slots;
 };
-
-// Validate doctor configuration
-export const validateDoctorConfig = (config: DoctorConfig): { isValid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-  if (!config.horarioAtendimento) {
-    errors.push('Horários de atendimento não configurados');
-  }
-  if (!config.duracaoConsulta || config.duracaoConsulta < 15 || config.duracaoConsulta > 180) {
-    errors.push('Duração da consulta deve estar entre 15 e 180 minutos');
-  }
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
-
-// **MODIFICADO:** Horários padrão agora vão até 18:00 com intervalo de almoço
-export const getDefaultWorkingHours = (): WorkingHours => ({
-  segunda: { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
-  terca:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
-  quarta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
-  quinta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
-  sexta:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '14:00' },
-  sabado:  { inicio: '08:00', fim: '12:00', ativo: true },
-  domingo: { inicio: '08:00', fim: '12:00', ativo: false }
-});
