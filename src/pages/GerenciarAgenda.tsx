@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,7 @@ const GerenciarAgenda = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay());
 
   const form = useForm<AgendaFormData>({
@@ -61,18 +62,16 @@ const GerenciarAgenda = () => {
     }
   });
 
-  const { reset, setValue, getValues, formState: { errors } } = form;
+  const { reset, setValue, getValues, formState: { errors }, watch } = form;
+
+  // Observa mudanças nos horários para atualizar o calendário visualmente
+  const watchedHorarios = watch("horarios");
 
   const fetchHorarios = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('medicos')
-        .select('configuracoes')
-        .eq('user_id', user.id)
-        .single();
-
+      const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
       if (error && error.code !== 'PGRST116') throw error;
 
       const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
@@ -97,6 +96,7 @@ const GerenciarAgenda = () => {
   const onSubmit = async (data: AgendaFormData) => {
     if (!user) return;
     setIsSubmitting(true);
+
     const horarioAtendimento = data.horarios.reduce((acc, curr) => {
         acc[curr.dia] = { inicio: curr.inicio, fim: curr.fim, ativo: curr.ativo };
         return acc;
@@ -105,17 +105,35 @@ const GerenciarAgenda = () => {
     try {
         const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
         if (fetchError) throw fetchError;
+
         const newConfiguracoes = { ...medicoData.configuracoes, horarioAtendimento };
+      
         const { error: updateError } = await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id);
         if (updateError) throw updateError;
-        toast({ title: "Agenda atualizada com sucesso!" });
+
+        toast({ title: "Agenda atualizada!", description: "Seus horários de atendimento foram salvos com sucesso." });
     } catch (error) {
-        toast({ title: "Erro ao salvar agenda", variant: "destructive" });
+        toast({ title: "Erro ao salvar", description: "Não foi possível atualizar sua agenda.", variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
   };
+
+  const dayPickerModifiers = {
+    active: (date: Date) => watchedHorarios?.[date.getDay()]?.ativo,
+  };
+
+  const dayPickerModifiersClassNames = {
+    active: 'bg-green-100/70 font-semibold',
+    selected: 'bg-blue-600 text-white focus:bg-blue-600 focus:text-white rounded-md', // Estilo para o dia selecionado
+  };
   
+  const handleDayClick = (day: Date | undefined) => {
+      if (!day) return;
+      setSelectedDate(day);
+      setSelectedDayIndex(day.getDay());
+  }
+
   const selectedHorario = getValues(`horarios.${selectedDayIndex}`);
 
   if (loading) {
@@ -145,8 +163,11 @@ const GerenciarAgenda = () => {
                       <CardContent className="p-2 flex justify-center">
                         <DayPickerCalendar
                             mode="single"
-                            onDayClick={(day) => setSelectedDayIndex(day.getDay())}
+                            selected={selectedDate}
+                            onSelect={handleDayClick}
                             locale={ptBR}
+                            modifiers={dayPickerModifiers}
+                            modifiersClassNames={dayPickerModifiersClassNames}
                         />
                       </CardContent>
                     </Card>
@@ -162,8 +183,9 @@ const GerenciarAgenda = () => {
                         {selectedHorario && (
                           <div className="space-y-6">
                             <div className="flex items-center justify-between rounded-lg border p-4">
-                                <Label className="text-base font-semibold">Atender neste dia?</Label>
+                                <Label htmlFor={`switch-${selectedHorario.dia}`} className="text-base font-semibold">Atender neste dia?</Label>
                                 <Switch
+                                    id={`switch-${selectedHorario.dia}`}
                                     checked={selectedHorario.ativo}
                                     onCheckedChange={(checked) => setValue(`horarios.${selectedDayIndex}.ativo`, checked, { shouldValidate: true, shouldDirty: true })}
                                 />
