@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch"; // Importando o Switch
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Clock, Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -179,7 +179,7 @@ const GerenciarAgenda = () => {
               <CardHeader>
                 <CardTitle>Meus Horários</CardTitle>
                 <CardDescription>
-                  Marque os dias que você atende e defina os horários de início e fim do seu expediente.
+                  Ative os dias que você atende e defina os horários de início e fim do seu expediente.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -191,38 +191,56 @@ const GerenciarAgenda = () => {
                         control={form.control}
                         name={`horarios.${index}`}
                         render={({ field }) => (
-                          <FormItem className={cn("flex flex-col sm:flex-row items-center gap-3 p-3 border rounded-lg transition-colors", field.value.ativo ? "bg-blue-50/50 border-blue-200" : "hover:bg-gray-50/50 border-gray-200")}>
-                            <div className="flex items-center w-full sm:w-40">
+                          <FormItem className={cn(
+                            "flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg transition-all",
+                            field.value.ativo ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"
+                          )}>
+                            <div className="flex items-center w-full sm:w-48">
                               <FormControl>
-                                <Checkbox checked={field.value.ativo} onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked)} />
-                              </FormControl>
-                              <Label className={cn("ml-3 font-medium", !field.value.ativo && "opacity-70")}>{item.label}</Label>
-                            </div>
-                            <div className="flex-1 w-full grid grid-cols-2 gap-3">
-                              <FormControl>
-                                <Input
-                                  type="time"
-                                  disabled={!field.value.ativo}
-                                  {...form.register(`horarios.${index}.inicio`)}
-                                  className={cn(!field.value.ativo && "opacity-70")}
+                                <Switch
+                                  checked={field.value.ativo}
+                                  onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked)}
+                                  aria-label={`Ativar ${item.label}`}
                                 />
                               </FormControl>
-                              <FormControl>
-                                <Input
-                                  type="time"
-                                  disabled={!field.value.ativo}
-                                  {...form.register(`horarios.${index}.fim`)}
-                                  className={cn(!field.value.ativo && "opacity-70")}
-                                />
-                              </FormControl>
+                              <Label className={cn("ml-4 font-medium text-base", field.value.ativo ? "text-gray-800" : "text-gray-500")}>
+                                {item.label}
+                              </Label>
                             </div>
-                            <FormMessage>{form.formState.errors.horarios?.[index]?.inicio?.message}</FormMessage>
+                            
+                            {field.value.ativo ? (
+                                <div className="flex-1 w-full grid grid-cols-2 gap-4">
+                                  <div className="space-y-1">
+                                    <Label htmlFor={`inicio-${item.dia}`} className="text-xs text-gray-600">Início</Label>
+                                    <Input
+                                      id={`inicio-${item.dia}`}
+                                      type="time"
+                                      {...form.register(`horarios.${index}.inicio`)}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label htmlFor={`fim-${item.dia}`} className="text-xs text-gray-600">Fim</Label>
+                                    <Input
+                                      id={`fim-${item.dia}`}
+                                      type="time"
+                                      {...form.register(`horarios.${index}.fim`)}
+                                    />
+                                  </div>
+                                </div>
+                            ) : (
+                                <div className="flex-1">
+                                    <p className="text-gray-500 font-medium text-sm">Fechado</p>
+                                </div>
+                            )}
+                            <FormMessage className="sm:ml-4 text-red-600 text-xs">
+                              {form.formState.errors.horarios?.[index]?.inicio?.message}
+                            </FormMessage>
                           </FormItem>
                         )}
                       />
                     ))}
-                    <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
-                      {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                    <Button type="submit" className="w-full mt-8 py-3 text-base" disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
                       Salvar Alterações
                     </Button>
                   </form>
