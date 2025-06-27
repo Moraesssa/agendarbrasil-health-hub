@@ -1,5 +1,4 @@
 // --- Interfaces e Tipos ---
-
 export interface TimeSlot {
   time: string;
   available: boolean;
@@ -30,8 +29,8 @@ export interface ExistingAppointment {
 
 
 // --- Funções Auxiliares de Tempo ---
-
 export const timeToMinutes = (time: string): number => {
+  if (!time || !time.includes(':')) return 0;
   const [hours, minutes] = time.split(':').map(Number);
   return (hours * 60) + minutes;
 };
@@ -44,12 +43,10 @@ export const minutesToTime = (minutes: number): string => {
 
 export const getDayName = (date: Date): string => {
   const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-  // getDay() retorna 0 para Domingo, 1 para Segunda, etc.
-  return days[date.getDay()];
+  return days[date.getUTCDay()]; // Usar getUTCDay para consistência
 };
 
 export const normalizeToStartOfDay = (dateString: string): Date => {
-  // Converte 'YYYY-MM-DD' para uma data UTC no início do dia
   return new Date(`${dateString}T00:00:00.000Z`);
 };
 
@@ -93,8 +90,8 @@ export const generateTimeSlots = (
   const workingHours = doctorConfig.horarioAtendimento?.[dayName];
 
   // **CORREÇÃO CRÍTICA E DEFINITIVA:**
-  // Verifica PRIMEIRO se o dia de trabalho está definido e ATIVO.
-  // Se não estiver ativo, retorna uma lista vazia, o que impede o agendamento.
+  // Esta verificação é a mais importante. Se o dia não estiver definido ou estiver inativo,
+  // a função retorna imediatamente uma lista vazia, impedindo o agendamento.
   if (!workingHours || !workingHours.ativo) {
     return [];
   }
@@ -111,7 +108,7 @@ export const generateTimeSlots = (
   const occupiedSlots = existingAppointments.map(extractTimeFromAppointment);
   const slots: TimeSlot[] = [];
 
-  for (let minutes = startMinutes; minutes + consultationDuration <= endMinutes; minutes += slotInterval) {
+  for (let minutes = startMinutes; (minutes + consultationDuration) <= endMinutes; minutes += slotInterval) {
     const slotStart = minutes;
     const slotEnd = slotStart + consultationDuration;
 
