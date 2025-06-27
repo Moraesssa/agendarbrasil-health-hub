@@ -1,11 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  generateTimeSlots, 
-  getDefaultWorkingHours, 
+import {
+  generateTimeSlots,
+  getDefaultWorkingHours,
   validateDoctorConfig,
   normalizeToStartOfDay,
-  DoctorConfig, 
+  DoctorConfig,
   TimeSlot,
   ExistingAppointment
 } from '@/utils/timeSlotUtils';
@@ -28,7 +27,7 @@ const checkAuthentication = async () => {
 };
 
 export const appointmentService = {
-  // Busca todas as especialidades únicas cadastradas
+  // ... (manter as outras funções como getSpecialties e getDoctorsBySpecialty) ...
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
     try {
@@ -58,7 +57,6 @@ export const appointmentService = {
     }
   },
 
-  // Busca médicos por especialidade
   async getDoctorsBySpecialty(specialty: string): Promise<Medico[]> {
     logger.info("Fetching doctors by specialty", "AppointmentService", { specialty });
     try {
@@ -113,36 +111,32 @@ export const appointmentService = {
     logger.info("Fetching available time slots", "AppointmentService", { doctorId, date });
     
     try {
-      // Verificar autenticação
       await checkAuthentication();
-      
-      if (!doctorId || !date) {
-        throw new Error("ID do médico e data são obrigatórios");
-      }
+      if (!doctorId || !date) throw new Error("ID do médico e data são obrigatórios");
 
-      // Normaliza a data para evitar problemas de timezone
       const normalizedDate = normalizeToStartOfDay(date);
       
-      // Busca a configuração do médico
       const { data: doctorData, error: doctorError } = await supabase
         .from('medicos')
         .select('configuracoes')
         .eq('user_id', doctorId)
         .single();
 
-      if (doctorError && doctorError.code !== 'PGRST116') { // PGRST116 = not found
-        logger.error("Failed to fetch doctor config", "AppointmentService", { doctorId, error: doctorError });
-        throw new Error(`Erro ao buscar configuração do médico: ${doctorError.message}`);
+      if (doctorError) {
+        // Se não encontrar o médico, não é um erro fatal, apenas loga e continua com defaults
+        if (doctorError.code === 'PGRST116') {
+           logger.warn("No config found for doctor, using defaults.", "AppointmentService", { doctorId });
+        } else {
+          logger.error("Failed to fetch doctor config", "AppointmentService", { doctorId, error: doctorError });
+          throw new Error(`Erro ao buscar configuração do médico: ${doctorError.message}`);
+        }
       }
 
-      // Define o início e o fim do dia em UTC para filtrar as consultas
       const startOfDay = new Date(normalizedDate);
       startOfDay.setUTCHours(0, 0, 0, 0);
-      
       const endOfDay = new Date(normalizedDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
       
-      // Busca consultas existentes para o médico e a data selecionada
       const { data: appointments, error: appointmentsError } = await supabase
         .from('consultas')
         .select('data_consulta, duracao_minutos')
@@ -156,64 +150,42 @@ export const appointmentService = {
         throw new Error(`Erro ao buscar consultas existentes: ${appointmentsError.message}`);
       }
 
-      // Converte para o formato esperado pelo utilitário
       const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
         data_consulta: apt.data_consulta,
         duracao_minutos: apt.duracao_minutos || 30
       }));
 
-      logger.info("Existing appointments found", "AppointmentService", { 
-        doctorId, 
-        date, 
-        appointmentsCount: existingAppointments.length 
-      });
+      logger.info("Existing appointments found", "AppointmentService", { doctorId, date, count: existingAppointments.length });
 
-      // Obtém a configuração do médico, ou usa os padrões se não configurado
-      const config = doctorData?.configuracoes as DoctorConfig | null;
+      // **CORREÇÃO PRINCIPAL AQUI**
+      // Garante que existe uma configuração e um horário de atendimento, caso contrário usa o padrão.
+      const config = (doctorData?.configuracoes || {}) as DoctorConfig;
       const doctorConfig: DoctorConfig = {
         duracaoConsulta: config?.duracaoConsulta || 30,
-        horarioAtendimento: config?.horarioAtendimento || getDefaultWorkingHours(),
+        horarioAtendimento: config?.horarioAtendimento || getDefaultWorkingHours(), // Usa o padrão se não houver
         timezone: config?.timezone || 'America/Sao_Paulo',
         bufferMinutos: config?.bufferMinutos || 0,
       };
 
-      logger.info("Doctor configuration", "AppointmentService", { doctorId, config: doctorConfig });
+      logger.info("Doctor configuration used", "AppointmentService", { doctorId, config: doctorConfig });
 
-      // Valida a configuração do médico
       const validation = validateDoctorConfig(doctorConfig);
       if (!validation.isValid) {
-        logger.error("Invalid doctor configuration", "AppointmentService", { 
-          doctorId, 
-          errors: validation.errors 
-        });
-        
-        // Retorna slots vazios se a configuração for inválida
+        logger.error("Invalid doctor configuration", "AppointmentService", { doctorId, errors: validation.errors });
         return [];
       }
 
-      // Gera os slots de tempo disponíveis
       const slots = generateTimeSlots(doctorConfig, normalizedDate, existingAppointments);
-      
-      logger.info("Generated time slots", "AppointmentService", { 
-        doctorId, 
-        date, 
-        totalSlots: slots.length,
-        availableSlots: slots.filter(s => s.available).length 
-      });
+      logger.info("Generated time slots", "AppointmentService", { doctorId, date, count: slots.length });
       
       return slots;
 
     } catch (error) {
-      logger.error("Error fetching available time slots", "AppointmentService", { 
-        doctorId, 
-        date, 
-        error 
-      });
+      logger.error("Error fetching available time slots", "AppointmentService", { doctorId, date, error });
       throw error;
     }
   },
-
-  // Cria uma nova consulta com validação de conflitos
+  // ... (manter a função scheduleAppointment) ...
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
