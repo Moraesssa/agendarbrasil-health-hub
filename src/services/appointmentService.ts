@@ -10,26 +10,15 @@ import {
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
-export interface Medico {
-  id: string;
-  display_name: string | null;
-}
-
-const checkAuthentication = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    logger.error("User not authenticated", "AppointmentService", error);
-    throw new Error("Você precisa estar logado para realizar esta ação");
-  }
-  return user;
-};
+// ... (o resto do ficheiro permanece igual, apenas a função getSpecialties é ajustada)
 
 export const appointmentService = {
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
     try {
       await checkAuthentication();
-      // **CORREÇÃO AQUI:** Chamada correta da função RPC
+      
+      // A chamada RPC permanece a mesma, mas agora vai invocar a função corrigida
       const { data, error } = await supabase.rpc('get_specialties');
 
       if (error) {
@@ -37,7 +26,7 @@ export const appointmentService = {
         throw new Error(`Erro ao buscar especialidades: ${error.message}`);
       }
       
-      // A função agora retorna diretamente um array de strings
+      // A função retorna diretamente um array de strings, garantimos que seja ordenado
       return (data || []).sort();
     } catch (error) {
       logger.error("Failed to fetch specialties", "AppointmentService", error);
@@ -45,6 +34,7 @@ export const appointmentService = {
     }
   },
 
+// ... cole o restante do conteúdo do ficheiro aqui
   async getDoctorsBySpecialty(specialty: string): Promise<Medico[]> {
     logger.info("Fetching doctors by specialty", "AppointmentService", { specialty });
     try {
@@ -157,3 +147,9 @@ export const appointmentService = {
     }
   }
 };
+// ... (resto do código do appointmentService.ts)
+
+interface Medico {
+  id: string; 
+  display_name: string | null;
+}
