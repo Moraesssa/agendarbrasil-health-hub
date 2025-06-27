@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Clock, Loader2, Save } from "lucide-react";
+import { Calendar, Clock, Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoader } from "@/components/PageLoader";
+import { Calendar as DayPickerCalendar } from "@/components/ui/calendar"; // Renomeando para evitar conflito
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 // --- Zod Schema for Validation ---
@@ -26,8 +27,8 @@ const horarioSchema = z.object({
   inicio: z.string(),
   fim: z.string()
 }).refine(data => !data.ativo || data.inicio < data.fim, {
-  message: "O horário de início deve ser anterior ao de fim.",
-  path: ["inicio"], 
+  message: "Início deve ser antes do fim.",
+  path: ["inicio"],
 });
 
 const agendaSchema = z.object({
@@ -37,13 +38,13 @@ const agendaSchema = z.object({
 type AgendaFormData = z.infer<typeof agendaSchema>;
 
 const diasDaSemana = [
-  { key: "segunda", label: "Segunda" },
-  { key: "terca", label: "Terça" },
-  { key: "quarta", label: "Quarta" },
-  { key: "quinta", label: "Quinta" },
-  { key: "sexta", label: "Sexta" },
-  { key: "sabado", label: "Sábado" },
-  { key: "domingo", label: "Domingo" },
+  { key: "domingo", label: "Domingo", index: 0 },
+  { key: "segunda", label: "Segunda-feira", index: 1 },
+  { key: "terca", label: "Terça-feira", index: 2 },
+  { key: "quarta", label: "Quarta-feira", index: 3 },
+  { key: "quinta", label: "Quinta-feira", index: 4 },
+  { key: "sexta", label: "Sexta-feira", index: 5 },
+  { key: "sabado", label: "Sábado", index: 6 },
 ];
 
 const GerenciarAgenda = () => {
@@ -51,6 +52,7 @@ const GerenciarAgenda = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(1); // Começar com Segunda-feira
 
   const form = useForm<AgendaFormData>({
     resolver: zodResolver(agendaSchema),
@@ -63,45 +65,49 @@ const GerenciarAgenda = () => {
       }))
     }
   });
+  
+  const watchedHorarios = useWatch({ control: form.control, name: "horarios" });
 
   useEffect(() => {
+    // ... (código de fetchHorarios permanece o mesmo)
     const fetchHorarios = async () => {
-      if (!user) return;
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('medicos')
-          .select('configuracoes')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
-        if (horarioAtendimento) {
-          const initialHorarios = diasDaSemana.map(dia => ({
-            ...dia,
-            ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
-            inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
-            fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
-          }));
-          form.reset({ horarios: initialHorarios });
+        if (!user) return;
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('medicos')
+            .select('configuracoes')
+            .eq('user_id', user.id)
+            .single();
+  
+          if (error) throw error;
+  
+          const horarioAtendimento = data?.configuracoes?.horarioAtendimento;
+          if (horarioAtendimento) {
+            const initialHorarios = diasDaSemana.map(dia => ({
+              ...dia,
+              ativo: horarioAtendimento?.[dia.key]?.ativo ?? false,
+              inicio: horarioAtendimento?.[dia.key]?.inicio || '08:00',
+              fim: horarioAtendimento?.[dia.key]?.fim || '18:00',
+            }));
+            form.reset({ horarios: initialHorarios });
+          }
+        } catch (error) {
+          toast({
+            title: "Erro ao carregar horários",
+            description: "Não foi possível buscar sua agenda atual.",
+            variant: "destructive"
+          });
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        toast({
-          title: "Erro ao carregar horários",
-          description: "Não foi possível buscar sua agenda atual.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHorarios();
+      };
+  
+      fetchHorarios();
   }, [user, form, toast]);
 
   const onSubmit = async (data: AgendaFormData) => {
+    // ... (código de onSubmit permanece o mesmo)
     if (!user) return;
     setIsSubmitting(true);
 
@@ -150,6 +156,14 @@ const GerenciarAgenda = () => {
     }
   };
 
+  const dayPickerModifiers = {
+    active: (date: Date) => watchedHorarios?.[date.getDay()]?.ativo,
+  };
+
+  const dayPickerModifiersClassNames = {
+    active: 'bg-green-100 text-green-800 border-green-200 rounded-md',
+  };
+
   if (loading) {
     return <PageLoader message="Carregando sua agenda..." />;
   }
@@ -165,74 +179,79 @@ const GerenciarAgenda = () => {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
                     Gerenciar Agenda
                 </h1>
-                <p className="text-sm text-gray-600">Atualize seus dias e horários de atendimento</p>
+                <p className="text-sm text-gray-600">Selecione um dia da semana para editar seus horários</p>
             </div>
           </header>
           <main className="flex-1 overflow-auto p-6">
-            <Card className="max-w-4xl mx-auto">
-              <CardHeader>
-                <CardTitle>Meus Horários</CardTitle>
-                <CardDescription>
-                  Selecione um dia da semana e defina se você atende e em quais horários.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Tabs defaultValue="segunda" className="w-full">
-                      <TabsList className="grid w-full grid-cols-7">
-                        {diasDaSemana.map((dia) => (
-                          <TabsTrigger key={dia.key} value={dia.key}>{dia.label}</TabsTrigger>
-                        ))}
-                      </TabsList>
-                      
-                      {form.getValues('horarios').map((item, index) => (
-                          <TabsContent key={item.dia} value={item.dia}>
-                              <FormField
-                                control={form.control}
-                                name={`horarios.${index}`}
-                                render={({ field }) => (
-                                  <Card className={cn("p-6 mt-2", field.value.ativo ? "bg-blue-50" : "bg-gray-50")}>
-                                      <FormItem className="space-y-6">
-                                        <div className="flex items-center justify-between">
-                                            <Label htmlFor={`switch-${item.dia}`} className="text-lg font-semibold">{item.label}</Label>
-                                            <FormControl>
-                                                <Switch
-                                                    id={`switch-${item.dia}`}
-                                                    checked={field.value.ativo}
-                                                    onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked, { shouldValidate: true })}
-                                                />
-                                            </FormControl>
-                                        </div>
-                                        {field.value.ativo && (
-                                            <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor={`inicio-${item.dia}`}>Início</Label>
-                                                    <Input id={`inicio-${item.dia}`} type="time" {...form.register(`horarios.${index}.inicio`)} />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor={`fim-${item.dia}`}>Fim</Label>
-                                                    <Input id={`fim-${item.dia}`} type="time" {...form.register(`horarios.${index}.fim`)} />
-                                                </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Coluna do Calendário */}
+                  <div className="lg:col-span-2">
+                    <Card>
+                      <CardContent className="p-2">
+                        <DayPickerCalendar
+                            mode="single"
+                            selected={new Date()}
+                            onDayClick={(day) => setSelectedDayIndex(day.getDay())}
+                            locale={ptBR}
+                            modifiers={dayPickerModifiers}
+                            modifiersClassNames={dayPickerModifiersClassNames}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Coluna de Edição */}
+                  <div className="lg:col-span-1">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Editar Horário</CardTitle>
+                        <CardDescription>Ajustes para: <span className="font-semibold text-blue-600">{diasDaSemana[selectedDayIndex].label}</span></CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <FormField
+                            control={form.control}
+                            name={`horarios.${selectedDayIndex}`}
+                            render={({ field }) => (
+                                <FormItem className="space-y-6">
+                                    <div className="flex items-center justify-between rounded-lg border p-4" onClick={() => form.setValue(`horarios.${selectedDayIndex}.ativo`, !field.value.ativo, { shouldValidate: true })}>
+                                        <Label htmlFor={`switch-${field.value.dia}`} className="text-base font-semibold">Atender neste dia?</Label>
+                                        <FormControl>
+                                            <Switch
+                                                id={`switch-${field.value.dia}`}
+                                                checked={field.value.ativo}
+                                                className="pointer-events-none"
+                                            />
+                                        </FormControl>
+                                    </div>
+
+                                    {field.value.ativo && (
+                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in-0 zoom-in-95">
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`inicio-${field.value.dia}`}>Início</Label>
+                                                <Input id={`inicio-${field.value.dia}`} type="time" {...form.register(`horarios.${selectedDayIndex}.inicio`)} />
                                             </div>
-                                        )}
-                                        {form.formState.errors.horarios?.[index] && <FormMessage>{form.formState.errors.horarios[index]?.inicio?.message}</FormMessage>}
-                                      </FormItem>
-                                  </Card>
-                                )}
-                              />
-                          </TabsContent>
-                      ))}
-                    </Tabs>
-                    
-                    <Button type="submit" className="w-full mt-8 py-3 text-base" disabled={isSubmitting}>
-                      {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                      Salvar Alterações
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`fim-${field.value.dia}`}>Fim</Label>
+                                                <Input id={`fim-${field.value.dia}`} type="time" {...form.register(`horarios.${selectedDayIndex}.fim`)} />
+                                            </div>
+                                        </div>
+                                    )}
+                                </FormItem>
+                            )}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+                
+                <Button type="submit" className="w-full max-w-xs mx-auto flex" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                    Salvar Alterações na Agenda
+                </Button>
+              </form>
+            </Form>
           </main>
         </SidebarInset>
       </div>
