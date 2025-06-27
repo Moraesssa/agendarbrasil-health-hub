@@ -15,8 +15,6 @@ export interface Medico {
   display_name: string | null;
 }
 
-// **A FUNÇÃO QUE ESTAVA EM FALTA ESTÁ AQUI**
-// Garante que o utilizador está autenticado antes de fazer qualquer chamada à API.
 const checkAuthentication = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) {
@@ -30,15 +28,9 @@ export const appointmentService = {
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
     try {
-      await checkAuthentication(); // Agora esta função existe
-      
+      await checkAuthentication();
       const { data, error } = await supabase.rpc('get_specialties');
-
-      if (error) {
-        logger.error("RPC get_specialties failed", "AppointmentService", error);
-        throw new Error(`Erro ao buscar especialidades: ${error.message}`);
-      }
-      
+      if (error) throw new Error(`Erro ao buscar especialidades: ${error.message}`);
       return (data || []).sort();
     } catch (error) {
       logger.error("Failed to fetch specialties", "AppointmentService", error);
@@ -70,11 +62,9 @@ export const appointmentService = {
   },
 
   async getAvailableTimeSlots(doctorId: string, date: string): Promise<TimeSlot[]> {
-    logger.info("Fetching available time slots", "AppointmentService", { doctorId, date });
-    
     try {
       await checkAuthentication();
-      if (!doctorId || !date) throw new Error("ID do médico e data são obrigatórios");
+      if (!doctorId || !date) return [];
 
       const normalizedDate = normalizeToStartOfDay(date);
       
@@ -85,7 +75,6 @@ export const appointmentService = {
         .single();
 
       if (doctorError && doctorError.code !== 'PGRST116') {
-        logger.error("Failed to fetch doctor config", "AppointmentService", { doctorId, error: doctorError });
         throw new Error(`Erro ao buscar configuração do médico: ${doctorError.message}`);
       }
 
@@ -96,18 +85,12 @@ export const appointmentService = {
         bufferMinutos: config.bufferMinutos || 0,
       };
 
-      const validation = validateDoctorConfig(doctorConfig);
-      if (!validation.isValid) {
-        logger.error("Invalid doctor configuration", "AppointmentService", { doctorId, errors: validation.errors });
-        return [];
-      }
-      
       const startOfDay = new Date(normalizedDate);
       startOfDay.setUTCHours(0, 0, 0, 0);
       const endOfDay = new Date(normalizedDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
       
-      const { data: appointments, error: appointmentsError } = await supabase
+      const { data: appointments } = await supabase
         .from('consultas')
         .select('data_consulta, duracao_minutos')
         .eq('medico_id', doctorId)
@@ -115,18 +98,14 @@ export const appointmentService = {
         .lte('data_consulta', endOfDay.toISOString())
         .in('status', ['agendada', 'confirmada']);
 
-      if (appointmentsError) throw new Error(`Erro ao buscar consultas existentes: ${appointmentsError.message}`);
-
       const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
         data_consulta: apt.data_consulta,
         duracao_minutos: apt.duracao_minutos || 30
       }));
 
-      const slots = generateTimeSlots(doctorConfig, normalizedDate, existingAppointments);
-      return slots;
-
+      return generateTimeSlots(doctorConfig, normalizedDate, existingAppointments);
     } catch (error) {
-      logger.error("Error fetching available time slots", "AppointmentService", { doctorId, date, error });
+      logger.error("Error in getAvailableTimeSlots", "AppointmentService", { doctorId, date, error });
       throw error;
     }
   },
@@ -137,7 +116,6 @@ export const appointmentService = {
     data_consulta: string;
     tipo_consulta: string;
   }) {
-    logger.info("Scheduling new appointment", "AppointmentService", { data: appointmentData });
     try {
       const user = await checkAuthentication();
       if (appointmentData.paciente_id !== user.id) {
