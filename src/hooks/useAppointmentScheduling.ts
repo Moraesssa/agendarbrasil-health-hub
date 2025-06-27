@@ -3,11 +3,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { appointmentService } from "@/services/appointmentService"; // Importe o serviço
+import { appointmentService } from "@/services/appointmentService";
 
 // --- Interfaces ---
-interface Doctor { id: string; display_name: string | null; }
+interface Doctor {
+  id: string;
+  display_name: string | null;
+}
 interface TimeSlot { time: string; available: boolean; }
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
@@ -17,6 +19,7 @@ export const useAppointmentScheduling = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // --- Estados ---
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("");
@@ -37,36 +40,78 @@ export const useAppointmentScheduling = () => {
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- Funções de Carregamento ---
   const loadSpecialties = useCallback(async () => {
     setIsLoadingSpecialties(true);
     try {
       const data = await appointmentService.getSpecialties();
       setSpecialties(data);
-    } catch (e) { toast({ title: "Erro ao carregar especialidades", variant: "destructive" }); }
-    finally { setIsLoadingSpecialties(false); }
+    } catch (e) { 
+      toast({ title: "Erro ao carregar especialidades", description: (e as Error).message, variant: "destructive" }); 
+    } finally { 
+      setIsLoadingSpecialties(false); 
+    }
   }, [toast]);
-  
-  // ... (manter as outras funções de carregamento) ...
 
-  const loadAvailableTimeSlots = useCallback(async (doctorId: string, date: string) => {
-    setIsLoadingTimeSlots(true);
+  const loadAvailableStates = useCallback(async () => {
+    setIsLoadingLocations(true);
     try {
-      const slots = await appointmentService.getAvailableTimeSlots(doctorId, date);
-      setAvailableTimeSlots(slots);
-    } catch (error) {
-      toast({ title: "Erro ao buscar horários", description: (error as Error).message, variant: "destructive" });
-    } finally {
-      setIsLoadingTimeSlots(false);
+      const { data, error } = await supabase.rpc('get_available_states');
+      if (error) throw error;
+      setStates(data || []);
+    } catch (e) { 
+      toast({ title: "Erro ao carregar estados", description: (e as Error).message, variant: "destructive" }); 
+    } finally { 
+      setIsLoadingLocations(false); 
+    }
+  }, [toast]);
+
+  const loadAvailableCities = useCallback(async (stateUf: string) => {
+    setIsLoadingLocations(true);
+    setCities([]);
+    try {
+      const { data, error } = await supabase.rpc('get_available_cities', { state_uf: stateUf });
+      if (error) throw error;
+      setCities(data || []);
+    } catch (e) { 
+      toast({ title: "Erro ao carregar cidades", description: (e as Error).message, variant: "destructive" }); 
+    } finally { 
+      setIsLoadingLocations(false); 
+    }
+  }, [toast]);
+
+  const loadDoctors = useCallback(async (specialty: string, state: string, city: string) => {
+    setIsLoadingDoctors(true);
+    setDoctors([]);
+    try {
+      const data = await appointmentService.getDoctorsBySpecialty(specialty);
+      setDoctors(data.filter(d => d.id)); // Filtra médicos sem ID (caso raro)
+    } catch (e) { 
+      toast({ title: "Erro ao carregar médicos", description: (e as Error).message, variant: "destructive" }); 
+    } finally { 
+      setIsLoadingDoctors(false); 
     }
   }, [toast]);
   
+  const loadAvailableTimeSlots = useCallback(async (doctorId: string, date: string) => {
+    setIsLoadingTimeSlots(true);
+    setAvailableTimeSlots([]);
+    try {
+        const slots = await appointmentService.getAvailableTimeSlots(doctorId, date);
+        setAvailableTimeSlots(slots);
+    } catch (error) {
+        toast({ title: "Erro ao buscar horários", description: (error as Error).message, variant: "destructive" });
+    } finally {
+        setIsLoadingTimeSlots(false);
+    }
+  }, [toast]);
+
   const handleAgendamento = useCallback(async () => {
     if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedSpecialty) return;
     setIsSubmitting(true);
     try {
-      // **CORREÇÃO PRINCIPAL AQUI**
-      // Cria a data e hora sem fuso horário, para que o Supabase interprete corretamente.
-      const appointmentDateTime = `${selectedDate} ${selectedTime}:00`;
+      // **CORREÇÃO: Cria a data em formato ISO completo para evitar problemas de fuso horário**
+      const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
 
       await appointmentService.scheduleAppointment({
         paciente_id: user.id,
@@ -83,40 +128,12 @@ export const useAppointmentScheduling = () => {
       setIsSubmitting(false);
     }
   }, [user, selectedDoctor, selectedDate, selectedTime, selectedSpecialty, navigate, toast]);
-  
-    const loadAvailableStates = useCallback(async () => {
-    setIsLoadingLocations(true);
-    try {
-      const { data, error } = await supabase.rpc('get_available_states');
-      if (error) throw error;
-      setStates(data || []);
-    } catch (e) { toast({ title: "Erro ao carregar estados", variant: "destructive" }); }
-    finally { setIsLoadingLocations(false); }
-  }, [toast]);
-
-  const loadAvailableCities = useCallback(async (stateUf: string) => {
-    setIsLoadingLocations(true);
-    setCities([]);
-    try {
-      const { data, error } = await supabase.rpc('get_available_cities', { state_uf: stateUf });
-      if (error) throw error;
-      setCities(data || []);
-    } catch (e) { toast({ title: "Erro ao carregar cidades", variant: "destructive" }); }
-    finally { setIsLoadingLocations(false); }
-  }, [toast]);
-
-  const loadDoctors = useCallback(async (specialty: string, state: string, city: string) => {
-    setIsLoadingDoctors(true);
-    setDoctors([]);
-    try {
-      const data = await appointmentService.getDoctorsBySpecialty(specialty);
-      setDoctors(data);
-    } catch (e) { toast({ title: "Erro ao carregar médicos", variant: "destructive" }); }
-    finally { setIsLoadingDoctors(false); }
-  }, [toast]);
 
   // --- useEffects ---
-  useEffect(() => { loadSpecialties(); loadAvailableStates(); }, [loadSpecialties, loadAvailableStates]);
+  useEffect(() => { 
+    loadSpecialties(); 
+    loadAvailableStates(); 
+  }, [loadSpecialties, loadAvailableStates]);
   
   useEffect(() => {
     setSelectedCity('');
@@ -152,7 +169,7 @@ export const useAppointmentScheduling = () => {
   return {
     selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedDoctorName,
     specialties, states, cities,
-    doctors: doctors.map(d => ({ id: d.id, display_name: d.display_name || "Médico" })),
+    doctors, // Retorna a lista completa para o componente
     availableTimeSlots,
     isLoadingSpecialties, isLoadingLocations, isLoadingDoctors, isLoadingTimeSlots, isSubmitting,
     handleSpecialtyChange: setSelectedSpecialty,
