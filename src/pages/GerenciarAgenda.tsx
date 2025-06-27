@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch"; // Importando o Switch
+import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Clock, Loader2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -191,17 +191,22 @@ const GerenciarAgenda = () => {
                         control={form.control}
                         name={`horarios.${index}`}
                         render={({ field }) => (
-                          <FormItem className={cn(
-                            "flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg transition-all",
-                            field.value.ativo ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"
-                          )}>
+                          <FormItem
+                            className={cn(
+                              "flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg transition-all cursor-pointer", // Adicionado cursor-pointer
+                              field.value.ativo ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                            )}
+                            // Lógica de clique para toda a área do item
+                            onClick={() => form.setValue(`horarios.${index}.ativo`, !field.value.ativo, { shouldValidate: true })}
+                          >
                             <div className="flex items-center w-full sm:w-48">
                               <FormControl>
-                                <Switch
-                                  checked={field.value.ativo}
-                                  onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked)}
-                                  aria-label={`Ativar ${item.label}`}
-                                />
+                                  {/* O Switch agora é apenas um indicador visual, o clique é controlado pelo FormItem */}
+                                  <Switch
+                                    checked={field.value.ativo}
+                                    aria-label={`Ativar ${item.label}`}
+                                    className="pointer-events-none" // Impede o clique direto no Switch
+                                  />
                               </FormControl>
                               <Label className={cn("ml-4 font-medium text-base", field.value.ativo ? "text-gray-800" : "text-gray-500")}>
                                 {item.label}
@@ -209,7 +214,7 @@ const GerenciarAgenda = () => {
                             </div>
                             
                             {field.value.ativo ? (
-                                <div className="flex-1 w-full grid grid-cols-2 gap-4">
+                                <div className="flex-1 w-full grid grid-cols-2 gap-4" onClick={(e) => e.stopPropagation()}>
                                   <div className="space-y-1">
                                     <Label htmlFor={`inicio-${item.dia}`} className="text-xs text-gray-600">Início</Label>
                                     <Input
@@ -228,7 +233,7 @@ const GerenciarAgenda = () => {
                                   </div>
                                 </div>
                             ) : (
-                                <div className="flex-1">
+                                <div className="flex-1" onClick={(e) => e.stopPropagation()}>
                                     <p className="text-gray-500 font-medium text-sm">Fechado</p>
                                 </div>
                             )}
