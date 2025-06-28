@@ -1,5 +1,4 @@
-
-import { Calendar, Users, FileText, User, LogOut, Home, Clock } from "lucide-react";
+import { Calendar, Users, FileText, User, LogOut, Home, Clock, Activity } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -25,6 +24,12 @@ const patientMenuItems = [
     url: "/",
     icon: Home,
     description: "Página inicial do portal"
+  },
+  {
+    title: "Dashboard Familiar",
+    url: "/dashboard-familiar",
+    icon: Activity,
+    description: "Visão geral da saúde familiar"
   },
   {
     title: "Agendamento",

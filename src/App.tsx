@@ -102,6 +102,7 @@ function App() {
                   <Route path="/agenda-paciente" element={<AgendaPaciente />} />
                   <Route path="/historico" element={<Historico />} />
                   <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
+                  <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AuthRedirectController>
