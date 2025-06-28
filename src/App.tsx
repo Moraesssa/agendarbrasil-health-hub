@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -26,6 +25,7 @@ import AgendaPaciente from './pages/AgendaPaciente';
 import Historico from './pages/Historico';
 import NotFound from './pages/NotFound';
 import GerenciarFamilia from './pages/GerenciarFamilia';
+import DashboardFamiliar from './pages/DashboardFamiliar';
 
 const queryClient = new QueryClient();
 

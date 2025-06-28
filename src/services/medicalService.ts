@@ -29,7 +29,10 @@ export const medicalService = {
         throw new Error(`Erro ao buscar serviços médicos: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(service => ({
+        ...service,
+        category: service.category as MedicalService['category']
+      }));
     } catch (error) {
       logger.error("Failed to fetch medical services", "MedicalService", error);
       throw error;
@@ -75,7 +78,11 @@ export const medicalService = {
         throw new Error(`Erro ao buscar triagens: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(triage => ({
+        ...triage,
+        urgency_level: triage.urgency_level as MedicalTriage['urgency_level'],
+        status: triage.status as MedicalTriage['status']
+      }));
     } catch (error) {
       logger.error("Failed to fetch triages", "MedicalService", error);
       throw error;
@@ -121,7 +128,11 @@ export const medicalService = {
         throw new Error(`Erro ao buscar vacinas: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(vaccine => ({
+        ...vaccine,
+        vaccine_type: vaccine.vaccine_type as VaccinationRecord['vaccine_type'],
+        status: vaccine.status as VaccinationRecord['status']
+      }));
     } catch (error) {
       logger.error("Failed to fetch vaccines", "MedicalService", error);
       throw error;
@@ -190,7 +201,11 @@ export const medicalService = {
         throw new Error(`Erro ao buscar exames: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(exam => ({
+        ...exam,
+        exam_type: exam.exam_type as MedicalExam['exam_type'],
+        status: exam.status as MedicalExam['status']
+      }));
     } catch (error) {
       logger.error("Failed to fetch exams", "MedicalService", error);
       throw error;
@@ -236,7 +251,11 @@ export const medicalService = {
         throw new Error(`Erro ao buscar atividades familiares: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(activity => ({
+        ...activity,
+        activity_type: activity.activity_type as FamilyActivity['activity_type'],
+        urgency: activity.urgency as FamilyActivity['urgency']
+      }));
     } catch (error) {
       logger.error("Failed to fetch upcoming activities", "MedicalService", error);
       throw error;
@@ -258,7 +277,11 @@ export const medicalService = {
         throw new Error(`Erro ao buscar notificações: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(notification => ({
+        ...notification,
+        notification_type: notification.notification_type as FamilyNotification['notification_type'],
+        priority: notification.priority as FamilyNotification['priority']
+      }));
     } catch (error) {
       logger.error("Failed to fetch notifications", "MedicalService", error);
       throw error;
