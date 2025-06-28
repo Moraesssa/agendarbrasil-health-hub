@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Medico, Paciente } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
-import { getDefaultWorkingHours } from '@/utils/timeSlotUtils'; // Importar a função de horários padrão
+import { getDefaultWorkingHours } from '@/utils/timeSlotUtils';
 
 export const useOnboarding = () => {
   const { user, userData, updateOnboardingStep, completeOnboarding } = useAuth();
@@ -24,10 +25,10 @@ export const useOnboarding = () => {
 
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
-      // **CORREÇÃO PRINCIPAL AQUI**
       // Garante que a configuração de horário exista, usando o padrão se necessário.
-      const existingConfig = (existing?.configuracoes as any) || {};
-      const newConfiguracoes = data.configuracoes || {};
+      const existingConfig = (existing?.configuracoes as Record<string, any>) || {};
+      const newConfiguracoes = (data.configuracoes as Record<string, any>) || {};
+      
       if (!newConfiguracoes.horarioAtendimento && !existingConfig.horarioAtendimento) {
         newConfiguracoes.horarioAtendimento = getDefaultWorkingHours();
       }
@@ -41,7 +42,7 @@ export const useOnboarding = () => {
         whatsapp: data.whatsapp || null,
         endereco: data.endereco || {},
         dados_profissionais: data.dadosProfissionais || {},
-        configuracoes: { ...existingConfig, ...newConfiguracoes }, // Mescla configurações existentes com novas
+        configuracoes: { ...existingConfig, ...newConfiguracoes },
         verificacao: data.verificacao || existingConfig.verificacao || {}
       };
 
@@ -73,21 +74,18 @@ export const useOnboarding = () => {
     }
   };
   
-  // ... (manter as outras funções como savePacienteData, nextStep, finishOnboarding) ...
-    const savePacienteData = async (data: Partial<Paciente>) => {
+  const savePacienteData = async (data: Partial<Paciente>) => {
     if (!user) return false;
 
     try {
       setIsSubmitting(true);
       
-      // Check if paciente record exists
       const { data: existing } = await supabase
         .from('pacientes')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      // Convert Date objects to ISO strings for JSON compatibility
       const processConvenio = (convenio: any) => {
         if (!convenio) return { temConvenio: false };
         

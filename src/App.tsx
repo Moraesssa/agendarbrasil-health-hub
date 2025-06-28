@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/toaster"
-import { Sonner } from './components/ui/sonner';
-import { ErrorBoundary } from 'react-error-boundary';
+import { Toaster as Sonner } from './components/ui/sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthRedirectController } from './components/AuthRedirectController';
 import Index from './pages/Index';
@@ -28,6 +28,50 @@ import NotFound from './pages/NotFound';
 import GerenciarFamilia from './pages/GerenciarFamilia';
 
 const queryClient = new QueryClient();
+
+// Simple error boundary component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Algo deu errado
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Por favor, recarregue a página
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Recarregar
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function App() {
   return (

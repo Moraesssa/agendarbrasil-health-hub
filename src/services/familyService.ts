@@ -19,7 +19,19 @@ export const familyService = {
         throw new Error(`Erro ao buscar membros da família: ${error.message}`);
       }
 
-      return data || [];
+      // Cast the returned data to the correct type
+      return (data || []).map((member: any): FamilyMember => ({
+        id: member.id,
+        family_member_id: member.family_member_id,
+        display_name: member.display_name,
+        email: member.email,
+        relationship: member.relationship as FamilyMember['relationship'],
+        permission_level: member.permission_level as FamilyMember['permission_level'],
+        can_schedule: member.can_schedule,
+        can_view_history: member.can_view_history,
+        can_cancel: member.can_cancel,
+        status: member.status as FamilyMember['status']
+      }));
     } catch (error) {
       logger.error("Failed to fetch family members", "FamilyService", error);
       throw error;

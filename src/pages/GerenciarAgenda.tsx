@@ -72,15 +72,17 @@ const GerenciarAgenda = () => {
     try {
       const { data, error } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
       
-      if (error && error.code !== 'PGRST116') throw error; // Ignora erro de "não encontrado"
+      if (error && error.code !== 'PGRST116') throw error;
 
-      const horarioAtendimento = data?.configuracoes?.horarioAtendimento || {};
+      const configuracoes = data?.configuracoes as Record<string, any> || {};
+      const horarioAtendimento = configuracoes?.horarioAtendimento || {};
       
       const horariosParaForm = diasDaSemana.reduce((acc, dia) => {
+        const diaConfig = horarioAtendimento[dia.key] as Record<string, any> || {};
         acc[dia.key] = {
-          ativo: horarioAtendimento[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
-          inicio: horarioAtendimento[dia.key]?.inicio || '08:00',
-          fim: horarioAtendimento[dia.key]?.fim || '18:00',
+          ativo: diaConfig?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
+          inicio: diaConfig?.inicio || '08:00',
+          fim: diaConfig?.fim || '18:00',
         };
         return acc;
       }, {} as Record<string, HorarioConfig>);
@@ -108,8 +110,9 @@ const GerenciarAgenda = () => {
       const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
       if (fetchError) throw fetchError;
 
+      const configuracoes = medicoData.configuracoes as Record<string, any> || {};
       const newConfiguracoes = {
-        ...medicoData.configuracoes,
+        ...configuracoes,
         horarioAtendimento: data.horarios
       };
 
@@ -117,7 +120,7 @@ const GerenciarAgenda = () => {
       if (updateError) throw updateError;
 
       toast({ title: "Agenda atualizada com sucesso!" });
-      reset(data); // Atualiza o estado "limpo" do formulário para o novo estado salvo
+      reset(data);
     } catch (error) {
       logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
       toast({ title: "Erro ao salvar agenda", variant: "destructive" });
@@ -206,7 +209,7 @@ const GerenciarAgenda = () => {
                     </div>
                     <div className="flex justify-end items-center gap-4 pt-4 border-t">
                        {isDirty && (
-                        <Button type="button" variant="ghost" onClick={() => fetchHorarios(true)}>
+                        <Button type="button" variant="ghost" onClick={() => fetchHorarios()}>
                           <Undo2 className="w-5 h-5 mr-2" />
                           Desfazer
                         </Button>
