@@ -1,193 +1,72 @@
-import React, { Suspense } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { AuthRedirectController } from "@/components/AuthRedirectController";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { PageLoader } from "@/components/PageLoader";
-import { logger } from "@/utils/logger";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/toaster"
+import { Sonner } from './components/ui/sonner';
+import { ErrorBoundary } from 'react-error-boundary';
+import { AuthProvider } from './contexts/AuthContext';
+import { AuthRedirectController } from './components/AuthRedirectController';
+import Index from './pages/Index';
+import Login from './pages/Login';
+import Cadastrar from './pages/Cadastrar';
+import CadastroMedico from './pages/CadastroMedico';
+import CadastroPaciente from './pages/CadastroPaciente';
+import UserTypeSelection from './pages/UserTypeSelection';
+import Onboarding from './pages/Onboarding';
+import DashboardMedico from './pages/DashboardMedico';
+import Perfil from './pages/Perfil';
+import PerfilMedico from './pages/PerfilMedico';
+import AgendaMedico from './pages/AgendaMedico';
+import GerenciarAgenda from './pages/GerenciarAgenda';
+import PacientesMedico from './pages/PacientesMedico';
+import EncaminhamentosMedico from './pages/EncaminhamentosMedico';
+import Agendamento from './pages/Agendamento';
+import AgendaPaciente from './pages/AgendaPaciente';
+import Historico from './pages/Historico';
+import NotFound from './pages/NotFound';
+import GerenciarFamilia from './pages/GerenciarFamilia';
 
-// Lazy load all pages for better performance
-const Index = React.lazy(() => 
-  import("./pages/Index").catch(err => {
-    logger.error("Failed to load Index page", "App", err);
-    throw err;
-  })
-);
+const queryClient = new QueryClient();
 
-const Login = React.lazy(() => 
-  import("./pages/Login").catch(err => {
-    logger.error("Failed to load Login page", "App", err);
-    throw err;
-  })
-);
-
-const UserTypeSelection = React.lazy(() => 
-  import("./pages/UserTypeSelection").catch(err => {
-    logger.error("Failed to load UserTypeSelection page", "App", err);
-    throw err;
-  })
-);
-
-const Onboarding = React.lazy(() => 
-  import("./pages/Onboarding").catch(err => {
-    logger.error("Failed to load Onboarding page", "App", err);
-    throw err;
-  })
-);
-
-// Paciente pages
-const Agendamento = React.lazy(() => 
-  import("./pages/Agendamento").catch(err => {
-    logger.error("Failed to load Agendamento page", "App", err);
-    throw err;
-  })
-);
-
-const AgendaPaciente = React.lazy(() => 
-  import("./pages/AgendaPaciente").catch(err => {
-    logger.error("Failed to load AgendaPaciente page", "App", err);
-    throw err;
-  })
-);
-
-const Perfil = React.lazy(() => 
-  import("./pages/Perfil").catch(err => {
-    logger.error("Failed to load Perfil page", "App", err);
-    throw err;
-  })
-);
-
-const Historico = React.lazy(() => 
-  import("./pages/Historico").catch(err => {
-    logger.error("Failed to load Historico page", "App", err);
-    throw err;
-  })
-);
-
-// Médico pages
-const DashboardMedico = React.lazy(() => 
-  import("./pages/DashboardMedico").catch(err => {
-    logger.error("Failed to load DashboardMedico page", "App", err);
-    throw err;
-  })
-);
-
-const AgendaMedico = React.lazy(() => 
-  import("./pages/AgendaMedico").catch(err => {
-    logger.error("Failed to load AgendaMedico page", "App", err);
-    throw err;
-  })
-);
-
-const PerfilMedico = React.lazy(() => 
-  import("./pages/PerfilMedico").catch(err => {
-    logger.error("Failed to load PerfilMedico page", "App", err);
-    throw err;
-  })
-);
-
-const PacientesMedico = React.lazy(() => 
-  import("./pages/PacientesMedico").catch(err => {
-    logger.error("Failed to load PacientesMedico page", "App", err);
-    throw err;
-  })
-);
-
-const EncaminhamentosMedico = React.lazy(() => 
-  import("./pages/EncaminhamentosMedico").catch(err => {
-    logger.error("Failed to load EncaminhamentosMedico page", "App", err);
-    throw err;
-  })
-);
-
-// NOVA PÁGINA PARA GERENCIAR AGENDA
-const GerenciarAgenda = React.lazy(() => 
-  import("./pages/GerenciarAgenda").catch(err => {
-    logger.error("Failed to load GerenciarAgenda page", "App", err);
-    throw err;
-  })
-);
-
-const NotFound = React.lazy(() => 
-  import("./pages/NotFound").catch(err => {
-    logger.error("Failed to load NotFound page", "App", err);
-    throw err;
-  })
-);
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        logger.warn(`Query failed, attempt ${failureCount + 1}`, "ReactQuery", error);
-        return failureCount < 3;
-      },
-    },
-    mutations: {
-      onError: (error) => {
-        logger.error("Mutation error", "ReactQuery", error);
-      },
-    },
-  },
-});
-
-const App = () => {
-  logger.info("App initialized", "App");
-
+function App() {
   return (
-    <ErrorBoundary context="App Root">
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <ErrorBoundary context="Auth Provider">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
             <AuthProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <ErrorBoundary context="Auth Redirect Controller">
-                  <AuthRedirectController>
-                    <Suspense fallback={<PageLoader message="Carregando página..." />}>
-                      <ErrorBoundary context="Routes">
-                        <Routes>
-                          {/* Rotas Públicas */}
-                          <Route path="/" element={<Index />} />
-                          <Route path="/login" element={<Login />} />
-                          
-                          {/* Configuração Inicial */}
-                          <Route path="/user-type" element={<UserTypeSelection />} />
-                          <Route path="/onboarding" element={<Onboarding />} />
-                          
-                          {/* Rotas do Paciente */}
-                          <Route path="/agendamento" element={<Agendamento />} />
-                          <Route path="/agenda-paciente" element={<AgendaPaciente />} />
-                          <Route path="/perfil" element={<Perfil />} />
-                          <Route path="/historico" element={<Historico />} />
-                          
-                          {/* Rotas do Médico */}
-                          <Route path="/dashboard-medico" element={<DashboardMedico />} />
-                          <Route path="/agenda-medico" element={<AgendaMedico />} />
-                          <Route path="/perfil-medico" element={<PerfilMedico />} />
-                          <Route path="/pacientes-medico" element={<PacientesMedico />} />
-                          <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                          <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} /> {/* NOVA ROTA */}
-                          
-                          {/* Sistema */}
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </ErrorBoundary>
-                    </Suspense>
-                  </AuthRedirectController>
-                </ErrorBoundary>
-              </BrowserRouter>
+              <AuthRedirectController>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/cadastrar" element={<Cadastrar />} />
+                  <Route path="/cadastro-medico" element={<CadastroMedico />} />
+                  <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
+                  <Route path="/user-type" element={<UserTypeSelection />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/dashboard-medico" element={<DashboardMedico />} />
+                  <Route path="/perfil" element={<Perfil />} />
+                  <Route path="/perfil-medico" element={<PerfilMedico />} />
+                  <Route path="/agenda-medico" element={<AgendaMedico />} />
+                  <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
+                  <Route path="/pacientes-medico" element={<PacientesMedico />} />
+                  <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                  <Route path="/agendamento" element={<Agendamento />} />
+                  <Route path="/agenda-paciente" element={<AgendaPaciente />} />
+                  <Route path="/historico" element={<Historico />} />
+                  <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthRedirectController>
             </AuthProvider>
-          </ErrorBoundary>
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
-};
+}
 
 export default App;

@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       consultas: {
         Row: {
+          agendado_por: string | null
           created_at: string
           data_consulta: string
           diagnostico: string | null
@@ -20,12 +21,14 @@ export type Database = {
           medico_id: string
           motivo: string | null
           notas_medico: string | null
+          paciente_familiar_id: string | null
           paciente_id: string
           status: Database["public"]["Enums"]["appointment_status"]
           tipo_consulta: string | null
           updated_at: string
         }
         Insert: {
+          agendado_por?: string | null
           created_at?: string
           data_consulta: string
           diagnostico?: string | null
@@ -35,12 +38,14 @@ export type Database = {
           medico_id: string
           motivo?: string | null
           notas_medico?: string | null
+          paciente_familiar_id?: string | null
           paciente_id: string
           status?: Database["public"]["Enums"]["appointment_status"]
           tipo_consulta?: string | null
           updated_at?: string
         }
         Update: {
+          agendado_por?: string | null
           created_at?: string
           data_consulta?: string
           diagnostico?: string | null
@@ -50,6 +55,7 @@ export type Database = {
           medico_id?: string
           motivo?: string | null
           notas_medico?: string | null
+          paciente_familiar_id?: string | null
           paciente_id?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           tipo_consulta?: string | null
@@ -57,8 +63,22 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "consultas_agendado_por_fkey"
+            columns: ["agendado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "consultas_medico_id_fkey"
             columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_paciente_familiar_id_fkey"
+            columns: ["paciente_familiar_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -101,6 +121,63 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      family_members: {
+        Row: {
+          can_cancel: boolean
+          can_schedule: boolean
+          can_view_history: boolean
+          created_at: string
+          family_member_id: string
+          id: string
+          permission_level: string
+          relationship: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_cancel?: boolean
+          can_schedule?: boolean
+          can_view_history?: boolean
+          created_at?: string
+          family_member_id: string
+          id?: string
+          permission_level?: string
+          relationship: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_cancel?: boolean
+          can_schedule?: boolean
+          can_view_history?: boolean
+          created_at?: string
+          family_member_id?: string
+          id?: string
+          permission_level?: string
+          relationship?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_member_id_fkey"
+            columns: ["family_member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       medicos: {
         Row: {
@@ -256,6 +333,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           uf: string
+        }[]
+      }
+      get_family_members: {
+        Args: { user_uuid: string }
+        Returns: {
+          id: string
+          family_member_id: string
+          display_name: string
+          email: string
+          relationship: string
+          permission_level: string
+          can_schedule: boolean
+          can_view_history: boolean
+          can_cancel: boolean
+          status: string
         }[]
       }
       get_specialties: {

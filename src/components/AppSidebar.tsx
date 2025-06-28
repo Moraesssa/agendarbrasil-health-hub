@@ -76,7 +76,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { logout, userData } = useAuth();
+  const { userData, logout } = useAuth();
 
   const handleNavigation = (url: string, title: string) => {
     if (url === "/settings") {
@@ -110,6 +110,14 @@ export function AppSidebar() {
       });
     }
   };
+
+  const pacienteNavItems = [
+    {
+      title: "Gerenciar Família",
+      url: "/gerenciar-familia",
+      icon: Users,
+    },
+  ];
 
   return (
     <Sidebar className="border-r border-blue-100 bg-gradient-to-b from-white to-blue-50/30">

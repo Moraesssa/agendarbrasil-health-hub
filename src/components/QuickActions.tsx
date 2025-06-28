@@ -2,18 +2,21 @@
 import { Calendar, Pill, Heart, Phone, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface QuickActionsProps {
   onAction: (action: string) => void;
 }
 
 const QuickActions = ({ onAction }: QuickActionsProps) => {
+  const navigate = useNavigate();
+
   const actions = [
     {
       icon: Calendar,
       label: "Agendar Consulta",
       color: "bg-blue-500 hover:bg-blue-600",
-      action: "Agendamento de consulta",
+      action: "agendamento",
       description: "Marque uma nova consulta"
     },
     {
@@ -48,10 +51,20 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
       icon: Users,
       label: "Família",
       color: "bg-teal-500 hover:bg-teal-600",
-      action: "Agendamento familiar",
+      action: "familia",
       description: "Gerencie consultas da família"
     }
   ];
+
+  const handleAction = (action: string) => {
+    if (action === "agendamento") {
+      navigate("/agendamento");
+    } else if (action === "familia") {
+      navigate("/gerenciar-familia");
+    } else {
+      onAction(action);
+    }
+  };
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
@@ -63,7 +76,7 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
           {actions.map((action, index) => (
             <Button
               key={index}
-              onClick={() => onAction(action.action)}
+              onClick={() => handleAction(action.action)}
               className={`${action.color} text-white flex flex-col items-center gap-1 sm:gap-2 h-auto py-3 sm:py-4 px-2 sm:px-3 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105 group relative`}
               title={action.description}
             >
