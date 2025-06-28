@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
+import { PatientSidebar } from '@/components/PatientSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,13 +27,13 @@ const GerenciarFamilia = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-green-50">
-        <AppSidebar />
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-green-50 to-blue-50">
+        <PatientSidebar />
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-blue-100/50 bg-white/95 backdrop-blur-md shadow-sm px-6">
-            <SidebarTrigger className="text-blue-600 hover:bg-blue-50" />
+          <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-green-100/50 bg-white/95 backdrop-blur-md shadow-sm px-6">
+            <SidebarTrigger className="text-green-600 hover:bg-green-50" />
             <div className="flex-1">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-800 to-blue-600 bg-clip-text text-transparent">
                 Gerenciar Família
               </h1>
               <p className="text-sm text-gray-600">
@@ -48,7 +48,7 @@ const GerenciarFamilia = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="flex items-center p-6">
-                    <Users className="h-8 w-8 text-blue-600" />
+                    <Users className="h-8 w-8 text-green-600" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total de Membros</p>
                       <p className="text-2xl font-bold">{familyMembers.length}</p>
@@ -58,7 +58,7 @@ const GerenciarFamilia = () => {
                 
                 <Card>
                   <CardContent className="flex items-center p-6">
-                    <UserPlus className="h-8 w-8 text-green-600" />
+                    <UserPlus className="h-8 w-8 text-blue-600" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Podem Agendar</p>
                       <p className="text-2xl font-bold">
@@ -87,7 +87,7 @@ const GerenciarFamilia = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-blue-600" />
+                        <Users className="w-5 h-5 text-green-600" />
                         Membros da Família
                       </CardTitle>
                       <CardDescription>
@@ -134,11 +134,11 @@ const GerenciarFamilia = () => {
               </Card>
 
               {/* Seção de ajuda */}
-              <Card className="bg-blue-50 border-blue-200">
+              <Card className="bg-green-50 border-green-200">
                 <CardHeader>
-                  <CardTitle className="text-blue-900">Como funciona?</CardTitle>
+                  <CardTitle className="text-green-900">Como funciona?</CardTitle>
                 </CardHeader>
-                <CardContent className="text-blue-800 space-y-2">
+                <CardContent className="text-green-800 space-y-2">
                   <p>• <strong>Administrador:</strong> Pode gerenciar todos os membros e suas permissões</p>
                   <p>• <strong>Gerenciador:</strong> Pode agendar e cancelar consultas para todos os membros</p>
                   <p>• <strong>Visualizador:</strong> Pode apenas visualizar as consultas dos membros</p>
