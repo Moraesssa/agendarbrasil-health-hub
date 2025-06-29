@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { Toaster } from "@/components/ui/toaster"
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from './components/ui/sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthRedirectController } from './components/AuthRedirectController';
-import { NotificationProvider } from './contexts/NotificationContext'; // <-- Nova importação
+import { NotificationProvider } from './contexts/NotificationContext';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Cadastrar from './pages/Cadastrar';
@@ -59,7 +59,7 @@ class ErrorBoundary extends React.Component<
             <p className="text-gray-600 mb-4">
               Por favor, recarregue a página
             </p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
@@ -83,7 +83,7 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
-              <NotificationProvider> {/* Adicionado o Provider */}
+              <NotificationProvider>
                 <AuthRedirectController>
                   <Routes>
                     <Route path="/" element={<Index />} />
@@ -100,4 +100,21 @@ function App() {
                     <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                    <Route path="/agendamento
+                    <Route path="/agendamento" element={<Agendamento />} />
+                    <Route path="/agenda-paciente" element={<AgendaPaciente />} />
+                    <Route path="/historico" element={<Historico />} />
+                    <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
+                    <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AuthRedirectController>
+              </NotificationProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
