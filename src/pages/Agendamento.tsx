@@ -1,6 +1,6 @@
 import { ArrowLeft, Loader2, Calendar, Sparkles, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // <-- LINHA CORRIGIDA/ADICIONADA
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // <-- A importação está aqui
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
@@ -16,7 +16,6 @@ const Agendamento = () => {
   const navigate = useNavigate();
   const { models, setters, state, actions } = useAppointmentScheduling();
 
-  // Esta lógica agora está mais limpa, obtendo os dados do hook.
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
   const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedDate && models.selectedTime && models.selectedLocal;
@@ -26,7 +25,7 @@ const Agendamento = () => {
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
-            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6"><ArrowLeft className="h-4 w-4 mr-2" />Voltar para o Início</Button>
+            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6"><ArrowLeft className="h-4 w-4 mr-2" />Voltar</Button>
             <h1 className="text-4xl font-bold text-center">Agendar Consulta</h1>
             <p className="text-lg text-gray-600 text-center">Encontre o profissional ideal para você.</p>
         </div>
