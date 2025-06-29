@@ -22,7 +22,8 @@ export const useRealtimeNotifications = () => {
         .limit(50);
 
       if (error) throw error;
-      setNotifications(data || []);
+      // Corrigido: Cast explícito para o tipo correto.
+      setNotifications((data as FamilyNotification[]) || []);
     } catch (error) {
       logger.error('Failed to fetch initial notifications', 'useRealtimeNotifications', error);
       toast({ title: 'Erro ao carregar notificações', variant: 'destructive' });
@@ -41,11 +42,12 @@ export const useRealtimeNotifications = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'family_notifications' },
         (payload) => {
-          logger.info('New notification received', 'useRealtimeNotifications', payload.new);
-          setNotifications((prev) => [payload.new, ...prev]);
+          const newNotification = payload.new as FamilyNotification;
+          logger.info('New notification received', 'useRealtimeNotifications', newNotification);
+          setNotifications((prev) => [newNotification, ...prev]);
           toast({
-            title: payload.new.title,
-            description: payload.new.message,
+            title: newNotification.title,
+            description: newNotification.message,
           });
         }
       )
