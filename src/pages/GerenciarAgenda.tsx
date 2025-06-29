@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Form, FormMessage } from "@/components/ui/form";
+import { Form, FormItem, FormMessage } from "@/components/ui/form"; // <-- FormItem importado
 import { Loader2, Save, Undo2, Clock, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,17 @@ import { PageLoader } from "@/components/PageLoader";
 import { logger } from "@/utils/logger";
 import locationService, { LocalAtendimento } from "@/services/locationService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// --- Constante movida para o topo ---
+const diasDaSemana = [
+  { key: "segunda", label: "Segunda-feira" },
+  { key: "terca", label: "Terça-feira" },
+  { key: "quarta", label: "Quarta-feira" },
+  { key: "quinta", label: "Quinta-feira" },
+  { key: "sexta", label: "Sexta-feira" },
+  { key: "sabado", label: "Sábado" },
+  { key: "domingo", label: "Domingo" },
+] as const;
 
 // --- Tipos e Esquemas Atualizados ---
 const horarioSchema = z.object({
@@ -45,15 +56,6 @@ const agendaSchema = z.object({
 type AgendaFormData = z.infer<typeof agendaSchema>;
 type HorarioConfig = z.infer<typeof horarioSchema>;
 
-const diasDaSemana = [
-  { key: "segunda", label: "Segunda-feira" },
-  { key: "terca", label: "Terça-feira" },
-  { key: "quarta", label: "Quarta-feira" },
-  { key: "quinta", label: "Quinta-feira" },
-  { key: "sexta", label: "Sexta-feira" },
-  { key: "sabado", label: "Sábado" },
-  { key: "domingo", label: "Domingo" },
-] as const;
 
 const GerenciarAgenda = () => {
     const { user } = useAuth();
