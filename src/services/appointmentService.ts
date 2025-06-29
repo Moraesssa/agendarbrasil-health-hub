@@ -1,30 +1,38 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
-  getDefaultWorkingHours, 
-  validateDoctorConfig,
-  normalizeToStartOfDay,
+  getDefaultWorkingHours,
   DoctorConfig, 
   TimeSlot,
   ExistingAppointment
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
+// Tipos atualizados
 export interface Medico {
   id: string;
   display_name: string | null;
 }
+export interface LocalComHorarios extends LocalAtendimento {
+  horarios_disponiveis: TimeSlot[];
+}
+export interface LocalAtendimento {
+  id: string;
+  nome_local: string;
+  endereco: any;
+}
 
 const checkAuthentication = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    logger.error("User not authenticated", "AppointmentService", error);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    logger.error("User not authenticated", "AppointmentService");
     throw new Error("Você precisa estar logado para realizar esta ação");
   }
   return user;
 };
 
 export const appointmentService = {
+  // ... (getSpecialties permanece o mesmo)
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
     try {
@@ -38,113 +46,94 @@ export const appointmentService = {
     }
   },
 
-  // ▼▼▼ FUNÇÃO CORRIGIDA ▼▼▼
-  async getDoctorsBySpecialty(specialty: string, state: string, city: string): Promise<Medico[]> {
-    logger.info("Buscando médicos por especialidade e local", "AppointmentService", { specialty, state, city });
-    try {
-      await checkAuthentication();
-      if (!specialty || !state || !city) {
-        return [];
-      }
-
-      // **CORREÇÃO: Adicionados filtros para estado (uf) e cidade no JSON de endereço**
-      const { data, error } = await supabase
-        .from('medicos')
-        .select(`
-          user_id,
-          profiles(display_name)
-        `)
-        .contains('especialidades', [specialty])
-        .eq('endereco->>uf', state)
-        .eq('endereco->>cidade', city);
-
-      if (error) {
-        throw new Error(`Erro ao buscar médicos: ${error.message}`);
-      }
-      
-      return (data || []).map((d: any) => ({
-        id: d.user_id,
-        display_name: d.profiles?.display_name || "Médico sem nome"
-      }));
-    } catch (error) {
-      logger.error("Falha ao buscar médicos", "AppointmentService", { specialty, state, city, error });
+  // Busca médicos que atendem em uma cidade/estado específica e com a especialidade desejada
+  async getDoctorsByLocationAndSpecialty(specialty: string, city: string, state: string): Promise<Medico[]> {
+    await checkAuthentication();
+    const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
+      p_specialty: specialty,
+      p_city: city,
+      p_state: state
+    });
+    if (error) {
+      logger.error("Error fetching doctors by location", "AppointmentService", error);
       throw error;
     }
+    return data || [];
   },
-  // ▲▲▲ FIM DA FUNÇÃO CORRIGIDA ▲▲▲
 
-  async getAvailableTimeSlots(doctorId: string, date: string): Promise<TimeSlot[]> {
-    try {
-      await checkAuthentication();
-      if (!doctorId || !date) return [];
+  // Busca os locais e horários disponíveis para um médico em uma data específica
+  async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
+    await checkAuthentication();
+    if (!doctorId || !date) return [];
 
-      const normalizedDate = normalizeToStartOfDay(date);
-      
-      const { data: doctorData, error: doctorError } = await supabase
-        .from('medicos')
-        .select('configuracoes')
-        .eq('user_id', doctorId)
-        .single();
+    const { data: medico, error: medicoError } = await supabase
+      .from('medicos')
+      .select('configuracoes, locais:locais_atendimento(*)')
+      .eq('user_id', doctorId)
+      .single();
 
-      if (doctorError && doctorError.code !== 'PGRST116') {
-        throw new Error(`Erro ao buscar configuração do médico: ${doctorError.message}`);
+    if (medicoError) throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
+
+    const { configuracoes, locais } = medico;
+    const horarioAtendimento = configuracoes?.horarioAtendimento || {};
+    const diaDaSemana = new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+
+    const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
+    
+    // Busca todas as consultas do médico para o dia para evitar conflitos
+    const startOfDay = new Date(`${date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${date}T23:59:59.999Z`);
+    const { data: appointments } = await supabase
+      .from('consultas')
+      .select('data_consulta, duracao_minutos, local_id')
+      .eq('medico_id', doctorId)
+      .gte('data_consulta', startOfDay.toISOString())
+      .lte('data_consulta', endOfDay.toISOString());
+    
+    const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
+      data_consulta: apt.data_consulta,
+      duracao_minutos: apt.duracao_minutos || 30
+    }));
+
+    const locaisComHorarios: LocalComHorarios[] = [];
+
+    for (const local of locais) {
+      const horariosNesteLocal = generateTimeSlots({
+        duracaoConsulta: configuracoes.duracaoConsulta || 30,
+        horarioAtendimento: { [diaDaSemana]: blocosDoDia.filter(b => b.local_id === local.id) }
+      }, new Date(date + 'T00:00:00'), existingAppointments);
+
+      if (horariosNesteLocal.length > 0) {
+        locaisComHorarios.push({
+          ...local,
+          horarios_disponiveis: horariosNesteLocal
+        });
       }
-
-      const config = (doctorData?.configuracoes || {}) as DoctorConfig;
-      const doctorConfig: DoctorConfig = {
-        duracaoConsulta: config.duracaoConsulta || 30,
-        horarioAtendimento: config.horarioAtendimento || getDefaultWorkingHours(),
-        bufferMinutos: config.bufferMinutos || 0,
-      };
-
-      const startOfDay = new Date(normalizedDate);
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      const endOfDay = new Date(normalizedDate);
-      endOfDay.setUTCHours(23, 59, 59, 999);
-      
-      const { data: appointments } = await supabase
-        .from('consultas')
-        .select('data_consulta, duracao_minutos')
-        .eq('medico_id', doctorId)
-        .gte('data_consulta', startOfDay.toISOString())
-        .lte('data_consulta', endOfDay.toISOString())
-        .in('status', ['agendada', 'confirmada']);
-
-      const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
-        data_consulta: apt.data_consulta,
-        duracao_minutos: apt.duracao_minutos || 30
-      }));
-
-      return generateTimeSlots(doctorConfig, normalizedDate, existingAppointments);
-    } catch (error) {
-      logger.error("Error in getAvailableTimeSlots", "AppointmentService", { doctorId, date, error });
-      throw error;
     }
+    
+    return locaisComHorarios;
   },
 
+  // Salva o agendamento com o local da consulta
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
     data_consulta: string;
     tipo_consulta: string;
+    local_id: string;
+    local_consulta_texto: string;
   }) {
-    try {
-      const user = await checkAuthentication();
-      if (appointmentData.paciente_id !== user.id) {
-        throw new Error("ID do paciente não corresponde ao usuário logado");
-      }
-      
-      const { error } = await supabase.from('consultas').insert({
-        ...appointmentData,
-        status: 'agendada',
-        motivo: 'Consulta solicitada via plataforma.'
-      });
-      if (error) throw new Error(`Erro ao agendar consulta: ${error.message}`);
-      
-      return { success: true };
-    } catch (error) {
-      logger.error("Error scheduling appointment", "AppointmentService", { error });
-      throw error;
-    }
+    await checkAuthentication();
+    const { error } = await supabase.from('consultas').insert({
+      paciente_id: appointmentData.paciente_id,
+      medico_id: appointmentData.medico_id,
+      data_consulta: appointmentData.data_consulta,
+      tipo_consulta: appointmentData.tipo_consulta,
+      local_id: appointmentData.local_id, // <-- NOVO
+      local_consulta: appointmentData.local_consulta_texto, // <-- NOVO
+      status: 'agendada',
+    });
+    if (error) throw error;
+    return { success: true };
   }
 };
