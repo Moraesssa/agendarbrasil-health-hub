@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as Sonner } from './components/ui/sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthRedirectController } from './components/AuthRedirectController';
+import { NotificationProvider } from './contexts/NotificationContext'; // <-- Nova importação
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Cadastrar from './pages/Cadastrar';
@@ -82,36 +83,21 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
-              <AuthRedirectController>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/cadastrar" element={<Cadastrar />} />
-                  <Route path="/cadastro-medico" element={<CadastroMedico />} />
-                  <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
-                  <Route path="/user-type" element={<UserTypeSelection />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/dashboard-medico" element={<DashboardMedico />} />
-                  <Route path="/perfil" element={<Perfil />} />
-                  <Route path="/perfil-medico" element={<PerfilMedico />} />
-                  <Route path="/agenda-medico" element={<AgendaMedico />} />
-                  <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
-                  <Route path="/pacientes-medico" element={<PacientesMedico />} />
-                  <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                  <Route path="/agendamento" element={<Agendamento />} />
-                  <Route path="/agenda-paciente" element={<AgendaPaciente />} />
-                  <Route path="/historico" element={<Historico />} />
-                  <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
-                  <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AuthRedirectController>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
-  );
-}
-
-export default App;
+              <NotificationProvider> {/* Adicionado o Provider */}
+                <AuthRedirectController>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/cadastrar" element={<Cadastrar />} />
+                    <Route path="/cadastro-medico" element={<CadastroMedico />} />
+                    <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
+                    <Route path="/user-type" element={<UserTypeSelection />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/dashboard-medico" element={<DashboardMedico />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/perfil-medico" element={<PerfilMedico />} />
+                    <Route path="/agenda-medico" element={<AgendaMedico />} />
+                    <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
+                    <Route path="/pacientes-medico" element={<PacientesMedico />} />
+                    <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                    <Route path="/agendamento
