@@ -6,7 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { appointmentService } from "@/services/appointmentService";
 
 // --- Interfaces ---
-interface Doctor { id: string; display_name: string | null; }
+interface Doctor {
+  id: string;
+  display_name: string | null;
+}
 interface TimeSlot { time: string; available: boolean; }
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
@@ -36,6 +39,7 @@ export const useAppointmentScheduling = () => {
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- Funções de Carregamento ---
   const loadSpecialties = useCallback(async () => {
     setIsLoadingSpecialties(true);
     try {
@@ -75,12 +79,13 @@ export const useAppointmentScheduling = () => {
     }
   }, [toast]);
 
-  const loadDoctors = useCallback(async (specialty: string) => {
+  // **CORREÇÃO: Agora passa estado e cidade para o serviço**
+  const loadDoctors = useCallback(async (specialty: string, state: string, city: string) => {
     setIsLoadingDoctors(true);
     setDoctors([]);
     try {
-      const data = await appointmentService.getDoctorsBySpecialty(specialty);
-      setDoctors(data.filter(d => d.id));
+      const data = await appointmentService.getDoctorsBySpecialty(specialty, state, city);
+      setDoctors(data);
     } catch (e) { 
       toast({ title: "Erro ao carregar médicos", description: (e as Error).message, variant: "destructive" }); 
     } finally { 
@@ -131,16 +136,18 @@ export const useAppointmentScheduling = () => {
   
   useEffect(() => {
     setSelectedCity('');
+    setDoctors([]); // Limpa os médicos ao trocar de estado
     if (selectedState) loadAvailableCities(selectedState);
   }, [selectedState, loadAvailableCities]);
 
   useEffect(() => {
     setSelectedDoctor('');
-    if (selectedSpecialty) {
-      // Simplificado para buscar por especialidade, o filtro de localização pode ser adicionado aqui se necessário
-      loadDoctors(selectedSpecialty);
+    setDoctors([]); // Limpa os médicos ao trocar de cidade
+    // **CORREÇÃO: Chama loadDoctors quando todos os 3 filtros estão prontos**
+    if (selectedSpecialty && selectedState && selectedCity) {
+      loadDoctors(selectedSpecialty, selectedState, selectedCity);
     }
-  }, [selectedSpecialty, loadDoctors]);
+  }, [selectedSpecialty, selectedState, selectedCity, loadDoctors]);
 
   useEffect(() => {
     setSelectedDate('');
