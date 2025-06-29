@@ -38,28 +38,40 @@ export const appointmentService = {
     }
   },
 
-  async getDoctorsBySpecialty(specialty: string): Promise<Medico[]> {
-    logger.info("Fetching doctors by specialty", "AppointmentService", { specialty });
+  // ▼▼▼ FUNÇÃO CORRIGIDA ▼▼▼
+  async getDoctorsBySpecialty(specialty: string, state: string, city: string): Promise<Medico[]> {
+    logger.info("Buscando médicos por especialidade e local", "AppointmentService", { specialty, state, city });
     try {
       await checkAuthentication();
-      if (!specialty) throw new Error("Especialidade é obrigatória");
+      if (!specialty || !state || !city) {
+        return [];
+      }
 
+      // **CORREÇÃO: Adicionados filtros para estado (uf) e cidade no JSON de endereço**
       const { data, error } = await supabase
         .from('medicos')
-        .select(`user_id, profiles(display_name)`)
-        .contains('especialidades', [specialty]);
+        .select(`
+          user_id,
+          profiles(display_name)
+        `)
+        .contains('especialidades', [specialty])
+        .eq('endereco->>uf', state)
+        .eq('endereco->>cidade', city);
 
-      if (error) throw new Error(`Erro ao buscar médicos: ${error.message}`);
+      if (error) {
+        throw new Error(`Erro ao buscar médicos: ${error.message}`);
+      }
       
       return (data || []).map((d: any) => ({
         id: d.user_id,
-        display_name: d.profiles?.display_name || "Médico"
+        display_name: d.profiles?.display_name || "Médico sem nome"
       }));
     } catch (error) {
-      logger.error("Failed to fetch doctors", "AppointmentService", { specialty, error });
+      logger.error("Falha ao buscar médicos", "AppointmentService", { specialty, state, city, error });
       throw error;
     }
   },
+  // ▲▲▲ FIM DA FUNÇÃO CORRIGIDA ▲▲▲
 
   async getAvailableTimeSlots(doctorId: string, date: string): Promise<TimeSlot[]> {
     try {
@@ -136,8 +148,3 @@ export const appointmentService = {
     }
   }
 };
-
-
-
-
-
