@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -9,32 +9,27 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Clock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
-// --- Zod Schema for Validation ---
+// --- Zod Schema com a nova estrutura de horários ---
+const horarioSchema = z.object({
+  ativo: z.boolean(),
+  inicio: z.string(),
+  fim: z.string(),
+}).refine(data => !data.ativo || (data.inicio && data.fim && data.inicio < data.fim), {
+  message: "Início deve ser antes do fim.",
+  path: ["inicio"],
+});
+
 const configuracoesSchema = z.object({
   duracaoConsulta: z.coerce.number().min(15, "Mínimo 15 min").max(120, "Máximo 120 min"),
   valorConsulta: z.coerce.number().positive("O valor deve ser positivo"),
   aceitaConvenio: z.boolean().default(false),
-  horarios: z.array(z.object({
-    dia: z.string(),
-    label: z.string(),
-    ativo: z.boolean(),
-    inicio: z.string(),
-    fim: z.string()
-  })).superRefine((horarios, ctx) => {
-    horarios.forEach((horario, index) => {
-      if (horario.ativo && horario.inicio >= horario.fim) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "O horário de início deve ser anterior ao de fim.",
-          path: [index, 'inicio'],
-        });
-      }
-    });
-  })
+  horarios: z.record(horarioSchema)
 });
 
 type ConfiguracoesFormData = z.infer<typeof configuracoesSchema>;
+type HorarioConfig = z.infer<typeof horarioSchema>;
 
 // --- Component Props ---
 interface ConfiguracoesFormProps {
@@ -42,58 +37,43 @@ interface ConfiguracoesFormProps {
   initialData?: any;
 }
 
-// --- Component ---
-export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProps) => {
+const diasDaSemana = [
+  { key: "segunda", label: "Segunda-feira" },
+  { key: "terca", label: "Terça-feira" },
+  { key: "quarta", label: "Quarta-feira" },
+  { key: "quinta", label: "Quinta-feira" },
+  { key: "sexta", label: "Sexta-feira" },
+  { key: "sabado", label: "Sábado" },
+  { key: "domingo", label: "Domingo" },
+] as const;
 
-  const diasDaSemana = [
-    { key: "segunda", label: "Segunda-feira" },
-    { key: "terca", label: "Terça-feira" },
-    { key: "quarta", label: "Quarta-feira" },
-    { key: "quinta", label: "Quinta-feira" },
-    { key: "sexta", label: "Sexta-feira" },
-    { key: "sabado", label: "Sábado" },
-    { key: "domingo", label: "Domingo" },
-  ];
-  
+
+// --- Componente ---
+export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProps) => {
   const form = useForm<ConfiguracoesFormData>({
     resolver: zodResolver(configuracoesSchema),
     defaultValues: {
       duracaoConsulta: initialData?.duracaoConsulta || 30,
       valorConsulta: initialData?.valorConsulta || 150,
       aceitaConvenio: initialData?.aceitaConvenio || false,
-      horarios: diasDaSemana.map(dia => ({
-        dia: dia.key,
-        label: dia.label,
-        ativo: initialData?.horarioAtendimento?.[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
-        inicio: initialData?.horarioAtendimento?.[dia.key]?.inicio || '08:00',
-        fim: initialData?.horarioAtendimento?.[dia.key]?.fim || '18:00'
-      }))
+      horarios: diasDaSemana.reduce((acc, dia) => {
+        acc[dia.key] = {
+          ativo: initialData?.horarioAtendimento?.[dia.key]?.ativo ?? (dia.key !== 'sabado' && dia.key !== 'domingo'),
+          inicio: initialData?.horarioAtendimento?.[dia.key]?.inicio || '08:00',
+          fim: initialData?.horarioAtendimento?.[dia.key]?.fim || '18:00',
+        };
+        return acc;
+      }, {} as Record<string, HorarioConfig>)
     }
   });
 
-  const { fields } = useFieldArray({
-    control: form.control,
-    name: "horarios"
-  });
-
   const onSubmit = (data: ConfiguracoesFormData) => {
-    // Formata os horários para o formato esperado pelo Supabase
-    const horarioAtendimento = data.horarios.reduce((acc, curr) => {
-      acc[curr.dia] = {
-        inicio: curr.inicio,
-        fim: curr.fim,
-        ativo: curr.ativo
-      };
-      return acc;
-    }, {} as { [key: string]: { inicio: string; fim: string; ativo: boolean } });
-
     onNext({
       configuracoes: {
         duracaoConsulta: data.duracaoConsulta,
         valorConsulta: data.valorConsulta,
         aceitaConvenio: data.aceitaConvenio,
-        horarioAtendimento: horarioAtendimento,
-        // Mantém campos que podem existir mas não são editados aqui
+        horarioAtendimento: data.horarios, // O formato já está correto
         conveniosAceitos: initialData?.conveniosAceitos || [],
       }
     });
@@ -128,7 +108,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                 )} />
               </div>
               <FormField control={form.control} name="aceitaConvenio" render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                    <div className="space-y-1 leading-none">
                     <FormLabel>Aceita convênios</FormLabel>
@@ -139,32 +119,57 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
             
             <Separator />
 
-            {/* Gerenciador de Horários */}
+            {/* Gerenciador de Horários (Novo Design) */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-gray-800">Horários de Atendimento</h3>
               </div>
               <div className="space-y-3">
-                {fields.map((item, index) => (
-                  <FormField
-                    key={item.id}
-                    control={form.control}
-                    name={`horarios.${index}`}
-                    render={({ field }) => (
-                      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 border rounded-lg">
-                        <div className="flex items-center w-full sm:w-40">
-                          <Checkbox checked={field.value.ativo} onCheckedChange={(checked) => form.setValue(`horarios.${index}.ativo`, !!checked)} />
-                          <Label className="ml-3 font-medium">{item.label}</Label>
+                {diasDaSemana.map((dia) => (
+                  <Card key={dia.key} className="p-4 bg-slate-50">
+                    <Controller
+                      name={`horarios.${dia.key}`}
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                          <div className="flex items-center w-full sm:w-48">
+                            <Switch
+                              checked={field.value.ativo}
+                              onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })}
+                              id={`switch-${dia.key}`}
+                            />
+                            <Label htmlFor={`switch-${dia.key}`} className="ml-3 font-semibold text-base">
+                              {dia.label}
+                            </Label>
+                          </div>
+                          <div className={`flex-1 w-full grid grid-cols-2 gap-4 transition-opacity ${field.value.ativo ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                            <div>
+                              <Label htmlFor={`inicio-${dia.key}`}>Início</Label>
+                              <Input
+                                id={`inicio-${dia.key}`}
+                                type="time"
+                                value={field.value.inicio}
+                                onChange={(e) => field.onChange({ ...field.value, inicio: e.target.value })}
+                                disabled={!field.value.ativo}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`fim-${dia.key}`}>Fim</Label>
+                              <Input
+                                id={`fim-${dia.key}`}
+                                type="time"
+                                value={field.value.fim}
+                                onChange={(e) => field.onChange({ ...field.value, fim: e.target.value })}
+                                disabled={!field.value.ativo}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 w-full grid grid-cols-2 gap-3">
-                          <Input type="time" disabled={!field.value.ativo} {...form.register(`horarios.${index}.inicio`)} />
-                          <Input type="time" disabled={!field.value.ativo} {...form.register(`horarios.${index}.fim`)} />
-                        </div>
-                        <FormMessage>{form.formState.errors.horarios?.[index]?.inicio?.message}</FormMessage>
-                      </div>
-                    )}
-                  />
+                      )}
+                    />
+                     {form.formState.errors.horarios?.[dia.key]?.inicio && <FormMessage className="mt-2">{form.formState.errors.horarios?.[dia.key]?.inicio?.message}</FormMessage>}
+                  </Card>
                 ))}
               </div>
             </div>
