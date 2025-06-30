@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,8 +80,9 @@ const GerenciarAgenda = () => {
             ]);
             
             setLocais(locaisData || []);
-            const medicoConfig = (medicoDataResponse.data?.configuracoes as any) || {};
-            const horarioAtendimento = medicoConfig.horarioAtendimento || {};
+            const medicoConfig = medicoDataResponse.data?.configuracoes || {};
+            const horarioAtendimento = typeof medicoConfig === 'object' && medicoConfig !== null ? 
+                (medicoConfig as any).horarioAtendimento || {} : {};
             reset({ horarios: horarioAtendimento });
         } catch (error) {
             logger.error("Erro ao carregar dados da agenda", "GerenciarAgenda", error);
@@ -96,7 +98,8 @@ const GerenciarAgenda = () => {
         setIsSubmitting(true);
         try {
             const { data: medicoData } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle();
-            const newConfiguracoes = { ...(medicoData?.configuracoes || {}), horarioAtendimento: data.horarios };
+            const currentConfig = medicoData?.configuracoes || {};
+            const newConfiguracoes = { ...currentConfig, horarioAtendimento: data.horarios };
             await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
             toast({ title: "Agenda atualizada com sucesso!" });
             reset(data);

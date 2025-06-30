@@ -7,8 +7,8 @@ import Agendamento from '@/pages/Agendamento';
 import { appointmentService } from '@/services/appointmentService';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 
-// Mock dos serviços
 vi.mock('@/services/appointmentService');
 vi.mock('@/hooks/use-toast');
 
@@ -20,9 +20,17 @@ vi.mocked(useToast).mockReturnValue({
   toasts: []
 });
 
-// Mock do AuthContext
+const mockUser: User = {
+  id: 'test-user-id',
+  email: 'test@test.com',
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: '2024-01-01T00:00:00.000Z'
+};
+
 const mockAuthContext = {
-  user: { id: 'test-user-id', email: 'test@test.com' },
+  user: mockUser,
   session: null,
   userData: null,
   loading: false,
@@ -54,7 +62,6 @@ describe('Agendamento de Consultas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup dos mocks padrão
     vi.mocked(appointmentService.getSpecialties).mockResolvedValue(['Cardiologia']);
     vi.mocked(appointmentService.getDoctorsByLocationAndSpecialty).mockResolvedValue([]);
     vi.mocked(appointmentService.getAvailableSlotsByDoctor).mockResolvedValue([]);
@@ -111,7 +118,6 @@ describe('Agendamento de Consultas', () => {
       </TestWrapper>
     );
 
-    // O teste verifica se o componente renderiza sem erros
     await waitFor(() => {
       expect(screen.getByText('Agendar Consulta')).toBeInTheDocument();
     });
@@ -124,7 +130,6 @@ describe('Agendamento de Consultas', () => {
       </TestWrapper>
     );
 
-    // O teste verifica se o componente renderiza sem erros
     await waitFor(() => {
       expect(screen.getByText('Agendar Consulta')).toBeInTheDocument();
     });

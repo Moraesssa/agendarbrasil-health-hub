@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { BaseUser } from '@/types/user';
@@ -9,7 +10,8 @@ export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userData, setUserData] = useState<BaseUser | null>(null);
-  const [loading, setLoading] = useState(true); // Começa como true
+  const [loading, setLoading] = useState(true);
+  const [onboardingStatus, setOnboardingStatus] = useState(null);
   
   const loadingUserRef = useRef<string | null>(null);
 
@@ -74,7 +76,7 @@ export const useAuthState = () => {
     
     setUserData(fullUserData);
     logger.info('UserData definido:', 'useAuthState', { userType: fullUserData.userType, onboardingCompleted: fullUserData.onboardingCompleted });
-    setLoading(false); // <-- O loading só termina aqui
+    setLoading(false);
     loadingUserRef.current = null;
   }, []);
 
@@ -98,5 +100,5 @@ export const useAuthState = () => {
     };
   }, [loadUserData]);
 
-  return { user, session, userData, loading, setUserData };
+  return { user, session, userData, loading, onboardingStatus, setUserData, setOnboardingStatus };
 };

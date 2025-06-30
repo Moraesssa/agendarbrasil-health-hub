@@ -1,10 +1,23 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { generateTimeSlots, DoctorConfig, TimeSlot, ExistingAppointment } from '@/utils/timeSlotUtils';
+import { generateTimeSlots, TimeSlot, ExistingAppointment } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 import { LocalAtendimento } from './locationService';
 
 export interface Medico { id: string; display_name: string | null; }
 export interface LocalComHorarios extends LocalAtendimento { horarios_disponiveis: TimeSlot[]; }
+
+interface BlocoHorario {
+  ativo: boolean;
+  inicio: string;
+  fim: string;
+  local_id: string;
+}
+
+interface DoctorConfig {
+  duracaoConsulta?: number;
+  horarioAtendimento?: Record<string, BlocoHorario[]>;
+}
 
 const checkAuthentication = async () => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,11 +51,23 @@ export const appointmentService = {
     await checkAuthentication();
     if (!doctorId || !date) return [];
 
-    const { data: medico, error } = await supabase.from('medicos').select('configuracoes, locais_atendimento(*)').eq('user_id', doctorId).single();
+    const { data: medico, error } = await supabase
+      .from('medicos')
+      .select('configuracoes')
+      .eq('user_id', doctorId)
+      .single();
+
     if (error) throw new Error(`Erro ao buscar dados do médico: ${error.message}`);
     
+    const { data: locais, error: locaisError } = await supabase
+      .from('locais_atendimento')
+      .select('*')
+      .eq('medico_id', doctorId)
+      .eq('ativo', true);
+
+    if (locaisError) throw new Error(`Erro ao buscar locais: ${locaisError.message}`);
+    
     const config = (medico.configuracoes as DoctorConfig) || {};
-    const locais = (medico.locais_atendimento as LocalAtendimento[]) || [];
     const horarioAtendimento = config.horarioAtendimento || {};
     const diaDaSemana = new Date(date + 'T12:00:00Z').toLocaleString('en-US', { weekday: 'long', timeZone: 'UTC' }).toLowerCase();
     
@@ -54,9 +79,9 @@ export const appointmentService = {
     const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({ data_consulta: apt.data_consulta, duracao_minutos: apt.duracao_minutos || 30 }));
 
     const locaisComHorarios: LocalComHorarios[] = [];
-    for (const local of locais) {
+    for (const local of (locais || [])) {
       if (!local.ativo) continue;
-      const blocosNesteLocal = blocosDoDia.filter((b: any) => b.local_id === local.id);
+      const blocosNesteLocal = Array.isArray(blocosDoDia) ? blocosDoDia.filter((b: BlocoHorario) => b.local_id === local.id) : [];
       if (blocosNesteLocal.length > 0) {
         const horarios = generateTimeSlots({ duracaoConsulta: config.duracaoConsulta || 30, horarioAtendimento: { [diaDaSemana]: blocosNesteLocal } }, startOfDay, existingAppointments);
         if (horarios.length > 0) {

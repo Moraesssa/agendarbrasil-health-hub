@@ -1,3 +1,4 @@
+
 import { ArrowLeft, Loader2, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +56,7 @@ const Agendamento = () => {
                   )}
                   {models.selectedDate && (
                     <div className="pt-4 border-t space-y-6">
-                      {state.isLoading && locaisComHorarios.length === 0 ? (
+                      {state.isLoading && models.locaisComHorarios.length === 0 ? (
                         <div className="text-center p-4"><Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-500" /></div>
                       ) : models.locaisComHorarios.length > 0 ? (
                         <>
