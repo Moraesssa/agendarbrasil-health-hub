@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
@@ -22,6 +23,11 @@ export interface LocalAtendimento {
   endereco: any;
 }
 
+// Type guard para verificar se um objeto tem a estrutura de configuração esperada
+const isValidConfiguration = (config: any): config is { horarioAtendimento?: any; duracaoConsulta?: number } => {
+  return config && typeof config === 'object';
+};
+
 const checkAuthentication = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -32,7 +38,6 @@ const checkAuthentication = async () => {
 };
 
 export const appointmentService = {
-  // ... (getSpecialties permanece o mesmo)
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
     try {
@@ -58,7 +63,7 @@ export const appointmentService = {
       logger.error("Error fetching doctors by location", "AppointmentService", error);
       throw error;
     }
-    return data || [];
+    return (data || []) as Medico[];
   },
 
   // Busca os locais e horários disponíveis para um médico em uma data específica
@@ -75,7 +80,8 @@ export const appointmentService = {
     if (medicoError) throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
 
     const { configuracoes, locais } = medico;
-    const horarioAtendimento = configuracoes?.horarioAtendimento || {};
+    const config = isValidConfiguration(configuracoes) ? configuracoes : {};
+    const horarioAtendimento = config.horarioAtendimento || {};
     const diaDaSemana = new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
 
     const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
@@ -97,10 +103,10 @@ export const appointmentService = {
 
     const locaisComHorarios: LocalComHorarios[] = [];
 
-    for (const local of locais) {
+    for (const local of locais || []) {
       const horariosNesteLocal = generateTimeSlots({
-        duracaoConsulta: configuracoes.duracaoConsulta || 30,
-        horarioAtendimento: { [diaDaSemana]: blocosDoDia.filter(b => b.local_id === local.id) }
+        duracaoConsulta: config.duracaoConsulta || 30,
+        horarioAtendimento: { [diaDaSemana]: blocosDoDia.filter((b: any) => b.local_id === local.id) }
       }, new Date(date + 'T00:00:00'), existingAppointments);
 
       if (horariosNesteLocal.length > 0) {
@@ -129,8 +135,8 @@ export const appointmentService = {
       medico_id: appointmentData.medico_id,
       data_consulta: appointmentData.data_consulta,
       tipo_consulta: appointmentData.tipo_consulta,
-      local_id: appointmentData.local_id, // <-- NOVO
-      local_consulta: appointmentData.local_consulta_texto, // <-- NOVO
+      local_id: appointmentData.local_id,
+      local_consulta: appointmentData.local_consulta_texto,
       status: 'agendada',
     });
     if (error) throw error;

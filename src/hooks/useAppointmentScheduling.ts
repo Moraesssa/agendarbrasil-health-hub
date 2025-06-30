@@ -1,7 +1,9 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { appointmentService, LocalComHorarios, Medico } from "@/services/appointmentService";
 
 interface StateInfo { uf: string; }

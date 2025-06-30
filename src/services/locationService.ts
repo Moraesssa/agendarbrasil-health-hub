@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
@@ -32,7 +33,10 @@ const locationService = {
       logger.error("Falha ao buscar locais", "locationService", error);
       throw error;
     }
-    return data as LocalAtendimento[];
+    return (data || []).map(local => ({
+      ...local,
+      endereco: typeof local.endereco === 'object' ? local.endereco as any : {}
+    })) as LocalAtendimento[];
   },
 
   // Adiciona um novo local de atendimento.

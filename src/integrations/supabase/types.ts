@@ -19,6 +19,7 @@ export type Database = {
           follow_up_required: boolean | null
           id: string
           local_consulta: string | null
+          local_id: string | null
           medico_id: string
           motivo: string | null
           notas_medico: string | null
@@ -40,6 +41,7 @@ export type Database = {
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
+          local_id?: string | null
           medico_id: string
           motivo?: string | null
           notas_medico?: string | null
@@ -61,6 +63,7 @@ export type Database = {
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
+          local_id?: string | null
           medico_id?: string
           motivo?: string | null
           notas_medico?: string | null
@@ -79,6 +82,13 @@ export type Database = {
             columns: ["agendado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_atendimento"
             referencedColumns: ["id"]
           },
           {
@@ -678,6 +688,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           uf: string
+        }[]
+      }
+      get_doctors_by_location_and_specialty: {
+        Args: { p_specialty: string; p_city: string; p_state: string }
+        Returns: {
+          id: string
+          display_name: string
         }[]
       }
       get_family_members: {

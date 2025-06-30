@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Form, FormItem, FormMessage } from "@/components/ui/form"; // <-- FormItem importado
+import { Form, FormItem, FormMessage } from "@/components/ui/form";
 import { Loader2, Save, Undo2, Clock, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +57,10 @@ const agendaSchema = z.object({
 type AgendaFormData = z.infer<typeof agendaSchema>;
 type HorarioConfig = z.infer<typeof horarioSchema>;
 
+// Type guard para verificar se um objeto tem a estrutura esperada
+const isValidConfiguration = (config: any): config is { horarioAtendimento?: Record<string, HorarioConfig[]> } => {
+  return config && typeof config === 'object';
+};
 
 const GerenciarAgenda = () => {
     const { user } = useAuth();
@@ -92,7 +97,8 @@ const GerenciarAgenda = () => {
 
             if (medicoData.error && medicoData.error.code !== 'PGRST116') throw medicoData.error;
 
-            const horarioAtendimento = medicoData.data?.configuracoes?.horarioAtendimento || {};
+            const config = isValidConfiguration(medicoData.data?.configuracoes) ? medicoData.data.configuracoes : {};
+            const horarioAtendimento = config.horarioAtendimento || {};
             
             const horariosParaForm = diasDaSemana.reduce((acc, dia) => {
                 acc[dia.key] = horarioAtendimento[dia.key] || [];
@@ -120,7 +126,8 @@ const GerenciarAgenda = () => {
             const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
             if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
-            const newConfiguracoes = { ...(medicoData.configuracoes || {}), horarioAtendimento: data.horarios };
+            const existingConfig = isValidConfiguration(medicoData?.configuracoes) ? medicoData.configuracoes : {};
+            const newConfiguracoes = { ...existingConfig, horarioAtendimento: data.horarios };
             const { error: updateError } = await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id);
             if (updateError) throw updateError;
 
@@ -225,7 +232,7 @@ const DayScheduleControl = ({ dia, control, locais, errors }: any) => {
                                              <Select value={controllerField.value.local_id ?? ''} onValueChange={value => controllerField.onChange({...controllerField.value, local_id: value})}>
                                                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                                 <SelectContent>
-                                                    {locais.map(local => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
+                                                    {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         </FormItem>
