@@ -109,11 +109,15 @@ export const appointmentService = {
       if (blocosDoLocal.length > 0) {
         // Criar WorkingHours válido
         const workingHours: WorkingHours = {};
-        workingHours[diaDaSemana] = blocosDoLocal.map((bloco: any) => ({
+        
+        // Mapear blocos para DayWorkingHours corretamente
+        const daySchedule: DayWorkingHours[] = blocosDoLocal.map((bloco: any) => ({
           inicio: bloco.inicio || '09:00',
           fim: bloco.fim || '17:00',
           ativo: bloco.ativo !== false
-        } as DayWorkingHours));
+        }));
+        
+        workingHours[diaDaSemana] = daySchedule;
 
         const horariosNesteLocal = generateTimeSlots({
           duracaoConsulta: config.duracaoConsulta || 30,

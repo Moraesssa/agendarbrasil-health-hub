@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Medico, Paciente } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
 import { getDefaultWorkingHours } from '@/utils/timeSlotUtils';
+import { medicoService } from '@/services/medicoService';
 
 export const useOnboarding = () => {
   const { user, userData, updateOnboardingStep, completeOnboarding } = useAuth();
@@ -17,53 +18,26 @@ export const useOnboarding = () => {
     try {
       setIsSubmitting(true);
       
-      const { data: existing, error: fetchError } = await supabase
-        .from('medicos')
-        .select('configuracoes')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
-
       // Garante que a configuração de horário exista, usando o padrão se necessário.
-      const existingConfig = (existing?.configuracoes as Record<string, any>) || {};
       const newConfiguracoes = (data.configuracoes as Record<string, any>) || {};
       
-      if (!newConfiguracoes.horarioAtendimento && !existingConfig.horarioAtendimento) {
+      if (!newConfiguracoes.horarioAtendimento) {
         newConfiguracoes.horarioAtendimento = getDefaultWorkingHours();
       }
 
       const medicoData = {
-        user_id: user.id,
         crm: data.crm || '',
         especialidades: data.especialidades || [],
-        registro_especialista: data.registroEspecialista || null,
+        registroEspecialista: data.registroEspecialista || null,
         telefone: data.telefone || '',
         whatsapp: data.whatsapp || null,
         endereco: data.endereco || {},
-        dados_profissionais: data.dadosProfissionais || {},
-        configuracoes: { ...existingConfig, ...newConfiguracoes },
-        verificacao: data.verificacao || existingConfig.verificacao || {}
+        dadosProfissionais: data.dadosProfissionais || {},
+        configuracoes: newConfiguracoes,
+        verificacao: data.verificacao || {}
       };
 
-      let error;
-      if (existing) {
-        ({ error } = await supabase
-          .from('medicos')
-          .update(medicoData)
-          .eq('user_id', user.id));
-      } else {
-        ({ error } = await supabase
-          .from('medicos')
-          .insert(medicoData));
-      }
-
-      if (error) {
-        console.error('Erro ao salvar dados do médico:', error);
-        toast({ title: "Erro ao salvar dados", description: error.message, variant: "destructive" });
-        return false;
-      }
-
+      await medicoService.saveMedicoData(medicoData);
       return true;
     } catch (error) {
       console.error('Erro ao salvar dados do médico:', error);
