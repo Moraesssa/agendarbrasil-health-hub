@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, Save, Undo2, Clock, Trash2, Plus, MapPin } from "lucide-react";
+import { Loader2, Save, Undo2, Clock, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +35,7 @@ const horarioSchema = z.object({
   ativo: z.boolean(),
   inicio: z.string(),
   fim: z.string(),
-  local_id: z.string().uuid({ message: "Selecione um local válido." }).nullable(),
+  local_id: z.string().uuid({ message: "O local é obrigatório." }).nullable(),
 }).refine(data => {
     if (!data.ativo) return true;
     return !!data.local_id && !!data.inicio && !!data.fim && data.inicio < data.fim;
@@ -76,10 +76,7 @@ const GerenciarAgenda = () => {
     const { reset, handleSubmit, control, formState: { isDirty } } = form;
 
     const fetchInitialData = useCallback(async () => {
-        if (!user?.id) {
-            setLoading(false);
-            return;
-        }
+        if (!user?.id) { setLoading(false); return; }
         setLoading(true);
         try {
             const [locaisData, medicoData] = await Promise.all([
@@ -99,7 +96,6 @@ const GerenciarAgenda = () => {
             }, {} as Record<string, any>);
 
             reset({ horarios: horariosParaForm });
-
         } catch (error) {
             logger.error("Erro ao carregar dados da agenda", "GerenciarAgenda", error);
             toast({ title: "Erro ao carregar dados", variant: "destructive" });
@@ -108,9 +104,7 @@ const GerenciarAgenda = () => {
         }
     }, [user?.id, reset, toast]);
 
-    useEffect(() => {
-        fetchInitialData();
-    }, [fetchInitialData]);
+    useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
 
     const onSubmit = async (data: AgendaFormData) => {
         if (!user?.id) return toast({ title: "Erro de autenticação", variant: "destructive" });
@@ -124,7 +118,7 @@ const GerenciarAgenda = () => {
             if (updateError) throw updateError;
 
             toast({ title: "Agenda atualizada com sucesso!" });
-            reset(data); // Atualiza os defaultValues para o novo estado salvo
+            reset(data);
         } catch (error) {
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
             toast({ title: "Erro ao salvar agenda", variant: "destructive" });
@@ -145,8 +139,7 @@ const GerenciarAgenda = () => {
                         <div className="flex-1">
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">Meus Horários</h1>
                             <p className="text-sm text-gray-600">
-                                Defina sua disponibilidade e locais para cada dia da semana.
-                                {isDirty && <span className="ml-2 text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>}
+                                {isDirty && <span className="text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>}
                             </p>
                         </div>
                     </header>
@@ -178,71 +171,65 @@ const GerenciarAgenda = () => {
 };
 
 // --- Componente Filho Corrigido ---
-const DayScheduleControl = ({ dia, control, locais }: { dia: {key: string, label: string}, control: any, locais: LocalAtendimento[] }) => {
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: `horarios.${dia.key}`
-    });
+const DayScheduleControl = ({ dia, control, locais }: any) => {
+    const { fields, append, remove } = useFieldArray({ control, name: `horarios.${dia.key}` });
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>{dia.label}</CardTitle>
-                {locais.length === 0 && <CardDescription className="text-red-500">Adicione um local de atendimento antes de definir os horários.</CardDescription>}
-            </CardHeader>
+            <CardHeader><CardTitle>{dia.label}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-                {fields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-slate-50">
-                        <div className="flex justify-between items-center">
+                {fields.map((item, index) => (
+                    <div key={item.id} className="p-4 border rounded-lg space-y-4 bg-slate-50 relative">
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                        <div className="flex items-center gap-4">
                             <Controller
                                 name={`horarios.${dia.key}.${index}.ativo`}
                                 control={control}
-                                render={({ field: switchField }) => (
-                                    <FormItem className="flex items-center gap-2">
-                                        <Switch
-                                            checked={switchField.value}
-                                            onCheckedChange={switchField.onChange}
-                                        />
-                                        <Label>Atendimento neste bloco</Label>
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center gap-2 pt-2">
+                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                        <Label>Ativo</Label>
                                     </FormItem>
                                 )}
                             />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
                         </div>
-                        {/* A Lógica do Controller é movida para cada campo individualmente */}
-                        <Controller
-                            name={`horarios.${dia.key}.${index}`}
-                            control={control}
-                            render={({ field: { value, onChange } }) => (
-                                <div className={`grid md:grid-cols-3 gap-4 ${!value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    <FormItem>
-                                        <Label>Início</Label>
-                                        <Input type="time" value={value.inicio} onChange={e => onChange({...value, inicio: e.target.value})} />
-                                    </FormItem>
-                                    <FormItem>
-                                        <Label>Fim</Label>
-                                        <Input type="time" value={value.fim} onChange={e => onChange({...value, fim: e.target.value})} />
-                                    </FormItem>
+                        <div className="grid md:grid-cols-3 gap-4">
+                             <Controller
+                                name={`horarios.${dia.key}.${index}.inicio`}
+                                control={control}
+                                render={({ field }) => <FormItem><Label>Início</Label><Input type="time" {...field} /></FormItem>}
+                            />
+                             <Controller
+                                name={`horarios.${dia.key}.${index}.fim`}
+                                control={control}
+                                render={({ field }) => <FormItem><Label>Fim</Label><Input type="time" {...field} /></FormItem>}
+                            />
+                            <Controller
+                                name={`horarios.${dia.key}.${index}.local_id`}
+                                control={control}
+                                render={({ field, fieldState }) => (
                                     <FormItem>
                                         <Label>Local</Label>
-                                         <Select value={value.local_id ?? ''} onValueChange={val => onChange({...value, local_id: val})}>
+                                        <Select onValueChange={field.onChange} value={field.value || ''}>
                                             <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                             <SelectContent>
-                                                {locais.map(local => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
+                                                {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
+                                        {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
                                     </FormItem>
-                                </div>
-                            )}
-                        />
+                                )}
+                            />
+                        </div>
                     </div>
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ ativo: true, inicio: '08:00', fim: '12:00', local_id: null })} disabled={locais.length === 0}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Bloco de Horário
+                    Adicionar Bloco
                 </Button>
+                 {locais.length === 0 && <p className="text-sm text-red-600 mt-2">Você precisa cadastrar um local em "Meus Locais" antes de adicionar horários.</p>}
             </CardContent>
         </Card>
     );
