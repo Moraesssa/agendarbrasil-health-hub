@@ -19,7 +19,6 @@ import { logger } from "@/utils/logger";
 import locationService, { LocalAtendimento } from "@/services/locationService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// --- Constante movida para o topo ---
 const diasDaSemana = [
   { key: "segunda", label: "Segunda-feira" },
   { key: "terca", label: "Terça-feira" },
@@ -30,7 +29,6 @@ const diasDaSemana = [
   { key: "domingo", label: "Domingo" },
 ] as const;
 
-// --- Esquema de Validação Simplificado e Corrigido ---
 const horarioSchema = z.object({
   ativo: z.boolean(),
   inicio: z.string(),
@@ -41,7 +39,6 @@ const horarioSchema = z.object({
     return !!data.local_id && !!data.inicio && !!data.fim && data.inicio < data.fim;
 }, {
   message: "Bloco ativo precisa de local e horário de início anterior ao fim.",
-  path: ["local_id"],
 });
 
 const agendaSchema = z.object({
@@ -55,7 +52,6 @@ const agendaSchema = z.object({
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
 
-// --- Componente Principal ---
 const GerenciarAgenda = () => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -83,16 +79,9 @@ const GerenciarAgenda = () => {
             ]);
             
             setLocais(locaisData || []);
-
             const medicoConfig = (medicoDataResponse.data?.configuracoes as any) || {};
             const horarioAtendimento = medicoConfig.horarioAtendimento || {};
-            
-            const horariosCompletos = diasDaSemana.reduce((acc, dia) => {
-                acc[dia.key] = horarioAtendimento[dia.key] || [];
-                return acc;
-            }, {} as Record<string, any>);
-            
-            reset({ horarios: horariosCompletos });
+            reset({ horarios: horarioAtendimento });
         } catch (error) {
             logger.error("Erro ao carregar dados da agenda", "GerenciarAgenda", error);
         } finally {
@@ -113,7 +102,6 @@ const GerenciarAgenda = () => {
             reset(data);
         } catch (error) {
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
-            toast({ title: "Erro ao salvar agenda", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -134,9 +122,7 @@ const GerenciarAgenda = () => {
                     <main className="p-6">
                         <Form {...form}>
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto">
-                                {diasDaSemana.map((dia) => (
-                                    <DayScheduleControl key={dia.key} dia={dia} control={control} locais={locais} />
-                                ))}
+                                {diasDaSemana.map((dia) => <DayScheduleControl key={dia.key} dia={dia} control={control} locais={locais} />)}
                                 <div className="flex justify-end items-center gap-4 pt-4 mt-6 border-t">
                                    {isDirty && <Button type="button" variant="ghost" onClick={() => fetchInitialData()}><Undo2 className="w-4 h-4 mr-2" /> Desfazer</Button>}
                                    <Button type="submit" disabled={isSubmitting || !isDirty || !isValid}>
@@ -162,32 +148,33 @@ const DayScheduleControl = ({ dia, control, locais }: any) => {
             <CardContent className="space-y-4">
                 {fields.length === 0 && <p className="text-sm text-gray-500">Nenhum bloco de horário para este dia.</p>}
                 {fields.map((item, index) => (
-                    <div key={item.id} className="p-4 border rounded-lg space-y-3 bg-slate-50 relative">
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                        <Controller name={`horarios.${dia.key}.${index}`} control={control} render={({ field, fieldState }) => (
-                            <div className="space-y-4">
-                                <FormItem className="flex items-center gap-2 pt-2">
-                                    <Switch checked={field.value.ativo} onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })} />
-                                    <Label>Ativo</Label>
-                                </FormItem>
-                                <div className={`grid md:grid-cols-3 gap-4 ${!field.value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    <FormItem><Label>Início</Label><Input type="time" value={field.value.inicio} onChange={e => field.onChange({ ...field.value, inicio: e.target.value })} /></FormItem>
-                                    <FormItem><Label>Fim</Label><Input type="time" value={field.value.fim} onChange={e => field.onChange({ ...field.value, fim: e.target.value })} /></FormItem>
-                                    <FormItem>
-                                        <Label>Local</Label>
-                                        <Select onValueChange={val => field.onChange({ ...field.value, local_id: val })} value={field.value.local_id || ''}>
-                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                </div>
-                                {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
-                            </div>
+                    <div key={item.id} className="p-4 border rounded-lg space-y-4 bg-slate-50/70 relative">
+                        <div className="absolute top-1 right-1">
+                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="h-7 w-7">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                        <Controller name={`horarios.${dia.key}.${index}.ativo`} control={control} render={({ field }) => (
+                            <FormItem className="flex items-center gap-2 pt-2">
+                                <Switch id={field.name} checked={field.value} onCheckedChange={field.onChange} />
+                                <Label htmlFor={field.name}>Ativo</Label>
+                            </FormItem>
                         )} />
+                        <div className="grid md:grid-cols-3 gap-4">
+                             <Controller name={`horarios.${dia.key}.${index}.inicio`} control={control} render={({ field }) => <FormItem><Label>Início</Label><Input type="time" {...field} /></FormItem>} />
+                             <Controller name={`horarios.${dia.key}.${index}.fim`} control={control} render={({ field }) => <FormItem><Label>Fim</Label><Input type="time" {...field} /></FormItem>} />
+                            <Controller name={`horarios.${dia.key}.${index}.local_id`} control={control} render={({ field }) => (
+                                <FormItem>
+                                    <Label>Local</Label>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )} />
+                        </div>
                     </div>
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ ativo: !(dia.key === 'sabado' || dia.key === 'domingo'), inicio: '08:00', fim: '12:00', local_id: null })} disabled={locais.length === 0}>
@@ -198,7 +185,7 @@ const DayScheduleControl = ({ dia, control, locais }: any) => {
                 <CardFooter>
                     <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" />
-                        Você precisa cadastrar um local em "Meus Locais" antes de adicionar horários.
+                        Você precisa cadastrar um local em "Meus Locais" para adicionar horários.
                     </p>
                 </CardFooter>
             )}
