@@ -10,7 +10,7 @@ interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
 
 export const useAppointmentScheduling = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // <-- Pega o estado de loading da autenticação
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -28,7 +28,7 @@ export const useAppointmentScheduling = () => {
   const [doctors, setDoctors] = useState<Medico[]>([]);
   const [locaisComHorarios, setLocaisComHorarios] = useState<LocalComHorarios[]>([]);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // <-- Inicia como true
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetSelection = useCallback((level: 'state' | 'city' | 'doctor' | 'date') => {
@@ -42,9 +42,9 @@ export const useAppointmentScheduling = () => {
     }
   }, []);
 
-  // Busca inicial de dados - CORRIGIDO para depender do 'user'
+  // Busca inicial de dados - AGORA DEPENDE DE `authLoading`
   useEffect(() => {
-    if (!user) return; // Só executa se o usuário estiver logado
+    if (authLoading || !user) return; // <-- Espera a autenticação terminar E o usuário existir
 
     const loadInitialData = async () => {
       setIsLoading(true);
@@ -63,7 +63,7 @@ export const useAppointmentScheduling = () => {
       }
     };
     loadInitialData();
-  }, [toast, user]); // <-- Dependência explícita no 'user'
+  }, [toast, user, authLoading]); // <-- Adicionada a dependência `authLoading`
 
   // Efeitos em cascata
   useEffect(() => {
@@ -109,7 +109,7 @@ export const useAppointmentScheduling = () => {
   return {
     models: { selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedLocal, specialties, states, cities, doctors, locaisComHorarios },
     setters: { setSelectedSpecialty, setSelectedState, setSelectedCity, setSelectedDoctor, setSelectedDate, setSelectedTime, setSelectedLocal },
-    state: { isLoading, isSubmitting },
+    state: { isLoading: isLoading || authLoading, isSubmitting }, // <-- Combina os loadings
     actions: { handleAgendamento, resetSelection }
   };
 };
