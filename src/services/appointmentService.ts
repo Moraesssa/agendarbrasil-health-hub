@@ -102,8 +102,14 @@ export const appointmentService = {
     const locaisComHorarios: LocalComHorarios[] = [];
 
     for (const local of locais || []) {
+      // Corrigir a filtragem dos blocos - verificar se blocosDoDia é array e se os blocos têm local_id
       const blocosDoLocal = Array.isArray(blocosDoDia) 
-        ? blocosDoDia.filter((bloco: any) => bloco && typeof bloco === 'object' && bloco.local_id === local.id)
+        ? blocosDoDia.filter((bloco: any) => 
+            bloco && 
+            typeof bloco === 'object' && 
+            bloco.local_id && 
+            bloco.local_id === local.id
+          )
         : [];
 
       if (blocosDoLocal.length > 0) {
@@ -117,6 +123,7 @@ export const appointmentService = {
           ativo: bloco.ativo !== false
         }));
         
+        // Atribuir o array de horários ao dia da semana
         workingHours[diaDaSemana] = daySchedule;
 
         const horariosNesteLocal = generateTimeSlots({
@@ -126,7 +133,9 @@ export const appointmentService = {
 
         if (horariosNesteLocal.length > 0) {
           locaisComHorarios.push({
-            ...local,
+            id: local.id,
+            nome_local: local.nome_local,
+            endereco: local.endereco,
             horarios_disponiveis: horariosNesteLocal
           });
         }
