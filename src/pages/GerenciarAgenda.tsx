@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from "react";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, Save, Undo2, Clock, Trash2, Plus } from "lucide-react";
+import { Loader2, Save, Undo2, Clock, Trash2, Plus, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -55,13 +54,8 @@ const agendaSchema = z.object({
 });
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
-type HorarioConfig = z.infer<typeof horarioSchema>;
 
-// Type guard para verificar se um objeto tem a estrutura esperada
-const isValidConfiguration = (config: any): config is { horarioAtendimento?: Record<string, HorarioConfig[]> } => {
-  return config && typeof config === 'object';
-};
-
+// --- Componente Principal ---
 const GerenciarAgenda = () => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -75,11 +69,11 @@ const GerenciarAgenda = () => {
             horarios: diasDaSemana.reduce((acc, dia) => {
                 acc[dia.key] = [];
                 return acc;
-            }, {} as Record<string, HorarioConfig[]>)
+            }, {} as Record<string, any>)
         }
     });
 
-    const { reset, handleSubmit, control, formState: { isDirty, errors } } = form;
+    const { reset, handleSubmit, control, formState: { isDirty } } = form;
 
     const fetchInitialData = useCallback(async () => {
         if (!user?.id) {
@@ -97,13 +91,12 @@ const GerenciarAgenda = () => {
 
             if (medicoData.error && medicoData.error.code !== 'PGRST116') throw medicoData.error;
 
-            const config = isValidConfiguration(medicoData.data?.configuracoes) ? medicoData.data.configuracoes : {};
-            const horarioAtendimento = config.horarioAtendimento || {};
+            const horarioAtendimento = (medicoData.data?.configuracoes as any)?.horarioAtendimento || {};
             
             const horariosParaForm = diasDaSemana.reduce((acc, dia) => {
                 acc[dia.key] = horarioAtendimento[dia.key] || [];
                 return acc;
-            }, {} as Record<string, HorarioConfig[]>);
+            }, {} as Record<string, any>);
 
             reset({ horarios: horariosParaForm });
 
@@ -126,13 +119,12 @@ const GerenciarAgenda = () => {
             const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
             if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
-            const existingConfig = isValidConfiguration(medicoData?.configuracoes) ? medicoData.configuracoes : {};
-            const newConfiguracoes = { ...existingConfig, horarioAtendimento: data.horarios };
+            const newConfiguracoes = { ...(medicoData.configuracoes || {}), horarioAtendimento: data.horarios };
             const { error: updateError } = await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id);
             if (updateError) throw updateError;
 
             toast({ title: "Agenda atualizada com sucesso!" });
-            reset(data);
+            reset(data); // Atualiza os defaultValues para o novo estado salvo
         } catch (error) {
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
             toast({ title: "Erro ao salvar agenda", variant: "destructive" });
@@ -162,7 +154,7 @@ const GerenciarAgenda = () => {
                         <Form {...form}>
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto">
                                 {diasDaSemana.map((dia) => (
-                                    <DayScheduleControl key={dia.key} dia={dia} control={control} locais={locais} errors={errors} />
+                                    <DayScheduleControl key={dia.key} dia={dia} control={control} locais={locais} />
                                 ))}
                                 <div className="flex justify-end items-center gap-4 pt-4 mt-6 border-t">
                                    {isDirty && (
@@ -185,8 +177,8 @@ const GerenciarAgenda = () => {
     );
 };
 
-// Componente para controlar a agenda de um dia
-const DayScheduleControl = ({ dia, control, locais, errors }: any) => {
+// --- Componente Filho Corrigido ---
+const DayScheduleControl = ({ dia, control, locais }: { dia: {key: string, label: string}, control: any, locais: LocalAtendimento[] }) => {
     const { fields, append, remove } = useFieldArray({
         control,
         name: `horarios.${dia.key}`
@@ -200,47 +192,51 @@ const DayScheduleControl = ({ dia, control, locais, errors }: any) => {
             </CardHeader>
             <CardContent className="space-y-4">
                 {fields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
-                         <Controller
+                    <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-slate-50">
+                        <div className="flex justify-between items-center">
+                            <Controller
+                                name={`horarios.${dia.key}.${index}.ativo`}
+                                control={control}
+                                render={({ field: switchField }) => (
+                                    <FormItem className="flex items-center gap-2">
+                                        <Switch
+                                            checked={switchField.value}
+                                            onCheckedChange={switchField.onChange}
+                                        />
+                                        <Label>Atendimento neste bloco</Label>
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        </div>
+                        {/* A Lógica do Controller é movida para cada campo individualmente */}
+                        <Controller
                             name={`horarios.${dia.key}.${index}`}
                             control={control}
-                            render={({ field: controllerField }) => (
-                                <>
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <Switch
-                                                checked={controllerField.value.ativo}
-                                                onCheckedChange={(checked) => controllerField.onChange({ ...controllerField.value, ativo: checked })}
-                                            />
-                                            <Label>Atendimento neste bloco</Label>
-                                        </div>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                            <Trash2 className="h-4 w-4 text-red-500" />
-                                        </Button>
-                                    </div>
-                                    <div className={`grid md:grid-cols-3 gap-4 ${!controllerField.value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
-                                        <FormItem>
-                                            <Label>Início</Label>
-                                            <Input type="time" value={controllerField.value.inicio} onChange={e => controllerField.onChange({...controllerField.value, inicio: e.target.value})} />
-                                        </FormItem>
-                                        <FormItem>
-                                            <Label>Fim</Label>
-                                            <Input type="time" value={controllerField.value.fim} onChange={e => controllerField.onChange({...controllerField.value, fim: e.target.value})} />
-                                        </FormItem>
-                                        <FormItem>
-                                            <Label>Local</Label>
-                                             <Select value={controllerField.value.local_id ?? ''} onValueChange={value => controllerField.onChange({...controllerField.value, local_id: value})}>
-                                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                                <SelectContent>
-                                                    {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormItem>
-                                    </div>
-                                </>
+                            render={({ field: { value, onChange } }) => (
+                                <div className={`grid md:grid-cols-3 gap-4 ${!value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <FormItem>
+                                        <Label>Início</Label>
+                                        <Input type="time" value={value.inicio} onChange={e => onChange({...value, inicio: e.target.value})} />
+                                    </FormItem>
+                                    <FormItem>
+                                        <Label>Fim</Label>
+                                        <Input type="time" value={value.fim} onChange={e => onChange({...value, fim: e.target.value})} />
+                                    </FormItem>
+                                    <FormItem>
+                                        <Label>Local</Label>
+                                         <Select value={value.local_id ?? ''} onValueChange={val => onChange({...value, local_id: val})}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {locais.map(local => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                </div>
                             )}
-                         />
-                         {errors.horarios?.[dia.key]?.[index] && <FormMessage className="text-red-500 text-xs">Verifique os horários e o local.</FormMessage>}
+                        />
                     </div>
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ ativo: true, inicio: '08:00', fim: '12:00', local_id: null })} disabled={locais.length === 0}>
