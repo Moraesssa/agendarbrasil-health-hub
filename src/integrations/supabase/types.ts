@@ -19,7 +19,6 @@ export type Database = {
           follow_up_required: boolean | null
           id: string
           local_consulta: string | null
-          local_id: string | null
           medico_id: string
           motivo: string | null
           notas_medico: string | null
@@ -41,7 +40,6 @@ export type Database = {
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
-          local_id?: string | null
           medico_id: string
           motivo?: string | null
           notas_medico?: string | null
@@ -63,7 +61,6 @@ export type Database = {
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
-          local_id?: string | null
           medico_id?: string
           motivo?: string | null
           notas_medico?: string | null
@@ -82,13 +79,6 @@ export type Database = {
             columns: ["agendado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_local_id_fkey"
-            columns: ["local_id"]
-            isOneToOne: false
-            referencedRelation: "locais_atendimento"
             referencedColumns: ["id"]
           },
           {
@@ -268,44 +258,6 @@ export type Database = {
           },
         ]
       }
-      locais_atendimento: {
-        Row: {
-          ativo: boolean
-          created_at: string
-          endereco: Json
-          id: string
-          medico_id: string
-          nome_local: string
-          telefone: string | null
-        }
-        Insert: {
-          ativo?: boolean
-          created_at?: string
-          endereco: Json
-          id?: string
-          medico_id: string
-          nome_local: string
-          telefone?: string | null
-        }
-        Update: {
-          ativo?: boolean
-          created_at?: string
-          endereco?: Json
-          id?: string
-          medico_id?: string
-          nome_local?: string
-          telefone?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "locais_atendimento_medico_id_fkey"
-            columns: ["medico_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       medical_exams: {
         Row: {
           completed_date: string | null
@@ -474,6 +426,7 @@ export type Database = {
           created_at: string
           crm: string
           dados_profissionais: Json
+          endereco: Json
           especialidades: string[]
           id: string
           registro_especialista: string | null
@@ -488,6 +441,7 @@ export type Database = {
           created_at?: string
           crm: string
           dados_profissionais?: Json
+          endereco?: Json
           especialidades?: string[]
           id?: string
           registro_especialista?: string | null
@@ -502,6 +456,7 @@ export type Database = {
           created_at?: string
           crm?: string
           dados_profissionais?: Json
+          endereco?: Json
           especialidades?: string[]
           id?: string
           registro_especialista?: string | null
@@ -690,13 +645,6 @@ export type Database = {
           uf: string
         }[]
       }
-      get_doctors_by_location_and_specialty: {
-        Args: { p_specialty: string; p_city: string; p_state: string }
-        Returns: {
-          id: string
-          display_name: string
-        }[]
-      }
       get_family_members: {
         Args: { user_uuid: string }
         Returns: {
@@ -722,18 +670,6 @@ export type Database = {
           scheduled_date: string
           urgency: string
           status: string
-        }[]
-      }
-      get_my_locations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          ativo: boolean
-          created_at: string
-          endereco: Json
-          id: string
-          medico_id: string
-          nome_local: string
-          telefone: string | null
         }[]
       }
       get_specialties: {
