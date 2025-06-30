@@ -1,4 +1,4 @@
-import { Calendar, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
+import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -29,7 +29,7 @@ const mainMenuItems = [
     title: "Agenda",
     url: "/agenda-medico",
     icon: Calendar,
-    description: "Gerenciar consultas e horários"
+    description: "Visualizar consultas e horários"
   },
   {
     title: "Pacientes",
@@ -51,12 +51,19 @@ const mainMenuItems = [
   }
 ];
 
+// Array de configurações atualizado
 const settingsItems = [
   {
     title: "Perfil",
     url: "/perfil-medico",
     icon: User,
     description: "Configurações do perfil médico"
+  },
+  {
+    title: "Meus Locais", // <-- NOVO ITEM
+    url: "/gerenciar-locais",
+    icon: MapPin,
+    description: "Gerenciar seus locais de atendimento"
   },
   {
     title: "Meus Horários",
@@ -82,7 +89,7 @@ export function AppSidebar() {
     if (url === "/settings") {
       toast({
         title: "Configurações",
-        description: "Página em desenvolvimento. Em breve você poderá configurar suas preferências.",
+        description: "Página em desenvolvimento.",
       });
       return;
     }
@@ -111,14 +118,6 @@ export function AppSidebar() {
     }
   };
 
-  const pacienteNavItems = [
-    {
-      title: "Gerenciar Família",
-      url: "/gerenciar-familia",
-      icon: Users,
-    },
-  ];
-
   return (
     <Sidebar className="border-r border-blue-100 bg-gradient-to-b from-white to-blue-50/30">
       <SidebarHeader className="p-4">
@@ -129,8 +128,6 @@ export function AppSidebar() {
               alt="AgendarBrasil Logo" 
               className="w-14 h-14 object-cover rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-200/40" 
             />
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/15 to-green-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-green-600 rounded-xl opacity-15 group-hover:opacity-25 blur-sm transition-all duration-300"></div>
           </div>
           <div>
             <h2 className="text-lg font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">
@@ -232,3 +229,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
