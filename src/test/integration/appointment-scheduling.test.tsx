@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Agendamento from '@/pages/Agendamento';
@@ -8,7 +8,6 @@ import { appointmentService } from '@/services/appointmentService';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock dos serviços
 vi.mock('@/services/appointmentService');
 vi.mock('@/hooks/use-toast');
 
@@ -20,7 +19,6 @@ vi.mocked(useToast).mockReturnValue({
   toasts: []
 });
 
-// Mock do AuthContext
 const mockAuthContext = {
   user: { 
     id: 'test-user-id', 
@@ -87,7 +85,6 @@ describe('Agendamento de Consultas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup dos mocks padrão
     vi.mocked(appointmentService.getSpecialties).mockResolvedValue(['Cardiologia']);
     vi.mocked(appointmentService.getDoctorsByLocationAndSpecialty).mockResolvedValue([]);
     vi.mocked(appointmentService.getAvailableSlotsByDoctor).mockResolvedValue([]);
@@ -144,7 +141,6 @@ describe('Agendamento de Consultas', () => {
       </TestWrapper>
     );
 
-    // O teste verifica se o componente renderiza sem erros
     await waitFor(() => {
       expect(screen.getByText('Agendar Consulta')).toBeInTheDocument();
     });
@@ -157,7 +153,6 @@ describe('Agendamento de Consultas', () => {
       </TestWrapper>
     );
 
-    // O teste verifica se o componente renderiza sem erros
     await waitFor(() => {
       expect(screen.getByText('Agendar Consulta')).toBeInTheDocument();
     });

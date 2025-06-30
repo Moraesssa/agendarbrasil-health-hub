@@ -2,38 +2,30 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
-  getDefaultWorkingHours,
   DoctorConfig, 
   TimeSlot,
-  ExistingAppointment
+  ExistingAppointment,
+  WorkingHours,
+  DayWorkingHours
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
-// Tipos atualizados
 export interface Medico {
   id: string;
   display_name: string | null;
 }
+
 export interface LocalComHorarios extends LocalAtendimento {
   horarios_disponiveis: TimeSlot[];
 }
+
 export interface LocalAtendimento {
   id: string;
   nome_local: string;
   endereco: any;
 }
 
-// Interface para blocos de horário
-interface BlocoHorario {
-  id?: string;
-  local_id: string;
-  inicio: string;
-  fim: string;
-  ativo: boolean;
-}
-
-// Type guard para verificar se um objeto tem a estrutura de configuração esperada
-const isValidConfiguration = (config: any): config is { horarioAtendimento?: any; duracaoConsulta?: number } => {
+const isValidConfiguration = (config: any): config is { horarioAtendimento?: WorkingHours; duracaoConsulta?: number } => {
   return config && typeof config === 'object';
 };
 
@@ -60,7 +52,6 @@ export const appointmentService = {
     }
   },
 
-  // Busca médicos que atendem em uma cidade/estado específica e com a especialidade desejada
   async getDoctorsByLocationAndSpecialty(specialty: string, city: string, state: string): Promise<Medico[]> {
     await checkAuthentication();
     const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
@@ -75,7 +66,6 @@ export const appointmentService = {
     return (data || []) as Medico[];
   },
 
-  // Busca os locais e horários disponíveis para um médico em uma data específica
   async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
     await checkAuthentication();
     if (!doctorId || !date) return [];
@@ -95,7 +85,6 @@ export const appointmentService = {
 
     const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
     
-    // Busca todas as consultas do médico para o dia para evitar conflitos
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
     const { data: appointments } = await supabase
@@ -113,15 +102,22 @@ export const appointmentService = {
     const locaisComHorarios: LocalComHorarios[] = [];
 
     for (const local of locais || []) {
-      // Filtrar blocos apenas se blocosDoDia for um array
       const blocosDoLocal = Array.isArray(blocosDoDia) 
         ? blocosDoDia.filter((bloco: any) => bloco && typeof bloco === 'object' && bloco.local_id === local.id)
         : [];
 
       if (blocosDoLocal.length > 0) {
+        // Criar WorkingHours válido
+        const workingHours: WorkingHours = {};
+        workingHours[diaDaSemana] = blocosDoLocal.map((bloco: any) => ({
+          inicio: bloco.inicio || '09:00',
+          fim: bloco.fim || '17:00',
+          ativo: bloco.ativo !== false
+        } as DayWorkingHours));
+
         const horariosNesteLocal = generateTimeSlots({
           duracaoConsulta: config.duracaoConsulta || 30,
-          horarioAtendimento: { [diaDaSemana]: blocosDoLocal }
+          horarioAtendimento: workingHours
         }, new Date(date + 'T00:00:00'), existingAppointments);
 
         if (horariosNesteLocal.length > 0) {
@@ -136,7 +132,6 @@ export const appointmentService = {
     return locaisComHorarios;
   },
 
-  // Salva o agendamento com o local da consulta
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;

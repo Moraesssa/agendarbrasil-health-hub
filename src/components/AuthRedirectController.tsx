@@ -1,6 +1,4 @@
 
-// src/components/AuthRedirectController.tsx
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -17,10 +15,9 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
   const userType = userData?.userType;
   const onboardingCompleted = userData?.onboardingCompleted;
 
-  // Mostrar mensagem de loading após 2 segundos
   useEffect(() => {
     if (loading) {
-      const timer = setTimeout(() => setShowLoadingMessage(true), 2000);
+      const timer = setTimeout(() => setShowLoadingMessage(true), 3000);
       return () => clearTimeout(timer);
     } else {
       setShowLoadingMessage(false);
@@ -66,7 +63,7 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
       // Se não está logado e tenta acessar rota protegida, vai para login
       navigate('/login');
     }
-  }, [user, loading, userType, onboardingCompleted, navigate, location.pathname]);
+  }, [user, userData, loading, userType, onboardingCompleted, navigate, location.pathname]);
 
   if (loading) {
     return (

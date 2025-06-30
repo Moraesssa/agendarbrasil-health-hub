@@ -22,12 +22,10 @@ export interface LocalAtendimento {
 }
 
 const locationService = {
-  // Busca todos os locais de atendimento do médico logado usando a nova função RPC.
   async getLocations(): Promise<LocalAtendimento[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuário não autenticado.");
 
-    // Use direct query instead of RPC to avoid type issues
     const { data, error } = await supabase
       .from('locais_atendimento')
       .select('*')
@@ -39,10 +37,30 @@ const locationService = {
       throw error;
     }
     
-    return (data || []) as LocalAtendimento[];
+    // Converter Json para Endereco e validar estrutura
+    const locais = (data || []).map(item => {
+      const endereco = item.endereco as any;
+      return {
+        id: item.id,
+        medico_id: item.medico_id,
+        nome_local: item.nome_local,
+        endereco: {
+          cep: endereco?.cep || '',
+          logradouro: endereco?.logradouro || '',
+          numero: endereco?.numero || '',
+          complemento: endereco?.complemento || '',
+          bairro: endereco?.bairro || '',
+          cidade: endereco?.cidade || '',
+          uf: endereco?.uf || ''
+        } as Endereco,
+        telefone: item.telefone || undefined,
+        ativo: item.ativo
+      } as LocalAtendimento;
+    });
+    
+    return locais;
   },
 
-  // Adiciona um novo local de atendimento (esta função permanece a mesma).
   async addLocation(locationData: Omit<LocalAtendimento, 'id' | 'ativo' | 'medico_id'>): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuário não autenticado.");
@@ -52,7 +70,7 @@ const locationService = {
       .insert({ 
         ...locationData, 
         medico_id: user.id,
-        endereco: locationData.endereco as any // Cast to Json type
+        endereco: locationData.endereco as any
       });
 
     if (error) {

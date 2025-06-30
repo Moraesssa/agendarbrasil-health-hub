@@ -1,6 +1,6 @@
 
 import { User, Session } from '@supabase/supabase-js';
-import { BaseUser, UserType, OnboardingStatus } from '@/types/user';
+import { BaseUser, OnboardingStatus } from './user';
 
 export interface AuthContextType {
   user: User | null;
@@ -10,7 +10,7 @@ export interface AuthContextType {
   onboardingStatus: OnboardingStatus | null;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  setUserType: (type: UserType) => Promise<void>;
+  setUserType: (type: 'medico' | 'paciente') => Promise<void>;
   updateOnboardingStep: (step: number) => Promise<void>;
   completeOnboarding: () => Promise<void>;
 }
