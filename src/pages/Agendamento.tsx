@@ -1,6 +1,6 @@
-import { ArrowLeft, Loader2, Calendar, Sparkles, MapPin } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // <-- A importação está aqui
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
@@ -37,26 +37,25 @@ const Agendamento = () => {
               <CardContent className="space-y-8">
                   {/* Etapa 1: Especialidade e Localização */}
                   <div className="grid md:grid-cols-3 gap-4">
-                      <SpecialtySelect specialties={models.specialties} selectedSpecialty={models.selectedSpecialty} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('state'); }} />
-                      <StateSelect states={models.states} selectedState={models.selectedState} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} disabled={!models.selectedSpecialty} />
+                      <SpecialtySelect specialties={models.specialties} selectedSpecialty={models.selectedSpecialty} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('doctor'); }} />
+                      <StateSelect states={models.states} selectedState={models.selectedState} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} />
                       <CitySelect cities={models.cities} selectedCity={models.selectedCity} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedCity(v); actions.resetSelection('doctor'); }} disabled={!models.selectedState} />
                   </div>
 
                   {/* Etapa 2: Médico e Data */}
-                  {models.selectedCity && (
-                      <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                          <DoctorSelect doctors={models.doctors} selectedDoctor={models.selectedDoctor} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} disabled={!models.selectedCity} />
-                          <DateSelect selectedDate={models.selectedDate} onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} disabled={!models.selectedDoctor} />
-                      </div>
-                  )}
+                  <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                      <DoctorSelect doctors={models.doctors} selectedDoctor={models.selectedDoctor} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} disabled={!models.selectedCity || !models.selectedSpecialty} />
+                      <DateSelect selectedDate={models.selectedDate} onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} disabled={!models.selectedDoctor} />
+                  </div>
 
                   {/* Etapa 3: Locais e Horários */}
                   {models.selectedDate && models.locaisComHorarios.length > 0 && (
                       <div className="pt-4 border-t space-y-6">
+                          <h2 className="font-semibold text-lg">Selecione um Local e Horário:</h2>
                           {models.locaisComHorarios.map(local => (
-                              <div key={local.id}>
-                                  <h3 className="font-semibold flex items-center gap-2"><MapPin className="h-4 w-4" />{local.nome_local}</h3>
-                                  <p className="text-sm text-gray-500 mb-2">{local.endereco.logradouro}, {local.endereco.numero}</p>
+                              <div key={local.id} className="p-4 border rounded-md bg-gray-50">
+                                  <h3 className="font-medium flex items-center gap-2"><MapPin className="h-4 w-4 text-blue-600" />{local.nome_local}</h3>
+                                  <p className="text-sm text-gray-500 mb-2 ml-6">{local.endereco.logradouro}, {local.endereco.numero}</p>
                                   <TimeSlotGrid
                                       timeSlots={local.horarios_disponiveis}
                                       selectedTime={models.selectedLocal?.id === local.id ? models.selectedTime : ""}
@@ -70,6 +69,7 @@ const Agendamento = () => {
                           ))}
                       </div>
                   )}
+                  {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && <p className="text-center text-gray-500 pt-4 border-t">Nenhum horário disponível para este médico na data selecionada.</p>}
                   
                    {/* Botão Final */}
                   {isFormComplete && (
