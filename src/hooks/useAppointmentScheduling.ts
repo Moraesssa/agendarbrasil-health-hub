@@ -14,6 +14,7 @@ export const useAppointmentScheduling = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Estados do formulário
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -22,37 +23,32 @@ export const useAppointmentScheduling = () => {
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedLocal, setSelectedLocal] = useState<LocalComHorarios | null>(null);
 
+  // Listas de opções
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [states, setStates] = useState<StateInfo[]>([]);
   const [cities, setCities] = useState<CityInfo[]>([]);
   const [doctors, setDoctors] = useState<Medico[]>([]);
   const [locaisComHorarios, setLocaisComHorarios] = useState<LocalComHorarios[]>([]);
 
+  // Estados de carregamento
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetSelection = useCallback((level: 'state' | 'city' | 'doctor' | 'date') => {
-    if (level === 'state') {
-      setSelectedCity("");
-      setDoctors([]);
-      setSelectedDoctor("");
-    }
-    if (level === 'city') {
-      setDoctors([]);
-      setSelectedDoctor("");
-    }
-    if (level === 'doctor') {
-      setSelectedDate("");
-    }
-    if (level === 'date') {
+    if (level === 'state') setSelectedCity("");
+    if (level === 'state' || level === 'city') setDoctors([]);
+    if (level === 'state' || level === 'city' || level === 'doctor') setSelectedDate("");
+    if (level === 'state' || level === 'city' || level === 'doctor' || level === 'date') {
       setSelectedTime("");
       setSelectedLocal(null);
       setLocaisComHorarios([]);
     }
   }, []);
 
+  // Busca inicial de dados (Especialidades e Estados)
   useEffect(() => {
-    if (!user) return;
+    if (!user) return; // <-- GARANTE que o usuário está logado antes de buscar
+    
     const loadInitialData = async () => {
       setIsLoading(true);
       try {
@@ -70,10 +66,11 @@ export const useAppointmentScheduling = () => {
       }
     };
     loadInitialData();
-  }, [toast, user]);
+  }, [toast, user]); // <-- Adiciona 'user' como dependência
 
+  // Efeitos em cascata para carregar as opções
   useEffect(() => {
-    if (!selectedState) return;
+    if (!selectedState) { setCities([]); return; };
     setIsLoading(true);
     supabase.rpc('get_available_cities', { state_uf: selectedState })
       .then(({ data }) => setCities(data || []))
@@ -81,10 +78,7 @@ export const useAppointmentScheduling = () => {
   }, [selectedState]);
 
   useEffect(() => {
-    if (!selectedSpecialty || !selectedCity || !selectedState) {
-        setDoctors([]); // Limpa a lista se os filtros mudarem
-        return;
-    };
+    if (!selectedSpecialty || !selectedCity || !selectedState) { setDoctors([]); return; };
     setIsLoading(true);
     appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState)
       .then(setDoctors)
@@ -92,10 +86,7 @@ export const useAppointmentScheduling = () => {
   }, [selectedSpecialty, selectedCity, selectedState]);
   
   useEffect(() => {
-    if (!selectedDoctor || !selectedDate) {
-        setLocaisComHorarios([]); // Limpa se não houver médico ou data
-        return;
-    }
+    if (!selectedDoctor || !selectedDate) { setLocaisComHorarios([]); return; }
     setIsLoading(true);
     appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate)
       .then(setLocaisComHorarios)
@@ -134,17 +125,3 @@ export const useAppointmentScheduling = () => {
     actions: { handleAgendamento, resetSelection }
   };
 };
-
-// Modificação na assinatura da função scheduleAppointment para corresponder ao serviço
-declare module '@/services/appointmentService' {
-  interface AppointmentService {
-    scheduleAppointment(appointmentData: {
-      paciente_id: string;
-      medico_id: string;
-      data_consulta: string;
-      tipo_consulta: string;
-      local_id: string;
-      local_consulta: string;
-    }): Promise<{ success: true }>;
-  }
-}
