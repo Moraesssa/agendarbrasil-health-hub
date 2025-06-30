@@ -14,7 +14,6 @@ export const useAppointmentScheduling = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Estados do formulário
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -23,14 +22,12 @@ export const useAppointmentScheduling = () => {
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedLocal, setSelectedLocal] = useState<LocalComHorarios | null>(null);
 
-  // Listas de opções
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [states, setStates] = useState<StateInfo[]>([]);
   const [cities, setCities] = useState<CityInfo[]>([]);
   const [doctors, setDoctors] = useState<Medico[]>([]);
   const [locaisComHorarios, setLocaisComHorarios] = useState<LocalComHorarios[]>([]);
 
-  // Estados de carregamento
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,10 +42,10 @@ export const useAppointmentScheduling = () => {
     }
   }, []);
 
-  // Busca inicial de dados (Especialidades e Estados)
+  // Busca inicial de dados - CORRIGIDO para depender do 'user'
   useEffect(() => {
-    if (!user) return; // <-- GARANTE que o usuário está logado antes de buscar
-    
+    if (!user) return; // Só executa se o usuário estiver logado
+
     const loadInitialData = async () => {
       setIsLoading(true);
       try {
@@ -60,37 +57,28 @@ export const useAppointmentScheduling = () => {
         setStates(statesData as StateInfo[]);
       } catch (e) {
         logger.error("Erro ao carregar dados iniciais", "useAppointmentScheduling", e);
-        toast({ title: "Erro ao carregar dados iniciais", variant: "destructive" });
+        toast({ title: "Erro ao carregar dados", description: "Não foi possível buscar especialidades e estados.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     };
     loadInitialData();
-  }, [toast, user]); // <-- Adiciona 'user' como dependência
+  }, [toast, user]); // <-- Dependência explícita no 'user'
 
-  // Efeitos em cascata para carregar as opções
+  // Efeitos em cascata
   useEffect(() => {
-    if (!selectedState) { setCities([]); return; };
-    setIsLoading(true);
-    supabase.rpc('get_available_cities', { state_uf: selectedState })
-      .then(({ data }) => setCities(data || []))
-      .finally(() => setIsLoading(false));
+    if (!selectedState) { setCities([]); return; }
+    appointmentService.getAvailableCities(selectedState).then(setCities);
   }, [selectedState]);
 
   useEffect(() => {
-    if (!selectedSpecialty || !selectedCity || !selectedState) { setDoctors([]); return; };
-    setIsLoading(true);
-    appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState)
-      .then(setDoctors)
-      .finally(() => setIsLoading(false));
+    if (!selectedSpecialty || !selectedCity || !selectedState) { setDoctors([]); return; }
+    appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState).then(setDoctors);
   }, [selectedSpecialty, selectedCity, selectedState]);
   
   useEffect(() => {
     if (!selectedDoctor || !selectedDate) { setLocaisComHorarios([]); return; }
-    setIsLoading(true);
-    appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate)
-      .then(setLocaisComHorarios)
-      .finally(() => setIsLoading(false));
+    appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate).then(setLocaisComHorarios);
   }, [selectedDoctor, selectedDate]);
 
   const handleAgendamento = useCallback(async () => {
