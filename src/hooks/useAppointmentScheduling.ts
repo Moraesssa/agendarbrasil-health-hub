@@ -1,10 +1,10 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { appointmentService, LocalComHorarios, Medico } from "@/services/appointmentService";
+import { logger } from "@/utils/logger";
 
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
@@ -14,7 +14,6 @@ export const useAppointmentScheduling = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Estados do formulário
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -23,19 +22,29 @@ export const useAppointmentScheduling = () => {
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedLocal, setSelectedLocal] = useState<LocalComHorarios | null>(null);
 
-  // Listas de opções
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [states, setStates] = useState<StateInfo[]>([]);
   const [cities, setCities] = useState<CityInfo[]>([]);
   const [doctors, setDoctors] = useState<Medico[]>([]);
   const [locaisComHorarios, setLocaisComHorarios] = useState<LocalComHorarios[]>([]);
 
-  // Estados de carregamento
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Carregamento inicial
+  const resetSelection = useCallback((level: 'state' | 'city' | 'doctor' | 'date') => {
+    if (level === 'state') setSelectedCity("");
+    if (level === 'state' || level === 'city') setDoctors([]);
+    if (level === 'state' || level === 'city' || level === 'doctor') setSelectedDate("");
+    if (level === 'state' || level === 'city' || level === 'doctor' || level === 'date') {
+      setSelectedTime("");
+      setSelectedLocal(null);
+      setLocaisComHorarios([]);
+    }
+  }, []);
+
+  // Busca inicial de dados
   useEffect(() => {
+    if (!user) return; // <-- GARANTE que o usuário está logado antes de buscar
     const loadInitialData = async () => {
       setIsLoading(true);
       try {
@@ -44,43 +53,42 @@ export const useAppointmentScheduling = () => {
           supabase.rpc('get_available_states').then(res => res.data || [])
         ]);
         setSpecialties(specialtiesData);
-        setStates(statesData);
+        setStates(statesData as StateInfo[]);
       } catch (e) {
+        logger.error("Erro ao carregar dados iniciais", "useAppointmentScheduling", e);
         toast({ title: "Erro ao carregar dados iniciais", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     };
     loadInitialData();
-  }, [toast]);
+  }, [toast, user]); // <-- Adiciona 'user' como dependência
 
-  // Lógica de busca em cascata
+  // Efeitos em cascata para carregar as opções
   useEffect(() => {
     if (!selectedState) return;
-    supabase.rpc('get_available_cities', { state_uf: selectedState }).then(({ data }) => setCities(data || []));
+    setIsLoading(true);
+    supabase.rpc('get_available_cities', { state_uf: selectedState })
+      .then(({ data }) => setCities(data || []))
+      .finally(() => setIsLoading(false));
   }, [selectedState]);
 
   useEffect(() => {
     if (!selectedSpecialty || !selectedCity || !selectedState) return;
+    setIsLoading(true);
     appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState)
-      .then(setDoctors);
+      .then(setDoctors)
+      .finally(() => setIsLoading(false));
   }, [selectedSpecialty, selectedCity, selectedState]);
   
   useEffect(() => {
     if (!selectedDoctor || !selectedDate) return;
+    setIsLoading(true);
     appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate)
-      .then(setLocaisComHorarios);
+      .then(setLocaisComHorarios)
+      .finally(() => setIsLoading(false));
   }, [selectedDoctor, selectedDate]);
-  
-  // Limpeza de seleções
-  const resetSelection = (level: 'state' | 'city' | 'doctor' | 'date') => {
-    if (level === 'state') { setSelectedCity(""); setDoctors([]); }
-    if (level === 'city') { setDoctors([]); }
-    if (level === 'doctor') { setSelectedDate(""); }
-    if (level === 'date') { setSelectedTime(""); setSelectedLocal(null); setLocaisComHorarios([]); }
-  }
 
-  // Submissão
   const handleAgendamento = useCallback(async () => {
     if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedLocal) return;
     setIsSubmitting(true);
@@ -94,10 +102,11 @@ export const useAppointmentScheduling = () => {
         data_consulta: appointmentDateTime,
         tipo_consulta: selectedSpecialty,
         local_id: selectedLocal.id,
-        local_consulta_texto: localTexto
+        local_consulta: localTexto,
+        status: "agendada",
       });
 
-      toast({ title: "Consulta agendada com sucesso!", description: "Você será redirecionado para a sua agenda." });
+      toast({ title: "Consulta agendada com sucesso!" });
       navigate("/agenda-paciente");
     } catch (error) {
       toast({ title: "Erro ao agendar", description: (error as Error).message, variant: "destructive" });
@@ -113,3 +122,19 @@ export const useAppointmentScheduling = () => {
     actions: { handleAgendamento, resetSelection }
   };
 };
+
+// Modificação na assinatura da função scheduleAppointment
+declare module '@/services/appointmentService' {
+  interface AppointmentService {
+    scheduleAppointment(appointmentData: {
+      paciente_id: string;
+      medico_id: string;
+      data_consulta: string;
+      tipo_consulta: string;
+      local_id: string;
+      local_consulta: string;
+      status: string;
+    }): Promise<{ success: true }>;
+  }
+}
+
