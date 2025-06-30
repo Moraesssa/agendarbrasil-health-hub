@@ -48,3 +48,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     </AuthContext.Provider>
   );
 };
+
+// Export AuthContext for tests
+export { AuthContext };

@@ -13,16 +13,25 @@ vi.mock('@/services/appointmentService');
 vi.mock('@/hooks/use-toast');
 
 const mockToast = vi.fn();
-vi.mocked(useToast).mockReturnValue({ toast: mockToast });
+const mockDismiss = vi.fn();
+vi.mocked(useToast).mockReturnValue({ 
+  toast: mockToast,
+  dismiss: mockDismiss,
+  toasts: []
+});
 
 // Mock do AuthContext
 const mockAuthContext = {
   user: { id: 'test-user-id', email: 'test@test.com' },
+  session: null,
+  userData: null,
   loading: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  updateProfile: vi.fn()
+  onboardingStatus: null,
+  signInWithGoogle: vi.fn(),
+  logout: vi.fn(),
+  setUserType: vi.fn(),
+  updateOnboardingStep: vi.fn(),
+  completeOnboarding: vi.fn()
 };
 
 // Mock dos dados

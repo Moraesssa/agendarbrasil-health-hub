@@ -23,6 +23,15 @@ export interface LocalAtendimento {
   endereco: any;
 }
 
+// Interface para blocos de horário
+interface BlocoHorario {
+  id?: string;
+  local_id: string;
+  inicio: string;
+  fim: string;
+  ativo: boolean;
+}
+
 // Type guard para verificar se um objeto tem a estrutura de configuração esperada
 const isValidConfiguration = (config: any): config is { horarioAtendimento?: any; duracaoConsulta?: number } => {
   return config && typeof config === 'object';
@@ -104,9 +113,14 @@ export const appointmentService = {
     const locaisComHorarios: LocalComHorarios[] = [];
 
     for (const local of locais || []) {
+      // Filtrar blocos apenas se blocosDoDia for um array de objetos
+      const blocosDoLocal = Array.isArray(blocosDoDia) 
+        ? blocosDoDia.filter((bloco: BlocoHorario) => bloco && typeof bloco === 'object' && bloco.local_id === local.id)
+        : [];
+
       const horariosNesteLocal = generateTimeSlots({
         duracaoConsulta: config.duracaoConsulta || 30,
-        horarioAtendimento: { [diaDaSemana]: blocosDoDia.filter((b: any) => b.local_id === local.id) }
+        horarioAtendimento: { [diaDaSemana]: blocosDoLocal }
       }, new Date(date + 'T00:00:00'), existingAppointments);
 
       if (horariosNesteLocal.length > 0) {
