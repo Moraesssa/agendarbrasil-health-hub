@@ -1,4 +1,5 @@
-import { Calendar, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
+
+import { Calendar, Home, Users, Clock, FileText, Settings, User, Activity, BarChart3, Stethoscope, LogOut, ArrowRightLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -59,12 +60,6 @@ const settingsItems = [
     description: "Configurações do perfil médico"
   },
   {
-    title: "Meus Horários",
-    url: "/gerenciar-agenda",
-    icon: Clock,
-    description: "Gerenciar dias e horários de atendimento"
-  },
-  {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
@@ -76,7 +71,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { userData, logout } = useAuth();
+  const { logout, userData } = useAuth();
 
   const handleNavigation = (url: string, title: string) => {
     if (url === "/settings") {
@@ -110,14 +105,6 @@ export function AppSidebar() {
       });
     }
   };
-
-  const pacienteNavItems = [
-    {
-      title: "Gerenciar Família",
-      url: "/gerenciar-familia",
-      icon: Users,
-    },
-  ];
 
   return (
     <Sidebar className="border-r border-blue-100 bg-gradient-to-b from-white to-blue-50/30">

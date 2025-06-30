@@ -147,19 +147,15 @@ const DashboardMedico = () => {
           </header>
 
           <main className="flex-1 overflow-auto">
-            <div className="container max-w-7xl mx-auto p-6 space-y-6">
+            <div className="container max-w-7xl mx-auto p-6 space-y-8">
               <MetricsCards data={dashboardData?.metrics} loading={loading} />
 
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="w-full">
-                  <ConsultasChart data={dashboardData?.consultasChart} loading={loading} />
-                </div>
-                <div className="w-full">
-                  <TiposConsultaChart data={dashboardData?.tiposConsultaChart} loading={loading} />
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <ConsultasChart data={dashboardData?.consultasChart} loading={loading} />
+                <TiposConsultaChart data={dashboardData?.tiposConsultaChart} loading={loading} />
               </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <div className="xl:col-span-2">
                   <PacientesRecentes />
                 </div>

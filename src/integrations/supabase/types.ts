@@ -11,86 +11,54 @@ export type Database = {
     Tables: {
       consultas: {
         Row: {
-          agendado_por: string | null
           created_at: string
           data_consulta: string
           diagnostico: string | null
           duracao_minutos: number
-          follow_up_required: boolean | null
           id: string
           local_consulta: string | null
           medico_id: string
           motivo: string | null
           notas_medico: string | null
-          paciente_familiar_id: string | null
           paciente_id: string
-          preparation_completed: boolean | null
-          service_type: string | null
           status: Database["public"]["Enums"]["appointment_status"]
           tipo_consulta: string | null
-          triage_id: string | null
           updated_at: string
         }
         Insert: {
-          agendado_por?: string | null
           created_at?: string
           data_consulta: string
           diagnostico?: string | null
           duracao_minutos?: number
-          follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
           medico_id: string
           motivo?: string | null
           notas_medico?: string | null
-          paciente_familiar_id?: string | null
           paciente_id: string
-          preparation_completed?: boolean | null
-          service_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           tipo_consulta?: string | null
-          triage_id?: string | null
           updated_at?: string
         }
         Update: {
-          agendado_por?: string | null
           created_at?: string
           data_consulta?: string
           diagnostico?: string | null
           duracao_minutos?: number
-          follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
           medico_id?: string
           motivo?: string | null
           notas_medico?: string | null
-          paciente_familiar_id?: string | null
           paciente_id?: string
-          preparation_completed?: boolean | null
-          service_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           tipo_consulta?: string | null
-          triage_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "consultas_agendado_por_fkey"
-            columns: ["agendado_por"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "consultas_medico_id_fkey"
             columns: ["medico_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_paciente_familiar_id_fkey"
-            columns: ["paciente_familiar_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -100,13 +68,6 @@ export type Database = {
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_triage_id_fkey"
-            columns: ["triage_id"]
-            isOneToOne: false
-            referencedRelation: "medical_triage"
             referencedColumns: ["id"]
           },
         ]
@@ -140,285 +101,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      family_members: {
-        Row: {
-          can_cancel: boolean
-          can_schedule: boolean
-          can_view_history: boolean
-          created_at: string
-          family_member_id: string
-          id: string
-          permission_level: string
-          relationship: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          can_cancel?: boolean
-          can_schedule?: boolean
-          can_view_history?: boolean
-          created_at?: string
-          family_member_id: string
-          id?: string
-          permission_level?: string
-          relationship: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          can_cancel?: boolean
-          can_schedule?: boolean
-          can_view_history?: boolean
-          created_at?: string
-          family_member_id?: string
-          id?: string
-          permission_level?: string
-          relationship?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "family_members_family_member_id_fkey"
-            columns: ["family_member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      family_notifications: {
-        Row: {
-          action_required: boolean | null
-          action_url: string | null
-          created_at: string
-          id: string
-          message: string
-          notification_type: string
-          patient_id: string
-          priority: string
-          read: boolean | null
-          scheduled_for: string | null
-          title: string
-          user_id: string
-        }
-        Insert: {
-          action_required?: boolean | null
-          action_url?: string | null
-          created_at?: string
-          id?: string
-          message: string
-          notification_type: string
-          patient_id: string
-          priority?: string
-          read?: boolean | null
-          scheduled_for?: string | null
-          title: string
-          user_id: string
-        }
-        Update: {
-          action_required?: boolean | null
-          action_url?: string | null
-          created_at?: string
-          id?: string
-          message?: string
-          notification_type?: string
-          patient_id?: string
-          priority?: string
-          read?: boolean | null
-          scheduled_for?: string | null
-          title?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "family_notifications_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      medical_exams: {
-        Row: {
-          completed_date: string | null
-          created_at: string
-          created_by: string
-          exam_name: string
-          exam_type: string
-          healthcare_provider: string | null
-          id: string
-          patient_id: string
-          preparation_instructions: string | null
-          preparation_required: boolean | null
-          results_available: boolean | null
-          results_summary: string | null
-          scheduled_date: string | null
-          status: string
-          updated_at: string
-          urgent: boolean | null
-        }
-        Insert: {
-          completed_date?: string | null
-          created_at?: string
-          created_by: string
-          exam_name: string
-          exam_type: string
-          healthcare_provider?: string | null
-          id?: string
-          patient_id: string
-          preparation_instructions?: string | null
-          preparation_required?: boolean | null
-          results_available?: boolean | null
-          results_summary?: string | null
-          scheduled_date?: string | null
-          status?: string
-          updated_at?: string
-          urgent?: boolean | null
-        }
-        Update: {
-          completed_date?: string | null
-          created_at?: string
-          created_by?: string
-          exam_name?: string
-          exam_type?: string
-          healthcare_provider?: string | null
-          id?: string
-          patient_id?: string
-          preparation_instructions?: string | null
-          preparation_required?: boolean | null
-          results_available?: boolean | null
-          results_summary?: string | null
-          scheduled_date?: string | null
-          status?: string
-          updated_at?: string
-          urgent?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "medical_exams_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "medical_exams_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      medical_services: {
-        Row: {
-          category: string
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          preparation_instructions: string | null
-          requires_preparation: boolean | null
-          typical_duration: number | null
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          preparation_instructions?: string | null
-          requires_preparation?: boolean | null
-          typical_duration?: number | null
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          preparation_instructions?: string | null
-          requires_preparation?: boolean | null
-          typical_duration?: number | null
-        }
-        Relationships: []
-      }
-      medical_triage: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          initial_guidance: string | null
-          patient_id: string
-          recommended_specialties: string[] | null
-          status: string
-          symptoms: string[]
-          updated_at: string
-          urgency_level: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          initial_guidance?: string | null
-          patient_id: string
-          recommended_specialties?: string[] | null
-          status?: string
-          symptoms: string[]
-          updated_at?: string
-          urgency_level: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          initial_guidance?: string | null
-          patient_id?: string
-          recommended_specialties?: string[] | null
-          status?: string
-          symptoms?: string[]
-          updated_at?: string
-          urgency_level?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "medical_triage_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "medical_triage_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       medicos: {
         Row: {
@@ -559,80 +241,17 @@ export type Database = {
         }
         Relationships: []
       }
-      vaccination_records: {
-        Row: {
-          administered_date: string | null
-          adverse_reactions: string | null
-          batch_number: string | null
-          created_at: string
-          created_by: string
-          dose_number: number | null
-          healthcare_provider: string | null
-          id: string
-          next_dose_date: string | null
-          patient_id: string
-          status: string
-          total_doses: number | null
-          updated_at: string
-          vaccine_name: string
-          vaccine_type: string
-        }
-        Insert: {
-          administered_date?: string | null
-          adverse_reactions?: string | null
-          batch_number?: string | null
-          created_at?: string
-          created_by: string
-          dose_number?: number | null
-          healthcare_provider?: string | null
-          id?: string
-          next_dose_date?: string | null
-          patient_id: string
-          status?: string
-          total_doses?: number | null
-          updated_at?: string
-          vaccine_name: string
-          vaccine_type: string
-        }
-        Update: {
-          administered_date?: string | null
-          adverse_reactions?: string | null
-          batch_number?: string | null
-          created_at?: string
-          created_by?: string
-          dose_number?: number | null
-          healthcare_provider?: string | null
-          id?: string
-          next_dose_date?: string | null
-          patient_id?: string
-          status?: string
-          total_doses?: number | null
-          updated_at?: string
-          vaccine_name?: string
-          vaccine_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vaccination_records_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vaccination_records_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_all_specialties: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          specialty: string
+        }[]
+      }
       get_available_cities: {
         Args: { state_uf: string }
         Returns: {
@@ -643,33 +262,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           uf: string
-        }[]
-      }
-      get_family_members: {
-        Args: { user_uuid: string }
-        Returns: {
-          id: string
-          family_member_id: string
-          display_name: string
-          email: string
-          relationship: string
-          permission_level: string
-          can_schedule: boolean
-          can_view_history: boolean
-          can_cancel: boolean
-          status: string
-        }[]
-      }
-      get_family_upcoming_activities: {
-        Args: { user_uuid: string }
-        Returns: {
-          activity_type: string
-          patient_name: string
-          patient_id: string
-          title: string
-          scheduled_date: string
-          urgency: string
-          status: string
         }[]
       }
       get_specialties: {

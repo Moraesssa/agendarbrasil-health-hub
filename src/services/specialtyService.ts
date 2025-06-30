@@ -3,40 +3,95 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
 export const specialtyService = {
+  // Busca todas as especialidades (padronizadas + customizadas dos médicos)
   async getAllSpecialties(): Promise<string[]> {
     logger.info("Fetching all specialties", "SpecialtyService");
     try {
-      const { data, error } = await supabase.rpc('get_specialties');
-      
+      // Usar a função RPC que combina especialidades padronizadas e customizadas
+      const { data, error } = await supabase.rpc('get_all_specialties');
+
       if (error) {
-        logger.error("Error fetching specialties", "SpecialtyService", error);
+        logger.error("RPC get_all_specialties failed", "SpecialtyService", error);
         throw new Error(`Erro ao buscar especialidades: ${error.message}`);
       }
       
-      return data || [];
+      if (!data || data.length === 0) {
+        logger.warn("No specialties found in database", "SpecialtyService");
+        
+        // Retornar especialidades padrão se não houver nenhuma no banco
+        return [
+          'Cardiologia',
+          'Neurologia', 
+          'Dermatologia',
+          'Ortopedia',
+          'Ginecologia',
+          'Pediatria',
+          'Oftalmologia',
+          'Otorrinolaringologia',
+          'Urologia',
+          'Psiquiatria'
+        ];
+      }
+      
+      // A RPC retorna diretamente um array de strings
+      const specialties = Array.isArray(data) ? data.sort() : [];
+      logger.info("All specialties fetched successfully", "SpecialtyService", { 
+        count: specialties.length 
+      });
+      return specialties;
     } catch (error) {
-      logger.error("Failed to fetch specialties", "SpecialtyService", error);
+      logger.error("Failed to fetch all specialties", "SpecialtyService", error);
       throw error;
     }
   },
 
-  async getSpecialtiesByDoctor(doctorId: string): Promise<string[]> {
-    logger.info("Fetching specialties by doctor", "SpecialtyService", { doctorId });
+  // Busca apenas especialidades padronizadas
+  async getStandardSpecialties(): Promise<string[]> {
+    logger.info("Fetching standard specialties", "SpecialtyService");
     try {
       const { data, error } = await supabase
-        .from('medicos')
-        .select('especialidades')
-        .eq('user_id', doctorId)
-        .single();
+        .from('especialidades_medicas')
+        .select('nome')
+        .eq('ativa', true)
+        .order('nome');
 
       if (error) {
-        logger.error("Error fetching doctor specialties", "SpecialtyService", error);
-        throw new Error(`Erro ao buscar especialidades do médico: ${error.message}`);
+        logger.error("Failed to fetch standard specialties", "SpecialtyService", error);
+        throw new Error(`Erro ao buscar especialidades padronizadas: ${error.message}`);
       }
-
-      return data?.especialidades || [];
+      
+      const specialties = data?.map(item => item.nome) || [];
+      logger.info("Standard specialties fetched successfully", "SpecialtyService", { 
+        count: specialties.length 
+      });
+      return specialties;
     } catch (error) {
-      logger.error("Failed to fetch doctor specialties", "SpecialtyService", { doctorId, error });
+      logger.error("Failed to fetch standard specialties", "SpecialtyService", error);
+      throw error;
+    }
+  },
+
+  // Busca especialidades com descrições (para interfaces administrativas futuras)
+  async getSpecialtiesWithDetails(): Promise<Array<{id: string, nome: string, codigo?: string, descricao?: string}>> {
+    logger.info("Fetching specialties with details", "SpecialtyService");
+    try {
+      const { data, error } = await supabase
+        .from('especialidades_medicas')
+        .select('id, nome, codigo, descricao')
+        .eq('ativa', true)
+        .order('nome');
+
+      if (error) {
+        logger.error("Failed to fetch specialties with details", "SpecialtyService", error);
+        throw new Error(`Erro ao buscar detalhes das especialidades: ${error.message}`);
+      }
+      
+      logger.info("Specialties with details fetched successfully", "SpecialtyService", { 
+        count: data?.length || 0 
+      });
+      return data || [];
+    } catch (error) {
+      logger.error("Failed to fetch specialties with details", "SpecialtyService", error);
       throw error;
     }
   }

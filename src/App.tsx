@@ -1,117 +1,185 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { Toaster } from "@/components/ui/toaster"
-import { Toaster as Sonner } from './components/ui/sonner';
-import { AuthProvider } from './contexts/AuthContext';
-import { AuthRedirectController } from './components/AuthRedirectController';
-import Index from './pages/Index';
-import Login from './pages/Login';
-import Cadastrar from './pages/Cadastrar';
-import CadastroMedico from './pages/CadastroMedico';
-import CadastroPaciente from './pages/CadastroPaciente';
-import UserTypeSelection from './pages/UserTypeSelection';
-import Onboarding from './pages/Onboarding';
-import DashboardMedico from './pages/DashboardMedico';
-import Perfil from './pages/Perfil';
-import PerfilMedico from './pages/PerfilMedico';
-import AgendaMedico from './pages/AgendaMedico';
-import GerenciarAgenda from './pages/GerenciarAgenda';
-import PacientesMedico from './pages/PacientesMedico';
-import EncaminhamentosMedico from './pages/EncaminhamentosMedico';
-import Agendamento from './pages/Agendamento';
-import AgendaPaciente from './pages/AgendaPaciente';
-import Historico from './pages/Historico';
-import NotFound from './pages/NotFound';
-import GerenciarFamilia from './pages/GerenciarFamilia';
-import DashboardFamiliar from './pages/DashboardFamiliar';
 
-const queryClient = new QueryClient();
+import React, { Suspense } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthRedirectController } from "@/components/AuthRedirectController";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageLoader } from "@/components/PageLoader";
+import { logger } from "@/utils/logger";
 
-// Simple error boundary component
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
+// Lazy load all pages for better performance
+const Index = React.lazy(() => 
+  import("./pages/Index").catch(err => {
+    logger.error("Failed to load Index page", "App", err);
+    throw err;
+  })
+);
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
+const Login = React.lazy(() => 
+  import("./pages/Login").catch(err => {
+    logger.error("Failed to load Login page", "App", err);
+    throw err;
+  })
+);
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
+const UserTypeSelection = React.lazy(() => 
+  import("./pages/UserTypeSelection").catch(err => {
+    logger.error("Failed to load UserTypeSelection page", "App", err);
+    throw err;
+  })
+);
 
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Algo deu errado
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Por favor, recarregue a página
-            </p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Recarregar
-            </button>
-          </div>
-        </div>
-      );
-    }
+const Onboarding = React.lazy(() => 
+  import("./pages/Onboarding").catch(err => {
+    logger.error("Failed to load Onboarding page", "App", err);
+    throw err;
+  })
+);
 
-    return this.props.children;
-  }
-}
+// Paciente pages
+const Agendamento = React.lazy(() => 
+  import("./pages/Agendamento").catch(err => {
+    logger.error("Failed to load Agendamento page", "App", err);
+    throw err;
+  })
+);
 
-function App() {
+const AgendaPaciente = React.lazy(() => 
+  import("./pages/AgendaPaciente").catch(err => {
+    logger.error("Failed to load AgendaPaciente page", "App", err);
+    throw err;
+  })
+);
+
+const Perfil = React.lazy(() => 
+  import("./pages/Perfil").catch(err => {
+    logger.error("Failed to load Perfil page", "App", err);
+    throw err;
+  })
+);
+
+const Historico = React.lazy(() => 
+  import("./pages/Historico").catch(err => {
+    logger.error("Failed to load Historico page", "App", err);
+    throw err;
+  })
+);
+
+// Médico pages
+const DashboardMedico = React.lazy(() => 
+  import("./pages/DashboardMedico").catch(err => {
+    logger.error("Failed to load DashboardMedico page", "App", err);
+    throw err;
+  })
+);
+
+const AgendaMedico = React.lazy(() => 
+  import("./pages/AgendaMedico").catch(err => {
+    logger.error("Failed to load AgendaMedico page", "App", err);
+    throw err;
+  })
+);
+
+const PerfilMedico = React.lazy(() => 
+  import("./pages/PerfilMedico").catch(err => {
+    logger.error("Failed to load PerfilMedico page", "App", err);
+    throw err;
+  })
+);
+
+const PacientesMedico = React.lazy(() => 
+  import("./pages/PacientesMedico").catch(err => {
+    logger.error("Failed to load PacientesMedico page", "App", err);
+    throw err;
+  })
+);
+
+const EncaminhamentosMedico = React.lazy(() => 
+  import("./pages/EncaminhamentosMedico").catch(err => {
+    logger.error("Failed to load EncaminhamentosMedico page", "App", err);
+    throw err;
+  })
+);
+
+const NotFound = React.lazy(() => 
+  import("./pages/NotFound").catch(err => {
+    logger.error("Failed to load NotFound page", "App", err);
+    throw err;
+  })
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        logger.warn(`Query failed, attempt ${failureCount + 1}`, "ReactQuery", error);
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      onError: (error) => {
+        logger.error("Mutation error", "ReactQuery", error);
+      },
+    },
+  },
+});
+
+const App = () => {
+  logger.info("App initialized", "App");
+
   return (
-    <ErrorBoundary>
+    <ErrorBoundary context="App Root">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+          <ErrorBoundary context="Auth Provider">
             <AuthProvider>
-              <AuthRedirectController>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/cadastrar" element={<Cadastrar />} />
-                  <Route path="/cadastro-medico" element={<CadastroMedico />} />
-                  <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
-                  <Route path="/user-type" element={<UserTypeSelection />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/dashboard-medico" element={<DashboardMedico />} />
-                  <Route path="/perfil" element={<Perfil />} />
-                  <Route path="/perfil-medico" element={<PerfilMedico />} />
-                  <Route path="/agenda-medico" element={<AgendaMedico />} />
-                  <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
-                  <Route path="/pacientes-medico" element={<PacientesMedico />} />
-                  <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                  <Route path="/agendamento" element={<Agendamento />} />
-                  <Route path="/agenda-paciente" element={<AgendaPaciente />} />
-                  <Route path="/historico" element={<Historico />} />
-                  <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
-                  <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AuthRedirectController>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ErrorBoundary context="Auth Redirect Controller">
+                  <AuthRedirectController>
+                    <Suspense fallback={<PageLoader message="Carregando página..." />}>
+                      <ErrorBoundary context="Routes">
+                        <Routes>
+                          {/* Rotas Públicas */}
+                          <Route path="/" element={<Index />} />
+                          <Route path="/login" element={<Login />} />
+                          
+                          {/* Configuração Inicial */}
+                          <Route path="/user-type" element={<UserTypeSelection />} />
+                          <Route path="/onboarding" element={<Onboarding />} />
+                          
+                          {/* Rotas do Paciente */}
+                          <Route path="/agendamento" element={<Agendamento />} />
+                          <Route path="/agenda-paciente" element={<AgendaPaciente />} />
+                          <Route path="/perfil" element={<Perfil />} />
+                          <Route path="/historico" element={<Historico />} />
+                          
+                          {/* Rotas do Médico */}
+                          <Route path="/dashboard-medico" element={<DashboardMedico />} />
+                          <Route path="/agenda-medico" element={<AgendaMedico />} />
+                          <Route path="/perfil-medico" element={<PerfilMedico />} />
+                          <Route path="/pacientes-medico" element={<PacientesMedico />} />
+                          <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                          
+                          {/* Sistema */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </ErrorBoundary>
+                    </Suspense>
+                  </AuthRedirectController>
+                </ErrorBoundary>
+              </BrowserRouter>
             </AuthProvider>
-          </BrowserRouter>
+          </ErrorBoundary>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
-}
+};
 
 export default App;
