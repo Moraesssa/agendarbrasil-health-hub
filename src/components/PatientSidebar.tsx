@@ -1,4 +1,4 @@
-import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin } from "lucide-react";
+import { Calendar, Users, FileText, User, LogOut, Home, Clock, Activity } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -18,82 +18,61 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-const mainMenuItems = [
+const patientMenuItems = [
   {
-    title: "Dashboard",
-    url: "/dashboard-medico",
-    icon: BarChart3,
-    description: "Visão geral da prática médica"
+    title: "Início",
+    url: "/",
+    icon: Home,
+    description: "Página inicial do portal"
   },
   {
-    title: "Agenda",
-    url: "/agenda-medico",
+    title: "Dashboard Familiar",
+    url: "/dashboard-familiar",
+    icon: Activity,
+    description: "Visão geral da saúde familiar"
+  },
+  {
+    title: "Agendamento",
+    url: "/agendamento",
     icon: Calendar,
-    description: "Visualizar consultas e horários"
+    description: "Agendar nova consulta"
   },
   {
-    title: "Pacientes",
-    url: "/pacientes-medico",
-    icon: Users,
-    description: "Lista de pacientes do médico"
-  },
-  {
-    title: "Encaminhamento",
-    url: "/encaminhamentos-medico",
-    icon: ArrowRightLeft,
-    description: "Encaminhamentos entre médicos"
+    title: "Minha Agenda",
+    url: "/agenda-paciente",
+    icon: Clock,
+    description: "Ver minhas consultas agendadas"
   },
   {
     title: "Histórico",
     url: "/historico",
     icon: FileText,
-    description: "Histórico de atendimentos"
+    description: "Histórico de consultas"
+  },
+  {
+    title: "Gerenciar Família",
+    url: "/gerenciar-familia",
+    icon: Users,
+    description: "Gerenciar membros da família"
   }
 ];
 
-// Array de configurações atualizado
 const settingsItems = [
   {
     title: "Perfil",
-    url: "/perfil-medico",
+    url: "/perfil",
     icon: User,
-    description: "Configurações do perfil médico"
-  },
-  {
-    title: "Meus Locais", // <-- NOVO ITEM
-    url: "/gerenciar-locais",
-    icon: MapPin,
-    description: "Gerenciar seus locais de atendimento"
-  },
-  {
-    title: "Meus Horários",
-    url: "/gerenciar-agenda",
-    icon: Clock,
-    description: "Gerenciar dias e horários de atendimento"
-  },
-  {
-    title: "Configurações",
-    url: "/settings",
-    icon: Settings,
-    description: "Configurações do sistema"
+    description: "Configurações do perfil"
   }
 ];
 
-export function AppSidebar() {
+export function PatientSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { userData, logout } = useAuth();
 
   const handleNavigation = (url: string, title: string) => {
-    if (url === "/settings") {
-      toast({
-        title: "Configurações",
-        description: "Página em desenvolvimento.",
-      });
-      return;
-    }
-    
     navigate(url);
     toast({
       title: `Navegando para ${title}`,
@@ -119,21 +98,23 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-blue-100 bg-gradient-to-b from-white to-blue-50/30">
+    <Sidebar className="border-r border-green-100 bg-gradient-to-b from-white to-green-50/30">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
           <div className="relative group">
             <img 
               src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
               alt="AgendarBrasil Logo" 
-              className="w-14 h-14 object-cover rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-200/40" 
+              className="w-14 h-14 object-cover rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-green-200/40" 
             />
+            <div className="absolute inset-0 bg-gradient-to-tr from-green-500/15 to-blue-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-blue-600 rounded-xl opacity-15 group-hover:opacity-25 blur-sm transition-all duration-300"></div>
           </div>
           <div>
-            <h2 className="text-lg font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">
+            <h2 className="text-lg font-bold bg-gradient-to-r from-green-800 to-blue-600 bg-clip-text text-transparent">
               AgendarBrasil
             </h2>
-            <p className="text-xs text-gray-600">Portal Médico</p>
+            <p className="text-xs text-gray-600">Portal do Paciente</p>
           </div>
         </div>
       </SidebarHeader>
@@ -145,12 +126,12 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainMenuItems.map((item) => (
+              {patientMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className="hover:bg-blue-50 hover:text-blue-700 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-800 data-[active=true]:font-semibold"
+                    className="hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-800 data-[active=true]:font-semibold"
                     title={item.description}
                   >
                     <button 
@@ -180,7 +161,7 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className="hover:bg-blue-50 hover:text-blue-700 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-800"
+                    className="hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-800"
                     title={item.description}
                   >
                     <button 
@@ -198,20 +179,20 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-blue-100">
+      <SidebarFooter className="p-4 border-t border-green-100">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-8 w-8">
             <AvatarImage src={userData?.photoURL} />
-            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-green-500 text-white text-sm font-semibold">
-              Dr
+            <AvatarFallback className="bg-gradient-to-br from-green-500 to-blue-500 text-white text-sm font-semibold">
+              {userData?.displayName?.charAt(0) || 'P'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              Dr(a). {userData?.displayName || 'Médico'}
+              {userData?.displayName || 'Paciente'}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              {userData?.especialidades?.[0] || 'Especialista'}
+              Portal do Paciente
             </p>
           </div>
         </div>
@@ -229,4 +210,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-

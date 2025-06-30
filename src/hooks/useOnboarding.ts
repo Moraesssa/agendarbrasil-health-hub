@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Medico, Paciente } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
+import { getDefaultWorkingHours } from '@/utils/timeSlotUtils';
 
 export const useOnboarding = () => {
   const { user, userData, updateOnboardingStep, completeOnboarding } = useAuth();
@@ -16,30 +17,21 @@ export const useOnboarding = () => {
     try {
       setIsSubmitting(true);
       
-      // Check if medico record exists
-      const { data: existing } = await supabase
+      const { data: existing, error: fetchError } = await supabase
         .from('medicos')
-        .select('id')
+        .select('configuracoes')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      // Convert Date objects to ISO strings for JSON compatibility
-      const processVerificacao = (verificacao: any) => {
-        if (!verificacao) return {
-          crmVerificado: false,
-          documentosEnviados: false,
-          aprovado: false
-        };
-        
-        return {
-          ...verificacao,
-          dataAprovacao: verificacao.dataAprovacao 
-            ? verificacao.dataAprovacao instanceof Date 
-              ? verificacao.dataAprovacao.toISOString()
-              : verificacao.dataAprovacao
-            : undefined
-        };
-      };
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      // Garante que a configuração de horário exista, usando o padrão se necessário.
+      const existingConfig = (existing?.configuracoes as Record<string, any>) || {};
+      const newConfiguracoes = (data.configuracoes as Record<string, any>) || {};
+      
+      if (!newConfiguracoes.horarioAtendimento && !existingConfig.horarioAtendimento) {
+        newConfiguracoes.horarioAtendimento = getDefaultWorkingHours();
+      }
 
       const medicoData = {
         user_id: user.id,
@@ -50,8 +42,8 @@ export const useOnboarding = () => {
         whatsapp: data.whatsapp || null,
         endereco: data.endereco || {},
         dados_profissionais: data.dadosProfissionais || {},
-        configuracoes: data.configuracoes || {},
-        verificacao: processVerificacao(data.verificacao)
+        configuracoes: { ...existingConfig, ...newConfiguracoes },
+        verificacao: data.verificacao || existingConfig.verificacao || {}
       };
 
       let error;
@@ -68,42 +60,32 @@ export const useOnboarding = () => {
 
       if (error) {
         console.error('Erro ao salvar dados do médico:', error);
-        toast({
-          title: "Erro ao salvar dados",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast({ title: "Erro ao salvar dados", description: error.message, variant: "destructive" });
         return false;
       }
 
       return true;
     } catch (error) {
       console.error('Erro ao salvar dados do médico:', error);
-      toast({
-        title: "Erro ao salvar dados",
-        description: "Tente novamente",
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao salvar dados", description: "Tente novamente", variant: "destructive" });
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   const savePacienteData = async (data: Partial<Paciente>) => {
     if (!user) return false;
 
     try {
       setIsSubmitting(true);
       
-      // Check if paciente record exists
       const { data: existing } = await supabase
         .from('pacientes')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      // Convert Date objects to ISO strings for JSON compatibility
       const processConvenio = (convenio: any) => {
         if (!convenio) return { temConvenio: false };
         
