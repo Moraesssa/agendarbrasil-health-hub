@@ -19,7 +19,6 @@ import { logger } from "@/utils/logger";
 import locationService, { LocalAtendimento } from "@/services/locationService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// --- Constante movida para o topo ---
 const diasDaSemana = [
   { key: "segunda", label: "Segunda-feira" },
   { key: "terca", label: "Terça-feira" },
@@ -30,7 +29,6 @@ const diasDaSemana = [
   { key: "domingo", label: "Domingo" },
 ] as const;
 
-// --- Esquema de Validação Atualizado ---
 const horarioSchema = z.object({
   ativo: z.boolean(),
   inicio: z.string(),
@@ -40,7 +38,7 @@ const horarioSchema = z.object({
     if (!data.ativo) return true;
     return !!data.local_id && !!data.inicio && !!data.fim && data.inicio < data.fim;
 }, {
-  message: "Para blocos ativos, o local é obrigatório e o início deve ser antes do fim.",
+  message: "Bloco ativo precisa de local e horário de início anterior ao fim.",
   path: ["local_id"],
 });
 
@@ -55,7 +53,6 @@ const agendaSchema = z.object({
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
 
-// --- Componente Principal ---
 const GerenciarAgenda = () => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -77,25 +74,24 @@ const GerenciarAgenda = () => {
         if (!user?.id) { setLoading(false); return; }
         setLoading(true);
         try {
-            const [locaisData, medicoData] = await Promise.all([
+            const [locaisData, medicoDataResponse] = await Promise.all([
                 locationService.getLocations(),
                 supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single()
             ]);
             
             setLocais(locaisData || []);
 
-            if (medicoData.error && medicoData.error.code !== 'PGRST116') throw medicoData.error;
-            const horarioAtendimento = (medicoData.data?.configuracoes as any)?.horarioAtendimento || {};
+            const medicoConfig = (medicoDataResponse.data?.configuracoes as any) || {};
+            const horarioAtendimento = medicoConfig.horarioAtendimento || {};
             
-            const horariosCompletos = diasDaSemana.reduce((acc, dia) => {
+            const horariosParaForm = diasDaSemana.reduce((acc, dia) => {
                 acc[dia.key] = horarioAtendimento[dia.key] || [];
                 return acc;
             }, {} as Record<string, any>);
-            
-            reset({ horarios: horariosCompletos });
+
+            reset({ horarios: horariosParaForm });
         } catch (error) {
             logger.error("Erro ao carregar dados da agenda", "GerenciarAgenda", error);
-            toast({ title: "Erro ao carregar dados", variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -107,7 +103,7 @@ const GerenciarAgenda = () => {
         if (!user?.id) return;
         setIsSubmitting(true);
         try {
-            const { data: medicoData } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
+            const { data: medicoData } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle();
             const newConfiguracoes = { ...(medicoData?.configuracoes || {}), horarioAtendimento: data.horarios };
             await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
             toast({ title: "Agenda atualizada com sucesso!" });
@@ -129,10 +125,8 @@ const GerenciarAgenda = () => {
                 <SidebarInset className="flex-1">
                      <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-white/95 px-6">
                         <SidebarTrigger />
-                        <div className="flex-1">
-                          <h1 className="text-xl font-bold text-gray-800">Meus Horários</h1>
-                          {isDirty && <p className="text-sm text-amber-600 font-medium animate-pulse">• Alterações não salvas</p>}
-                        </div>
+                        <h1 className="text-xl font-bold text-gray-800">Meus Horários</h1>
+                        {isDirty && <span className="ml-4 text-amber-600 font-medium animate-pulse text-sm">• Alterações não salvas</span>}
                     </header>
                     <main className="p-6">
                         <Form {...form}>
@@ -141,12 +135,8 @@ const GerenciarAgenda = () => {
                                     <DayScheduleControl key={dia.key} dia={dia} control={control} locais={locais} />
                                 ))}
                                 <div className="flex justify-end items-center gap-4 pt-4 mt-6 border-t">
-                                   {isDirty && (
-                                    <Button type="button" variant="ghost" onClick={() => fetchInitialData()}>
-                                      <Undo2 className="w-4 h-4 mr-2" /> Desfazer
-                                    </Button>
-                                  )}
-                                    <Button type="submit" disabled={isSubmitting || !isDirty || !isValid}>
+                                   {isDirty && <Button type="button" variant="ghost" onClick={() => fetchInitialData()}><Undo2 className="w-4 h-4 mr-2" /> Desfazer</Button>}
+                                   <Button type="submit" disabled={isSubmitting || !isDirty || !isValid}>
                                         {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
                                         Salvar Alterações
                                     </Button>
@@ -173,38 +163,28 @@ const DayScheduleControl = ({ dia, control, locais }: any) => {
                         <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => remove(index)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
-                        <Controller
-                            control={control}
-                            name={`horarios.${dia.key}.${index}`}
-                            render={({ field, fieldState: { error } }) => (
-                                <>
-                                    <FormItem className="flex items-center gap-2">
-                                        <Switch checked={field.value.ativo} onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })} />
-                                        <Label>Ativo</Label>
+                        <Controller name={`horarios.${dia.key}.${index}`} control={control} render={({ field, fieldState }) => (
+                            <div className="space-y-4">
+                                <FormItem className="flex items-center gap-2">
+                                    <Switch checked={field.value.ativo} onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })} />
+                                    <Label>Atendimento neste bloco</Label>
+                                </FormItem>
+                                <div className={`grid md:grid-cols-3 gap-4 ${!field.value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <FormItem><Label>Início</Label><Input type="time" value={field.value.inicio} onChange={e => field.onChange({ ...field.value, inicio: e.target.value })} /></FormItem>
+                                    <FormItem><Label>Fim</Label><Input type="time" value={field.value.fim} onChange={e => field.onChange({ ...field.value, fim: e.target.value })} /></FormItem>
+                                    <FormItem>
+                                        <Label>Local</Label>
+                                        <Select onValueChange={val => field.onChange({ ...field.value, local_id: val })} value={field.value.local_id || ''}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     </FormItem>
-                                    <div className={`grid md:grid-cols-3 gap-4 ${!field.value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
-                                        <FormItem>
-                                            <Label>Início</Label>
-                                            <Input type="time" value={field.value.inicio} onChange={e => field.onChange({ ...field.value, inicio: e.target.value })} />
-                                        </FormItem>
-                                        <FormItem>
-                                            <Label>Fim</Label>
-                                            <Input type="time" value={field.value.fim} onChange={e => field.onChange({ ...field.value, fim: e.target.value })} />
-                                        </FormItem>
-                                        <FormItem>
-                                            <Label>Local</Label>
-                                             <Select onValueChange={val => field.onChange({ ...field.value, local_id: val })} value={field.value.local_id || undefined}>
-                                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                                <SelectContent>
-                                                    {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormItem>
-                                    </div>
-                                    {error && <FormMessage>{error.message}</FormMessage>}
-                                </>
-                            )}
-                        />
+                                </div>
+                                {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
+                            </div>
+                        )} />
                     </div>
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ ativo: !(dia.key === 'sabado' || dia.key === 'domingo'), inicio: '08:00', fim: '12:00', local_id: null })} disabled={locais.length === 0}>
