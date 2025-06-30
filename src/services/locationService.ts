@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
@@ -26,15 +27,19 @@ const locationService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuário não autenticado.");
 
-    // MODIFICADO: Agora chama a função RPC 'get_my_locations'
-    const { data, error } = await supabase.rpc('get_my_locations');
+    // Use direct query instead of RPC to avoid type issues
+    const { data, error } = await supabase
+      .from('locais_atendimento')
+      .select('*')
+      .eq('medico_id', user.id)
+      .order('nome_local');
 
     if (error) {
-      logger.error("Falha ao buscar locais via RPC", "locationService", error);
+      logger.error("Falha ao buscar locais", "locationService", error);
       throw error;
     }
-    // O retorno da RPC já está corretamente tipado se os tipos do Supabase estiverem atualizados.
-    return (data as LocalAtendimento[]) || [];
+    
+    return (data || []) as LocalAtendimento[];
   },
 
   // Adiciona um novo local de atendimento (esta função permanece a mesma).
@@ -44,7 +49,11 @@ const locationService = {
 
     const { error } = await supabase
       .from('locais_atendimento')
-      .insert({ ...locationData, medico_id: user.id });
+      .insert({ 
+        ...locationData, 
+        medico_id: user.id,
+        endereco: locationData.endereco as any // Cast to Json type
+      });
 
     if (error) {
       logger.error("Falha ao adicionar local", "locationService", error);

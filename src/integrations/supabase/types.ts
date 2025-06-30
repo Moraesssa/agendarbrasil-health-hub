@@ -724,6 +724,18 @@ export type Database = {
           status: string
         }[]
       }
+      get_my_locations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ativo: boolean
+          created_at: string
+          endereco: Json
+          id: string
+          medico_id: string
+          nome_local: string
+          telefone: string | null
+        }[]
+      }
       get_specialties: {
         Args: Record<PropertyKey, never>
         Returns: string[]

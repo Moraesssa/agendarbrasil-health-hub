@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,10 +75,16 @@ export const useAppointmentScheduling = () => {
 
   useEffect(() => {
     if (!selectedState) return;
-    setIsLoading(true);
-    supabase.rpc('get_available_cities', { state_uf: selectedState })
-      .then(({ data }) => setCities(data || []))
-      .finally(() => setIsLoading(false));
+    const loadCities = async () => {
+      setIsLoading(true);
+      try {
+        const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
+        setCities(data || []);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadCities();
   }, [selectedState]);
 
   useEffect(() => {
@@ -85,10 +92,16 @@ export const useAppointmentScheduling = () => {
         setDoctors([]); // Limpa a lista se os filtros mudarem
         return;
     };
-    setIsLoading(true);
-    appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState)
-      .then(setDoctors)
-      .finally(() => setIsLoading(false));
+    const loadDoctors = async () => {
+      setIsLoading(true);
+      try {
+        const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
+        setDoctors(doctorsData);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadDoctors();
   }, [selectedSpecialty, selectedCity, selectedState]);
   
   useEffect(() => {
@@ -96,10 +109,16 @@ export const useAppointmentScheduling = () => {
         setLocaisComHorarios([]); // Limpa se não houver médico ou data
         return;
     }
-    setIsLoading(true);
-    appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate)
-      .then(setLocaisComHorarios)
-      .finally(() => setIsLoading(false));
+    const loadSlots = async () => {
+      setIsLoading(true);
+      try {
+        const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
+        setLocaisComHorarios(slots);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSlots();
   }, [selectedDoctor, selectedDate]);
 
   const handleAgendamento = useCallback(async () => {
@@ -115,7 +134,7 @@ export const useAppointmentScheduling = () => {
         data_consulta: appointmentDateTime,
         tipo_consulta: selectedSpecialty,
         local_id: selectedLocal.id,
-        local_consulta: localTexto,
+        local_consulta_texto: localTexto,
       });
 
       toast({ title: "Consulta agendada com sucesso!" });
@@ -134,17 +153,3 @@ export const useAppointmentScheduling = () => {
     actions: { handleAgendamento, resetSelection }
   };
 };
-
-// Modificação na assinatura da função scheduleAppointment para corresponder ao serviço
-declare module '@/services/appointmentService' {
-  interface AppointmentService {
-    scheduleAppointment(appointmentData: {
-      paciente_id: string;
-      medico_id: string;
-      data_consulta: string;
-      tipo_consulta: string;
-      local_id: string;
-      local_consulta: string;
-    }): Promise<{ success: true }>;
-  }
-}

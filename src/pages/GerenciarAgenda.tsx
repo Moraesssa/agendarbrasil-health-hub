@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -85,7 +86,23 @@ const GerenciarAgenda = () => {
             setLocais(locaisData);
 
             if (medicoData.error && medicoData.error.code !== 'PGRST116') throw medicoData.error;
-            const horarioAtendimento = (medicoData.data?.configuracoes as any)?.horarioAtendimento || {};
+            
+            // Safe parsing of configurations
+            let horarioAtendimento = {};
+            if (medicoData.data?.configuracoes) {
+                try {
+                    const config = typeof medicoData.data.configuracoes === 'string' 
+                        ? JSON.parse(medicoData.data.configuracoes) 
+                        : medicoData.data.configuracoes;
+                    
+                    if (config && typeof config === 'object' && config.horarioAtendimento) {
+                        horarioAtendimento = config.horarioAtendimento;
+                    }
+                } catch (e) {
+                    logger.error("Erro ao fazer parse das configurações", "GerenciarAgenda", e);
+                }
+            }
+            
             reset({ horarios: horarioAtendimento });
         } catch (error) {
             logger.error("Erro ao carregar dados da agenda", "GerenciarAgenda", error);
@@ -104,7 +121,23 @@ const GerenciarAgenda = () => {
             const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
             if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
-            const newConfiguracoes = { ...(medicoData.configuracoes || {}), horarioAtendimento: data.horarios };
+            // Safe parsing and merging of configurations
+            let existingConfig = {};
+            if (medicoData?.configuracoes) {
+                try {
+                    existingConfig = typeof medicoData.configuracoes === 'string' 
+                        ? JSON.parse(medicoData.configuracoes) 
+                        : medicoData.configuracoes;
+                } catch (e) {
+                    logger.error("Erro ao fazer parse das configurações existentes", "GerenciarAgenda", e);
+                }
+            }
+
+            const newConfiguracoes = { 
+                ...existingConfig, 
+                horarioAtendimento: data.horarios 
+            };
+            
             await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
 
             toast({ title: "Agenda atualizada com sucesso!" });
@@ -177,25 +210,25 @@ const DayScheduleControl = ({ dia, control, locais }: any) => {
                                 <>
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
-                                            <Switch checked={value.ativo} onCheckedChange={(checked) => onChange({ ...value, ativo: checked })} />
+                                            <Switch checked={value?.ativo || false} onCheckedChange={(checked) => onChange({ ...value, ativo: checked })} />
                                             <Label>Atendimento neste bloco</Label>
                                         </div>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                             <Trash2 className="h-4 w-4 text-red-500" />
                                         </Button>
                                     </div>
-                                    <div className={`grid md:grid-cols-3 gap-4 ${!value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className={`grid md:grid-cols-3 gap-4 ${!value?.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <FormItem>
                                             <Label>Início</Label>
-                                            <Input type="time" value={value.inicio} onChange={e => onChange({...value, inicio: e.target.value})} />
+                                            <Input type="time" value={value?.inicio || ''} onChange={e => onChange({...value, inicio: e.target.value})} />
                                         </FormItem>
                                         <FormItem>
                                             <Label>Fim</Label>
-                                            <Input type="time" value={value.fim} onChange={e => onChange({...value, fim: e.target.value})} />
+                                            <Input type="time" value={value?.fim || ''} onChange={e => onChange({...value, fim: e.target.value})} />
                                         </FormItem>
                                         <FormItem>
                                             <Label>Local</Label>
-                                             <Select onValueChange={val => onChange({...value, local_id: val})} value={value.local_id || undefined}>
+                                             <Select onValueChange={val => onChange({...value, local_id: val})} value={value?.local_id || undefined}>
                                                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                                 <SelectContent>
                                                     {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}

@@ -113,21 +113,23 @@ export const appointmentService = {
     const locaisComHorarios: LocalComHorarios[] = [];
 
     for (const local of locais || []) {
-      // Filtrar blocos apenas se blocosDoDia for um array de objetos
+      // Filtrar blocos apenas se blocosDoDia for um array
       const blocosDoLocal = Array.isArray(blocosDoDia) 
-        ? blocosDoDia.filter((bloco: BlocoHorario) => bloco && typeof bloco === 'object' && bloco.local_id === local.id)
+        ? blocosDoDia.filter((bloco: any) => bloco && typeof bloco === 'object' && bloco.local_id === local.id)
         : [];
 
-      const horariosNesteLocal = generateTimeSlots({
-        duracaoConsulta: config.duracaoConsulta || 30,
-        horarioAtendimento: { [diaDaSemana]: blocosDoLocal }
-      }, new Date(date + 'T00:00:00'), existingAppointments);
+      if (blocosDoLocal.length > 0) {
+        const horariosNesteLocal = generateTimeSlots({
+          duracaoConsulta: config.duracaoConsulta || 30,
+          horarioAtendimento: { [diaDaSemana]: blocosDoLocal }
+        }, new Date(date + 'T00:00:00'), existingAppointments);
 
-      if (horariosNesteLocal.length > 0) {
-        locaisComHorarios.push({
-          ...local,
-          horarios_disponiveis: horariosNesteLocal
-        });
+        if (horariosNesteLocal.length > 0) {
+          locaisComHorarios.push({
+            ...local,
+            horarios_disponiveis: horariosNesteLocal
+          });
+        }
       }
     }
     
