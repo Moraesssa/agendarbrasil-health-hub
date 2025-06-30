@@ -19,6 +19,7 @@ import { logger } from "@/utils/logger";
 import locationService, { LocalAtendimento } from "@/services/locationService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// --- Constante movida para o topo ---
 const diasDaSemana = [
   { key: "segunda", label: "Segunda-feira" },
   { key: "terca", label: "Terça-feira" },
@@ -29,6 +30,7 @@ const diasDaSemana = [
   { key: "domingo", label: "Domingo" },
 ] as const;
 
+// --- Esquema de Validação Simplificado e Corrigido ---
 const horarioSchema = z.object({
   ativo: z.boolean(),
   inicio: z.string(),
@@ -53,6 +55,7 @@ const agendaSchema = z.object({
 
 type AgendaFormData = z.infer<typeof agendaSchema>;
 
+// --- Componente Principal ---
 const GerenciarAgenda = () => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -76,7 +79,7 @@ const GerenciarAgenda = () => {
         try {
             const [locaisData, medicoDataResponse] = await Promise.all([
                 locationService.getLocations(),
-                supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single()
+                supabase.from('medicos').select('configuracoes').eq('user_id', user.id).maybeSingle()
             ]);
             
             setLocais(locaisData || []);
@@ -84,18 +87,18 @@ const GerenciarAgenda = () => {
             const medicoConfig = (medicoDataResponse.data?.configuracoes as any) || {};
             const horarioAtendimento = medicoConfig.horarioAtendimento || {};
             
-            const horariosParaForm = diasDaSemana.reduce((acc, dia) => {
+            const horariosCompletos = diasDaSemana.reduce((acc, dia) => {
                 acc[dia.key] = horarioAtendimento[dia.key] || [];
                 return acc;
             }, {} as Record<string, any>);
-
-            reset({ horarios: horariosParaForm });
+            
+            reset({ horarios: horariosCompletos });
         } catch (error) {
             logger.error("Erro ao carregar dados da agenda", "GerenciarAgenda", error);
         } finally {
             setLoading(false);
         }
-    }, [user?.id, reset, toast]);
+    }, [user?.id, reset]);
 
     useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
 
@@ -159,15 +162,15 @@ const DayScheduleControl = ({ dia, control, locais }: any) => {
             <CardContent className="space-y-4">
                 {fields.length === 0 && <p className="text-sm text-gray-500">Nenhum bloco de horário para este dia.</p>}
                 {fields.map((item, index) => (
-                    <div key={item.id} className="p-4 border rounded-lg space-y-4 bg-slate-50 relative">
+                    <div key={item.id} className="p-4 border rounded-lg space-y-3 bg-slate-50 relative">
                         <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => remove(index)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                         <Controller name={`horarios.${dia.key}.${index}`} control={control} render={({ field, fieldState }) => (
                             <div className="space-y-4">
-                                <FormItem className="flex items-center gap-2">
+                                <FormItem className="flex items-center gap-2 pt-2">
                                     <Switch checked={field.value.ativo} onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })} />
-                                    <Label>Atendimento neste bloco</Label>
+                                    <Label>Ativo</Label>
                                 </FormItem>
                                 <div className={`grid md:grid-cols-3 gap-4 ${!field.value.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <FormItem><Label>Início</Label><Input type="time" value={field.value.inicio} onChange={e => field.onChange({ ...field.value, inicio: e.target.value })} /></FormItem>
