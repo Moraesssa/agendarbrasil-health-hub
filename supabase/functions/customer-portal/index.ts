@@ -58,9 +58,19 @@ serve(async (req) => {
 
     console.log("Usuário autenticado:", user.id, "Email:", user.email);
 
-    // Obter dados da requisição
-    const { returnUrl } = await req.json();
-    console.log("URL de retorno:", returnUrl);
+    // Obter dados da requisição de forma segura
+    let returnUrl;
+    try {
+      const requestBody = await req.json();
+      returnUrl = requestBody?.returnUrl;
+    } catch (jsonError) {
+      console.log("Nenhum JSON no body da requisição, usando URL padrão");
+      returnUrl = null;
+    }
+    
+    const defaultReturnUrl = `${new URL(req.url).origin}/financeiro`;
+    const finalReturnUrl = returnUrl || defaultReturnUrl;
+    console.log("URL de retorno:", finalReturnUrl);
 
     // Buscar customer no Stripe
     console.log("Buscando customer no Stripe para email:", user.email);
@@ -74,10 +84,18 @@ serve(async (req) => {
     if (customers.data.length === 0) {
       console.log("Customer não encontrado, criando novo customer no Stripe");
       
+      // Obter nome do usuário de forma segura
+      const userName = user.user_metadata?.full_name || 
+                     user.user_metadata?.display_name || 
+                     user.user_metadata?.name ||
+                     user.email.split('@')[0];
+      
+      console.log("Nome do usuário para customer:", userName);
+      
       // Criar novo customer no Stripe
       const newCustomer = await stripe.customers.create({
         email: user.email,
-        name: user.user_metadata?.full_name || user.user_metadata?.display_name || user.email.split('@')[0],
+        name: userName,
         metadata: {
           supabase_user_id: user.id,
         },
@@ -94,7 +112,7 @@ serve(async (req) => {
     console.log("Criando sessão do portal para customer:", customerId);
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: returnUrl || `${new URL(req.url).origin}/financeiro`,
+      return_url: finalReturnUrl,
     });
 
     console.log("Sessão do portal criada com sucesso:", session.id);
