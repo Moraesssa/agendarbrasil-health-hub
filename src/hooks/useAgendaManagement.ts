@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,26 +30,57 @@ export const useAgendaManagement = () => {
 
     // Function to check if there are any valid blocks
     const hasValidBlocks = useCallback(() => {
-        if (!watchedValues || typeof watchedValues !== 'object') return false;
+        console.log("🔍 hasValidBlocks - watchedValues:", watchedValues);
+        
+        if (!watchedValues || typeof watchedValues !== 'object') {
+            console.log("❌ hasValidBlocks - watchedValues is invalid");
+            return false;
+        }
+        
+        let validBlocksFound = 0;
         
         for (const dia of diasDaSemana) {
             const blocosDoDia = watchedValues[dia.key];
+            console.log(`🔍 Verificando ${dia.label} (${dia.key}):`, blocosDoDia);
+            
             if (Array.isArray(blocosDoDia)) {
-                const hasValidBlock = blocosDoDia.some((bloco: any) => {
-                    return bloco?.ativo === true && 
-                           bloco?.inicio && 
-                           bloco?.fim && 
-                           bloco?.local_id && 
-                           bloco.inicio < bloco.fim;
+                const validBlocks = blocosDoDia.filter((bloco: any) => {
+                    const isActive = bloco?.ativo === true;
+                    const hasLocalId = bloco?.local_id && bloco.local_id !== null && bloco.local_id !== '';
+                    const hasInicio = bloco?.inicio && bloco.inicio !== '';
+                    const hasFim = bloco?.fim && bloco.fim !== '';
+                    const validTime = hasInicio && hasFim && bloco.inicio < bloco.fim;
+                    
+                    const isValid = isActive && hasLocalId && validTime;
+                    
+                    console.log(`   📦 Bloco:`, {
+                        ativo: isActive,
+                        local_id: bloco?.local_id,
+                        inicio: bloco?.inicio,
+                        fim: bloco?.fim,
+                        hasLocalId,
+                        hasInicio,
+                        hasFim,
+                        validTime,
+                        isValid
+                    });
+                    
+                    return isValid;
                 });
-                if (hasValidBlock) return true;
+                
+                validBlocksFound += validBlocks.length;
+                console.log(`   ✅ ${dia.label}: ${validBlocks.length} blocos válidos`);
             }
         }
-        return false;
+        
+        const result = validBlocksFound > 0;
+        console.log(`🎯 hasValidBlocks resultado: ${result} (${validBlocksFound} blocos válidos encontrados)`);
+        return result;
     }, [watchedValues]);
 
     // Remove dependency on isValid - only check if there are valid blocks
     const canSave = hasValidBlocks();
+    console.log("🚀 canSave:", canSave);
 
     const fetchInitialData = useCallback(async () => {
         if (!user?.id) { setLoading(false); return; }
@@ -91,7 +121,12 @@ export const useAgendaManagement = () => {
     }, [user?.id, reset, toast]);
 
     const onSubmit = async (data: AgendaFormData) => {
-        if (!user?.id) return;
+        console.log("🔥 onSubmit called with data:", data);
+        
+        if (!user?.id) {
+            console.log("❌ No user ID");
+            return;
+        }
         
         // Custom validation for active blocks only
         let hasValidActiveBlocks = false;
@@ -101,6 +136,7 @@ export const useAgendaManagement = () => {
                 for (const bloco of blocosDoDia) {
                     if (bloco.ativo) {
                         if (!bloco.local_id || !bloco.inicio || !bloco.fim || bloco.inicio >= bloco.fim) {
+                            console.log("❌ Bloco inválido encontrado:", bloco);
                             toast({ 
                                 title: "Erro de validação", 
                                 description: `Bloco ativo em ${dia.label} possui dados inválidos.`,
@@ -115,6 +151,7 @@ export const useAgendaManagement = () => {
         }
 
         if (!hasValidActiveBlocks) {
+            console.log("❌ Nenhum bloco ativo válido encontrado");
             toast({ 
                 title: "Erro de validação", 
                 description: "É necessário ter pelo menos um bloco ativo e válido para salvar.",
@@ -123,6 +160,7 @@ export const useAgendaManagement = () => {
             return;
         }
 
+        console.log("✅ Validação passou, iniciando save...");
         setIsSubmitting(true);
         try {
             const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
@@ -147,9 +185,11 @@ export const useAgendaManagement = () => {
             
             await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
 
+            console.log("✅ Dados salvos com sucesso!");
             toast({ title: "Agenda atualizada com sucesso!" });
             reset(data);
         } catch (error) {
+            console.log("❌ Erro ao salvar:", error);
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
             toast({ title: "Erro ao salvar agenda", variant: "destructive" });
         } finally {
