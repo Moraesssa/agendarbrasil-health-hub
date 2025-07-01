@@ -26,6 +26,8 @@ export const usePayment = () => {
 
     setProcessing(true);
     try {
+      console.log("Iniciando processamento de pagamento:", paymentData);
+      
       // Chamar a Edge Function do Stripe para criar checkout
       const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
         body: {
@@ -40,10 +42,12 @@ export const usePayment = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error("Erro na Edge Function:", error);
+        throw new Error(error.message || "Erro ao criar sessão de pagamento");
       }
 
       if (data?.url) {
+        console.log("URL de checkout recebida:", data.url);
         // Redirecionar para o Stripe Checkout
         window.location.href = data.url;
         return { success: true };
@@ -74,6 +78,8 @@ export const usePayment = () => {
     }
 
     try {
+      console.log("Criando sessão do portal do cliente");
+      
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         body: {
           returnUrl: `${window.location.origin}/financeiro`
@@ -81,10 +87,12 @@ export const usePayment = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error("Erro na Edge Function:", error);
+        throw new Error(error.message || "Erro ao criar portal do cliente");
       }
 
       if (data?.url) {
+        console.log("URL do portal recebida:", data.url);
         window.open(data.url, '_blank');
         return { success: true };
       } else {
