@@ -5,7 +5,7 @@ project_id = "ulebotjrsgheybhpdnxd"
 verify_jwt = true
 
 [functions.customer-portal]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false

@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
+import Stripe from "https://esm.sh/stripe@15.12.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -58,19 +58,19 @@ serve(async (req) => {
 
     console.log("Usuário autenticado:", user.id, "Email:", user.email);
 
-    // Obter dados da requisição de forma segura
-    let returnUrl;
+    // Obter URL de retorno de forma segura
+    let returnUrl = "https://ulebotjrsgheybhpdnxd.supabase.co/financeiro";
+    
     try {
       const requestBody = await req.json();
-      returnUrl = requestBody?.returnUrl;
+      if (requestBody?.returnUrl) {
+        returnUrl = requestBody.returnUrl;
+      }
     } catch (jsonError) {
-      console.log("Nenhum JSON no body da requisição, usando URL padrão");
-      returnUrl = null;
+      console.log("Usando URL de retorno padrão");
     }
     
-    const defaultReturnUrl = `${new URL(req.url).origin}/financeiro`;
-    const finalReturnUrl = returnUrl || defaultReturnUrl;
-    console.log("URL de retorno:", finalReturnUrl);
+    console.log("URL de retorno:", returnUrl);
 
     // Buscar customer no Stripe
     console.log("Buscando customer no Stripe para email:", user.email);
@@ -112,7 +112,7 @@ serve(async (req) => {
     console.log("Criando sessão do portal para customer:", customerId);
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: finalReturnUrl,
+      return_url: returnUrl,
     });
 
     console.log("Sessão do portal criada com sucesso:", session.id);
