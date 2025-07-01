@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from "react";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -73,6 +72,31 @@ const GerenciarAgenda = () => {
     });
 
     const { reset, handleSubmit, control, formState: { isDirty, isValid } } = form;
+    
+    // Watch all form values to check for valid blocks
+    const watchedValues = useWatch({ control, name: "horarios" });
+
+    // Function to check if there are any valid blocks
+    const hasValidBlocks = useCallback(() => {
+        if (!watchedValues || typeof watchedValues !== 'object') return false;
+        
+        for (const dia of diasDaSemana) {
+            const blocosDoDia = watchedValues[dia.key];
+            if (Array.isArray(blocosDoDia)) {
+                const hasValidBlock = blocosDoDia.some((bloco: any) => {
+                    return bloco?.ativo === true && 
+                           bloco?.inicio && 
+                           bloco?.fim && 
+                           bloco?.local_id && 
+                           bloco.inicio < bloco.fim;
+                });
+                if (hasValidBlock) return true;
+            }
+        }
+        return false;
+    }, [watchedValues]);
+
+    const canSave = hasValidBlocks() && isValid;
 
     const fetchInitialData = useCallback(async () => {
         if (!user?.id) { setLoading(false); return; }
@@ -163,7 +187,8 @@ const GerenciarAgenda = () => {
                           <h1 className="text-2xl font-bold text-gray-800">Meus Horários</h1>
                           <p className="text-sm text-gray-600">
                               Defina sua disponibilidade e locais para cada dia da semana.
-                              {isDirty && <span className="ml-2 text-amber-600 font-medium animate-pulse">• Alterações não salvas</span>}
+                              {!canSave && <span className="ml-2 text-amber-600 font-medium">• Configure pelo menos um bloco válido para salvar</span>}
+                              {isDirty && canSave && <span className="ml-2 text-green-600 font-medium animate-pulse">• Pronto para salvar</span>}
                           </p>
                         </div>
                     </header>
@@ -179,7 +204,7 @@ const GerenciarAgenda = () => {
                                       <Undo2 className="w-4 h-4 mr-2" /> Desfazer
                                     </Button>
                                   )}
-                                    <Button type="submit" disabled={isSubmitting || !isDirty || !isValid}>
+                                    <Button type="submit" disabled={isSubmitting || !canSave}>
                                         {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
                                         Salvar Alterações
                                     </Button>
@@ -193,6 +218,7 @@ const GerenciarAgenda = () => {
     );
 };
 
+// --- Componente Secundário ---
 const DayScheduleControl = ({ dia, control, locais }: any) => {
     const { fields, append, remove } = useFieldArray({ control, name: `horarios.${dia.key}` });
 
