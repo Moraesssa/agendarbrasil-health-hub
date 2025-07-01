@@ -102,7 +102,7 @@ export const appointmentService = {
     const locaisComHorarios: LocalComHorarios[] = [];
 
     for (const local of locais || []) {
-      // Corrigir a filtragem dos blocos - verificar se blocosDoDia é array e se os blocos têm local_id
+      // Verificar se blocosDoDia é array e filtrar blocos para este local
       const blocosDoLocal = Array.isArray(blocosDoDia) 
         ? blocosDoDia.filter((bloco: any) => 
             bloco && 
