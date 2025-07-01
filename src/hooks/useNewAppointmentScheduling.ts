@@ -53,73 +53,162 @@ export const useNewAppointmentScheduling = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    console.log("🚀 useNewAppointmentScheduling: Iniciando carregamento de dados iniciais");
+    console.log("🔐 User:", user ? "autenticado" : "não autenticado");
+    
+    if (!user) {
+      console.log("❌ Usuário não autenticado, abortando carregamento");
+      return;
+    }
+    
     const loadInitialData = async () => {
+      console.log("📊 Carregando especialidades e estados...");
       setIsLoading(true);
       try {
-        const [specialtiesData, statesData] = await Promise.all([
-          newAppointmentService.getSpecialties(),
-          supabase.rpc('get_available_states').then(res => res.data || [])
-        ]);
+        console.log("🔍 Chamando newAppointmentService.getSpecialties()...");
+        const specialtiesData = await newAppointmentService.getSpecialties();
+        console.log("✅ Especialidades carregadas:", specialtiesData.length, specialtiesData);
+        
+        console.log("🔍 Chamando supabase.rpc('get_available_states')...");
+        const statesResponse = await supabase.rpc('get_available_states');
+        console.log("📍 Estados response:", statesResponse);
+        const statesData = statesResponse.data || [];
+        console.log("✅ Estados carregados:", statesData.length, statesData);
+        
         setSpecialties(specialtiesData);
         setStates(statesData as StateInfo[]);
+        
+        console.log("🎉 Dados iniciais carregados com sucesso!");
       } catch (e) {
+        console.error("❌ Erro ao carregar dados iniciais:", e);
         logger.error("Erro ao carregar dados iniciais", "useNewAppointmentScheduling", e);
-        toast({ title: "Erro ao carregar dados iniciais", variant: "destructive" });
+        toast({ 
+          title: "Erro ao carregar dados iniciais", 
+          description: e instanceof Error ? e.message : "Erro desconhecido",
+          variant: "destructive" 
+        });
       } finally {
         setIsLoading(false);
+        console.log("🏁 Carregamento inicial finalizado");
       }
     };
     loadInitialData();
   }, [toast, user]);
 
   useEffect(() => {
-    if (!selectedState) return;
+    console.log("🌍 Estado selecionado mudou:", selectedState);
+    if (!selectedState) {
+      console.log("❌ Nenhum estado selecionado, limpando cidades");
+      setCities([]);
+      return;
+    }
+    
     const loadCities = async () => {
+      console.log("🏙️ Carregando cidades para estado:", selectedState);
       setIsLoading(true);
       try {
-        const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
+        const { data, error } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
+        if (error) {
+          console.error("❌ Erro ao buscar cidades:", error);
+          throw error;
+        }
+        console.log("✅ Cidades carregadas:", data?.length || 0, data);
         setCities(data || []);
+      } catch (e) {
+        console.error("❌ Erro ao carregar cidades:", e);
+        toast({
+          title: "Erro ao carregar cidades",
+          description: e instanceof Error ? e.message : "Erro desconhecido",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     loadCities();
-  }, [selectedState]);
+  }, [selectedState, toast]);
 
   useEffect(() => {
+    console.log("👨‍⚕️ Parâmetros para busca de médicos:", { selectedSpecialty, selectedCity, selectedState });
+    
     if (!selectedSpecialty || !selectedCity || !selectedState) {
-        setDoctors([]);
-        return;
-    };
+      console.log("❌ Parâmetros incompletos para busca de médicos");
+      setDoctors([]);
+      return;
+    }
+    
     const loadDoctors = async () => {
+      console.log("🔍 Buscando médicos...");
       setIsLoading(true);
       try {
-        const doctorsData = await newAppointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
+        const doctorsData = await newAppointmentService.getDoctorsByLocationAndSpecialty(
+          selectedSpecialty, 
+          selectedCity, 
+          selectedState
+        );
+        console.log("✅ Médicos encontrados:", doctorsData.length, doctorsData);
         setDoctors(doctorsData);
+        
+        if (doctorsData.length === 0) {
+          console.log("⚠️ Nenhum médico encontrado para os critérios selecionados");
+          toast({
+            title: "Nenhum médico encontrado",
+            description: `Não há médicos de ${selectedSpecialty} em ${selectedCity}/${selectedState}`,
+            variant: "default"
+          });
+        }
+      } catch (e) {
+        console.error("❌ Erro ao carregar médicos:", e);
+        toast({
+          title: "Erro ao carregar médicos",
+          description: e instanceof Error ? e.message : "Erro desconhecido",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     loadDoctors();
-  }, [selectedSpecialty, selectedCity, selectedState]);
+  }, [selectedSpecialty, selectedCity, selectedState, toast]);
   
   useEffect(() => {
+    console.log("🗓️ Parâmetros para busca de slots:", { selectedDoctor, selectedDate });
+    
     if (!selectedDoctor || !selectedDate) {
-        setLocaisComHorarios([]);
-        return;
+      console.log("❌ Parâmetros incompletos para busca de horários");
+      setLocaisComHorarios([]);
+      return;
     }
+    
     const loadSlots = async () => {
+      console.log("⏰ Buscando horários disponíveis...");
       setIsLoading(true);
       try {
         const slots = await newAppointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
+        console.log("✅ Slots encontrados:", slots.length, slots);
         setLocaisComHorarios(slots);
+        
+        if (slots.length === 0) {
+          console.log("⚠️ Nenhum horário disponível encontrado");
+          toast({
+            title: "Nenhum horário disponível",
+            description: `Não há horários disponíveis para a data ${selectedDate}`,
+            variant: "default"
+          });
+        }
+      } catch (e) {
+        console.error("❌ Erro ao carregar horários:", e);
+        toast({
+          title: "Erro ao carregar horários",
+          description: e instanceof Error ? e.message : "Erro desconhecido",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     loadSlots();
-  }, [selectedDoctor, selectedDate]);
+  }, [selectedDoctor, selectedDate, toast]);
 
   const handleAgendamento = useCallback(async () => {
     if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedLocal) return;

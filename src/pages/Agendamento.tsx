@@ -1,7 +1,8 @@
 
-import { ArrowLeft, Loader2, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useNewAppointmentScheduling } from "@/hooks/useNewAppointmentScheduling";
@@ -33,6 +34,17 @@ const Agendamento = () => {
             <h1 className="text-4xl font-bold text-center text-gray-800">Agendar Consulta</h1>
             <p className="text-lg text-gray-600 text-center mt-2">Encontre o profissional ideal para você em poucos passos.</p>
         </div>
+
+        {/* Debug Info - Mostrar apenas em desenvolvimento */}
+        {process.env.NODE_ENV === 'development' && (
+          <Alert className="mb-6 bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Debug Info:</strong> Especialidades: {models.specialties.length}, Estados: {models.states.length}, 
+              Cidades: {models.cities.length}, Médicos: {models.doctors.length}, Loading: {state.isLoading ? 'Sim' : 'Não'}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
@@ -67,6 +79,16 @@ const Agendamento = () => {
                           disabled={!models.selectedState} 
                       />
                   </div>
+
+                  {/* Mostrar erro se não há dados carregados */}
+                  {!state.isLoading && models.specialties.length === 0 && (
+                    <Alert className="bg-yellow-50 border-yellow-200">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Não foi possível carregar as especialidades. Verifique sua conexão e tente recarregar a página.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   {/* --- ETAPA 2: MÉDICO E DATA --- */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
@@ -105,6 +127,7 @@ const Agendamento = () => {
                           ))}
                       </div>
                   )}
+                  
                   {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && (
                     <div className="text-center text-gray-500 pt-4 border-t">
                       <p>Nenhum horário disponível para este médico na data selecionada.</p>
