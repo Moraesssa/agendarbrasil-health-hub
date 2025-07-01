@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { Json } from '@/integrations/supabase/types';
 
 export interface PaymentData {
   consulta_id: string;
@@ -10,7 +11,7 @@ export interface PaymentData {
   metodo_pagamento: 'credit_card' | 'pix' | 'convenio' | 'manual';
   gateway_id?: string;
   status: 'succeeded' | 'pending' | 'failed';
-  dados_gateway?: object;
+  dados_gateway?: Json;
 }
 
 export interface FinancialSummary {
