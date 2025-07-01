@@ -24,7 +24,7 @@ export const useAgendaManagement = () => {
         }
     });
 
-    const { reset, handleSubmit, control, formState: { isDirty, isValid } } = form;
+    const { reset, handleSubmit, control, formState: { isDirty } } = form;
     
     // Watch all form values to check for valid blocks
     const watchedValues = useWatch({ control, name: "horarios" });
@@ -49,7 +49,8 @@ export const useAgendaManagement = () => {
         return false;
     }, [watchedValues]);
 
-    const canSave = hasValidBlocks() && isValid;
+    // Remove dependency on isValid - only check if there are valid blocks
+    const canSave = hasValidBlocks();
 
     const fetchInitialData = useCallback(async () => {
         if (!user?.id) { setLoading(false); return; }
@@ -91,6 +92,37 @@ export const useAgendaManagement = () => {
 
     const onSubmit = async (data: AgendaFormData) => {
         if (!user?.id) return;
+        
+        // Custom validation for active blocks only
+        let hasValidActiveBlocks = false;
+        for (const dia of diasDaSemana) {
+            const blocosDoDia = data.horarios[dia.key];
+            if (Array.isArray(blocosDoDia)) {
+                for (const bloco of blocosDoDia) {
+                    if (bloco.ativo) {
+                        if (!bloco.local_id || !bloco.inicio || !bloco.fim || bloco.inicio >= bloco.fim) {
+                            toast({ 
+                                title: "Erro de validação", 
+                                description: `Bloco ativo em ${dia.label} possui dados inválidos.`,
+                                variant: "destructive" 
+                            });
+                            return;
+                        }
+                        hasValidActiveBlocks = true;
+                    }
+                }
+            }
+        }
+
+        if (!hasValidActiveBlocks) {
+            toast({ 
+                title: "Erro de validação", 
+                description: "É necessário ter pelo menos um bloco ativo e válido para salvar.",
+                variant: "destructive" 
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
