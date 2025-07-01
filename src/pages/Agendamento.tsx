@@ -187,6 +187,7 @@ const Agendamento = () => {
               id: 'temp-id',
               valor: 150, // Valor fixo por enquanto
               medicoNome: selectedDoctorInfo.display_name || 'Médico',
+              medicoId: selectedDoctorInfo.id, // Added missing medicoId property
               dataConsulta: `${models.selectedDate}T${models.selectedTime}:00`,
               especialidade: models.selectedSpecialty
             }}
