@@ -1,6 +1,6 @@
 import { ArrowLeft, Loader2, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
@@ -18,37 +18,70 @@ const Agendamento = () => {
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
-  const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedDate && models.selectedTime && models.selectedLocal;
+  const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedDate && models.selectedLocal;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
-            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6"><ArrowLeft className="h-4 w-4 mr-2" />Voltar</Button>
-            <h1 className="text-4xl font-bold text-center">Agendar Consulta</h1>
-            <p className="text-lg text-gray-600 text-center">Encontre o profissional ideal para você.</p>
+            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6 flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+            </Button>
+            <h1 className="text-4xl font-bold text-center text-gray-800">Agendar Consulta</h1>
+            <p className="text-lg text-gray-600 text-center mt-2">Encontre o profissional ideal para você em poucos passos.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Coluna Principal de Agendamento */}
           <div className="lg:col-span-2">
-            <Card className="shadow-xl">
-              <CardHeader><CardTitle>Filtros e Agendamento</CardTitle></CardHeader>
+            <Card className="shadow-xl border-0">
+              <CardHeader>
+                  <CardTitle>Filtros de Agendamento</CardTitle>
+                  <CardDescription>Siga os passos para encontrar um horário disponível.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-8">
-                  {/* Etapa 1: Especialidade e Localização */}
-                  <div className="grid md:grid-cols-3 gap-4">
-                      <SpecialtySelect specialties={models.specialties} selectedSpecialty={models.selectedSpecialty} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('doctor'); }} />
-                      <StateSelect states={models.states} selectedState={models.selectedState} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} />
-                      <CitySelect cities={models.cities} selectedCity={models.selectedCity} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedCity(v); actions.resetSelection('doctor'); }} disabled={!models.selectedState} />
+                  {/* --- ETAPA 1: ESPECIALIDADE E LOCALIZAÇÃO --- */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <SpecialtySelect 
+                          specialties={models.specialties} 
+                          selectedSpecialty={models.selectedSpecialty} 
+                          isLoading={state.isLoading} 
+                          onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('doctor'); }} 
+                      />
+                      <StateSelect 
+                          states={models.states} 
+                          selectedState={models.selectedState} 
+                          isLoading={state.isLoading} 
+                          onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} 
+                      />
+                      <CitySelect 
+                          cities={models.cities} 
+                          selectedCity={models.selectedCity} 
+                          isLoading={state.isLoading} 
+                          onChange={(v) => { setters.setSelectedCity(v); actions.resetSelection('doctor'); }} 
+                          disabled={!models.selectedState} 
+                      />
                   </div>
 
-                  {/* Etapa 2: Médico e Data */}
-                  <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                      <DoctorSelect doctors={models.doctors} selectedDoctor={models.selectedDoctor} isLoading={state.isLoading} onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} disabled={!models.selectedCity || !models.selectedSpecialty} />
-                      <DateSelect selectedDate={models.selectedDate} onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} disabled={!models.selectedDoctor} />
+                  {/* --- ETAPA 2: MÉDICO E DATA --- */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                      <DoctorSelect 
+                          doctors={models.doctors} 
+                          selectedDoctor={models.selectedDoctor} 
+                          isLoading={state.isLoading} 
+                          onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} 
+                          disabled={!models.selectedCity || !models.selectedSpecialty} 
+                      />
+                      <DateSelect 
+                          selectedDate={models.selectedDate} 
+                          onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} 
+                          disabled={!models.selectedDoctor} 
+                      />
                   </div>
 
-                  {/* Etapa 3: Locais e Horários */}
+                  {/* --- ETAPA 3: LOCAIS E HORÁRIOS --- */}
                   {models.selectedDate && models.locaisComHorarios.length > 0 && (
                       <div className="pt-4 border-t space-y-6">
                           <h2 className="font-semibold text-lg">Selecione um Local e Horário:</h2>
@@ -71,10 +104,10 @@ const Agendamento = () => {
                   )}
                   {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && <p className="text-center text-gray-500 pt-4 border-t">Nenhum horário disponível para este médico na data selecionada.</p>}
                   
-                   {/* Botão Final */}
+                   {/* --- BOTÃO DE CONFIRMAÇÃO --- */}
                   {isFormComplete && (
                     <div className="pt-6 border-t">
-                      <Button onClick={actions.handleAgendamento} className="w-full text-lg py-6" disabled={state.isSubmitting}>
+                      <Button onClick={actions.handleAgendamento} className="w-full text-lg py-6 bg-blue-600 hover:bg-blue-700" disabled={state.isSubmitting}>
                         {state.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Calendar className="mr-2 h-5 w-5" />}
                         Confirmar Agendamento
                       </Button>
@@ -83,6 +116,8 @@ const Agendamento = () => {
               </CardContent>
             </Card>
           </div>
+          
+          {/* Coluna de Resumo */}
           <div className="lg:col-span-1 sticky top-24">
             <AppointmentSummary 
               selectedSpecialty={models.selectedSpecialty}
@@ -96,7 +131,9 @@ const Agendamento = () => {
           </div>
         </div>
       </main>
-    </div>
+    </SidebarInset>
+  </div>
+    </SidebarProvider>
   );
 };
 
