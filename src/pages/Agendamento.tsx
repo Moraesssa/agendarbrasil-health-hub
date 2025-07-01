@@ -18,7 +18,7 @@ const Agendamento = () => {
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
-  const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedDate && models.selectedLocal;
+  const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedTime && models.selectedLocal;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -34,6 +34,7 @@ const Agendamento = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          
           {/* Coluna Principal de Agendamento */}
           <div className="lg:col-span-2">
             <Card className="shadow-xl border-0">
@@ -48,13 +49,14 @@ const Agendamento = () => {
                           specialties={models.specialties} 
                           selectedSpecialty={models.selectedSpecialty} 
                           isLoading={state.isLoading} 
-                          onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('doctor'); }} 
+                          onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('state'); }} 
                       />
                       <StateSelect 
                           states={models.states} 
                           selectedState={models.selectedState} 
                           isLoading={state.isLoading} 
                           onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} 
+                          disabled={!models.selectedSpecialty}
                       />
                       <CitySelect 
                           cities={models.cities} 
@@ -72,7 +74,7 @@ const Agendamento = () => {
                           selectedDoctor={models.selectedDoctor} 
                           isLoading={state.isLoading} 
                           onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} 
-                          disabled={!models.selectedCity || !models.selectedSpecialty} 
+                          disabled={!models.selectedCity} 
                       />
                       <DateSelect 
                           selectedDate={models.selectedDate} 
@@ -102,7 +104,11 @@ const Agendamento = () => {
                           ))}
                       </div>
                   )}
-                  {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && <p className="text-center text-gray-500 pt-4 border-t">Nenhum horário disponível para este médico na data selecionada.</p>}
+                  {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && (
+                    <div className="text-center text-gray-500 pt-4 border-t">
+                      <p>Nenhum horário disponível para este médico na data selecionada.</p>
+                    </div>
+                  )}
                   
                    {/* --- BOTÃO DE CONFIRMAÇÃO --- */}
                   {isFormComplete && (
@@ -131,9 +137,7 @@ const Agendamento = () => {
           </div>
         </div>
       </main>
-    </SidebarInset>
-  </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
