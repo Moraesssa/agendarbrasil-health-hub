@@ -32,6 +32,7 @@ serve(async (req) => {
     // Verificar se o usuário está autenticado
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("Token de autorização não fornecido");
       throw new Error("Token de autorização não fornecido");
     }
 
@@ -50,31 +51,53 @@ serve(async (req) => {
       throw new Error("Usuário não autenticado");
     }
 
-    console.log("Usuário autenticado:", user.id);
+    if (!user.email) {
+      console.error("Email do usuário não encontrado");
+      throw new Error("Email do usuário não encontrado");
+    }
+
+    console.log("Usuário autenticado:", user.id, "Email:", user.email);
 
     // Obter dados da requisição
     const { returnUrl } = await req.json();
+    console.log("URL de retorno:", returnUrl);
 
     // Buscar customer no Stripe
+    console.log("Buscando customer no Stripe para email:", user.email);
     const customers = await stripe.customers.list({
       email: user.email,
       limit: 1,
     });
 
+    let customerId;
+    
     if (customers.data.length === 0) {
-      throw new Error("Customer não encontrado no Stripe");
+      console.log("Customer não encontrado, criando novo customer no Stripe");
+      
+      // Criar novo customer no Stripe
+      const newCustomer = await stripe.customers.create({
+        email: user.email,
+        name: user.user_metadata?.full_name || user.user_metadata?.display_name || user.email.split('@')[0],
+        metadata: {
+          supabase_user_id: user.id,
+        },
+      });
+      
+      customerId = newCustomer.id;
+      console.log("Novo customer criado:", customerId);
+    } else {
+      customerId = customers.data[0].id;
+      console.log("Customer existente encontrado:", customerId);
     }
 
-    const customerId = customers.data[0].id;
-    console.log("Customer encontrado:", customerId);
-
     // Criar sessão do portal do cliente
+    console.log("Criando sessão do portal para customer:", customerId);
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: returnUrl,
+      return_url: returnUrl || `${new URL(req.url).origin}/financeiro`,
     });
 
-    console.log("Sessão do portal criada:", session.id);
+    console.log("Sessão do portal criada com sucesso:", session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
@@ -86,10 +109,18 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Erro na criação do portal do cliente:", error);
+    
+    // Log detalhado do erro
+    if (error instanceof Error) {
+      console.error("Nome do erro:", error.name);
+      console.error("Mensagem do erro:", error.message);
+      console.error("Stack trace:", error.stack);
+    }
+
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Erro interno do servidor",
-        details: error.toString()
+        error: error instanceof Error ? error.message : "Erro interno do servidor",
+        details: error instanceof Error ? error.toString() : "Erro desconhecido"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

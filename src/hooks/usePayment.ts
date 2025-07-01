@@ -88,7 +88,18 @@ export const usePayment = () => {
 
       if (error) {
         console.error("Erro na Edge Function:", error);
-        throw new Error(error.message || "Erro ao criar portal do cliente");
+        
+        // Mensagens de erro mais específicas
+        let errorMessage = "Erro ao criar portal do cliente";
+        if (error.message?.includes("não configurado")) {
+          errorMessage = "Sistema de pagamento não configurado. Entre em contato com o suporte.";
+        } else if (error.message?.includes("não autenticado")) {
+          errorMessage = "Sessão expirada. Faça login novamente.";
+        } else if (error.message?.includes("não encontrado")) {
+          errorMessage = "Dados do cliente não encontrados. Tente fazer uma compra primeiro.";
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (data?.url) {
