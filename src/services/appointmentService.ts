@@ -38,6 +38,27 @@ const checkAuthentication = async () => {
   return user;
 };
 
+// Função para verificar se um horário específico ainda está disponível
+const checkAvailabilityBeforeScheduling = async (
+  doctorId: string, 
+  appointmentDateTime: string
+): Promise<boolean> => {
+  const { data: existingAppointment, error } = await supabase
+    .from('consultas')
+    .select('id')
+    .eq('medico_id', doctorId)
+    .eq('data_consulta', appointmentDateTime)
+    .in('status', ['agendada', 'confirmada'])
+    .limit(1);
+
+  if (error) {
+    logger.error("Error checking appointment availability", "AppointmentService", error);
+    throw new Error("Erro ao verificar disponibilidade do horário");
+  }
+
+  return !existingAppointment || existingAppointment.length === 0;
+};
+
 export const appointmentService = {
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "AppointmentService");
@@ -152,17 +173,47 @@ export const appointmentService = {
     local_id: string;
     local_consulta_texto: string;
   }) {
-    await checkAuthentication();
-    const { error } = await supabase.from('consultas').insert({
-      paciente_id: appointmentData.paciente_id,
-      medico_id: appointmentData.medico_id,
-      data_consulta: appointmentData.data_consulta,
-      tipo_consulta: appointmentData.tipo_consulta,
-      local_id: appointmentData.local_id,
-      local_consulta: appointmentData.local_consulta_texto,
-      status: 'agendada',
-    });
-    if (error) throw error;
-    return { success: true };
+    try {
+      await checkAuthentication();
+
+      // Verificação final de disponibilidade antes do agendamento
+      const isAvailable = await checkAvailabilityBeforeScheduling(
+        appointmentData.medico_id, 
+        appointmentData.data_consulta
+      );
+
+      if (!isAvailable) {
+        throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
+      }
+
+      const { error } = await supabase.from('consultas').insert({
+        paciente_id: appointmentData.paciente_id,
+        medico_id: appointmentData.medico_id,
+        data_consulta: appointmentData.data_consulta,
+        tipo_consulta: appointmentData.tipo_consulta,
+        local_id: appointmentData.local_id,
+        local_consulta: appointmentData.local_consulta_texto,
+        status: 'agendada',
+      });
+
+      if (error) {
+        // Verificar se é erro de constraint violation (agendamento duplicado)
+        if (error.code === '23505' && error.message?.includes('idx_consultas_unique_slot')) {
+          logger.warn("Attempt to schedule duplicate appointment", "AppointmentService", { 
+            doctorId: appointmentData.medico_id, 
+            dateTime: appointmentData.data_consulta 
+          });
+          throw new Error("Este horário já foi ocupado por outro paciente. Por favor, escolha outro horário disponível.");
+        }
+        
+        logger.error("Error scheduling appointment", "AppointmentService", error);
+        throw error;
+      }
+
+      return { success: true };
+    } catch (error) {
+      logger.error("Failed to schedule appointment", "AppointmentService", error);
+      throw error;
+    }
   }
 };
