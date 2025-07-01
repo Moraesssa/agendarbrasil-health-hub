@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,9 +20,10 @@ import Perfil from '@/pages/Perfil';
 import PerfilMedico from '@/pages/PerfilMedico';
 import AgendaMedico from '@/pages/AgendaMedico';
 import GerenciarAgenda from '@/pages/GerenciarAgenda';
-import GerenciarLocais from '@/pages/GerenciarLocais'; // <-- Rota adicionada
+import GerenciarLocais from '@/pages/GerenciarLocais';
 import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
+import Financeiro from '@/pages/Financeiro';
 import Agendamento from '@/pages/Agendamento';
 import AgendaPaciente from '@/pages/AgendaPaciente';
 import Historico from '@/pages/Historico';
@@ -99,9 +101,10 @@ function App() {
                     <Route path="/perfil-medico" element={<PerfilMedico />} />
                     <Route path="/agenda-medico" element={<AgendaMedico />} />
                     <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
-                    <Route path="/gerenciar-locais" element={<GerenciarLocais />} /> {/* <-- Rota adicionada */}
+                    <Route path="/gerenciar-locais" element={<GerenciarLocais />} />
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                    <Route path="/financeiro" element={<Financeiro />} />
                     <Route path="/agendamento" element={<Agendamento />} />
                     <Route path="/agenda-paciente" element={<AgendaPaciente />} />
                     <Route path="/historico" element={<Historico />} />
