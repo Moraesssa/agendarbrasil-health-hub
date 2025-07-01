@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,14 +13,29 @@ import { DoctorSelect } from "@/components/scheduling/DoctorSelect";
 import { DateSelect } from "@/components/scheduling/DateSelect";
 import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
+import { PaymentModal } from "@/components/financial/PaymentModal";
+import { useState } from "react";
 
 const Agendamento = () => {
   const navigate = useNavigate();
   const { models, setters, state, actions } = useNewAppointmentScheduling();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
   const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedTime && models.selectedLocal;
+
+  const handleConfirmAppointment = () => {
+    if (isFormComplete) {
+      // Para consultas particulares, mostrar modal de pagamento
+      setShowPaymentModal(true);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    // Após pagamento bem-sucedido, agendar a consulta
+    actions.handleAgendamento();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -126,9 +141,22 @@ const Agendamento = () => {
                    {/* --- BOTÃO DE CONFIRMAÇÃO --- */}
                   {isFormComplete && (
                     <div className="pt-6 border-t">
-                      <Button onClick={actions.handleAgendamento} className="w-full text-lg py-6 bg-blue-600 hover:bg-blue-700" disabled={state.isSubmitting}>
-                        {state.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Calendar className="mr-2 h-5 w-5" />}
-                        Confirmar Agendamento
+                      <Button 
+                        onClick={handleConfirmAppointment} 
+                        className="w-full text-lg py-6 bg-blue-600 hover:bg-blue-700" 
+                        disabled={state.isSubmitting}
+                      >
+                        {state.isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Processando...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-2 h-5 w-5" />
+                            Confirmar e Pagar
+                          </>
+                        )}
                       </Button>
                     </div>
                   )}
@@ -149,6 +177,22 @@ const Agendamento = () => {
             />
           </div>
         </div>
+
+        {/* Modal de Pagamento */}
+        {showPaymentModal && models.selectedLocal && selectedDoctorInfo && (
+          <PaymentModal
+            isOpen={showPaymentModal}
+            onClose={() => setShowPaymentModal(false)}
+            consultaData={{
+              id: 'temp-id',
+              valor: 150, // Valor fixo por enquanto
+              medicoNome: selectedDoctorInfo.display_name || 'Médico',
+              dataConsulta: `${models.selectedDate}T${models.selectedTime}:00`,
+              especialidade: models.selectedSpecialty
+            }}
+            onPaymentSuccess={handlePaymentSuccess}
+          />
+        )}
       </main>
     </div>
   );

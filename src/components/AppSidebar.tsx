@@ -1,4 +1,4 @@
-import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin } from "lucide-react";
+import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin, DollarSign } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -36,6 +36,12 @@ const mainMenuItems = [
     url: "/pacientes-medico",
     icon: Users,
     description: "Lista de pacientes do médico"
+  },
+  {
+    title: "Financeiro",
+    url: "/financeiro",
+    icon: DollarSign,
+    description: "Relatórios financeiros e receitas"
   },
   {
     title: "Encaminhamento",
@@ -229,4 +235,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
