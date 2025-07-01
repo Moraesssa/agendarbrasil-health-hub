@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
@@ -6,7 +5,8 @@ import {
   TimeSlot,
   ExistingAppointment,
   WorkingHours,
-  DayWorkingHours
+  DayWorkingHours,
+  getDayName
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
@@ -81,7 +81,9 @@ export const appointmentService = {
     const { configuracoes, locais } = medico;
     const config = isValidConfiguration(configuracoes) ? configuracoes : {};
     const horarioAtendimento = config.horarioAtendimento || {};
-    const diaDaSemana = new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+    
+    // Usar a função getDayName para obter o dia da semana em português
+    const diaDaSemana = getDayName(new Date(date + 'T00:00:00'));
 
     const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
     

@@ -1,10 +1,12 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
   TimeSlot,
   ExistingAppointment,
   WorkingHours,
-  DayWorkingHours
+  DayWorkingHours,
+  getDayName
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 
@@ -143,8 +145,9 @@ export const newAppointmentService = {
       const duracaoConsulta = configuracoes.duracaoConsulta || 30;
       const horarioAtendimento = configuracoes.horarioAtendimento || {};
 
-      // Determinar dia da semana
-      const diaDaSemana = new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+      // Determinar dia da semana usando a função do timeSlotUtils
+      const diaDaSemana = getDayName(new Date(date + 'T00:00:00'));
+      console.log("🔍 Dia da semana calculado:", diaDaSemana, "para data:", date);
 
       // Buscar consultas existentes
       const startOfDay = new Date(`${date}T00:00:00.000Z`);
@@ -169,6 +172,7 @@ export const newAppointmentService = {
         
         // Buscar configuração de horário para este local
         const blocosDoLocal = horarioAtendimento[diaDaSemana] || [];
+        console.log("🔍 Blocos encontrados para", diaDaSemana, ":", blocosDoLocal);
         
         // Filtrar blocos específicos para este local (se aplicável)
         const blocosAtivos = Array.isArray(blocosDoLocal) 
