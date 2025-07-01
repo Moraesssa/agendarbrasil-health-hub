@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
@@ -56,13 +55,10 @@ const checkAuthentication = async () => {
 export const newAppointmentService = {
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "NewAppointmentService");
-    console.log("🔍 newAppointmentService.getSpecialties: Iniciando busca...");
     try {
       await checkAuthentication();
-      console.log("✅ Usuário autenticado, chamando RPC...");
       
       const { data, error } = await supabase.rpc('get_specialties');
-      console.log("📊 RPC get_specialties response:", { data, error });
       
       if (error) {
         console.error("❌ Erro na RPC get_specialties:", error);
@@ -70,10 +66,8 @@ export const newAppointmentService = {
       }
       
       const specialties = (data || []).sort();
-      console.log("✅ Especialidades processadas:", specialties);
       return specialties;
     } catch (error) {
-      console.error("❌ Erro geral em getSpecialties:", error);
       logger.error("Failed to fetch specialties", "NewAppointmentService", error);
       throw error;
     }
@@ -81,7 +75,6 @@ export const newAppointmentService = {
 
   async getDoctorsByLocationAndSpecialty(specialty: string, city: string, state: string): Promise<Medico[]> {
     logger.info("Fetching doctors by location and specialty", "NewAppointmentService");
-    console.log("🔍 getDoctorsByLocationAndSpecialty:", { specialty, city, state });
     try {
       await checkAuthentication();
       
@@ -91,8 +84,6 @@ export const newAppointmentService = {
         p_state: state
       });
       
-      console.log("👨‍⚕️ RPC get_doctors_by_location_and_specialty response:", { data, error });
-      
       if (error) {
         console.error("❌ Erro na RPC get_doctors_by_location_and_specialty:", error);
         logger.error("Error fetching doctors by location", "NewAppointmentService", error);
@@ -100,10 +91,8 @@ export const newAppointmentService = {
       }
       
       const doctors = (data || []) as Medico[];
-      console.log("✅ Médicos processados:", doctors);
       return doctors;
     } catch (error) {
-      console.error("❌ Erro geral em getDoctorsByLocationAndSpecialty:", error);
       logger.error("Failed to fetch doctors", "NewAppointmentService", error);
       throw error;
     }
@@ -111,24 +100,19 @@ export const newAppointmentService = {
 
   async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
     logger.info("Fetching available slots by doctor", "NewAppointmentService");
-    console.log("🔍 getAvailableSlotsByDoctor:", { doctorId, date });
     try {
       await checkAuthentication();
       if (!doctorId || !date) {
-        console.log("❌ Parâmetros faltando:", { doctorId, date });
         logger.info("Missing doctorId or date", "NewAppointmentService");
         return [];
       }
 
       // Buscar dados do médico
-      console.log("👨‍⚕️ Buscando configurações do médico...");
       const { data: medico, error: medicoError } = await supabase
         .from('medicos')
         .select('configuracoes')
         .eq('user_id', doctorId)
         .single();
-
-      console.log("📊 Médico data:", { medico, medicoError });
 
       if (medicoError) {
         console.error("❌ Erro ao buscar médico:", medicoError);
@@ -137,14 +121,11 @@ export const newAppointmentService = {
       }
 
       // Buscar locais do médico
-      console.log("🏥 Buscando locais do médico...");
       const { data: locais, error: locaisError } = await supabase
         .from('locais_atendimento')
         .select('*')
         .eq('medico_id', doctorId)
         .eq('ativo', true);
-
-      console.log("📍 Locais data:", { locais, locaisError });
 
       if (locaisError) {
         console.error("❌ Erro ao buscar locais:", locaisError);
@@ -153,7 +134,6 @@ export const newAppointmentService = {
       }
 
       if (!locais || locais.length === 0) {
-        console.log("⚠️ Nenhum local ativo encontrado");
         logger.info("No active locations found for doctor", "NewAppointmentService");
         return [];
       }
@@ -162,15 +142,11 @@ export const newAppointmentService = {
       const configuracoes = medico?.configuracoes as any || {};
       const duracaoConsulta = configuracoes.duracaoConsulta || 30;
       const horarioAtendimento = configuracoes.horarioAtendimento || {};
-      
-      console.log("⚙️ Configurações processadas:", { duracaoConsulta, horarioAtendimento });
 
       // Determinar dia da semana
       const diaDaSemana = new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
-      console.log("📅 Dia da semana:", diaDaSemana);
 
       // Buscar consultas existentes
-      console.log("📋 Buscando consultas existentes...");
       const startOfDay = new Date(`${date}T00:00:00.000Z`);
       const endOfDay = new Date(`${date}T23:59:59.999Z`);
       const { data: appointments } = await supabase
@@ -179,8 +155,6 @@ export const newAppointmentService = {
         .eq('medico_id', doctorId)
         .gte('data_consulta', startOfDay.toISOString())
         .lte('data_consulta', endOfDay.toISOString());
-      
-      console.log("📋 Consultas existentes:", appointments);
       
       const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
         data_consulta: apt.data_consulta,
@@ -192,11 +166,9 @@ export const newAppointmentService = {
       // Processar cada local
       for (const local of locais) {
         const localTyped = local as LocalAtendimentoDb;
-        console.log("🏢 Processando local:", localTyped.nome_local);
         
         // Buscar configuração de horário para este local
         const blocosDoLocal = horarioAtendimento[diaDaSemana] || [];
-        console.log("⏰ Blocos do dia encontrados:", blocosDoLocal);
         
         // Filtrar blocos específicos para este local (se aplicável)
         const blocosAtivos = Array.isArray(blocosDoLocal) 
@@ -213,22 +185,16 @@ export const newAppointmentService = {
             })
           : [];
 
-        console.log("✅ Blocos ativos para este local:", blocosAtivos);
-
         if (blocosAtivos.length > 0) {
           // Criar WorkingHours para este local
           const workingHours: WorkingHours = {};
           workingHours[diaDaSemana] = blocosAtivos;
-
-          console.log("🔧 WorkingHours criado:", workingHours);
 
           // Gerar slots para este local
           const horariosDisponiveis = generateTimeSlots({
             duracaoConsulta,
             horarioAtendimento: workingHours
           }, new Date(date + 'T00:00:00'), existingAppointments);
-
-          console.log("⏰ Horários gerados:", horariosDisponiveis);
 
           if (horariosDisponiveis.length > 0) {
             locaisComHorarios.push({
@@ -241,12 +207,10 @@ export const newAppointmentService = {
         }
       }
       
-      console.log("🎉 Resultado final:", locaisComHorarios);
       logger.info(`Found ${locaisComHorarios.length} locations with available slots`, "NewAppointmentService");
       return locaisComHorarios;
 
     } catch (error) {
-      console.error("❌ Erro geral em getAvailableSlotsByDoctor:", error);
       logger.error("Failed to fetch available slots", "NewAppointmentService", error);
       throw error;
     }

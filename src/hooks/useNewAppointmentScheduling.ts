@@ -53,32 +53,28 @@ export const useNewAppointmentScheduling = () => {
   }, []);
 
   useEffect(() => {
-    console.log("🚀 useNewAppointmentScheduling: Iniciando carregamento de dados iniciais");
-    console.log("🔐 User:", user ? "autenticado" : "não autenticado");
-    
-    if (!user) {
-      console.log("❌ Usuário não autenticado, abortando carregamento");
-      return;
-    }
+    if (!user) return;
     
     const loadInitialData = async () => {
-      console.log("📊 Carregando especialidades e estados...");
       setIsLoading(true);
       try {
-        console.log("🔍 Chamando newAppointmentService.getSpecialties()...");
         const specialtiesData = await newAppointmentService.getSpecialties();
-        console.log("✅ Especialidades carregadas:", specialtiesData.length, specialtiesData);
+        console.log("✅ Especialidades carregadas:", specialtiesData.length);
         
-        console.log("🔍 Chamando supabase.rpc('get_available_states')...");
         const statesResponse = await supabase.rpc('get_available_states');
-        console.log("📍 Estados response:", statesResponse);
         const statesData = statesResponse.data || [];
-        console.log("✅ Estados carregados:", statesData.length, statesData);
+        console.log("✅ Estados carregados:", statesData.length);
         
         setSpecialties(specialtiesData);
         setStates(statesData as StateInfo[]);
         
-        console.log("🎉 Dados iniciais carregados com sucesso!");
+        if (statesData.length === 0) {
+          toast({
+            title: "Atenção",
+            description: "Nenhum estado com médicos disponíveis foi encontrado.",
+            variant: "default"
+          });
+        }
       } catch (e) {
         console.error("❌ Erro ao carregar dados iniciais:", e);
         logger.error("Erro ao carregar dados iniciais", "useNewAppointmentScheduling", e);
@@ -89,30 +85,23 @@ export const useNewAppointmentScheduling = () => {
         });
       } finally {
         setIsLoading(false);
-        console.log("🏁 Carregamento inicial finalizado");
       }
     };
     loadInitialData();
   }, [toast, user]);
 
   useEffect(() => {
-    console.log("🌍 Estado selecionado mudou:", selectedState);
     if (!selectedState) {
-      console.log("❌ Nenhum estado selecionado, limpando cidades");
       setCities([]);
       return;
     }
     
     const loadCities = async () => {
-      console.log("🏙️ Carregando cidades para estado:", selectedState);
       setIsLoading(true);
       try {
         const { data, error } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
-        if (error) {
-          console.error("❌ Erro ao buscar cidades:", error);
-          throw error;
-        }
-        console.log("✅ Cidades carregadas:", data?.length || 0, data);
+        if (error) throw error;
+        console.log("✅ Cidades carregadas para", selectedState, ":", data?.length || 0);
         setCities(data || []);
       } catch (e) {
         console.error("❌ Erro ao carregar cidades:", e);
@@ -129,16 +118,12 @@ export const useNewAppointmentScheduling = () => {
   }, [selectedState, toast]);
 
   useEffect(() => {
-    console.log("👨‍⚕️ Parâmetros para busca de médicos:", { selectedSpecialty, selectedCity, selectedState });
-    
     if (!selectedSpecialty || !selectedCity || !selectedState) {
-      console.log("❌ Parâmetros incompletos para busca de médicos");
       setDoctors([]);
       return;
     }
     
     const loadDoctors = async () => {
-      console.log("🔍 Buscando médicos...");
       setIsLoading(true);
       try {
         const doctorsData = await newAppointmentService.getDoctorsByLocationAndSpecialty(
@@ -146,11 +131,10 @@ export const useNewAppointmentScheduling = () => {
           selectedCity, 
           selectedState
         );
-        console.log("✅ Médicos encontrados:", doctorsData.length, doctorsData);
+        console.log("✅ Médicos encontrados:", doctorsData.length);
         setDoctors(doctorsData);
         
         if (doctorsData.length === 0) {
-          console.log("⚠️ Nenhum médico encontrado para os critérios selecionados");
           toast({
             title: "Nenhum médico encontrado",
             description: `Não há médicos de ${selectedSpecialty} em ${selectedCity}/${selectedState}`,
@@ -172,24 +156,19 @@ export const useNewAppointmentScheduling = () => {
   }, [selectedSpecialty, selectedCity, selectedState, toast]);
   
   useEffect(() => {
-    console.log("🗓️ Parâmetros para busca de slots:", { selectedDoctor, selectedDate });
-    
     if (!selectedDoctor || !selectedDate) {
-      console.log("❌ Parâmetros incompletos para busca de horários");
       setLocaisComHorarios([]);
       return;
     }
     
     const loadSlots = async () => {
-      console.log("⏰ Buscando horários disponíveis...");
       setIsLoading(true);
       try {
         const slots = await newAppointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
-        console.log("✅ Slots encontrados:", slots.length, slots);
+        console.log("✅ Slots encontrados:", slots.length);
         setLocaisComHorarios(slots);
         
         if (slots.length === 0) {
-          console.log("⚠️ Nenhum horário disponível encontrado");
           toast({
             title: "Nenhum horário disponível",
             description: `Não há horários disponíveis para a data ${selectedDate}`,

@@ -35,17 +35,6 @@ const Agendamento = () => {
             <p className="text-lg text-gray-600 text-center mt-2">Encontre o profissional ideal para você em poucos passos.</p>
         </div>
 
-        {/* Debug Info - Mostrar apenas em desenvolvimento */}
-        {process.env.NODE_ENV === 'development' && (
-          <Alert className="mb-6 bg-blue-50 border-blue-200">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Debug Info:</strong> Especialidades: {models.specialties.length}, Estados: {models.states.length}, 
-              Cidades: {models.cities.length}, Médicos: {models.doctors.length}, Loading: {state.isLoading ? 'Sim' : 'Não'}
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* Coluna Principal de Agendamento */}
@@ -80,12 +69,12 @@ const Agendamento = () => {
                       />
                   </div>
 
-                  {/* Mostrar erro se não há dados carregados */}
-                  {!state.isLoading && models.specialties.length === 0 && (
+                  {/* Mostrar aviso se não há estados disponíveis */}
+                  {!state.isLoading && models.specialties.length > 0 && models.states.length === 0 && (
                     <Alert className="bg-yellow-50 border-yellow-200">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>
-                        Não foi possível carregar as especialidades. Verifique sua conexão e tente recarregar a página.
+                        Não há médicos disponíveis no momento. Verifique novamente mais tarde ou entre em contato conosco.
                       </AlertDescription>
                     </Alert>
                   )}
