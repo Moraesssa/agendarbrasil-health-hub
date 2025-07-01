@@ -1,9 +1,10 @@
+
 import { ArrowLeft, Loader2, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
+import { useNewAppointmentScheduling } from "@/hooks/useNewAppointmentScheduling";
 import { SpecialtySelect } from "@/components/scheduling/SpecialtySelect";
 import { StateSelect } from "@/components/scheduling/StateSelect";
 import { CitySelect } from "@/components/scheduling/CitySelect";
@@ -14,7 +15,7 @@ import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
 
 const Agendamento = () => {
   const navigate = useNavigate();
-  const { models, setters, state, actions } = useAppointmentScheduling();
+  const { models, setters, state, actions } = useNewAppointmentScheduling();
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
