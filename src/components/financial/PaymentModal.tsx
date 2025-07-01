@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { CreditCard, QrCode, X, Loader2 } from 'lucide-react';
+import { CreditCard, QrCode, X, Loader2, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { usePayment } from "@/hooks/usePayment";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -14,40 +14,30 @@ interface PaymentModalProps {
     id: string;
     valor: number;
     medicoNome: string;
+    medicoId: string;
     dataConsulta: string;
     especialidade: string;
   };
-  onPaymentSuccess: () => void;
+  onPaymentSuccess?: () => void;
 }
 
 export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }: PaymentModalProps) => {
   const [selectedMethod, setSelectedMethod] = useState<'credit_card' | 'pix' | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const { toast } = useToast();
+  const { processing, processPayment } = usePayment();
 
   const handlePayment = async () => {
     if (!selectedMethod) return;
     
-    setProcessing(true);
-    try {
-      // Simular processamento de pagamento
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Pagamento realizado com sucesso!",
-        description: "Sua consulta foi confirmada.",
-      });
-      
-      onPaymentSuccess();
+    const result = await processPayment({
+      consultaId: consultaData.id,
+      medicoId: consultaData.medicoId,
+      valor: consultaData.valor,
+      metodo: selectedMethod
+    });
+
+    if (result.success) {
+      onPaymentSuccess?.();
       onClose();
-    } catch (error) {
-      toast({
-        title: "Erro no pagamento",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive"
-      });
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -103,9 +93,9 @@ export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }
                 <CreditCard className="h-5 w-5 text-blue-600" />
                 <div className="flex-1">
                   <div className="font-medium">Cartão de Crédito</div>
-                  <div className="text-sm text-gray-500">Pagamento instantâneo</div>
+                  <div className="text-sm text-gray-500">Processado pelo Stripe</div>
                 </div>
-                <Badge variant="secondary">Recomendado</Badge>
+                <Badge variant="secondary">Seguro</Badge>
               </CardContent>
             </Card>
 
@@ -133,12 +123,19 @@ export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }
             {processing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
+                Redirecionando para o Stripe...
               </>
             ) : (
-              `Pagar ${consultaData.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+              <>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Pagar {consultaData.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </>
             )}
           </Button>
+
+          <p className="text-xs text-gray-500 text-center">
+            Você será redirecionado para o Stripe para finalizar o pagamento de forma segura.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

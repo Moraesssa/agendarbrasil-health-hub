@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { financeService } from '@/services/financeService';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export const usePayment = () => {
@@ -26,33 +26,35 @@ export const usePayment = () => {
 
     setProcessing(true);
     try {
-      // Simular processamento do pagamento
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Registrar o pagamento no banco
-      const result = await financeService.registrarPagamento({
-        consulta_id: paymentData.consultaId,
-        paciente_id: user.id,
-        medico_id: paymentData.medicoId,
-        valor: paymentData.valor,
-        metodo_pagamento: paymentData.metodo,
-        status: 'succeeded',
-        gateway_id: `sim_${Date.now()}` // Simulação
+      // Chamar a Edge Function do Stripe para criar checkout
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
+          consultaId: paymentData.consultaId,
+          medicoId: paymentData.medicoId,
+          amount: Math.round(paymentData.valor * 100), // Converter para centavos
+          currency: 'brl',
+          paymentMethod: paymentData.metodo,
+          successUrl: `${window.location.origin}/agenda-paciente?payment=success`,
+          cancelUrl: `${window.location.origin}/agenda-paciente?payment=cancelled`
+        }
       });
 
-      if (result.success) {
-        toast({
-          title: "Pagamento realizado com sucesso!",
-          description: "Sua consulta foi confirmada.",
-        });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.url) {
+        // Redirecionar para o Stripe Checkout
+        window.location.href = data.url;
         return { success: true };
       } else {
-        throw result.error;
+        throw new Error('URL de checkout não foi retornada');
       }
     } catch (error) {
+      console.error('Erro no pagamento:', error);
       toast({
         title: "Erro no pagamento",
-        description: "Não foi possível processar o pagamento. Tente novamente.",
+        description: error instanceof Error ? error.message : "Não foi possível processar o pagamento. Tente novamente.",
         variant: "destructive"
       });
       return { success: false, error };
@@ -61,8 +63,47 @@ export const usePayment = () => {
     }
   };
 
+  const createCustomerPortalSession = async () => {
+    if (!user) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para acessar o portal do cliente.",
+        variant: "destructive"
+      });
+      return { success: false };
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        body: {
+          returnUrl: `${window.location.origin}/financeiro`
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        return { success: true };
+      } else {
+        throw new Error('URL do portal não foi retornada');
+      }
+    } catch (error) {
+      console.error('Erro ao abrir portal do cliente:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível abrir o portal do cliente.",
+        variant: "destructive"
+      });
+      return { success: false, error };
+    }
+  };
+
   return {
     processing,
-    processPayment
+    processPayment,
+    createCustomerPortalSession
   };
 };

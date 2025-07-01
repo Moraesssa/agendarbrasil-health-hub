@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { DollarSign, TrendingUp, CreditCard, AlertCircle, Filter, Download } from "lucide-react";
+import { DollarSign, TrendingUp, CreditCard, AlertCircle, Filter, Download, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,15 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { financeService, FinancialSummary } from "@/services/financeService";
+import { usePayment } from "@/hooks/usePayment";
 import { PageLoader } from "@/components/PageLoader";
 import { RevenueChart } from "@/components/financial/RevenueChart";
+import { useToast } from "@/hooks/use-toast";
 
 const Financeiro = () => {
   const { user } = useAuth();
+  const { createCustomerPortalSession } = usePayment();
+  const { toast } = useToast();
   const [reportData, setReportData] = useState<any[]>([]);
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -35,12 +39,21 @@ const Financeiro = () => {
         setChartData(chartResult);
       } catch (error) {
         console.error("Erro ao carregar dados financeiros", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados financeiros.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
     fetchFinancialData();
-  }, [user]);
+  }, [user, toast]);
+
+  const handleOpenCustomerPortal = async () => {
+    await createCustomerPortalSession();
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -48,6 +61,15 @@ const Financeiro = () => {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'succeeded': return 'Pago';
+      case 'pending': return 'Pendente';
+      case 'failed': return 'Falhou';
+      default: return status;
     }
   };
 
@@ -68,8 +90,18 @@ const Financeiro = () => {
               <h1 className="text-2xl font-bold text-gray-800">Financeiro</h1>
               <p className="text-sm text-gray-600">Relatório de pagamentos e receitas.</p>
             </div>
-            <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Exportar</Button>
-            <Button><Filter className="mr-2 h-4 w-4" /> Filtrar</Button>
+            <Button variant="outline" onClick={handleOpenCustomerPortal}>
+              <Settings className="mr-2 h-4 w-4" />
+              Portal do Cliente
+            </Button>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+            <Button>
+              <Filter className="mr-2 h-4 w-4" />
+              Filtrar
+            </Button>
           </header>
           
           <main className="p-6 space-y-6">
@@ -150,12 +182,14 @@ const Financeiro = () => {
                         <TableCell>{item.consulta?.paciente?.display_name || 'N/A'}</TableCell>
                         <TableCell>{item.consulta?.tipo_consulta || 'N/A'}</TableCell>
                         <TableCell>{formatCurrency(Number(item.valor))}</TableCell>
-                        <TableCell className="capitalize">{item.metodo_pagamento?.replace('_', ' ')}</TableCell>
+                        <TableCell className="capitalize">
+                          {item.metodo_pagamento === 'credit_card' ? 'Cartão de Crédito' : 
+                           item.metodo_pagamento === 'pix' ? 'PIX' : 
+                           item.metodo_pagamento?.replace('_', ' ')}
+                        </TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(item.status)}>
-                            {item.status === 'succeeded' ? 'Pago' : 
-                             item.status === 'pending' ? 'Pendente' : 
-                             item.status === 'failed' ? 'Falhou' : item.status}
+                            {getStatusText(item.status)}
                           </Badge>
                         </TableCell>
                       </TableRow>
