@@ -28,9 +28,11 @@ export type Database = {
           preparation_completed: boolean | null
           service_type: string | null
           status: Database["public"]["Enums"]["appointment_status"]
+          status_pagamento: string | null
           tipo_consulta: string | null
           triage_id: string | null
           updated_at: string
+          valor: number | null
         }
         Insert: {
           agendado_por?: string | null
@@ -50,9 +52,11 @@ export type Database = {
           preparation_completed?: boolean | null
           service_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
+          status_pagamento?: string | null
           tipo_consulta?: string | null
           triage_id?: string | null
           updated_at?: string
+          valor?: number | null
         }
         Update: {
           agendado_por?: string | null
@@ -72,9 +76,11 @@ export type Database = {
           preparation_completed?: boolean | null
           service_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
+          status_pagamento?: string | null
           tipo_consulta?: string | null
           triage_id?: string | null
           updated_at?: string
+          valor?: number | null
         }
         Relationships: [
           {
@@ -559,6 +565,67 @@ export type Database = {
           {
             foreignKeyName: "pacientes_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamentos: {
+        Row: {
+          consulta_id: string | null
+          created_at: string | null
+          dados_gateway: Json | null
+          gateway_id: string | null
+          id: string
+          medico_id: string
+          metodo_pagamento: string
+          paciente_id: string
+          status: string
+          valor: number
+        }
+        Insert: {
+          consulta_id?: string | null
+          created_at?: string | null
+          dados_gateway?: Json | null
+          gateway_id?: string | null
+          id?: string
+          medico_id: string
+          metodo_pagamento: string
+          paciente_id: string
+          status: string
+          valor: number
+        }
+        Update: {
+          consulta_id?: string | null
+          created_at?: string | null
+          dados_gateway?: Json | null
+          gateway_id?: string | null
+          id?: string
+          medico_id?: string
+          metodo_pagamento?: string
+          paciente_id?: string
+          status?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_consulta_id_fkey"
+            columns: ["consulta_id"]
+            isOneToOne: false
+            referencedRelation: "consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_paciente_id_fkey"
+            columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

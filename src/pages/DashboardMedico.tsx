@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { AlertsSection } from "@/components/dashboard/AlertsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { financeService } from "@/services/financeService";
 import { PageLoader } from "@/components/PageLoader";
 
 // Tipagem para os dados do dashboard
@@ -69,51 +71,64 @@ const DashboardMedico = () => {
         const todayString = new Date().toISOString().split('T')[0];
         const todayAppointments = weeklyAppointments.filter(c => c.data_consulta.startsWith(todayString));
         
-        // CORREÇÃO: Pega o valor da consulta das configurações do médico
-        const valorConsulta = (userData as any).configuracoes?.valorConsulta || 0;
-        const receitaSemanal = weeklyAppointments
-          .filter(c => c.status === 'realizada' || c.status === 'confirmada')
-          .length * valorConsulta;
+        // Buscar receita semanal real dos pagamentos
+        try {
+          const resumoFinanceiro = await financeService.getResumoFinanceiro(user.id);
+          const receitaSemanal = resumoFinanceiro.receitaSemanal;
+          
+          const proximasConsultas = todayAppointments.filter(c => new Date(c.data_consulta) > new Date()).length;
 
-        const proximasConsultas = todayAppointments.filter(c => new Date(c.data_consulta) > new Date()).length;
+          const metrics = {
+            pacientesHoje: todayAppointments.length,
+            receitaSemanal,
+            proximasConsultas,
+            tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 30,
+          };
 
-        const metrics = {
-          pacientesHoje: todayAppointments.length,
-          receitaSemanal,
-          proximasConsultas,
-          // CORREÇÃO: Pega o tempo médio das configurações do médico
-          tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 0,
-        };
+          // Processar dados para o gráfico de consultas
+          const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+          const consultasSemanais = weekDays.map(dia => ({ dia, consultas: 0 }));
+          weeklyAppointments.forEach(c => {
+            const dayIndex = new Date(c.data_consulta).getDay();
+            consultasSemanais[dayIndex].consultas++;
+          });
 
-        // Processar dados para o gráfico de consultas
-        const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-        const consultasSemanais = weekDays.map(dia => ({ dia, consultas: 0 }));
-        weeklyAppointments.forEach(c => {
-          const dayIndex = new Date(c.data_consulta).getDay();
-          consultasSemanais[dayIndex].consultas++;
-        });
+          // Processar dados para o gráfico de tipos de consulta
+          const tiposMap: { [key: string]: number } = {};
+          weeklyAppointments.forEach(c => {
+            const tipo = c.tipo_consulta || 'Outro';
+            tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
+          });
 
-        // Processar dados para o gráfico de tipos de consulta
-        const tiposMap: { [key: string]: number } = {};
-        weeklyAppointments.forEach(c => {
-          const tipo = c.tipo_consulta || 'Outro';
-          tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
-        });
-
-        const totalConsultas = weeklyAppointments.length;
-        // CORREÇÃO: Centralizar cores ou passá-las como parte do tema
-        const colors = ["#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#f97316"];
-        const tiposConsultaChart = Object.entries(tiposMap).map(([tipo, valor], index) => ({
-          tipo,
-          valor: totalConsultas > 0 ? parseFloat(((valor / totalConsultas) * 100).toFixed(2)) : 0,
-          cor: colors[index % colors.length]
-        }));
-        
-        setDashboardData({
-          metrics,
-          consultasChart: consultasSemanais.slice(1).concat(consultasSemanais.slice(0, 1)),
-          tiposConsultaChart
-        });
+          const totalConsultas = weeklyAppointments.length;
+          const colors = ["#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#f97316"];
+          const tiposConsultaChart = Object.entries(tiposMap).map(([tipo, valor], index) => ({
+            tipo,
+            valor: totalConsultas > 0 ? parseFloat(((valor / totalConsultas) * 100).toFixed(2)) : 0,
+            cor: colors[index % colors.length]
+          }));
+          
+          setDashboardData({
+            metrics,
+            consultasChart: consultasSemanais.slice(1).concat(consultasSemanais.slice(0, 1)),
+            tiposConsultaChart
+          });
+        } catch (financeError) {
+          console.error("Erro ao buscar dados financeiros:", financeError);
+          // Fallback para dados básicos sem receita
+          const metrics = {
+            pacientesHoje: todayAppointments.length,
+            receitaSemanal: 0,
+            proximasConsultas: todayAppointments.filter(c => new Date(c.data_consulta) > new Date()).length,
+            tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 30,
+          };
+          
+          setDashboardData({
+            metrics,
+            consultasChart: [],
+            tiposConsultaChart: []
+          });
+        }
         
       } catch (error) {
         console.error("Erro ao buscar dados do dashboard:", error);
