@@ -175,17 +175,7 @@ export const newAppointmentService = {
         if (blocosAtivos.length > 0) {
           // Criar WorkingHours para este local
           const workingHours: WorkingHours = {};
-          
-          // Converter blocos para DayWorkingHours
-          const daySchedule: DayWorkingHours[] = blocosAtivos.map((bloco: any) => ({
-            inicio: bloco.inicio || '09:00',
-            fim: bloco.fim || '17:00',
-            ativo: bloco.ativo !== false,
-            inicioAlmoco: bloco.inicioAlmoco,
-            fimAlmoco: bloco.fimAlmoco
-          }));
-
-          workingHours[diaDaSemana] = daySchedule;
+          workingHours[diaDaSemana] = blocosAtivos;
 
           // Gerar slots para este local
           const horariosDisponiveis = generateTimeSlots({

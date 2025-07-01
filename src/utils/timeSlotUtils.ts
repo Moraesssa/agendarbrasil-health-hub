@@ -1,3 +1,4 @@
+
 // --- Interfaces e Tipos ---
 export interface TimeSlot {
   time: string;
@@ -13,7 +14,7 @@ export interface DayWorkingHours {
 }
 
 export interface WorkingHours {
-  [key: string]: DayWorkingHours;
+  [key: string]: DayWorkingHours[];
 }
 
 export interface DoctorConfig {
@@ -43,7 +44,7 @@ export const minutesToTime = (minutes: number): string => {
 
 export const getDayName = (date: Date): string => {
   const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-  return days[date.getUTCDay()]; // Usar getUTCDay para consistência
+  return days[date.getUTCDay()];
 };
 
 export const normalizeToStartOfDay = (dateString: string): Date => {
@@ -72,13 +73,13 @@ export const validateDoctorConfig = (config: DoctorConfig): { isValid: boolean; 
 };
 
 export const getDefaultWorkingHours = (): WorkingHours => ({
-  segunda: { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
-  terca:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
-  quarta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
-  quinta:  { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
-  sexta:   { inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' },
-  sabado:  { inicio: '08:00', fim: '12:00', ativo: false },
-  domingo: { inicio: '08:00', fim: '12:00', ativo: false }
+  segunda: [{ inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' }],
+  terca:   [{ inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' }],
+  quarta:  [{ inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' }],
+  quinta:  [{ inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' }],
+  sexta:   [{ inicio: '08:00', fim: '18:00', ativo: true, inicioAlmoco: '12:00', fimAlmoco: '13:00' }],
+  sabado:  [{ inicio: '08:00', fim: '12:00', ativo: false }],
+  domingo: [{ inicio: '08:00', fim: '12:00', ativo: false }]
 });
 
 export const generateTimeSlots = (
@@ -87,12 +88,9 @@ export const generateTimeSlots = (
   existingAppointments: ExistingAppointment[] = []
 ): TimeSlot[] => {
   const dayName = getDayName(selectedDate);
-  const workingHours = doctorConfig.horarioAtendimento?.[dayName];
+  const workingHoursBlocks = doctorConfig.horarioAtendimento?.[dayName] || [];
 
-  // **CORREÇÃO CRÍTICA E DEFINITIVA:**
-  // Esta verificação é a mais importante. Se o dia não estiver definido ou estiver inativo,
-  // a função retorna imediatamente uma lista vazia, impedindo o agendamento.
-  if (!workingHours || !workingHours.ativo) {
+  if (!workingHoursBlocks.length) {
     return [];
   }
 
@@ -100,33 +98,38 @@ export const generateTimeSlots = (
   const bufferMinutes = doctorConfig.bufferMinutos || 0;
   const slotInterval = consultationDuration + bufferMinutes;
 
-  const startMinutes = timeToMinutes(workingHours.inicio);
-  const endMinutes = timeToMinutes(workingHours.fim);
-  const lunchStartMinutes = workingHours.inicioAlmoco ? timeToMinutes(workingHours.inicioAlmoco) : null;
-  const lunchEndMinutes = workingHours.fimAlmoco ? timeToMinutes(workingHours.fimAlmoco) : null;
-
   const occupiedSlots = existingAppointments.map(extractTimeFromAppointment);
   const slots: TimeSlot[] = [];
 
-  for (let minutes = startMinutes; (minutes + consultationDuration) <= endMinutes; minutes += slotInterval) {
-    const slotStart = minutes;
-    const slotEnd = slotStart + consultationDuration;
+  // Processar cada bloco de horário
+  for (const workingHours of workingHoursBlocks) {
+    if (!workingHours.ativo) continue;
 
-    // Pula os horários que caem dentro do intervalo de almoço
-    if (lunchStartMinutes && lunchEndMinutes && slotStart < lunchEndMinutes && slotEnd > lunchStartMinutes) {
-      continue;
-    }
-    
-    // Verifica conflitos com agendamentos existentes
-    const isOccupied = occupiedSlots.some(
-      ({ startMinutes, endMinutes }) => slotStart < endMinutes && slotEnd > startMinutes
-    );
+    const startMinutes = timeToMinutes(workingHours.inicio);
+    const endMinutes = timeToMinutes(workingHours.fim);
+    const lunchStartMinutes = workingHours.inicioAlmoco ? timeToMinutes(workingHours.inicioAlmoco) : null;
+    const lunchEndMinutes = workingHours.fimAlmoco ? timeToMinutes(workingHours.fimAlmoco) : null;
 
-    if (!isOccupied) {
-      slots.push({
-        time: minutesToTime(minutes),
-        available: true
-      });
+    for (let minutes = startMinutes; (minutes + consultationDuration) <= endMinutes; minutes += slotInterval) {
+      const slotStart = minutes;
+      const slotEnd = slotStart + consultationDuration;
+
+      // Pula os horários que caem dentro do intervalo de almoço
+      if (lunchStartMinutes && lunchEndMinutes && slotStart < lunchEndMinutes && slotEnd > lunchStartMinutes) {
+        continue;
+      }
+      
+      // Verifica conflitos com agendamentos existentes
+      const isOccupied = occupiedSlots.some(
+        ({ startMinutes, endMinutes }) => slotStart < endMinutes && slotEnd > startMinutes
+      );
+
+      if (!isOccupied) {
+        slots.push({
+          time: minutesToTime(minutes),
+          available: true
+        });
+      }
     }
   }
 

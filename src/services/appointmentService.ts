@@ -101,7 +101,13 @@ export const appointmentService = {
 
     const locaisComHorarios: LocalComHorarios[] = [];
 
-    for (const local of locais || []) {
+    // Garantir que locais é um array de objetos
+    const locaisArray = Array.isArray(locais) ? locais : [];
+
+    for (const local of locaisArray) {
+      // Verificar se local é um objeto válido
+      if (!local || typeof local !== 'object' || !local.id) continue;
+
       // Verificar se blocosDoDia é array e filtrar blocos para este local
       const blocosDoLocal = Array.isArray(blocosDoDia) 
         ? blocosDoDia.filter((bloco: any) => 
@@ -115,16 +121,7 @@ export const appointmentService = {
       if (blocosDoLocal.length > 0) {
         // Criar WorkingHours válido
         const workingHours: WorkingHours = {};
-        
-        // Mapear blocos para DayWorkingHours corretamente
-        const daySchedule: DayWorkingHours[] = blocosDoLocal.map((bloco: any) => ({
-          inicio: bloco.inicio || '09:00',
-          fim: bloco.fim || '17:00',
-          ativo: bloco.ativo !== false
-        }));
-        
-        // Atribuir o array de horários ao dia da semana
-        workingHours[diaDaSemana] = daySchedule;
+        workingHours[diaDaSemana] = blocosDoLocal;
 
         const horariosNesteLocal = generateTimeSlots({
           duracaoConsulta: config.duracaoConsulta || 30,
