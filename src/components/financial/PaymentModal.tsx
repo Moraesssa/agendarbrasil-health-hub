@@ -39,21 +39,17 @@ export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }
     });
 
     if (result.success) {
-      // PaymentModal deve permanecer aberto até redirecionamento completar
-      // onPaymentSuccess?.(); // Removido para evitar fechamento prematuro
-      // onClose(); // Removido para evitar fechamento prematuro
-      
-      // Modal se fechará automaticamente quando usuário voltar do Stripe
-      console.log("Pagamento iniciado com sucesso, aguardando redirecionamento...");
+      console.log("Pagamento iniciado com sucesso - modal permanecerá aberto");
+      // Modal permanece aberto para permitir monitoramento
     } else {
-      // Só fechar em caso de erro
+      // Só resetar em caso de erro real
       setPaymentStarted(false);
     }
   };
 
   const handleModalClose = () => {
-    // Não permitir fechar modal se pagamento já foi iniciado
-    if (!paymentStarted && !processing) {
+    // Só permitir fechar se não há processamento ativo
+    if (!processing && !paymentStarted) {
       onClose();
     }
   };
@@ -64,7 +60,7 @@ export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Pagamento da Consulta
-            {!paymentStarted && !processing && (
+            {!processing && !paymentStarted && (
               <Button variant="ghost" size="sm" onClick={handleModalClose}>
                 <X className="h-4 w-4" />
               </Button>
@@ -73,12 +69,26 @@ export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Mostrar estado de processamento */}
+          {/* Estado de processamento */}
           {paymentStarted && (
             <div className="text-center py-4 bg-blue-50 rounded-lg">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
-              <p className="text-blue-700 font-medium">Abrindo página de pagamento...</p>
-              <p className="text-sm text-blue-600">Você será redirecionado para o Stripe em instantes</p>
+              <ExternalLink className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <p className="text-blue-700 font-medium">Pagamento sendo processado</p>
+              <p className="text-sm text-blue-600">
+                Uma nova aba deve ter aberto com o Stripe.<br/>
+                Se não abriu, verifique se permitiu pop-ups.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => {
+                  setPaymentStarted(false);
+                  onClose();
+                }}
+              >
+                Fechar Modal
+              </Button>
             </div>
           )}
 
@@ -164,7 +174,7 @@ export const PaymentModal = ({ isOpen, onClose, consultaData, onPaymentSuccess }
               </Button>
 
               <p className="text-xs text-gray-500 text-center">
-                Você será redirecionado para o Stripe para finalizar o pagamento de forma segura.
+                O pagamento abrirá em uma nova aba do Stripe.
               </p>
             </>
           )}

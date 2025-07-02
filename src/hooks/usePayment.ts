@@ -49,34 +49,59 @@ export const usePayment = () => {
       if (data?.url) {
         console.log("URL de checkout recebida:", data.url);
         
-        // ESTRATÉGIA MELHORADA: Tentar abrir em nova aba primeiro, fallback para mesmo navegador
+        // ESTRATÉGIA CORRIGIDA: Tentar abrir em nova aba com verificação mais robusta
         try {
-          // Tentar abrir em nova aba
+          console.log("Tentando abrir Stripe em nova aba...");
           const newWindow = window.open(data.url, '_blank', 'noopener,noreferrer');
           
-          // Verificar se nova aba foi bloqueada
-          if (!newWindow || newWindow.closed) {
-            console.log("Pop-up bloqueado, redirecionando na mesma aba...");
-            // Fallback: redirecionar na mesma aba
-            window.location.href = data.url;
-          } else {
-            console.log("Stripe aberto em nova aba com sucesso");
-            
-            // Monitorar fechamento da aba para detectar retorno
-            const checkClosed = setInterval(() => {
-              if (newWindow.closed) {
-                console.log("Aba do Stripe foi fechada, usuário pode ter retornado");
-                clearInterval(checkClosed);
-                // Aqui podemos adicionar lógica para refresh da página se necessário
-              }
-            }, 1000);
-            
-            // Limpar interval após 5 minutos para evitar memory leak
-            setTimeout(() => clearInterval(checkClosed), 300000);
-          }
+          // Aguardar um pouco antes de verificar se foi bloqueado
+          setTimeout(() => {
+            if (!newWindow || newWindow.closed) {
+              console.log("Pop-up foi bloqueado - mostrando opção manual");
+              toast({
+                title: "Pop-up bloqueado",
+                description: "Clique no botão abaixo para abrir o pagamento",
+                variant: "default",
+                action: (
+                  <button 
+                    onClick={() => window.location.href = data.url}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Abrir Pagamento
+                  </button>
+                )
+              });
+            } else {
+              console.log("Nova aba aberta com sucesso");
+              
+              // Monitorar fechamento da aba
+              const checkClosed = setInterval(() => {
+                if (newWindow.closed) {
+                  console.log("Aba do Stripe foi fechada");
+                  clearInterval(checkClosed);
+                }
+              }, 1000);
+              
+              // Limpar interval após 5 minutos
+              setTimeout(() => clearInterval(checkClosed), 300000);
+            }
+          }, 500); // Aguardar 500ms antes de verificar
+          
         } catch (popupError) {
-          console.error("Erro ao abrir popup, usando redirecionamento normal:", popupError);
-          window.location.href = data.url;
+          console.error("Erro ao abrir popup:", popupError);
+          toast({
+            title: "Erro ao abrir pagamento",
+            description: "Clique no botão abaixo para continuar",
+            variant: "default",
+            action: (
+              <button 
+                onClick={() => window.location.href = data.url}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+              >
+                Abrir Pagamento
+              </button>
+            )
+          });
         }
         
         return { success: true };
