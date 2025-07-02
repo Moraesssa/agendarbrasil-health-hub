@@ -49,28 +49,55 @@ export const usePayment = () => {
       if (data?.url) {
         console.log("URL de checkout recebida:", data.url);
         
-        // ESTRATÉGIA CORRIGIDA: Tentar abrir em nova aba com verificação mais robusta
+        // Tentar abrir em nova aba com detecção melhorada de popup bloqueado
         try {
           console.log("Tentando abrir Stripe em nova aba...");
           const newWindow = window.open(data.url, '_blank', 'noopener,noreferrer');
           
-          // Aguardar um pouco antes de verificar se foi bloqueado
+          // Aguardar antes de verificar se foi bloqueado
           setTimeout(() => {
-            if (!newWindow || newWindow.closed) {
-              console.log("Pop-up foi bloqueado - mostrando opção manual");
+            let popupBlocked = false;
+            
+            try {
+              // Verificar se a janela foi bloqueada
+              if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                popupBlocked = true;
+              } else {
+                // Tentar acessar a location para verificar se foi bloqueada
+                try {
+                  newWindow.focus();
+                } catch (e) {
+                  popupBlocked = true;
+                }
+              }
+            } catch (e) {
+              popupBlocked = true;
+            }
+            
+            if (popupBlocked) {
+              console.log("Pop-up foi bloqueado - oferecendo alternativa manual");
               toast({
                 title: "Pop-up bloqueado",
-                description: "Clique no botão abaixo para abrir o pagamento",
+                description: "Seu navegador bloqueou a abertura da nova aba. Clique em 'Abrir Pagamento' para continuar.",
                 variant: "default",
-                action: (
-                  <button 
-                    onClick={() => window.location.href = data.url}
-                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    Abrir Pagamento
-                  </button>
-                )
+                duration: 10000,
               });
+              
+              // Criar um botão na página para abrir manualmente
+              const openPaymentButton = document.createElement('button');
+              openPaymentButton.innerText = 'Abrir Pagamento';
+              openPaymentButton.className = 'fixed top-4 right-4 z-50 bg-blue-600 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-700';
+              openPaymentButton.onclick = () => {
+                window.location.href = data.url;
+              };
+              document.body.appendChild(openPaymentButton);
+              
+              // Remover o botão após 30 segundos
+              setTimeout(() => {
+                if (document.body.contains(openPaymentButton)) {
+                  document.body.removeChild(openPaymentButton);
+                }
+              }, 30000);
             } else {
               console.log("Nova aba aberta com sucesso");
               
@@ -85,23 +112,21 @@ export const usePayment = () => {
               // Limpar interval após 5 minutos
               setTimeout(() => clearInterval(checkClosed), 300000);
             }
-          }, 500); // Aguardar 500ms antes de verificar
+          }, 1000); // Aguardar 1 segundo para verificação mais confiável
           
         } catch (popupError) {
           console.error("Erro ao abrir popup:", popupError);
           toast({
             title: "Erro ao abrir pagamento",
-            description: "Clique no botão abaixo para continuar",
+            description: "Não foi possível abrir a nova aba. Redirecionando na mesma página...",
             variant: "default",
-            action: (
-              <button 
-                onClick={() => window.location.href = data.url}
-                className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-              >
-                Abrir Pagamento
-              </button>
-            )
+            duration: 3000,
           });
+          
+          // Aguardar 3 segundos antes de redirecionar na mesma aba
+          setTimeout(() => {
+            window.location.href = data.url;
+          }, 3000);
         }
         
         return { success: true };
