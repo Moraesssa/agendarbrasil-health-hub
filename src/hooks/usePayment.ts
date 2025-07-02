@@ -99,7 +99,7 @@ export const usePayment = () => {
                 }
               }, 30000);
             } else {
-              console.log("Nova aba aberta com sucesso");
+              console.log("Nova aba aberta com sucesso - redirecionando página original");
               
               // Monitorar fechamento da aba
               const checkClosed = setInterval(() => {
@@ -111,6 +111,11 @@ export const usePayment = () => {
               
               // Limpar interval após 5 minutos
               setTimeout(() => clearInterval(checkClosed), 300000);
+              
+              // Redirecionar página original para agenda do paciente
+              setTimeout(() => {
+                window.location.href = "/agenda-paciente";
+              }, 1500);
             }
           }, 1000); // Aguardar 1 segundo para verificação mais confiável
           
