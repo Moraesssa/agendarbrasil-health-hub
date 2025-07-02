@@ -48,8 +48,37 @@ export const usePayment = () => {
 
       if (data?.url) {
         console.log("URL de checkout recebida:", data.url);
-        // Redirecionar para o Stripe Checkout
-        window.location.href = data.url;
+        
+        // ESTRATÉGIA MELHORADA: Tentar abrir em nova aba primeiro, fallback para mesmo navegador
+        try {
+          // Tentar abrir em nova aba
+          const newWindow = window.open(data.url, '_blank', 'noopener,noreferrer');
+          
+          // Verificar se nova aba foi bloqueada
+          if (!newWindow || newWindow.closed) {
+            console.log("Pop-up bloqueado, redirecionando na mesma aba...");
+            // Fallback: redirecionar na mesma aba
+            window.location.href = data.url;
+          } else {
+            console.log("Stripe aberto em nova aba com sucesso");
+            
+            // Monitorar fechamento da aba para detectar retorno
+            const checkClosed = setInterval(() => {
+              if (newWindow.closed) {
+                console.log("Aba do Stripe foi fechada, usuário pode ter retornado");
+                clearInterval(checkClosed);
+                // Aqui podemos adicionar lógica para refresh da página se necessário
+              }
+            }, 1000);
+            
+            // Limpar interval após 5 minutos para evitar memory leak
+            setTimeout(() => clearInterval(checkClosed), 300000);
+          }
+        } catch (popupError) {
+          console.error("Erro ao abrir popup, usando redirecionamento normal:", popupError);
+          window.location.href = data.url;
+        }
+        
         return { success: true };
       } else {
         throw new Error('URL de checkout não foi retornada');

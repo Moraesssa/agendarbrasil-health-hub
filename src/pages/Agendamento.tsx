@@ -20,13 +20,23 @@ const Agendamento = () => {
   const navigate = useNavigate();
   const { models, setters, state, actions } = useNewAppointmentScheduling();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [consultaId, setConsultaId] = useState<string | null>(null);
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
   const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedTime && models.selectedLocal;
 
+  // Gerar ID único para a consulta antes do pagamento
+  const generateConsultaId = () => {
+    return 'consulta_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  };
+
   const handleConfirmAppointment = () => {
     if (isFormComplete) {
+      // Gerar ID real para a consulta
+      const newConsultaId = generateConsultaId();
+      setConsultaId(newConsultaId);
+      
       // Para consultas particulares, mostrar modal de pagamento
       setShowPaymentModal(true);
     }
@@ -35,6 +45,7 @@ const Agendamento = () => {
   const handlePaymentSuccess = () => {
     // Após pagamento bem-sucedido, agendar a consulta
     actions.handleAgendamento();
+    setShowPaymentModal(false);
   };
 
   return (
@@ -179,15 +190,15 @@ const Agendamento = () => {
         </div>
 
         {/* Modal de Pagamento */}
-        {showPaymentModal && models.selectedLocal && selectedDoctorInfo && (
+        {showPaymentModal && models.selectedLocal && selectedDoctorInfo && consultaId && (
           <PaymentModal
             isOpen={showPaymentModal}
             onClose={() => setShowPaymentModal(false)}
             consultaData={{
-              id: 'temp-id',
+              id: consultaId, // Usar ID real gerado
               valor: 150, // Valor fixo por enquanto
               medicoNome: selectedDoctorInfo.display_name || 'Médico',
-              medicoId: selectedDoctorInfo.id, // Added missing medicoId property
+              medicoId: selectedDoctorInfo.id,
               dataConsulta: `${models.selectedDate}T${models.selectedTime}:00`,
               especialidade: models.selectedSpecialty
             }}
