@@ -4,7 +4,7 @@ import { Calendar, Clock, User, Check, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,9 +22,32 @@ const AgendaPaciente = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [appointments, setAppointments] = useState<AppointmentWithDoctor[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Handle payment URL parameters
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      toast({
+        title: "Pagamento realizado com sucesso!",
+        description: "Sua consulta foi confirmada e você receberá um lembrete antes do horário.",
+      });
+      // Clean the URL
+      navigate("/agenda-paciente", { replace: true });
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Pagamento cancelado",
+        description: "O pagamento foi cancelado. Você pode tentar novamente a qualquer momento.",
+        variant: "destructive"
+      });
+      // Clean the URL
+      navigate("/agenda-paciente", { replace: true });
+    }
+  }, [searchParams, navigate, toast]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -125,7 +148,17 @@ const AgendaPaciente = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    // Check if there are payment parameters in the current URL
+    const currentParams = new URLSearchParams(window.location.search);
+    const hasPaymentParams = currentParams.has('payment');
+    
+    if (hasPaymentParams) {
+      // If coming from payment flow, go to home instead of browser back
+      navigate("/");
+    } else {
+      // Normal back navigation
+      navigate(-1);
+    }
   };
   
   const upcomingAppointments = appointments.filter(
