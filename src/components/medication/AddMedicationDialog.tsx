@@ -55,10 +55,19 @@ export const AddMedicationDialog = ({ open, onOpenChange, onMedicationAdded }: A
         instructions: formData.instructions.trim() === '' ? null : formData.instructions
       };
 
-      await createMedication(sanitizedData);
-      onMedicationAdded();
+      // Criar o medicamento e aguardar a conclusão
+      const newMedication = await createMedication(sanitizedData);
+      console.log("Medicamento adicionado com sucesso:", newMedication);
+      
+      // Fechar o diálogo antes de atualizar a lista para evitar problemas de UI
       onOpenChange(false);
       resetForm();
+      
+      // Após fechar o diálogo e limpar o formulário, atualizar a lista
+      // Usando setTimeout para garantir que a UI seja atualizada após o fechamento do diálogo
+      setTimeout(() => {
+        onMedicationAdded();
+      }, 100);
     } catch (error) {
       console.error('Erro ao adicionar medicamento:', error);
     }

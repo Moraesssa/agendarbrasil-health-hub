@@ -78,19 +78,37 @@ export const useMedicationReminders = () => {
   const createMedication = async (medication: Omit<MedicationReminder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     setIsSubmitting(true);
     try {
-      await medicationService.createMedicationReminder(medication);
+      logger.debug("Iniciando criação de medicamento", "createMedication", { medication_name: medication.medication_name });
+      
+      // Cria o medicamento e obtém o objeto completo com ID
+      const newMedication = await medicationService.createMedicationReminder(medication);
+      
+      // Mostrar toast imediatamente para feedback do usuário
       toast({
         title: "Medicamento adicionado!",
         description: `${medication.medication_name} foi adicionado aos seus lembretes.`
       });
-      await loadMedications();
+      
+      // Garantir que a lista completa seja recarregada para incluir novas doses
+      const updatedMedications = await medicationService.getMedicationReminders();
+      
+      // Atualizar o estado com os dados atualizados
+      setMedications(updatedMedications);
+      
+      logger.debug("Medicamento criado com sucesso", "createMedication", {
+        id: newMedication.id,
+        updatedCount: updatedMedications.length
+      });
+      
+      return newMedication;
     } catch (error) {
-      logger.error("Erro ao criar medicamento", "useMedicationReminders", error);
+      logger.error("Erro ao criar medicamento", "createMedication", error);
       toast({
         title: "Erro ao adicionar medicamento",
         description: error instanceof Error ? error.message : "Tente novamente",
         variant: "destructive"
       });
+      throw error; // Re-lançar o erro para tratamento no componente
     } finally {
       setIsSubmitting(false);
     }

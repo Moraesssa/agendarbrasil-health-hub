@@ -10,6 +10,15 @@ import { translateFrequency } from "@/utils/translations";
 const MedicationReminders = () => {
   const { medications, isLoading, markAsTaken, markAsSkipped, loadMedications } = useMedicationReminders();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  
+  // Garantir que o componente responda a mudanças de medicamentos
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  const handleMedicationAdded = () => {
+    // Forçar uma atualização completa dos dados e do componente
+    loadMedications();
+    setRefreshKey(prevKey => prevKey + 1);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -165,7 +174,7 @@ const MedicationReminders = () => {
       <AddMedicationDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onMedicationAdded={loadMedications}
+        onMedicationAdded={handleMedicationAdded}
       />
     </>
   );
