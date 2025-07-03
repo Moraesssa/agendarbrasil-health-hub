@@ -57,7 +57,7 @@ const Medicamentos = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-blue-900 mb-2">Meus Medicamentos</h1>
-          <p className="text-gray-600">Gerencie seus lembretes de medicamento</p>
+          <p className="text-gray-600">Gerencie seus lembretes de medicamentos.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -89,15 +89,15 @@ const Medicamentos = () => {
                 {searchTerm ? 'Nenhum medicamento encontrado' : 'Nenhum medicamento cadastrado'}
               </h3>
               <p className="text-gray-500 mb-6">
-                {searchTerm 
-                  ? 'Tente alterar o termo de busca'
-                  : 'Adicione seu primeiro medicamento para começar'
+                {searchTerm
+                  ? 'Tente alterar o termo da busca.'
+                  : 'Adicione seu primeiro medicamento para começar a monitorar sua saúde.'
                 }
               </p>
               {!searchTerm && (
                 <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Primeiro Medicamento
+                  Adicionar primeiro medicamento
                 </Button>
               )}
             </CardContent>

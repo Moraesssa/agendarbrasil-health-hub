@@ -69,13 +69,13 @@ const MedicationReminders = () => {
           {medications.length === 0 ? (
             <div className="text-center py-8">
               <Pill className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">Nenhum medicamento cadastrado</p>
+              <p className="text-gray-500 mb-4">Nenhum medicamento cadastrado.</p>
               <Button
                 onClick={() => setShowAddDialog(true)}
                 className="bg-blue-500 hover:bg-blue-600"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Adicionar Primeiro Medicamento
+                Adicionar primeiro medicamento
               </Button>
             </div>
           ) : (
@@ -138,7 +138,7 @@ const MedicationReminders = () => {
                         className="h-7 sm:h-8 px-2 sm:px-3 text-xs border-gray-200 text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
                         onClick={() => markAsSkipped(medication.id)}
                       >
-                        Pular
+                        Pular dose
                       </Button>
                     )}
                   </div>
