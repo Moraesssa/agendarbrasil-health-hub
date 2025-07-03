@@ -165,9 +165,20 @@ export const useMedicationReminders = () => {
       return;
     }
     
-    logger.debug("Marcando medicamento como tomado", "markAsTaken", { medicationId, medication });
+    logger.debug("Marcando medicamento como tomado", "markAsTaken", { 
+      medicationId, 
+      medication: {
+        ...medication,
+        today_doses: medication.today_doses
+      }
+    });
+    
+    console.log("Debug - medication.today_doses:", medication.today_doses);
+    console.log("Debug - doses length:", medication.today_doses?.length || 0);
+    console.log("Debug - all doses:", medication.today_doses?.map(d => ({ id: d.id, status: d.status, time: d.scheduled_time })));
     
     const pendingDose = findClosestPendingDose(medication?.today_doses);
+    console.log("Debug - pendingDose found:", pendingDose);
     const targetDoseId = doseId || pendingDose?.id;
 
     if (!targetDoseId) {
