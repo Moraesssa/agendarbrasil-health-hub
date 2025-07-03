@@ -54,6 +54,13 @@ class MedicationService {
     };
   }
 
+  private toLocaleDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   async getMedicationReminders(): Promise<MedicationWithDoses[]> {
     try {
       const { data: reminders, error } = await supabase
@@ -65,7 +72,7 @@ class MedicationService {
       if (error) throw error;
 
       // Get today's doses for each reminder
-      const today = new Date().toISOString().split('T')[0];
+      const today = this.toLocaleDateString(new Date());
       const remindersWithDoses = await Promise.all(
         (reminders || []).map(async (reminder) => {
           const { data: doses } = await supabase
@@ -207,7 +214,7 @@ class MedicationService {
       for (const time of reminder.times) {
         doses.push({
           reminder_id: reminder.id,
-          scheduled_date: date.toISOString().split('T')[0],
+          scheduled_date: this.toLocaleDateString(date),
           scheduled_time: time,
           status: 'pending'
         });
