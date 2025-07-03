@@ -234,11 +234,6 @@ export const financeService = {
             paciente:profiles!consultas_paciente_id_fkey (
               display_name
             )
-          ),
-          original_payment:pagamentos!pagamentos_original_payment_id_fkey (
-            gateway_id,
-            valor,
-            created_at
           )
         `)
         .eq('medico_id', medicoId)
