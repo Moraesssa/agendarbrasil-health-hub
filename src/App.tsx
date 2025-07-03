@@ -24,6 +24,7 @@ import GerenciarLocais from '@/pages/GerenciarLocais';
 import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
 import Financeiro from '@/pages/Financeiro';
+import MarcarRetorno from '@/pages/MarcarRetorno';
 import Agendamento from '@/pages/Agendamento';
 import AgendaPaciente from '@/pages/AgendaPaciente';
 import Historico from '@/pages/Historico';
@@ -105,6 +106,7 @@ function App() {
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
                     <Route path="/financeiro" element={<Financeiro />} />
+                    <Route path="/marcar-retorno" element={<MarcarRetorno />} />
                     <Route path="/agendamento" element={<Agendamento />} />
                     <Route path="/agenda-paciente" element={<AgendaPaciente />} />
                     <Route path="/historico" element={<Historico />} />

@@ -32,6 +32,12 @@ const mainMenuItems = [
     description: "Visualizar consultas e horários"
   },
   {
+    title: "Marcar Retorno",
+    url: "/marcar-retorno",
+    icon: ArrowRightLeft,
+    description: "Agendar consultas de retorno"
+  },
+  {
     title: "Pacientes",
     url: "/pacientes-medico",
     icon: Users,
