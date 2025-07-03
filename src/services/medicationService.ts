@@ -73,14 +73,20 @@ class MedicationService {
 
       // Get today's doses for each reminder
       const today = this.toLocaleDateString(new Date());
+      logger.debug("Buscando doses para hoje", "getMedicationReminders", { today });
+
       const remindersWithDoses = await Promise.all(
         (reminders || []).map(async (reminder) => {
-          const { data: doses } = await supabase
+          const { data: doses, error: dosesError } = await supabase
             .from('medication_doses')
             .select('*')
             .eq('reminder_id', reminder.id)
             .eq('scheduled_date', today)
             .order('scheduled_time');
+
+          if (dosesError) {
+            logger.error("Erro ao buscar doses", "getMedicationReminders", dosesError);
+          }
 
           // Convert Json type to string[] for times
           const times = this.convertJsonToStringArray(reminder.times);
@@ -91,6 +97,45 @@ class MedicationService {
             status: dose.status as 'pending' | 'taken' | 'missed' | 'skipped'
           }));
 
+          logger.debug("Doses encontradas para lembrete", "getMedicationReminders", {
+            reminderId: reminder.id,
+            medicationName: reminder.medication_name,
+            dosesCount: typedDoses.length,
+            times: times,
+            doses: typedDoses
+          });
+
+          // Se não há doses para hoje mas o lembrete está ativo, gerar doses
+          if (typedDoses.length === 0 && times.length > 0) {
+            logger.debug("Gerando doses ausentes para hoje", "getMedicationReminders", {
+              reminderId: reminder.id,
+              times: times
+            });
+            
+            await this.generateTodayDoses(reminder.id, times);
+            
+            // Buscar as doses recém-criadas
+            const { data: newDoses } = await supabase
+              .from('medication_doses')
+              .select('*')
+              .eq('reminder_id', reminder.id)
+              .eq('scheduled_date', today)
+              .order('scheduled_time');
+
+            const newTypedDoses: MedicationDose[] = (newDoses || []).map(dose => ({
+              ...dose,
+              status: dose.status as 'pending' | 'taken' | 'missed' | 'skipped'
+            }));
+
+            return {
+              ...reminder,
+              times: times,
+              today_doses: newTypedDoses,
+              next_dose_time: this.getNextDoseTime(times, newTypedDoses),
+              status: this.getMedicationStatus(times, newTypedDoses)
+            } as MedicationWithDoses;
+          }
+
           return {
             ...reminder,
             times: times,
@@ -100,6 +145,15 @@ class MedicationService {
           } as MedicationWithDoses;
         })
       );
+
+      logger.debug("Lembretes carregados com sucesso", "getMedicationReminders", {
+        count: remindersWithDoses.length,
+        reminders: remindersWithDoses.map(r => ({
+          id: r.id,
+          name: r.medication_name,
+          dosesCount: r.today_doses?.length || 0
+        }))
+      });
 
       return remindersWithDoses;
     } catch (error) {
@@ -113,6 +167,11 @@ class MedicationService {
       // Sanitize data before sending to database
       const sanitizedMedication = this.sanitizeMedicationData(medication);
       
+      logger.debug("Criando lembrete de medicamento", "createMedicationReminder", {
+        medication_name: sanitizedMedication.medication_name,
+        times: sanitizedMedication.times
+      });
+      
       const { data, error } = await supabase
         .from('medication_reminders')
         .insert({
@@ -124,9 +183,28 @@ class MedicationService {
 
       if (error) throw error;
 
+      logger.debug("Lembrete criado, gerando doses", "createMedicationReminder", {
+        reminderId: data.id,
+        times: this.convertJsonToStringArray(data.times)
+      });
+
       // Create initial doses for today and upcoming days
       const reminderWithTimes = { ...data, times: this.convertJsonToStringArray(data.times) };
       await this.generateDosesForReminder(reminderWithTimes);
+
+      // Verificar se as doses foram criadas corretamente
+      const today = this.toLocaleDateString(new Date());
+      const { data: todayDoses } = await supabase
+        .from('medication_doses')
+        .select('*')
+        .eq('reminder_id', data.id)
+        .eq('scheduled_date', today);
+
+      logger.debug("Doses criadas para hoje", "createMedicationReminder", {
+        reminderId: data.id,
+        dosesCreated: todayDoses?.length || 0,
+        expectedDoses: reminderWithTimes.times.length
+      });
 
       return { ...data, times: this.convertJsonToStringArray(data.times) };
     } catch (error) {
@@ -204,22 +282,21 @@ class MedicationService {
     }
   }
 
-  private async generateDosesForReminder(reminder: MedicationReminder): Promise<void> {
-    const startDate = new Date(reminder.start_date);
-    const endDate = reminder.end_date ? new Date(reminder.end_date) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+  private async generateTodayDoses(reminderId: string, times: string[]): Promise<void> {
+    const today = this.toLocaleDateString(new Date());
     
-    const doses = [];
-    
-    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
-      for (const time of reminder.times) {
-        doses.push({
-          reminder_id: reminder.id,
-          scheduled_date: this.toLocaleDateString(date),
-          scheduled_time: time,
-          status: 'pending'
-        });
-      }
-    }
+    const doses = times.map(time => ({
+      reminder_id: reminderId,
+      scheduled_date: today,
+      scheduled_time: time,
+      status: 'pending'
+    }));
+
+    logger.debug("Criando doses para hoje", "generateTodayDoses", {
+      reminderId,
+      dosesCount: doses.length,
+      doses
+    });
 
     if (doses.length > 0) {
       const { error } = await supabase
@@ -227,8 +304,74 @@ class MedicationService {
         .insert(doses);
 
       if (error) {
-        logger.error("Erro ao gerar doses para lembrete", "medicationService", error);
+        logger.error("Erro ao gerar doses para hoje", "generateTodayDoses", error);
+        throw error;
       }
+
+      logger.debug("Doses criadas com sucesso para hoje", "generateTodayDoses", {
+        reminderId,
+        dosesCreated: doses.length
+      });
+    }
+  }
+
+  private async generateDosesForReminder(reminder: MedicationReminder): Promise<void> {
+    try {
+      const startDate = new Date(reminder.start_date);
+      const endDate = reminder.end_date ? new Date(reminder.end_date) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      
+      logger.debug("Gerando doses para lembrete", "generateDosesForReminder", {
+        reminderId: reminder.id,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        times: reminder.times
+      });
+      
+      const doses = [];
+      
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        for (const time of reminder.times) {
+          doses.push({
+            reminder_id: reminder.id,
+            scheduled_date: this.toLocaleDateString(date),
+            scheduled_time: time,
+            status: 'pending'
+          });
+        }
+      }
+
+      logger.debug("Doses preparadas para inserção", "generateDosesForReminder", {
+        reminderId: reminder.id,
+        totalDoses: doses.length,
+        daysSpan: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        timesPerDay: reminder.times.length
+      });
+
+      if (doses.length > 0) {
+        const { error } = await supabase
+          .from('medication_doses')
+          .insert(doses);
+
+        if (error) {
+          logger.error("Erro ao gerar doses para lembrete", "generateDosesForReminder", {
+            error,
+            reminderId: reminder.id,
+            dosesCount: doses.length
+          });
+          throw error;
+        }
+
+        logger.debug("Doses geradas com sucesso", "generateDosesForReminder", {
+          reminderId: reminder.id,
+          dosesCreated: doses.length
+        });
+      }
+    } catch (error) {
+      logger.error("Erro na geração de doses", "generateDosesForReminder", {
+        error,
+        reminderId: reminder.id
+      });
+      throw error;
     }
   }
 
