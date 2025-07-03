@@ -580,7 +580,12 @@ export type Database = {
           id: string
           medico_id: string
           metodo_pagamento: string
+          original_payment_id: string | null
           paciente_id: string
+          refund_id: string | null
+          refund_reason: string | null
+          refunded_amount: number | null
+          refunded_at: string | null
           status: string
           valor: number
         }
@@ -592,7 +597,12 @@ export type Database = {
           id?: string
           medico_id: string
           metodo_pagamento: string
+          original_payment_id?: string | null
           paciente_id: string
+          refund_id?: string | null
+          refund_reason?: string | null
+          refunded_amount?: number | null
+          refunded_at?: string | null
           status: string
           valor: number
         }
@@ -604,7 +614,12 @@ export type Database = {
           id?: string
           medico_id?: string
           metodo_pagamento?: string
+          original_payment_id?: string | null
           paciente_id?: string
+          refund_id?: string | null
+          refund_reason?: string | null
+          refunded_amount?: number | null
+          refunded_at?: string | null
           status?: string
           valor?: number
         }
@@ -621,6 +636,13 @@ export type Database = {
             columns: ["medico_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_original_payment_id_fkey"
+            columns: ["original_payment_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
             referencedColumns: ["id"]
           },
           {

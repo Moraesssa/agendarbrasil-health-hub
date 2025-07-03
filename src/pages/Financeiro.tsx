@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { DollarSign, TrendingUp, CreditCard, AlertCircle, Filter, Download, Settings } from "lucide-react";
+import { DollarSign, TrendingUp, CreditCard, AlertCircle, Filter, Download, Settings, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +13,7 @@ import { financeService, FinancialSummary } from "@/services/financeService";
 import { usePayment } from "@/hooks/usePayment";
 import { PageLoader } from "@/components/PageLoader";
 import { RevenueChart } from "@/components/financial/RevenueChart";
+import { RefundButton } from "@/components/financial/RefundButton";
 import { useToast } from "@/hooks/use-toast";
 
 const Financeiro = () => {
@@ -19,6 +21,7 @@ const Financeiro = () => {
   const { createCustomerPortalSession } = usePayment();
   const { toast } = useToast();
   const [reportData, setReportData] = useState<any[]>([]);
+  const [refundData, setRefundData] = useState<any[]>([]);
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,13 +31,15 @@ const Financeiro = () => {
       if (!user) return;
       try {
         setLoading(true);
-        const [reportResult, summaryResult, chartResult] = await Promise.all([
+        const [reportResult, refundResult, summaryResult, chartResult] = await Promise.all([
           financeService.getRelatorioFinanceiro(user.id),
+          financeService.getRefundHistory(user.id),
           financeService.getResumoFinanceiro(user.id),
           financeService.getReceitaMensal(user.id)
         ]);
         
         setReportData(reportResult);
+        setRefundData(refundResult);
         setSummary(summaryResult);
         setChartData(chartResult);
       } catch (error) {
@@ -53,6 +58,29 @@ const Financeiro = () => {
 
   const handleOpenCustomerPortal = async () => {
     await createCustomerPortalSession();
+  };
+
+  const handleRefundSuccess = () => {
+    // Recarregar dados após reembolso
+    const fetchFinancialData = async () => {
+      if (!user) return;
+      try {
+        const [reportResult, refundResult, summaryResult, chartResult] = await Promise.all([
+          financeService.getRelatorioFinanceiro(user.id),
+          financeService.getRefundHistory(user.id),
+          financeService.getResumoFinanceiro(user.id),
+          financeService.getReceitaMensal(user.id)
+        ]);
+        
+        setReportData(reportResult);
+        setRefundData(refundResult);
+        setSummary(summaryResult);
+        setChartData(chartResult);
+      } catch (error) {
+        console.error("Erro ao recarregar dados financeiros", error);
+      }
+    };
+    fetchFinancialData();
   };
 
   const getStatusColor = (status: string) => {
@@ -155,54 +183,133 @@ const Financeiro = () => {
             {/* Gráfico de receita */}
             {chartData.length > 0 && <RevenueChart data={chartData} />}
 
-            {/* Tabela de transações */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Histórico de Transações
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Paciente</TableHead>
-                      <TableHead>Especialidade</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Método</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportData.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{new Date(item.created_at).toLocaleDateString('pt-BR')}</TableCell>
-                        <TableCell>{item.consulta?.paciente?.display_name || 'N/A'}</TableCell>
-                        <TableCell>{item.consulta?.tipo_consulta || 'N/A'}</TableCell>
-                        <TableCell>{formatCurrency(Number(item.valor))}</TableCell>
-                        <TableCell className="capitalize">
-                          {item.metodo_pagamento === 'credit_card' ? 'Cartão de Crédito' : 
-                           item.metodo_pagamento === 'pix' ? 'PIX' : 
-                           item.metodo_pagamento?.replace('_', ' ')}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(item.status)}>
-                            {getStatusText(item.status)}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {reportData.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    Nenhuma transação encontrada.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Abas de Transações e Reembolsos */}
+            <Tabs defaultValue="transactions" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="transactions">Transações</TabsTrigger>
+                <TabsTrigger value="refunds">Reembolsos</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="transactions">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Histórico de Transações
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Paciente</TableHead>
+                          <TableHead>Especialidade</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Método</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.filter(item => item.status !== 'refund').map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{new Date(item.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                            <TableCell>{item.consulta?.paciente?.display_name || 'N/A'}</TableCell>
+                            <TableCell>{item.consulta?.tipo_consulta || 'N/A'}</TableCell>
+                            <TableCell>{formatCurrency(Number(item.valor))}</TableCell>
+                            <TableCell className="capitalize">
+                              {item.metodo_pagamento === 'credit_card' ? 'Cartão de Crédito' : 
+                               item.metodo_pagamento === 'pix' ? 'PIX' : 
+                               item.metodo_pagamento?.replace('_', ' ')}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(item.status)}>
+                                {getStatusText(item.status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {item.status === 'succeeded' && (
+                                <RefundButton
+                                  paymentData={{
+                                    id: item.id,
+                                    valor: Number(item.valor),
+                                    consulta_id: item.consulta_id,
+                                    status: item.status,
+                                    paciente_nome: item.consulta?.paciente?.display_name,
+                                    data_consulta: item.consulta?.data_consulta
+                                  }}
+                                  onRefundSuccess={handleRefundSuccess}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {reportData.filter(item => item.status !== 'refund').length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        Nenhuma transação encontrada.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="refunds">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <RotateCcw className="w-5 h-5" />
+                      Histórico de Reembolsos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data do Reembolso</TableHead>
+                          <TableHead>Paciente</TableHead>
+                          <TableHead>Valor Reembolsado</TableHead>
+                          <TableHead>Motivo</TableHead>
+                          <TableHead>ID Reembolso</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {refundData.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              {item.refunded_at ? new Date(item.refunded_at).toLocaleDateString('pt-BR') : 'N/A'}
+                            </TableCell>
+                            <TableCell>{item.consulta?.paciente?.display_name || 'N/A'}</TableCell>
+                            <TableCell className="text-red-600 font-medium">
+                              -{formatCurrency(Number(item.refunded_amount || Math.abs(item.valor)))}
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate" title={item.refund_reason}>
+                              {item.refund_reason || 'N/A'}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {item.refund_id || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="bg-red-100 text-red-800">
+                                Reembolsado
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {refundData.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        Nenhum reembolso processado.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </main>
         </SidebarInset>
       </div>

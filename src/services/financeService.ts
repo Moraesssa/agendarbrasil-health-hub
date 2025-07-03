@@ -184,5 +184,111 @@ export const financeService = {
       logger.error("Erro ao buscar receita mensal", "financeService", error);
       return [];
     }
+  },
+
+  /**
+   * Processa um reembolso via Edge Function
+   */
+  async processRefund(paymentId: string, reason: string, amount?: number): Promise<{ success: boolean; error?: Error }> {
+    logger.info("Processando reembolso", "financeService", { paymentId, reason, amount });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('process-refund', {
+        body: {
+          paymentId,
+          reason,
+          amount
+        }
+      });
+
+      if (error) {
+        throw new Error(`Erro na Edge Function: ${error.message}`);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      logger.info("Reembolso processado com sucesso", "financeService", { refundId: data?.refundId });
+      return { success: true };
+    } catch (error) {
+      logger.error("Falha ao processar reembolso", "financeService", error);
+      return { success: false, error: error as Error };
+    }
+  },
+
+  /**
+   * Busca histórico de reembolsos de um médico
+   */
+  async getRefundHistory(medicoId: string): Promise<any[]> {
+    logger.info("Buscando histórico de reembolsos", "financeService", { medicoId });
+
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          *,
+          consulta:consultas (
+            data_consulta,
+            tipo_consulta,
+            paciente:profiles!consultas_paciente_id_fkey (
+              display_name
+            )
+          ),
+          original_payment:pagamentos!pagamentos_original_payment_id_fkey (
+            gateway_id,
+            valor,
+            created_at
+          )
+        `)
+        .eq('medico_id', medicoId)
+        .eq('status', 'refund')
+        .order('refunded_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Erro ao buscar histórico de reembolsos: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      logger.error("Falha ao buscar histórico de reembolsos", "financeService", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Verifica se um pagamento pode ser reembolsado
+   */
+  async canRefund(paymentId: string): Promise<boolean> {
+    try {
+      const { data: payment, error } = await supabase
+        .from('pagamentos')
+        .select('status, created_at')
+        .eq('id', paymentId)
+        .single();
+
+      if (error || !payment) {
+        return false;
+      }
+
+      // Só pode reembolsar pagamentos bem-sucedidos
+      if (payment.status !== 'succeeded') {
+        return false;
+      }
+
+      // Verificar se já existe um reembolso para este pagamento
+      const { data: existingRefund } = await supabase
+        .from('pagamentos')
+        .select('id')
+        .eq('original_payment_id', paymentId)
+        .eq('status', 'refund')
+        .single();
+
+      // Se já existe reembolso, não pode reembolsar novamente
+      return !existingRefund;
+    } catch (error) {
+      logger.error("Erro ao verificar elegibilidade para reembolso", "financeService", error);
+      return false;
+    }
   }
 };
