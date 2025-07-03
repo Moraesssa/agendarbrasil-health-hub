@@ -15,27 +15,26 @@ export const useMedicationReminders = () => {
 
   const findClosestPendingDose = (doses: MedicationWithDoses['today_doses']) => {
     if (!doses || doses.length === 0) return null;
-
+  
     const now = new Date();
+    const nowInMinutes = now.getHours() * 60 + now.getMinutes();
+  
     const pendingDoses = doses.filter(d => d.status === 'pending');
-
+  
     if (pendingDoses.length === 0) return null;
-    if (pendingDoses.length === 1) return pendingDoses[0];
-
+  
     return pendingDoses.reduce((closest, current) => {
-      const closestTime = new Date();
       const [closestHours, closestMinutes] = closest.scheduled_time.split(':').map(Number);
-      closestTime.setHours(closestHours, closestMinutes, 0, 0);
-
-      const currentTime = new Date();
+      const closestTimeInMinutes = closestHours * 60 + closestMinutes;
+  
       const [currentHours, currentMinutes] = current.scheduled_time.split(':').map(Number);
-      currentTime.setHours(currentHours, currentMinutes, 0, 0);
-
-      const closestDiff = Math.abs(closestTime.getTime() - now.getTime());
-      const currentDiff = Math.abs(currentTime.getTime() - now.getTime());
-
+      const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+  
+      const closestDiff = Math.abs(closestTimeInMinutes - nowInMinutes);
+      const currentDiff = Math.abs(currentTimeInMinutes - nowInMinutes);
+  
       return currentDiff < closestDiff ? current : closest;
-    });
+    }, pendingDoses[0]); // Initialize with the first pending dose
   };
 
   const loadMedications = async () => {
@@ -126,7 +125,7 @@ export const useMedicationReminders = () => {
     const targetDoseId = doseId || pendingDose?.id;
 
     if (!targetDoseId) {
-      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para pular.", variant: "destructive" });
+      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para marcar como tomada.", variant: "destructive" });
       return;
     }
 
