@@ -180,7 +180,7 @@ export const useMedicationReminders = () => {
       const newMeds = prevMeds.map(med => {
         if (med.id === medicationId) {
           const updatedDoses = med.today_doses?.map(dose =>
-            dose.id === targetDoseId ? { ...dose, status: 'taken' as const } : dose
+            dose.id === targetDoseId ? { ...dose, ...dose, status: 'taken' as const } : { ...dose }
           ) || [];
 
           const allTaken = updatedDoses.every(d => d.status === 'taken');
@@ -199,7 +199,7 @@ export const useMedicationReminders = () => {
             status: newStatus
           };
         }
-        return med;
+        return { ...med };
       });
       return newMeds;
     });
@@ -258,9 +258,8 @@ export const useMedicationReminders = () => {
       const newMeds = prevMeds.map(med => {
         if (med.id === medicationId) {
           const updatedDoses = med.today_doses?.map(dose =>
-            dose.id === targetDoseId ? { ...dose, status: 'skipped' as const } : dose
+            dose.id === targetDoseId ? { ...dose, ...dose, status: 'skipped' as const } : { ...dose }
           ) || [];
-            
           const allTakenOrSkipped = updatedDoses.every(d => d.status === 'taken' || d.status === 'skipped');
           const hasPending = updatedDoses.some(d => d.status === 'pending');
           const newStatus: 'pending' | 'taken' | 'missed' | 'overdue' = hasPending ? 'pending' : allTakenOrSkipped ? 'taken' : 'overdue';
@@ -277,7 +276,7 @@ export const useMedicationReminders = () => {
             status: newStatus
           };
         }
-        return med;
+        return { ...med };
       });
       return newMeds;
     });
