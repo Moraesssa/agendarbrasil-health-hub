@@ -1,6 +1,7 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { User, Users } from "lucide-react";
+import { User } from "lucide-react";
 import { FamilyMember } from "@/types/family";
 
 interface FamilyMemberSelectProps {
@@ -36,17 +37,16 @@ export const FamilyMemberSelect = ({
   );
 
   return (
-    <div className="space-y-2">
-      <Label className="flex items-center gap-2">
-        <Users className="h-4 w-4" />
-        Agendar para
+    <div className="space-y-3">
+      <Label className="text-sm font-medium text-foreground">
+        Para quem deseja agendar
       </Label>
       <Select
         value={selectedMemberId}
         onValueChange={onChange}
         disabled={disabled || isLoading}
       >
-        <SelectTrigger>
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Selecione para quem agendar" />
         </SelectTrigger>
         <SelectContent>
