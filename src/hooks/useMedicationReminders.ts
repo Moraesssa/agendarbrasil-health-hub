@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +13,10 @@ export const useMedicationReminders = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const findClosestPendingDose = (doses: MedicationWithDoses['today_doses']) => {
-    if (!doses || doses.length === 0) return null;
+    if (!doses || doses.length === 0) {
+      logger.debug("Nenhuma dose encontrada", "findClosestPendingDose", { doses });
+      return null;
+    }
   
     const now = new Date();
     const nowInMinutes = now.getHours() * 60 + now.getMinutes();
@@ -22,18 +24,33 @@ export const useMedicationReminders = () => {
     // Garantir que apenas doses pendentes sejam consideradas
     const pendingDoses = doses.filter(d => d.status === 'pending');
     
-    logger.debug("Doses pendentes encontradas", "findClosestPendingDose", {
-      count: pendingDoses.length,
-      doses: pendingDoses
+    logger.debug("Procurando dose pendente mais próxima", "findClosestPendingDose", {
+      totalDoses: doses.length,
+      pendingDoses: pendingDoses.length,
+      currentTime: `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
+      allDoses: doses.map(d => ({ 
+        id: d.id, 
+        status: d.status, 
+        time: d.scheduled_time,
+        isPending: d.status === 'pending'
+      }))
     });
   
-    if (pendingDoses.length === 0) return null;
+    if (pendingDoses.length === 0) {
+      logger.debug("Nenhuma dose pendente encontrada", "findClosestPendingDose");
+      return null;
+    }
     
     // Se houver apenas uma dose pendente, retorna ela
-    if (pendingDoses.length === 1) return pendingDoses[0];
+    if (pendingDoses.length === 1) {
+      logger.debug("Única dose pendente encontrada", "findClosestPendingDose", {
+        dose: pendingDoses[0]
+      });
+      return pendingDoses[0];
+    }
   
     // Encontra a dose pendente mais próxima do horário atual
-    return pendingDoses.reduce((closest, current) => {
+    const closestDose = pendingDoses.reduce((closest, current) => {
       try {
         const [closestHours, closestMinutes] = closest.scheduled_time.split(':').map(Number);
         const closestTimeInMinutes = closestHours * 60 + closestMinutes;
@@ -53,7 +70,13 @@ export const useMedicationReminders = () => {
         });
         return closest;
       }
-    }, pendingDoses[0]); // Initialize with the first pending dose
+    }, pendingDoses[0]);
+
+    logger.debug("Dose mais próxima selecionada", "findClosestPendingDose", {
+      selectedDose: closestDose
+    });
+
+    return closestDose;
   };
 
   const loadMedications = async () => {
@@ -61,8 +84,17 @@ export const useMedicationReminders = () => {
     
     setIsLoading(true);
     try {
+      logger.debug("Carregando medicamentos", "loadMedications", { userId: user.id });
       const data = await medicationService.getMedicationReminders();
       setMedications(data);
+      logger.debug("Medicamentos carregados com sucesso", "loadMedications", {
+        count: data.length,
+        medications: data.map(m => ({
+          id: m.id,
+          name: m.medication_name,
+          dosesCount: m.today_doses?.length || 0
+        }))
+      });
     } catch (error) {
       logger.error("Erro ao carregar medicamentos", "useMedicationReminders", error);
       toast({
@@ -78,7 +110,10 @@ export const useMedicationReminders = () => {
   const createMedication = async (medication: Omit<MedicationReminder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     setIsSubmitting(true);
     try {
-      logger.debug("Iniciando criação de medicamento", "createMedication", { medication_name: medication.medication_name });
+      logger.debug("Iniciando criação de medicamento", "createMedication", { 
+        medication_name: medication.medication_name,
+        times: medication.times
+      });
       
       // Cria o medicamento e obtém o objeto completo com ID
       const newMedication = await medicationService.createMedicationReminder(medication);
@@ -108,7 +143,7 @@ export const useMedicationReminders = () => {
         description: error instanceof Error ? error.message : "Tente novamente",
         variant: "destructive"
       });
-      throw error; // Re-lançar o erro para tratamento no componente
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -157,8 +192,6 @@ export const useMedicationReminders = () => {
   };
 
   const markAsTaken = async (medicationId: string, doseId?: string, notes?: string) => {
-    // Atualizar o estado imediatamente para resposta instantânea na UI
-    // Antes mesmo de fazer a chamada de API
     const medication = medications.find(m => m.id === medicationId);
     if (!medication) {
       toast({ title: "Erro", description: "Medicamento não encontrado.", variant: "destructive" });
@@ -168,21 +201,36 @@ export const useMedicationReminders = () => {
     logger.debug("Marcando medicamento como tomado", "markAsTaken", { 
       medicationId, 
       medication: {
-        ...medication,
-        today_doses: medication.today_doses
+        id: medication.id,
+        name: medication.medication_name,
+        dosesCount: medication.today_doses?.length || 0,
+        doses: medication.today_doses?.map(d => ({ 
+          id: d.id, 
+          status: d.status, 
+          time: d.scheduled_time 
+        })) || []
       }
     });
     
-    console.log("Debug - medication.today_doses:", medication.today_doses);
-    console.log("Debug - doses length:", medication.today_doses?.length || 0);
-    console.log("Debug - all doses:", medication.today_doses?.map(d => ({ id: d.id, status: d.status, time: d.scheduled_time })));
-    
     const pendingDose = findClosestPendingDose(medication?.today_doses);
-    console.log("Debug - pendingDose found:", pendingDose);
     const targetDoseId = doseId || pendingDose?.id;
 
     if (!targetDoseId) {
-      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para marcar como tomada.", variant: "destructive" });
+      logger.error("Nenhuma dose pendente encontrada", "markAsTaken", {
+        medicationId,
+        providedDoseId: doseId,
+        foundPendingDose: pendingDose,
+        allDoses: medication.today_doses
+      });
+      
+      toast({ 
+        title: "Nenhuma dose pendente", 
+        description: "Não há doses pendentes para marcar como tomadas. Tente recarregar a página.",
+        variant: "destructive" 
+      });
+      
+      // Tentar recarregar os dados
+      loadMedications();
       return;
     }
 
@@ -200,8 +248,9 @@ export const useMedicationReminders = () => {
 
           logger.debug("Estado atualizado otimisticamente", "markAsTaken", {
             medicationId,
+            targetDoseId,
             newStatus,
-            updatedDoses
+            updatedDoses: updatedDoses.map(d => ({ id: d.id, status: d.status }))
           });
 
           return {
@@ -226,7 +275,6 @@ export const useMedicationReminders = () => {
       await medicationService.markDoseAsTaken(targetDoseId, notes);
       
       // Recarrega os dados para garantir sincronização com o backend
-      // Este recarregamento é silencioso (sem indicador de carregamento)
       const refreshedData = await medicationService.getMedicationReminders();
       setMedications(refreshedData);
       
@@ -234,7 +282,7 @@ export const useMedicationReminders = () => {
         count: refreshedData.length
       });
     } catch (error) {
-      logger.error("Erro ao marcar dose como tomada", "useMedicationReminders", error);
+      logger.error("Erro ao marcar dose como tomada", "markAsTaken", error);
       toast({
         title: "Erro ao salvar",
         description: "Houve um erro ao salvar as alterações. Atualizando dados...",
@@ -247,20 +295,40 @@ export const useMedicationReminders = () => {
   };
 
   const markAsSkipped = async (medicationId: string, doseId?: string, notes?: string) => {
-    // Atualizar o estado imediatamente para resposta instantânea na UI
     const medication = medications.find(m => m.id === medicationId);
     if (!medication) {
       toast({ title: "Erro", description: "Medicamento não encontrado.", variant: "destructive" });
       return;
     }
     
-    logger.debug("Marcando medicamento como pulado", "markAsSkipped", { medicationId, medication });
+    logger.debug("Marcando medicamento como pulado", "markAsSkipped", { 
+      medicationId, 
+      medication: {
+        id: medication.id,
+        name: medication.medication_name,
+        dosesCount: medication.today_doses?.length || 0
+      }
+    });
     
     const pendingDose = findClosestPendingDose(medication?.today_doses);
     const targetDoseId = doseId || pendingDose?.id;
 
     if (!targetDoseId) {
-      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para pular.", variant: "destructive" });
+      logger.error("Nenhuma dose pendente encontrada", "markAsSkipped", {
+        medicationId,
+        providedDoseId: doseId,
+        foundPendingDose: pendingDose,
+        allDoses: medication.today_doses
+      });
+      
+      toast({ 
+        title: "Nenhuma dose pendente", 
+        description: "Não há doses pendentes para pular. Tente recarregar a página.",
+        variant: "destructive" 
+      });
+      
+      // Tentar recarregar os dados
+      loadMedications();
       return;
     }
 
@@ -278,8 +346,9 @@ export const useMedicationReminders = () => {
 
           logger.debug("Estado atualizado otimisticamente", "markAsSkipped", {
             medicationId,
+            targetDoseId,
             newStatus,
-            updatedDoses
+            updatedDoses: updatedDoses.map(d => ({ id: d.id, status: d.status }))
           });
 
           return {
@@ -304,7 +373,6 @@ export const useMedicationReminders = () => {
       await medicationService.markDoseAsSkipped(targetDoseId, notes);
       
       // Recarrega os dados para garantir sincronização com o backend
-      // Este recarregamento é silencioso (sem indicador de carregamento)
       const refreshedData = await medicationService.getMedicationReminders();
       setMedications(refreshedData);
       
@@ -312,7 +380,7 @@ export const useMedicationReminders = () => {
         count: refreshedData.length
       });
     } catch (error) {
-      logger.error("Erro ao marcar dose como pulada", "useMedicationReminders", error);
+      logger.error("Erro ao marcar dose como pulada", "markAsSkipped", error);
       toast({
         title: "Erro ao salvar",
         description: "Houve um erro ao salvar as alterações. Atualizando dados...",
