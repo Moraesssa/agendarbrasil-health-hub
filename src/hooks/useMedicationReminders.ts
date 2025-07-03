@@ -13,6 +13,31 @@ export const useMedicationReminders = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const findClosestPendingDose = (doses: MedicationWithDoses['today_doses']) => {
+    if (!doses || doses.length === 0) return null;
+
+    const now = new Date();
+    const pendingDoses = doses.filter(d => d.status === 'pending');
+
+    if (pendingDoses.length === 0) return null;
+    if (pendingDoses.length === 1) return pendingDoses[0];
+
+    return pendingDoses.reduce((closest, current) => {
+      const closestTime = new Date();
+      const [closestHours, closestMinutes] = closest.scheduled_time.split(':').map(Number);
+      closestTime.setHours(closestHours, closestMinutes, 0, 0);
+
+      const currentTime = new Date();
+      const [currentHours, currentMinutes] = current.scheduled_time.split(':').map(Number);
+      currentTime.setHours(currentHours, currentMinutes, 0, 0);
+
+      const closestDiff = Math.abs(closestTime.getTime() - now.getTime());
+      const currentDiff = Math.abs(currentTime.getTime() - now.getTime());
+
+      return currentDiff < closestDiff ? current : closest;
+    });
+  };
+
   const loadMedications = async () => {
     if (!user) return;
     
@@ -97,11 +122,11 @@ export const useMedicationReminders = () => {
 
   const markAsTaken = async (medicationId: string, doseId?: string, notes?: string) => {
     const medication = medications.find(m => m.id === medicationId);
-    const pendingDose = medication?.today_doses?.find(d => d.status === 'pending');
+    const pendingDose = findClosestPendingDose(medication?.today_doses);
     const targetDoseId = doseId || pendingDose?.id;
 
     if (!targetDoseId) {
-      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para marcar.", variant: "destructive" });
+      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para pular.", variant: "destructive" });
       return;
     }
 
@@ -142,11 +167,11 @@ export const useMedicationReminders = () => {
 
   const markAsSkipped = async (medicationId: string, doseId?: string, notes?: string) => {
     const medication = medications.find(m => m.id === medicationId);
-    const pendingDose = medication?.today_doses?.find(d => d.status === 'pending');
+    const pendingDose = findClosestPendingDose(medication?.today_doses);
     const targetDoseId = doseId || pendingDose?.id;
 
     if (!targetDoseId) {
-      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para marcar.", variant: "destructive" });
+      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para pular.", variant: "destructive" });
       return;
     }
 
