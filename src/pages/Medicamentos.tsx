@@ -7,9 +7,10 @@ import { Pill, Plus, Search, Edit, Trash2, Clock, CheckCircle, AlertCircle } fro
 import { useMedicationReminders } from "@/hooks/useMedicationReminders";
 import { AddMedicationDialog } from "@/components/medication/AddMedicationDialog";
 import Header from "@/components/Header";
+import { translateFrequency } from "@/utils/translations";
 
 const Medicamentos = () => {
-  const { medications, isLoading, deleteMedication, markAsTaken, markAsSkipped } = useMedicationReminders();
+  const { medications, isLoading, deleteMedication, markAsTaken, markAsSkipped, loadMedications } = useMedicationReminders();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -113,7 +114,7 @@ const Medicamentos = () => {
                       <div>
                         <CardTitle className="text-lg">{medication.medication_name}</CardTitle>
                         <p className="text-sm text-gray-600 mt-1">
-                          {medication.dosage} • {medication.frequency === 'daily' ? 'Diário' : medication.frequency}
+                          {medication.dosage} • {translateFrequency(medication.frequency)}
                         </p>
                       </div>
                     </div>
@@ -192,9 +193,10 @@ const Medicamentos = () => {
         )}
       </div>
 
-      <AddMedicationDialog 
-        open={showAddDialog} 
+      <AddMedicationDialog
+        open={showAddDialog}
         onOpenChange={setShowAddDialog}
+        onMedicationAdded={loadMedications}
       />
     </div>
   );

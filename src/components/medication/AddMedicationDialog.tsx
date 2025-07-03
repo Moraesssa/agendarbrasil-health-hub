@@ -13,9 +13,10 @@ import { useMedicationReminders } from "@/hooks/useMedicationReminders";
 interface AddMedicationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onMedicationAdded: () => void;
 }
 
-export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogProps) => {
+export const AddMedicationDialog = ({ open, onOpenChange, onMedicationAdded }: AddMedicationDialogProps) => {
   const { createMedication, isSubmitting } = useMedicationReminders();
   
   const [formData, setFormData] = useState({
@@ -55,6 +56,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       };
 
       await createMedication(sanitizedData);
+      onMedicationAdded();
       onOpenChange(false);
       resetForm();
     } catch (error) {

@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMedicationReminders } from "@/hooks/useMedicationReminders";
 import { AddMedicationDialog } from "./medication/AddMedicationDialog";
+import { translateFrequency } from "@/utils/translations";
 
 const MedicationReminders = () => {
-  const { medications, isLoading, markAsTaken, markAsSkipped } = useMedicationReminders();
+  const { medications, isLoading, markAsTaken, markAsSkipped, loadMedications } = useMedicationReminders();
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   const getStatusIcon = (status: string) => {
@@ -100,7 +101,7 @@ const MedicationReminders = () => {
                         {medication.medication_name}
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-600">
-                        {medication.dosage} • {medication.frequency === 'daily' ? 'Diário' : medication.frequency}
+                        {medication.dosage} • {translateFrequency(medication.frequency)}
                       </p>
                     </div>
                   </div>
@@ -161,9 +162,10 @@ const MedicationReminders = () => {
         </CardContent>
       </Card>
 
-      <AddMedicationDialog 
-        open={showAddDialog} 
+      <AddMedicationDialog
+        open={showAddDialog}
         onOpenChange={setShowAddDialog}
+        onMedicationAdded={loadMedications}
       />
     </>
   );
