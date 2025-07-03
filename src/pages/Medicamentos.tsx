@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Pill, Plus, Search, Edit, Trash2, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useMedicationReminders } from "@/hooks/useMedicationReminders";
 import { AddMedicationDialog } from "@/components/medication/AddMedicationDialog";
-import { Header } from "@/components/Header";
+import Header from "@/components/Header";
 
 const Medicamentos = () => {
   const { medications, isLoading, deleteMedication, markAsTaken, markAsSkipped } = useMedicationReminders();

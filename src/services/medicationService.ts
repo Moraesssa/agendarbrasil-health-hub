@@ -57,12 +57,22 @@ class MedicationService {
             .eq('scheduled_date', today)
             .order('scheduled_time');
 
+          // Convert Json type to string[] for times
+          const times = Array.isArray(reminder.times) ? reminder.times : [];
+          
+          // Convert doses to proper type
+          const typedDoses: MedicationDose[] = (doses || []).map(dose => ({
+            ...dose,
+            status: dose.status as 'pending' | 'taken' | 'missed' | 'skipped'
+          }));
+
           return {
             ...reminder,
-            today_doses: doses || [],
-            next_dose_time: this.getNextDoseTime(reminder.times, doses || []),
-            status: this.getMedicationStatus(reminder.times, doses || [])
-          };
+            times: times,
+            today_doses: typedDoses,
+            next_dose_time: this.getNextDoseTime(times, typedDoses),
+            status: this.getMedicationStatus(times, typedDoses)
+          } as MedicationWithDoses;
         })
       );
 
@@ -87,9 +97,10 @@ class MedicationService {
       if (error) throw error;
 
       // Create initial doses for today and upcoming days
-      await this.generateDosesForReminder(data);
+      const reminderWithTimes = { ...data, times: Array.isArray(data.times) ? data.times : [] };
+      await this.generateDosesForReminder(reminderWithTimes);
 
-      return data;
+      return { ...data, times: Array.isArray(data.times) ? data.times : [] };
     } catch (error) {
       logger.error("Erro ao criar lembrete de medicamento", "medicationService", error);
       throw error;
@@ -106,7 +117,7 @@ class MedicationService {
         .single();
 
       if (error) throw error;
-      return data;
+      return { ...data, times: Array.isArray(data.times) ? data.times : [] };
     } catch (error) {
       logger.error("Erro ao atualizar lembrete de medicamento", "medicationService", error);
       throw error;
