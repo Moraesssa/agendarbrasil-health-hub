@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import Header from "@/components/Header";
 import { translateFrequency } from "@/utils/translations";
 
 const Medicamentos = () => {
+  const navigate = useNavigate();
   const { medications, isLoading, deleteMedication, markAsTaken, markAsSkipped, loadMedications } = useMedicationReminders();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,9 +58,14 @@ const Medicamentos = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">Meus Medicamentos</h1>
-          <p className="text-gray-600">Gerencie seus lembretes de medicamentos.</p>
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">Meus Medicamentos</h1>
+            <p className="text-gray-600">Gerencie seus lembretes de medicamentos.</p>
+          </div>
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Voltar
+          </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
