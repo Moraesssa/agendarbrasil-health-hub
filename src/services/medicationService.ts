@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
@@ -36,6 +35,13 @@ export interface MedicationWithDoses extends MedicationReminder {
 }
 
 class MedicationService {
+  private convertJsonToStringArray(jsonValue: any): string[] {
+    if (Array.isArray(jsonValue)) {
+      return jsonValue.filter(item => typeof item === 'string') as string[];
+    }
+    return [];
+  }
+
   async getMedicationReminders(): Promise<MedicationWithDoses[]> {
     try {
       const { data: reminders, error } = await supabase
@@ -58,7 +64,7 @@ class MedicationService {
             .order('scheduled_time');
 
           // Convert Json type to string[] for times
-          const times = Array.isArray(reminder.times) ? reminder.times : [];
+          const times = this.convertJsonToStringArray(reminder.times);
           
           // Convert doses to proper type
           const typedDoses: MedicationDose[] = (doses || []).map(dose => ({
@@ -97,10 +103,10 @@ class MedicationService {
       if (error) throw error;
 
       // Create initial doses for today and upcoming days
-      const reminderWithTimes = { ...data, times: Array.isArray(data.times) ? data.times : [] };
+      const reminderWithTimes = { ...data, times: this.convertJsonToStringArray(data.times) };
       await this.generateDosesForReminder(reminderWithTimes);
 
-      return { ...data, times: Array.isArray(data.times) ? data.times : [] };
+      return { ...data, times: this.convertJsonToStringArray(data.times) };
     } catch (error) {
       logger.error("Erro ao criar lembrete de medicamento", "medicationService", error);
       throw error;
@@ -117,7 +123,7 @@ class MedicationService {
         .single();
 
       if (error) throw error;
-      return { ...data, times: Array.isArray(data.times) ? data.times : [] };
+      return { ...data, times: this.convertJsonToStringArray(data.times) };
     } catch (error) {
       logger.error("Erro ao atualizar lembrete de medicamento", "medicationService", error);
       throw error;
