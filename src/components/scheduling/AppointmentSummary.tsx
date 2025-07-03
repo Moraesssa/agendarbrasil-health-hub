@@ -12,16 +12,18 @@ interface AppointmentSummaryProps {
     selectedDate: string;
     selectedTime: string;
     selectedLocal: { nome_local: string; endereco: any } | null;
+    selectedPatientName?: string;
 }
 
-export const AppointmentSummary = ({ 
-    selectedSpecialty,
-    selectedDoctorName,
-    selectedState,
-    selectedCity,
-    selectedDate,
-    selectedTime,
-    selectedLocal
+export const AppointmentSummary = ({
+  selectedSpecialty,
+  selectedDoctorName,
+  selectedState,
+  selectedCity,
+  selectedDate,
+  selectedTime,
+  selectedLocal,
+  selectedPatientName
 }: AppointmentSummaryProps) => {
     
     const locationText = selectedLocal ? `${selectedLocal.nome_local} (${selectedLocal.endereco.cidade}, ${selectedLocal.endereco.uf})` : null;
@@ -35,6 +37,9 @@ export const AppointmentSummary = ({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
+                {selectedPatientName && (
+                  <InfoRow icon={User} label="Paciente" value={selectedPatientName} isCompleted={!!selectedPatientName} />
+                )}
                 <InfoRow icon={Stethoscope} label="Especialidade" value={selectedSpecialty} isCompleted={!!selectedSpecialty} />
                 <InfoRow icon={User} label="Médico" value={selectedDoctorName} isCompleted={!!selectedDoctorName} />
                 <InfoRow icon={MapIcon} label="Estado" value={selectedState} isCompleted={!!selectedState} />

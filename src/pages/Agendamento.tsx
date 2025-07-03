@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import { useNewAppointmentScheduling } from "@/hooks/useNewAppointmentScheduling";
+import { useFamilyAppointmentScheduling } from "@/hooks/useFamilyAppointmentScheduling";
 import { SpecialtySelect } from "@/components/scheduling/SpecialtySelect";
 import { StateSelect } from "@/components/scheduling/StateSelect";
 import { CitySelect } from "@/components/scheduling/CitySelect";
@@ -14,17 +14,20 @@ import { DateSelect } from "@/components/scheduling/DateSelect";
 import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
 import { PaymentModal } from "@/components/financial/PaymentModal";
+import { FamilyMemberSelect } from "@/components/scheduling/FamilyMemberSelect";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
 const Agendamento = () => {
   const navigate = useNavigate();
-  const { models, setters, state, actions } = useNewAppointmentScheduling();
+  const { user } = useAuth();
+  const { models, setters, state, actions } = useFamilyAppointmentScheduling();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [consultaId, setConsultaId] = useState<string | null>(null);
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
 
-  const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedTime && models.selectedLocal;
+  const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedTime && models.selectedLocal && models.selectedPatientId;
 
   // Gerar ID único para a consulta antes do pagamento
   const generateConsultaId = () => {
@@ -71,27 +74,42 @@ const Agendamento = () => {
                   <CardDescription>Siga os passos para encontrar um horário disponível.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
+                  {/* --- ETAPA 0: SELEÇÃO DO PACIENTE --- */}
+                  {user && (
+                    <div className="space-y-4">
+                      <FamilyMemberSelect
+                        familyMembers={models.familyMembers}
+                        selectedMemberId={models.selectedPatientId}
+                        currentUserId={user.id}
+                        currentUserName={user.email || 'Usuário'}
+                        isLoading={state.isLoading}
+                        onChange={setters.setSelectedPatientId}
+                      />
+                    </div>
+                  )}
+
                   {/* --- ETAPA 1: ESPECIALIDADE E LOCALIZAÇÃO --- */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
                       <SpecialtySelect 
                           specialties={models.specialties} 
                           selectedSpecialty={models.selectedSpecialty} 
                           isLoading={state.isLoading} 
-                          onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('state'); }} 
-                      />
-                      <StateSelect 
-                          states={models.states} 
-                          selectedState={models.selectedState} 
-                          isLoading={state.isLoading} 
-                          onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} 
-                          disabled={!models.selectedSpecialty}
-                      />
-                      <CitySelect 
-                          cities={models.cities} 
-                          selectedCity={models.selectedCity} 
-                          isLoading={state.isLoading} 
-                          onChange={(v) => { setters.setSelectedCity(v); actions.resetSelection('doctor'); }} 
-                          disabled={!models.selectedState} 
+                           onChange={(v) => { setters.setSelectedSpecialty(v); actions.resetSelection('state'); }} 
+                           disabled={!models.selectedPatientId}
+                       />
+                       <StateSelect 
+                           states={models.states} 
+                           selectedState={models.selectedState} 
+                           isLoading={state.isLoading} 
+                           onChange={(v) => { setters.setSelectedState(v); actions.resetSelection('city'); }} 
+                           disabled={!models.selectedSpecialty || !models.selectedPatientId}
+                       />
+                       <CitySelect 
+                           cities={models.cities} 
+                           selectedCity={models.selectedCity} 
+                           isLoading={state.isLoading} 
+                           onChange={(v) => { setters.setSelectedCity(v); actions.resetSelection('doctor'); }} 
+                           disabled={!models.selectedState || !models.selectedPatientId}
                       />
                   </div>
 
@@ -111,13 +129,13 @@ const Agendamento = () => {
                           doctors={models.doctors} 
                           selectedDoctor={models.selectedDoctor} 
                           isLoading={state.isLoading} 
-                          onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} 
-                          disabled={!models.selectedCity} 
-                      />
-                      <DateSelect 
-                          selectedDate={models.selectedDate} 
-                          onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} 
-                          disabled={!models.selectedDoctor} 
+                           onChange={(v) => { setters.setSelectedDoctor(v); actions.resetSelection('date'); }} 
+                           disabled={!models.selectedCity || !models.selectedPatientId} 
+                       />
+                       <DateSelect 
+                           selectedDate={models.selectedDate} 
+                           onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} 
+                           disabled={!models.selectedDoctor || !models.selectedPatientId}
                       />
                   </div>
 
@@ -185,6 +203,11 @@ const Agendamento = () => {
               selectedDate={models.selectedDate}
               selectedTime={models.selectedTime}
               selectedLocal={models.selectedLocal}
+              selectedPatientName={
+                models.selectedPatientId === user?.id 
+                  ? "Para você" 
+                  : models.familyMembers.find(m => m.family_member_id === models.selectedPatientId)?.display_name || "Paciente"
+              }
             />
           </div>
         </div>
