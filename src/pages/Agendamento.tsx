@@ -52,31 +52,46 @@ const Agendamento = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+    <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6 flex items-center gap-2">
+        <div className="mb-12">
+            <Button variant="ghost" onClick={() => navigate("/")} className="mb-8 flex items-center gap-2 hover:bg-accent text-muted-foreground">
                 <ArrowLeft className="h-4 w-4" />
                 Voltar
             </Button>
-            <h1 className="text-4xl font-bold text-center text-gray-800">Agendar Consulta</h1>
-            <p className="text-lg text-gray-600 text-center mt-2">Encontre o profissional ideal para você em poucos passos.</p>
+            <div className="text-center space-y-4">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Agendar Consulta
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Encontre o profissional ideal para você em poucos passos
+              </p>
+            </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* Coluna Principal de Agendamento */}
           <div className="lg:col-span-2">
-            <Card className="shadow-xl border-0">
-              <CardHeader>
-                  <CardTitle>Filtros de Agendamento</CardTitle>
-                  <CardDescription>Siga os passos para encontrar um horário disponível.</CardDescription>
+            <Card className="shadow-lg border border-border/50 backdrop-blur-sm bg-card/50">
+              <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 to-accent/5">
+                  <CardTitle className="text-2xl font-semibold text-foreground flex items-center gap-3">
+                    <Calendar className="h-6 w-6 text-primary" />
+                    Filtros de Agendamento
+                  </CardTitle>
+                  <CardDescription className="text-base text-muted-foreground">
+                    Siga os passos para encontrar um horário disponível
+                  </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-8">
+              <CardContent className="space-y-10 p-8">
                   {/* --- ETAPA 0: SELEÇÃO DO PACIENTE --- */}
                   {user && (
-                    <div className="space-y-4">
+                    <div className="space-y-6 p-6 bg-accent/20 rounded-lg border border-border/30">
+                      <div className="flex items-center gap-2 text-lg font-medium text-foreground">
+                        <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                        Selecione o Paciente
+                      </div>
                       <FamilyMemberSelect
                         familyMembers={models.familyMembers}
                         selectedMemberId={models.selectedPatientId}
@@ -89,7 +104,12 @@ const Agendamento = () => {
                   )}
 
                   {/* --- ETAPA 1: ESPECIALIDADE E LOCALIZAÇÃO --- */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="space-y-6 p-6 bg-accent/20 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-2 text-lg font-medium text-foreground">
+                      <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                      Especialidade e Localização
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <SpecialtySelect 
                           specialties={models.specialties} 
                           selectedSpecialty={models.selectedSpecialty} 
@@ -110,21 +130,27 @@ const Agendamento = () => {
                            isLoading={state.isLoading} 
                            onChange={(v) => { setters.setSelectedCity(v); actions.resetSelection('doctor'); }} 
                            disabled={!models.selectedState || !models.selectedPatientId}
-                      />
+                       />
+                    </div>
                   </div>
 
                   {/* Mostrar aviso se não há estados disponíveis */}
                   {!state.isLoading && models.specialties.length > 0 && models.states.length === 0 && (
-                    <Alert className="bg-yellow-50 border-yellow-200">
+                    <Alert className="bg-destructive/10 border-destructive/20 text-destructive">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
+                      <AlertDescription className="text-destructive">
                         Não há médicos disponíveis no momento. Verifique novamente mais tarde ou entre em contato conosco.
                       </AlertDescription>
                     </Alert>
                   )}
 
                   {/* --- ETAPA 2: MÉDICO E DATA --- */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-6 p-6 bg-accent/20 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-2 text-lg font-medium text-foreground">
+                      <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                      Médico e Data
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <DoctorSelect 
                           doctors={models.doctors} 
                           selectedDoctor={models.selectedDoctor} 
@@ -136,17 +162,25 @@ const Agendamento = () => {
                            selectedDate={models.selectedDate} 
                            onChange={(d) => { setters.setSelectedDate(d); actions.resetSelection('date'); }} 
                            disabled={!models.selectedDoctor || !models.selectedPatientId}
-                      />
+                       />
+                    </div>
                   </div>
 
                   {/* --- ETAPA 3: LOCAIS E HORÁRIOS --- */}
                   {models.selectedDate && models.locaisComHorarios.length > 0 && (
-                      <div className="pt-4 border-t space-y-6">
-                          <h2 className="font-semibold text-lg">Selecione um Local e Horário:</h2>
+                      <div className="space-y-6 p-6 bg-accent/20 rounded-lg border border-border/30">
+                        <div className="flex items-center gap-2 text-lg font-medium text-foreground">
+                          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                          Locais e Horários Disponíveis
+                        </div>
+                        <div className="space-y-6">
                           {models.locaisComHorarios.map(local => (
-                              <div key={local.id} className="p-4 border rounded-md bg-gray-50">
-                                  <h3 className="font-medium flex items-center gap-2"><MapPin className="h-4 w-4 text-blue-600" />{local.nome_local}</h3>
-                                  <p className="text-sm text-gray-500 mb-2 ml-6">{local.endereco.logradouro}, {local.endereco.numero}</p>
+                              <div key={local.id} className="p-6 border border-border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
+                                  <h3 className="font-semibold text-lg flex items-center gap-3 text-foreground mb-2">
+                                    <MapPin className="h-5 w-5 text-primary" />
+                                    {local.nome_local}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground mb-4 ml-8">{local.endereco.logradouro}, {local.endereco.numero}</p>
                                   <TimeSlotGrid
                                       timeSlots={local.horarios_disponiveis}
                                       selectedTime={models.selectedLocal?.id === local.id ? models.selectedTime : ""}
@@ -158,31 +192,41 @@ const Agendamento = () => {
                                   />
                               </div>
                           ))}
+                        </div>
                       </div>
                   )}
                   
                   {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && (
-                    <div className="text-center text-gray-500 pt-4 border-t">
-                      <p>Nenhum horário disponível para este médico na data selecionada.</p>
+                    <div className="text-center p-8 space-y-4">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+                        <Calendar className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground text-lg">Nenhum horário disponível para este médico na data selecionada.</p>
+                      <p className="text-sm text-muted-foreground">Tente selecionar uma data diferente.</p>
                     </div>
                   )}
                   
                    {/* --- BOTÃO DE CONFIRMAÇÃO --- */}
                   {isFormComplete && (
-                    <div className="pt-6 border-t">
+                    <div className="space-y-6 p-6 bg-primary/5 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2 text-lg font-medium text-foreground">
+                        <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">5</div>
+                        Finalizar Agendamento
+                      </div>
                       <Button 
                         onClick={handleConfirmAppointment} 
-                        className="w-full text-lg py-6 bg-blue-600 hover:bg-blue-700" 
+                        size="lg"
+                        className="w-full text-lg py-6 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200" 
                         disabled={state.isSubmitting}
                       >
                         {state.isSubmitting ? (
                           <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            <Loader2 className="mr-3 h-6 w-6 animate-spin" />
                             Processando...
                           </>
                         ) : (
                           <>
-                            <CreditCard className="mr-2 h-5 w-5" />
+                            <CreditCard className="mr-3 h-6 w-6" />
                             Confirmar e Pagar
                           </>
                         )}
@@ -194,7 +238,7 @@ const Agendamento = () => {
           </div>
           
           {/* Coluna de Resumo */}
-          <div className="lg:col-span-1 sticky top-24">
+          <div className="lg:col-span-1 sticky top-24 space-y-6">
             <AppointmentSummary 
               selectedSpecialty={models.selectedSpecialty}
               selectedDoctorName={selectedDoctorInfo?.display_name || ''}
