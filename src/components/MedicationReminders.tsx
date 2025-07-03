@@ -5,17 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMedicationReminders } from "@/hooks/useMedicationReminders";
-import { useMedicationActions } from "@/hooks/useMedicationActions";
 import { AddMedicationDialog } from "./medication/AddMedicationDialog";
 import { translateFrequency } from "@/utils/translations";
 
 const MedicationReminders = () => {
-  const { medications, isLoading, loadMedications, isSubmitting } = useMedicationReminders();
-  const { markAsTaken, markAsSkipped } = useMedicationActions({
-    medications,
-    setMedications: () => {},
-    loadMedications,
-  });
+  const { medications, isLoading, loadMedications, isSubmitting, markAsTaken, markAsSkipped } = useMedicationReminders();
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   // Garantir que o componente responda a mudanças de medicamentos
