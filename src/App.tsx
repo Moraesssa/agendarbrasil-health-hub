@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -31,6 +30,7 @@ import Historico from '@/pages/Historico';
 import NotFound from '@/pages/NotFound';
 import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
+import Medicamentos from '@/pages/Medicamentos';
 
 const queryClient = new QueryClient();
 
@@ -112,6 +112,7 @@ function App() {
                     <Route path="/historico" element={<Historico />} />
                     <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
+                    <Route path="/medicamentos" element={<Medicamentos />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AuthRedirectController>

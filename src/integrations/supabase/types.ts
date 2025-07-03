@@ -541,6 +541,95 @@ export type Database = {
           },
         ]
       }
+      medication_doses: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          reminder_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          taken_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reminder_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status?: string
+          taken_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reminder_id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          taken_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_doses_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "medication_reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_reminders: {
+        Row: {
+          created_at: string
+          dosage: string
+          end_date: string | null
+          frequency: string
+          id: string
+          instructions: string | null
+          is_active: boolean
+          medication_name: string
+          start_date: string
+          times: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          end_date?: string | null
+          frequency: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          medication_name: string
+          start_date?: string
+          times?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          medication_name?: string
+          start_date?: string
+          times?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       medicos: {
         Row: {
           configuracoes: Json

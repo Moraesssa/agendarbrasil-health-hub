@@ -23,7 +23,7 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
       icon: Pill,
       label: "Lembrete Remédio",
       color: "bg-green-500 hover:bg-green-600",
-      action: "Lembrete de medicamento",
+      action: "medicamentos",
       description: "Configure alertas para medicamentos"
     },
     {
@@ -61,6 +61,8 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
       navigate("/agendamento");
     } else if (action === "familia") {
       navigate("/gerenciar-familia");
+    } else if (action === "medicamentos") {
+      navigate("/medicamentos");
     } else {
       onAction(action);
     }
