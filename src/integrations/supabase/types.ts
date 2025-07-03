@@ -127,6 +127,73 @@ export type Database = {
           },
         ]
       }
+      encaminhamentos: {
+        Row: {
+          created_at: string
+          data_encaminhamento: string
+          data_resposta: string | null
+          especialidade: string
+          id: string
+          medico_destino_id: string | null
+          medico_origem_id: string
+          motivo: string
+          observacoes: string | null
+          paciente_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_encaminhamento?: string
+          data_resposta?: string | null
+          especialidade: string
+          id?: string
+          medico_destino_id?: string | null
+          medico_origem_id: string
+          motivo: string
+          observacoes?: string | null
+          paciente_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_encaminhamento?: string
+          data_resposta?: string | null
+          especialidade?: string
+          id?: string
+          medico_destino_id?: string | null
+          medico_origem_id?: string
+          motivo?: string
+          observacoes?: string | null
+          paciente_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encaminhamentos_medico_destino_id_fkey"
+            columns: ["medico_destino_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encaminhamentos_medico_origem_id_fkey"
+            columns: ["medico_origem_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encaminhamentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       especialidades_medicas: {
         Row: {
           ativa: boolean | null

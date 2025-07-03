@@ -1,70 +1,82 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { ArrowRightLeft, Send, Inbox, Clock, CheckCircle, Plus, Search, User, Calendar } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowRightLeft, Send, Inbox, Clock, CheckCircle, Plus, User, Calendar } from "lucide-react";
+import { useEncaminhamentos } from "@/hooks/useEncaminhamentos";
+import { NovoEncaminhamentoDialog } from "@/components/encaminhamentos/NovoEncaminhamentoDialog";
+import { specialtyService } from "@/services/specialtyService";
 
 const EncaminhamentosMedico = () => {
-  const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [novoEncaminhamentoOpen, setNovoEncaminhamentoOpen] = useState(false);
+  const [especialidades, setEspecialidades] = useState<string[]>([]);
+  
+  const {
+    encaminhamentosEnviados,
+    encaminhamentosRecebidos,
+    loading,
+    atualizarEncaminhamento,
+    carregarEncaminhamentos
+  } = useEncaminhamentos();
 
-  // Dados de exemplo - em produção viriam do banco de dados
-  const encaminhamentosEnviados = [
-    {
-      id: 1,
-      paciente: "Maria Silva",
-      especialidade: "Cardiologia",
-      medico: "Dr. João Cardoso",
-      data: "2024-01-15",
-      status: "Aguardando",
-      motivo: "Suspeita de arritmia cardíaca"
-    },
-    {
-      id: 2,
-      paciente: "João Santos",
-      especialidade: "Neurologia",
-      medico: "Dr. Ana Neuro",
-      data: "2024-01-10",
-      status: "Confirmado",
-      motivo: "Cefaleia crônica"
-    }
-  ];
-
-  const encaminhamentosRecebidos = [
-    {
-      id: 3,
-      paciente: "Pedro Lima",
-      especialidade: "Clínica Geral",
-      medico: "Dr. Carlos Silva",
-      data: "2024-01-12",
-      status: "Pendente",
-      motivo: "Acompanhamento pós-cirúrgico"
-    }
-  ];
-
-  const especialidades = [
-    "Cardiologia", "Neurologia", "Ortopedia", "Dermatologia", 
-    "Ginecologia", "Urologia", "Psiquiatria", "Endocrinologia"
-  ];
+  useEffect(() => {
+    const carregarEspecialidades = async () => {
+      try {
+        const especialidadesData = await specialtyService.getAllSpecialties();
+        setEspecialidades(especialidadesData);
+      } catch (error) {
+        console.error("Erro ao carregar especialidades:", error);
+      }
+    };
+    carregarEspecialidades();
+  }, []);
 
   const handleNovoEncaminhamento = () => {
-    toast({
-      title: "Novo Encaminhamento",
-      description: "Funcionalidade em desenvolvimento",
-    });
+    setNovoEncaminhamentoOpen(true);
   };
 
-  const handleAceitarEncaminhamento = (id: number, paciente: string) => {
-    toast({
-      title: "Encaminhamento Aceito",
-      description: `Encaminhamento do paciente ${paciente} foi aceito`,
-    });
+  const handleAceitarEncaminhamento = async (id: string, pacienteNome: string) => {
+    await atualizarEncaminhamento(id, { status: 'aceito' });
+  };
+
+  const handleRejeitarEncaminhamento = async (id: string) => {
+    await atualizarEncaminhamento(id, { status: 'rejeitado' });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'aceito':
+      case 'confirmado':
+        return 'bg-green-100 text-green-700';
+      case 'aguardando':
+      case 'pendente':
+        return 'bg-orange-100 text-orange-700';
+      case 'rejeitado':
+        return 'bg-red-100 text-red-700';
+      case 'realizado':
+        return 'bg-blue-100 text-blue-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'aguardando':
+        return 'Aguardando';
+      case 'aceito':
+        return 'Aceito';
+      case 'rejeitado':
+        return 'Rejeitado';
+      case 'realizado':
+        return 'Realizado';
+      default:
+        return status;
+    }
   };
 
   return (
@@ -108,7 +120,7 @@ const EncaminhamentosMedico = () => {
                   <CardContent className="p-4 text-center">
                     <Clock className="w-8 h-8 text-orange-600 mx-auto mb-2" />
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {encaminhamentosEnviados.filter(e => e.status === "Aguardando").length}
+                      {encaminhamentosEnviados.filter(e => e.status === "aguardando").length}
                     </h3>
                     <p className="text-sm text-gray-600">Aguardando</p>
                   </CardContent>
@@ -117,7 +129,7 @@ const EncaminhamentosMedico = () => {
                   <CardContent className="p-4 text-center">
                     <CheckCircle className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {encaminhamentosEnviados.filter(e => e.status === "Confirmado").length}
+                      {encaminhamentosEnviados.filter(e => e.status === "aceito").length}
                     </h3>
                     <p className="text-sm text-gray-600">Confirmados</p>
                   </CardContent>
@@ -150,25 +162,25 @@ const EncaminhamentosMedico = () => {
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h4 className="font-semibold text-lg">{encaminhamento.paciente}</h4>
+                                <h4 className="font-semibold text-lg">{encaminhamento.paciente?.display_name || 'Paciente'}</h4>
                                 <p className="text-gray-600">{encaminhamento.especialidade}</p>
                               </div>
                               <Badge 
-                                variant={encaminhamento.status === "Confirmado" ? "default" : "secondary"}
-                                className={encaminhamento.status === "Confirmado" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}
+                                variant={encaminhamento.status === "aceito" ? "default" : "secondary"}
+                                className={getStatusColor(encaminhamento.status)}
                               >
-                                {encaminhamento.status}
+                                {getStatusText(encaminhamento.status)}
                               </Badge>
                             </div>
                             
                             <div className="grid md:grid-cols-2 gap-4 text-sm mb-3">
                               <div className="flex items-center gap-2">
                                 <User className="w-4 h-4 text-gray-400" />
-                                <span>Para: {encaminhamento.medico}</span>
+                                <span>Para: {encaminhamento.medico_destino?.display_name || 'Especialista disponível'}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-gray-400" />
-                                <span>{new Date(encaminhamento.data).toLocaleDateString('pt-BR')}</span>
+                                <span>{new Date(encaminhamento.data_encaminhamento).toLocaleDateString('pt-BR')}</span>
                               </div>
                             </div>
                             
@@ -196,19 +208,30 @@ const EncaminhamentosMedico = () => {
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h4 className="font-semibold text-lg">{encaminhamento.paciente}</h4>
-                                <p className="text-gray-600">De: {encaminhamento.medico}</p>
+                                <h4 className="font-semibold text-lg">{encaminhamento.paciente?.display_name || 'Paciente'}</h4>
+                                <p className="text-gray-600">De: {encaminhamento.medico_origem?.display_name || 'Médico'}</p>
                               </div>
                               <div className="flex gap-2">
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                                  {encaminhamento.status}
+                                <Badge variant="secondary" className={getStatusColor(encaminhamento.status)}>
+                                  {getStatusText(encaminhamento.status)}
                                 </Badge>
-                                <Button 
-                                  size="sm"
-                                  onClick={() => handleAceitarEncaminhamento(encaminhamento.id, encaminhamento.paciente)}
-                                >
-                                  Aceitar
-                                </Button>
+                                {encaminhamento.status === 'aguardando' && (
+                                  <>
+                                    <Button 
+                                      size="sm"
+                                      onClick={() => handleAceitarEncaminhamento(encaminhamento.id, encaminhamento.paciente?.display_name || 'Paciente')}
+                                    >
+                                      Aceitar
+                                    </Button>
+                                    <Button 
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleRejeitarEncaminhamento(encaminhamento.id)}
+                                    >
+                                      Rejeitar
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             </div>
                             
@@ -219,7 +242,7 @@ const EncaminhamentosMedico = () => {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-gray-400" />
-                                <span>{new Date(encaminhamento.data).toLocaleDateString('pt-BR')}</span>
+                                <span>{new Date(encaminhamento.data_encaminhamento).toLocaleDateString('pt-BR')}</span>
                               </div>
                             </div>
                             
@@ -253,6 +276,12 @@ const EncaminhamentosMedico = () => {
           </main>
         </SidebarInset>
       </div>
+      
+      <NovoEncaminhamentoDialog
+        open={novoEncaminhamentoOpen}
+        onOpenChange={setNovoEncaminhamentoOpen}
+        onSuccess={carregarEncaminhamentos}
+      />
     </SidebarProvider>
   );
 };
