@@ -1,10 +1,9 @@
-
 import { Pill, Clock, CheckCircle, AlertCircle, Plus } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMedicationReminders } from "@/hooks/useMedicationReminders";
-import { useState } from "react";
 import { AddMedicationDialog } from "./medication/AddMedicationDialog";
 
 const MedicationReminders = () => {
@@ -64,14 +63,6 @@ const MedicationReminders = () => {
               <Pill className="h-4 w-4 sm:h-5 sm:w-5" />
               Medicamentos
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-blue-600 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3"
-              onClick={() => setShowAddDialog(true)}
-            >
-              Gerenciar
-            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
