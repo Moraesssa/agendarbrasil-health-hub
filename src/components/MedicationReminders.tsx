@@ -1,3 +1,4 @@
+
 import { Pill, Clock, CheckCircle, AlertCircle, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { AddMedicationDialog } from "./medication/AddMedicationDialog";
 import { translateFrequency } from "@/utils/translations";
 
 const MedicationReminders = () => {
-  const { medications, isLoading, markAsTaken, markAsSkipped, loadMedications } = useMedicationReminders();
+  const { medications, isLoading, markAsTaken, markAsSkipped, loadMedications, isSubmitting } = useMedicationReminders();
   const [showAddDialog, setShowAddDialog] = useState(false);
   
   // Garantir que o componente responda a mudanças de medicamentos
@@ -18,6 +19,16 @@ const MedicationReminders = () => {
     // Forçar uma atualização completa dos dados e do componente
     loadMedications();
     setRefreshKey(prevKey => prevKey + 1);
+  };
+
+  const handleMarkAsTaken = (medicationId: string) => {
+    // Prevenir qualquer comportamento de submit/refresh
+    markAsTaken(medicationId);
+  };
+
+  const handleMarkAsSkipped = (medicationId: string) => {
+    // Prevenir qualquer comportamento de submit/refresh
+    markAsSkipped(medicationId);
   };
 
   const getStatusIcon = (status: string) => {
@@ -81,6 +92,7 @@ const MedicationReminders = () => {
               <Pill className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Nenhum medicamento cadastrado.</p>
               <Button
+                type="button"
                 onClick={() => setShowAddDialog(true)}
                 className="bg-blue-500 hover:bg-blue-600"
               >
@@ -134,21 +146,25 @@ const MedicationReminders = () => {
                   <div className="w-full sm:w-auto flex gap-2">
                     {medication.status === 'pending' && (
                       <Button 
+                        type="button"
                         size="sm" 
                         className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-green-500 hover:bg-green-600 flex-1 sm:flex-none"
-                        onClick={() => markAsTaken(medication.id)}
+                        onClick={() => handleMarkAsTaken(medication.id)}
+                        disabled={isSubmitting}
                       >
-                        Marcar como tomado
+                        {isSubmitting ? 'Processando...' : 'Marcar como tomado'}
                       </Button>
                     )}
                     {(medication.status === 'overdue' || medication.status === 'pending') && (
                       <Button 
+                        type="button"
                         size="sm" 
                         variant="outline" 
                         className="h-7 sm:h-8 px-2 sm:px-3 text-xs border-gray-200 text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
-                        onClick={() => markAsSkipped(medication.id)}
+                        onClick={() => handleMarkAsSkipped(medication.id)}
+                        disabled={isSubmitting}
                       >
-                        Pular dose
+                        {isSubmitting ? 'Processando...' : 'Pular dose'}
                       </Button>
                     )}
                   </div>
@@ -160,6 +176,7 @@ const MedicationReminders = () => {
           {/* Add Medication Button */}
           {medications.length > 0 && (
             <Button 
+              type="button"
               variant="outline" 
               className="w-full mt-3 sm:mt-4 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 h-10 sm:h-11 text-sm"
               onClick={() => setShowAddDialog(true)}
