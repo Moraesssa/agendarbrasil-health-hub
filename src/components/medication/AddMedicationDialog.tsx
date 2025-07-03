@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,16 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     }
 
     try {
-      await createMedication(formData);
+      // Sanitize form data before sending
+      const sanitizedData = {
+        ...formData,
+        // Convert empty end_date string to null
+        end_date: formData.end_date.trim() === '' ? null : formData.end_date,
+        // Ensure instructions is null if empty
+        instructions: formData.instructions.trim() === '' ? null : formData.instructions
+      };
+
+      await createMedication(sanitizedData);
       onOpenChange(false);
       resetForm();
     } catch (error) {
@@ -262,6 +270,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                   value={formData.end_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
                   className="focus:ring-2 focus:ring-blue-500"
+                  min={formData.start_date}
                 />
               </div>
             </div>

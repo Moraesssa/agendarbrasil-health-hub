@@ -9,8 +9,8 @@ export interface MedicationReminder {
   frequency: string;
   times: string[];
   start_date: string;
-  end_date?: string;
-  instructions?: string;
+  end_date?: string | null;
+  instructions?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -40,6 +40,18 @@ class MedicationService {
       return jsonValue.filter(item => typeof item === 'string') as string[];
     }
     return [];
+  }
+
+  private sanitizeMedicationData(medication: any) {
+    return {
+      ...medication,
+      // Ensure end_date is null if empty string
+      end_date: medication.end_date && medication.end_date.trim() !== '' ? medication.end_date : null,
+      // Ensure instructions is null if empty string
+      instructions: medication.instructions && medication.instructions.trim() !== '' ? medication.instructions : null,
+      // Ensure times is properly formatted
+      times: Array.isArray(medication.times) ? medication.times : []
+    };
   }
 
   async getMedicationReminders(): Promise<MedicationWithDoses[]> {
@@ -91,10 +103,13 @@ class MedicationService {
 
   async createMedicationReminder(medication: Omit<MedicationReminder, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<MedicationReminder> {
     try {
+      // Sanitize data before sending to database
+      const sanitizedMedication = this.sanitizeMedicationData(medication);
+      
       const { data, error } = await supabase
         .from('medication_reminders')
         .insert({
-          ...medication,
+          ...sanitizedMedication,
           user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
@@ -115,9 +130,12 @@ class MedicationService {
 
   async updateMedicationReminder(id: string, updates: Partial<MedicationReminder>): Promise<MedicationReminder> {
     try {
+      // Sanitize data before sending to database
+      const sanitizedUpdates = this.sanitizeMedicationData(updates);
+      
       const { data, error } = await supabase
         .from('medication_reminders')
-        .update(updates)
+        .update(sanitizedUpdates)
         .eq('id', id)
         .select()
         .single();
