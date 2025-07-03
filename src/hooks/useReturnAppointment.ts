@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +51,7 @@ export const useReturnAppointment = () => {
           .select(`
             paciente_id,
             data_consulta,
-            profiles!inner(
+            profiles!consultas_paciente_id_fkey(
               id,
               display_name,
               email
@@ -69,7 +70,7 @@ export const useReturnAppointment = () => {
           const patientId = consulta.paciente_id;
           const profile = consulta.profiles;
           
-          if (!patientMap.has(patientId)) {
+          if (profile && !patientMap.has(patientId)) {
             patientMap.set(patientId, {
               id: patientId,
               display_name: profile.display_name || profile.email,
@@ -77,7 +78,7 @@ export const useReturnAppointment = () => {
               last_consultation: consulta.data_consulta,
               consultation_count: 1
             });
-          } else {
+          } else if (profile && patientMap.has(patientId)) {
             const patient = patientMap.get(patientId)!;
             patient.consultation_count += 1;
             // Keep the most recent consultation date
