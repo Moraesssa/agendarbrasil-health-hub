@@ -96,24 +96,40 @@ export const useMedicationReminders = () => {
   };
 
   const markAsTaken = async (medicationId: string, doseId?: string, notes?: string) => {
+    const medication = medications.find(m => m.id === medicationId);
+    const pendingDose = medication?.today_doses?.find(d => d.status === 'pending');
+    const targetDoseId = doseId || pendingDose?.id;
+
+    if (!targetDoseId) {
+      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para marcar.", variant: "destructive" });
+      return;
+    }
+
     try {
-      if (doseId) {
-        await medicationService.markDoseAsTaken(doseId, notes);
-      } else {
-        // Find today's pending dose for this medication
-        const medication = medications.find(m => m.id === medicationId);
-        const pendingDose = medication?.today_doses?.find(d => d.status === 'pending');
-        
-        if (pendingDose) {
-          await medicationService.markDoseAsTaken(pendingDose.id, notes);
-        }
-      }
-      
+      await medicationService.markDoseAsTaken(targetDoseId, notes);
+
+      setMedications(prevMeds => {
+        const newMeds = prevMeds.map(med => {
+          if (med.id === medicationId) {
+            const updatedDoses = med.today_doses.map(dose =>
+              dose.id === targetDoseId ? { ...dose, status: 'taken' as const } : dose
+            );
+
+            const allTaken = updatedDoses.every(d => d.status === 'taken');
+            const hasPending = updatedDoses.some(d => d.status === 'pending');
+            const newStatus: 'pending' | 'taken' | 'missed' | 'overdue' = allTaken ? 'taken' : hasPending ? 'pending' : 'overdue';
+
+            return { ...med, today_doses: updatedDoses, status: newStatus };
+          }
+          return med;
+        });
+        return newMeds;
+      });
+
       toast({
         title: "Dose marcada como tomada!",
         description: "Parabéns por manter sua medicação em dia."
       });
-      await loadMedications();
     } catch (error) {
       logger.error("Erro ao marcar dose como tomada", "useMedicationReminders", error);
       toast({
@@ -125,24 +141,40 @@ export const useMedicationReminders = () => {
   };
 
   const markAsSkipped = async (medicationId: string, doseId?: string, notes?: string) => {
+    const medication = medications.find(m => m.id === medicationId);
+    const pendingDose = medication?.today_doses?.find(d => d.status === 'pending');
+    const targetDoseId = doseId || pendingDose?.id;
+
+    if (!targetDoseId) {
+      toast({ title: "Erro", description: "Nenhuma dose pendente encontrada para marcar.", variant: "destructive" });
+      return;
+    }
+
     try {
-      if (doseId) {
-        await medicationService.markDoseAsSkipped(doseId, notes);
-      } else {
-        // Find today's pending dose for this medication
-        const medication = medications.find(m => m.id === medicationId);
-        const pendingDose = medication?.today_doses?.find(d => d.status === 'pending');
-        
-        if (pendingDose) {
-          await medicationService.markDoseAsSkipped(pendingDose.id, notes);
-        }
-      }
-      
+      await medicationService.markDoseAsSkipped(targetDoseId, notes);
+
+      setMedications(prevMeds => {
+        const newMeds = prevMeds.map(med => {
+          if (med.id === medicationId) {
+            const updatedDoses = med.today_doses.map(dose =>
+              dose.id === targetDoseId ? { ...dose, status: 'skipped' as const } : dose
+            );
+            
+            const allTakenOrSkipped = updatedDoses.every(d => d.status === 'taken' || d.status === 'skipped');
+            const hasPending = updatedDoses.some(d => d.status === 'pending');
+            const newStatus: 'pending' | 'taken' | 'missed' | 'overdue' = hasPending ? 'pending' : allTakenOrSkipped ? 'taken' : 'overdue';
+
+            return { ...med, today_doses: updatedDoses, status: newStatus };
+          }
+          return med;
+        });
+        return newMeds;
+      });
+
       toast({
         title: "Dose marcada como pulada",
         description: "Lembre-se de não pular doses sem orientação médica."
       });
-      await loadMedications();
     } catch (error) {
       logger.error("Erro ao marcar dose como pulada", "useMedicationReminders", error);
       toast({
