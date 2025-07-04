@@ -1,17 +1,21 @@
-import { useState } from "react";
-import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText, Activity, Thermometer, Weight } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Calendar, Bell, User, Plus, Heart, Pill, CalendarCheck, Phone, LogIn, UserPlus, FileText, Activity, Thermometer, Weight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/Header";
 import QuickActions from "@/components/QuickActions";
 import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
-import MedicationReminders from "@/components/MedicationReminders";
+import MedicationRemindersV2 from "@/components/MedicationRemindersV2";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppointments } from "@/hooks/useAppointments";
+import { useMedicalManagement } from "@/hooks/useMedicalManagement";
+import { useMedicationRemindersV2 } from "@/hooks/useMedicationRemindersV2";
+import AppointmentSkeleton from "@/components/appointments/AppointmentSkeleton";
 
-// Mock data for HealthSummary
+// Mock data for HealthSummary as a fallback
 const mockHealthMetrics = [
   { label: "Pressão Arterial", value: "120/80", unit: "mmHg", status: "normal", icon: Activity, color: "text-green-600" },
   { label: "Frequência Cardíaca", value: "72", unit: "bpm", status: "normal", icon: Heart, color: "text-red-600" },
@@ -28,7 +32,61 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const { appointments, isLoading, error } = useAppointments();
+  const { medications } = useMedicationRemindersV2();
+
+  useEffect(() => {
+    const navItems = [
+      { id: 'home', route: '/' },
+      { id: 'calendar', route: '/agenda-paciente' },
+      { id: 'add', route: '/agendamento' },
+      { id: 'reminders', route: '/historico' },
+      { id: 'profile', route: '/perfil' },
+    ];
+    const currentNavItem = navItems.find(item => item.route === location.pathname);
+    if (currentNavItem) {
+      setActiveTab(currentNavItem.id);
+    }
+  }, [location.pathname]);
+
+  const calendarData = useMemo(() => {
+    const daysWithAppointments = new Set<number>();
+    const daysWithMedication = new Set<number>();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    if (appointments) {
+      appointments.forEach(app => {
+        const dateParts = app.data.split('/');
+        if (dateParts.length === 3) {
+          const date = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]));
+          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+            daysWithAppointments.add(date.getDate());
+          }
+        }
+      });
+    }
+
+    if (medications) {
+      medications.forEach(med => {
+        if (med.today_doses && Array.isArray(med.today_doses)) {
+          med.today_doses.forEach(dose => {
+            if (dose.scheduled_time) {
+              const doseDate = new Date(dose.scheduled_date);
+              if (doseDate.getMonth() === currentMonth && doseDate.getFullYear() === currentYear) {
+                daysWithMedication.add(doseDate.getDate());
+              }
+            }
+          });
+        }
+      });
+    }
+
+    return { daysWithAppointments, daysWithMedication };
+  }, [appointments, medications]);
 
   const requireAuth = (callback: () => void, actionName: string) => {
     if (!user) {
@@ -83,11 +141,8 @@ const Index = () => {
         break;
       case "Lembrete de medicamento":
         requireAuth(() => {
-          toast({
-            title: "Lembrete configurado!",
-            description: "Você receberá notificações sobre seus medicamentos nos horários programados",
-          });
-        }, "configurar lembrete");
+          navigate("/medicamentos");
+        }, "ver seus medicamentos");
         break;
       case "Agendamento de check-up":
         requireAuth(() => {
@@ -113,11 +168,8 @@ const Index = () => {
         break;
       case "Agendamento familiar":
         requireAuth(() => {
-          toast({
-            title: "Agendamento Familiar",
-            description: "Em breve você poderá gerenciar consultas de toda a família em um só lugar",
-          });
-        }, "agendar para família");
+          navigate("/gerenciar-familia");
+        }, "agendar para sua família");
         break;
       default:
         toast({
@@ -164,15 +216,15 @@ const Index = () => {
     if (hasAppointment) {
       requireAuth(() => {
         toast({
-          title: "Consulta agendada",
-          description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
+          title: "Consulta Agendada",
+          description: `Você tem uma consulta marcada para o dia ${day}. Verifique sua agenda para mais detalhes.`,
         });
         navigate("/agenda-paciente");
       }, "ver detalhes da consulta");
     } else if (hasMedication) {
       toast({
-        title: "Lembrete de medicamento",
-        description: `Você tem medicamentos programados para o dia ${day}`,
+        title: "Lembrete de Medicamento",
+        description: `Lembretes de medicamentos programados para o dia ${day}.`,
       });
     } else if (day > 0 && day <= 31) {
       requireAuth(() => {
@@ -284,55 +336,80 @@ const Index = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 sm:px-6">
-                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
-                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                        <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
-                          {day}
+                    {isLoading ? (
+                      <div className="space-y-4">
+                        <AppointmentSkeleton className="h-32" />
+                        <AppointmentSkeleton className="h-8" />
+                      </div>
+                    ) : error ? (
+                      <div className="text-center py-8 text-red-600">
+                        <AlertCircle className="mx-auto h-12 w-12" />
+                        <p className="mt-4 font-semibold">Erro ao carregar agenda</p>
+                        <p className="text-sm text-gray-600">{error}</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
+                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                            <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
+                              {day}
+                            </div>
+                          ))}
+                          {(() => {
+                            const now = new Date();
+                            const year = now.getFullYear();
+                            const month = now.getMonth();
+                            const firstDayOfMonth = new Date(year, month, 1).getDay();
+                            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+                            const totalCells = Math.ceil((firstDayOfMonth + totalDaysInMonth) / 7) * 7;
+
+                            return Array.from({ length: totalCells }, (_, i) => {
+                              const day = i - firstDayOfMonth + 1;
+                              const hasAppointment = calendarData.daysWithAppointments.has(day);
+                              const hasMedication = calendarData.daysWithMedication.has(day);
+                              const isCurrentMonth = day > 0 && day <= totalDaysInMonth;
+
+                              return (
+                                <div
+                                  key={i}
+                                  className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
+                                    !isCurrentMonth
+                                      ? 'text-gray-300'
+                                      : hasAppointment
+                                        ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600'
+                                        : hasMedication
+                                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                          : 'hover:bg-gray-100'
+                                  }`}
+                                  onClick={() => isCurrentMonth && handleDayClick(day, hasAppointment, hasMedication)}
+                                  title={
+                                    isCurrentMonth
+                                      ? hasAppointment
+                                        ? `Consulta agendada para o dia ${day} - Clique para ver detalhes`
+                                        : hasMedication
+                                          ? `Lembrete de medicamento para o dia ${day}`
+                                          : 'Clique para agendar uma consulta'
+                                      : ''
+                                  }
+                                >
+                                  {isCurrentMonth ? day : ''}
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
-                      ))}
-                      {Array.from({ length: 35 }, (_, i) => {
-                        const day = i - 6;
-                        const hasAppointment = [5, 12, 18, 25].includes(day);
-                        const hasMedication = [3, 8, 15, 22, 29].includes(day);
-                        
-                        return (
-                          <div
-                            key={i}
-                            className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
-                              day < 1 || day > 31 
-                                ? 'text-gray-300' 
-                                : hasAppointment 
-                                  ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
-                                  : hasMedication
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    : 'hover:bg-gray-100'
-                            }`}
-                            onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
-                            title={
-                              hasAppointment 
-                                ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
-                                : hasMedication 
-                                  ? `Lembrete de medicamento para o dia ${day}`
-                                  : day > 0 && day <= 31 
-                                    ? 'Clique para agendar uma consulta'
-                                    : ''
-                            }
-                          >
-                            {day > 0 && day <= 31 ? day : ''}
+                        <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                            <span>Consultas</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                        <span>Consultas</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-green-400 rounded"></div>
-                        <span>Medicamentos</span>
-                      </div>
-                    </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-green-100 rounded"></div>
+                            <span>Medicamentos</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -343,7 +420,7 @@ const Index = () => {
                   healthMetrics={mockHealthMetrics}
                   healthScore={mockHealthScore}
                 />
-                <MedicationReminders />
+                <MedicationRemindersV2 />
               </div>
             </div>
           </>
@@ -387,7 +464,7 @@ const Index = () => {
                   <LogIn className="w-5 h-5 mr-2" />
                   Entrar
                 </Button>
-                <Button onClick={() => navigate('/login')} variant="outline" size="lg">
+                <Button onClick={() => navigate('/cadastrar')} variant="outline" size="lg">
                   <UserPlus className="w-5 h-5 mr-2" />
                   Criar Conta Grátis
                 </Button>
