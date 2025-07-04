@@ -31,7 +31,8 @@ import NotFound from '@/pages/NotFound';
 import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
 import Medicamentos from '@/pages/Medicamentos';
-
+import AdicionarMetrica from '@/pages/AdicionarMetrica';
+ 
 const queryClient = new QueryClient();
 
 // Simple error boundary component
@@ -113,6 +114,7 @@ function App() {
                     <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                     <Route path="/medicamentos" element={<Medicamentos />} />
+                    <Route path="/adicionar-metrica" element={<AdicionarMetrica />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AuthRedirectController>

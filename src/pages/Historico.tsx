@@ -73,8 +73,15 @@ import { useAuth } from "@/contexts/AuthContext";
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-bold text-blue-900">Histórico Médico</h1>
-          <p className="text-gray-600">Suas consultas e exames anteriores</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-blue-900">Histórico Médico</h1>
+              <p className="text-gray-600">Suas consultas e exames anteriores</p>
+            </div>
+            <Button onClick={() => navigate('/adicionar-metrica')}>
+              Adicionar Métrica
+            </Button>
+          </div>
         </div>
 
         {(historyError || metricsError) && (
