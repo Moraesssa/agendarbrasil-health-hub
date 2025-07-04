@@ -241,7 +241,8 @@ export const appointmentService = {
 
     if (consultasError) {
       logger.error('Error fetching history (consultas)', 'appointmentService', consultasError);
-      throw new Error('Não foi possível carregar o histórico de consultas.');
+      // Não lança mais o erro, apenas loga e retorna um array vazio para consultas.
+      // throw new Error('Não foi possível carregar o histórico de consultas.');
     }
 
     const { data: examesData, error: examesError } = await supabase
