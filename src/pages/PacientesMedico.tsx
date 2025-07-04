@@ -9,6 +9,7 @@ import { Users, Search, Calendar, Phone, Mail, MapPin, Clock, Plus, Loader2 } fr
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import NovoPacienteModal from "@/components/NovoPacienteModal"; // Import the new modal component
 
 // Tipagem para os dados do paciente
 interface Paciente {
@@ -24,6 +25,7 @@ const PacientesMedico = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
 
   // CORREÇÃO: Busca de dados reais
   useEffect(() => {
@@ -67,14 +69,43 @@ const PacientesMedico = () => {
     (paciente.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleNovaConsulta = (pacienteId: string, nomePaciente: string | null) => {
-    toast({
-      title: "Agendar Nova Consulta",
-      description: `Preparando agendamento para ${nomePaciente}`,
-    });
-    // navigate('/caminho-para-agendamento-com-id', { state: { pacienteId } });
+  const handleNovoPaciente = () => {
+    setIsModalOpen(true); // Open the modal
   };
-
+  
+  const handleCreatePaciente = async (patientData: { display_name: string; email: string; user_type: string }) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: crypto.randomUUID(), // Generate a UUID for the new profile
+            display_name: patientData.display_name,
+            email: patientData.email,
+            user_type: 'paciente', // Defaulting to 'paciente'
+            onboarding_completed: false,
+            last_login: new Date().toISOString(),
+            is_active: true,
+            preferences: { notifications: true, theme: "light", language: "pt-BR" }
+          },
+        ])
+        .select();
+  
+      if (error) throw error;
+  
+      setPacientes(prevPacientes => [...prevPacientes, ...(data as Paciente[])]);
+      toast({ title: "Paciente criado com sucesso!", description: `O paciente ${patientData.display_name} foi adicionado.` });
+      setIsModalOpen(false); // Close the modal after successful creation
+    } catch (error: any) {
+      console.error("Error creating patient:", error);
+      toast({ title: "Erro ao criar paciente", description: error.message || "Tente novamente.", variant: "destructive" });
+    }
+  };
+  
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+  
   const handleVerHistorico = (pacienteId: string, nomePaciente: string | null) => {
     toast({
       title: "Histórico do Paciente",
@@ -82,7 +113,15 @@ const PacientesMedico = () => {
     });
     // navigate(`/historico/${pacienteId}`);
   };
-
+  
+  const handleNovaConsulta = (pacienteId: string, nomePaciente: string | null) => {
+    toast({
+      title: "Nova Consulta",
+      description: `Abrindo agendamento para ${nomePaciente}`,
+    });
+    // navigate(`/agendamento/${pacienteId}`); // Assuming a route for scheduling
+  };
+  
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
@@ -96,7 +135,7 @@ const PacientesMedico = () => {
               </h1>
               <p className="text-sm text-gray-600">Gerencie seus pacientes e consultas</p>
             </div>
-            <Button className="bg-blue-500 hover:bg-blue-600">
+            <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleNovoPaciente}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Paciente
             </Button>
@@ -181,6 +220,11 @@ const PacientesMedico = () => {
           </main>
         </SidebarInset>
       </div>
+      <NovoPacienteModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleCreatePaciente}
+      />
     </SidebarProvider>
   );
 };
