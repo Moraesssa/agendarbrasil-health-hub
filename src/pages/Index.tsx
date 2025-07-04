@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText } from "lucide-react";
+import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText, Activity, Thermometer, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +10,19 @@ import HealthSummary from "@/components/HealthSummary";
 import MedicationReminders from "@/components/MedicationReminders";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Mock data for HealthSummary
+const mockHealthMetrics = [
+  { label: "Pressão Arterial", value: "120/80", unit: "mmHg", status: "normal", icon: Activity, color: "text-green-600" },
+  { label: "Frequência Cardíaca", value: "72", unit: "bpm", status: "normal", icon: Heart, color: "text-red-600" },
+  { label: "Temperatura", value: "36.5", unit: "°C", status: "normal", icon: Thermometer, color: "text-orange-600" },
+  { label: "Peso", value: "70.2", unit: "kg", status: "ideal", icon: Weight, color: "text-purple-600" },
+] as const;
+
+const mockHealthScore = {
+  value: 85,
+  message: "Excelente! Continue mantendo seus hábitos saudáveis.",
+};
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -327,13 +339,16 @@ const Index = () => {
 
               {/* Right Column - Health & Reminders */}
               <div className="space-y-4 sm:space-y-6">
-                <HealthSummary />
+                <HealthSummary
+                  healthMetrics={mockHealthMetrics}
+                  healthScore={mockHealthScore}
+                />
                 <MedicationReminders />
               </div>
             </div>
           </>
         ) : (
-          /* ... keep existing code (Call to Action for Logged-Out Users) */
+          /* Call to Action for Logged-Out Users */
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl text-center text-blue-900">
