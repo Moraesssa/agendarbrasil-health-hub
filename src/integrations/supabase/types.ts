@@ -379,6 +379,54 @@ export type Database = {
           },
         ]
       }
+      health_metrics: {
+        Row: {
+          id: string
+          patient_id: string
+          appointment_id: string | null
+          metric_type: string
+          value: Json
+          unit: string
+          recorded_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          patient_id: string
+          appointment_id?: string | null
+          metric_type: string
+          value: Json
+          unit: string
+          recorded_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          patient_id?: string
+          appointment_id?: string | null
+          metric_type?: string
+          value?: Json
+          unit?: string
+          recorded_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_metrics_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "health_metrics_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       medical_exams: {
         Row: {
           completed_date: string | null

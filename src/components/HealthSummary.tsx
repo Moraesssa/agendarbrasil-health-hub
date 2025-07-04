@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 // Define types for props
-interface HealthMetric {
+export interface HealthMetric {
  label: string;
  value: string | number;
  unit?: string;
@@ -13,9 +13,9 @@ interface HealthMetric {
  color: string;
 }
 
-interface HealthSummaryProps {
- healthMetrics: readonly HealthMetric[];
- healthScore: {
+export interface HealthSummaryProps {
+  healthMetrics: readonly HealthMetric[];
+  healthScore: {
    value: number;
    message: string;
  };

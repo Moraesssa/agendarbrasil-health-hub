@@ -8,13 +8,18 @@ import Header from "@/components/Header";
 import { useHistory } from "@/hooks/useHistory";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-const Historico = () => {
-  const navigate = useNavigate();
-  const { data, isLoading, error } = useHistory();
-  const { consultas, exames } = data;
-
-  const renderConsultaSkeleton = () => (
+import HealthSummary from "@/components/HealthSummary";
+import { useHealthMetrics } from "@/hooks/useHealthMetrics";
+import { useAuth } from "@/contexts/AuthContext";
+ 
+ const Historico = () => {
+   const navigate = useNavigate();
+   const { user } = useAuth();
+   const { data, isLoading: isLoadingHistory, error: historyError } = useHistory();
+   const { summaryData, isLoading: isLoadingMetrics, error: metricsError } = useHealthMetrics(user?.id || '');
+   const { consultas, exames } = data;
+ 
+   const renderConsultaSkeleton = () => (
     <div className="p-4 border rounded-lg space-y-3">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
@@ -72,17 +77,25 @@ const Historico = () => {
           <p className="text-gray-600">Suas consultas e exames anteriores</p>
         </div>
 
-        {error && (
+        {(historyError || metricsError) && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Erro ao Carregar Histórico</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertTitle>Erro ao Carregar Dados</AlertTitle>
+            <AlertDescription>{historyError || metricsError?.message}</AlertDescription>
           </Alert>
         )}
+ 
+        <div className="mb-8">
+          {isLoadingMetrics ? (
+            <Skeleton className="h-80 w-full rounded-lg" />
+          ) : summaryData ? (
+            <HealthSummary {...summaryData} />
+          ) : null}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Histórico de Consultas */}
-          <Card className="shadow-lg">
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+           {/* Histórico de Consultas */}
+           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -90,7 +103,7 @@ const Historico = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLoading ? (
+              {isLoadingHistory ? (
                 Array.from({ length: 3 }).map((_, index) => <div key={index}>{renderConsultaSkeleton()}</div>)
               ) : consultas.length > 0 ? (
                 consultas.map((consulta) => (
@@ -139,7 +152,7 @@ const Historico = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLoading ? (
+              {isLoadingHistory ? (
                 Array.from({ length: 3 }).map((_, index) => <div key={index}>{renderExameSkeleton()}</div>)
               ) : exames.length > 0 ? (
                 exames.map((exame) => (
