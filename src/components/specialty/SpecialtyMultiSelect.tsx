@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,17 +35,7 @@ export const SpecialtyMultiSelect = ({
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Carregar especialidades padronizadas
-  useEffect(() => {
-    loadAvailableSpecialties();
-  }, []);
-
-  // Notificar mudanças para o componente pai
-  useEffect(() => {
-    onChange(selectedSpecialties);
-  }, [selectedSpecialties, onChange]);
-
-  const loadAvailableSpecialties = async () => {
+  const loadAvailableSpecialties = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('especialidades_medicas')
@@ -75,7 +65,17 @@ export const SpecialtyMultiSelect = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Carregar especialidades padronizadas
+  useEffect(() => {
+    loadAvailableSpecialties();
+  }, [loadAvailableSpecialties]);
+
+  // Notificar mudanças para o componente pai
+  useEffect(() => {
+    onChange(selectedSpecialties);
+  }, [selectedSpecialties, onChange]);
 
   const filteredSpecialties = availableSpecialties.filter(specialty =>
     specialty.toLowerCase().includes(searchTerm.toLowerCase()) &&

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { medicalService } from '@/services/medicalService';
 import { 
@@ -29,7 +29,7 @@ export const useMedicalManagement = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadMedicalData = async () => {
+  const loadMedicalData = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -71,7 +71,7 @@ export const useMedicalManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const createTriage = async (triageData: CreateTriageData) => {
     try {
@@ -211,7 +211,7 @@ export const useMedicalManagement = () => {
 
   useEffect(() => {
     loadMedicalData();
-  }, [user]);
+  }, [loadMedicalData]);
 
   return {
     medicalServices,

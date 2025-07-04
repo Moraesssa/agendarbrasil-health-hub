@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { BaseUser, OnboardingStatus } from '@/types/user';
@@ -14,7 +14,7 @@ export const useAuthState = () => {
 
   const loadingUserRef = useRef<string | null>(null);
 
-  const loadUserData = async (uid: string, retryCount = 0) => {
+  const loadUserData = useCallback(async (uid: string, retryCount = 0) => {
     if (loadingUserRef.current === uid) return;
     loadingUserRef.current = uid;
     
@@ -80,10 +80,10 @@ export const useAuthState = () => {
         ...roleData,
       };
 
-      console.log('🎯 UserData definido:', { 
-          userType: baseUser.userType, 
+      console.log('🎯 UserData definido:', {
+          userType: baseUser.userType,
           onboardingCompleted: baseUser.onboardingCompleted,
-          displayName: baseUser.displayName 
+          displayName: baseUser.displayName
       });
       setUserData(baseUser);
       setLoading(false);
@@ -93,7 +93,7 @@ export const useAuthState = () => {
       setLoading(false);
       loadingUserRef.current = null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     console.log("🚀 Iniciando AuthState...");
@@ -133,7 +133,7 @@ export const useAuthState = () => {
       console.log("🧹 Limpando a inscrição do AuthState.");
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadUserData]);
 
   return {
     user, 

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { medicationServiceV2 } from "@/services/medicationServiceV2";
@@ -15,7 +15,7 @@ export const useMedicationRemindersV2 = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadMedications = async () => {
+  const loadMedications = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -36,7 +36,7 @@ export const useMedicationRemindersV2 = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const markAsTaken = async (medicationId: string) => {
     const medication = medications.find(m => m.id === medicationId);
@@ -229,7 +229,7 @@ export const useMedicationRemindersV2 = () => {
 
   useEffect(() => {
     loadMedications();
-  }, [user]);
+  }, [loadMedications]);
 
   return {
     medications,
