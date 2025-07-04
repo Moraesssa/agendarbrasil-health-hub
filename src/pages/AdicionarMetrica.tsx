@@ -87,9 +87,9 @@ const AdicionarMetrica = () => {
         const metricData = {
             patient_id: user.id,
             metric_type: values.metric_type,
-            value: values.metric_type === 'blood_pressure' 
+            value: values.metric_type === 'blood_pressure'
                 ? { systolic: Number(values.systolic), diastolic: Number(values.diastolic) }
-                : Number(values.value),
+                : { value: Number(values.value) },
             unit: values.unit,
             recorded_at: new Date().toISOString(),
         };
