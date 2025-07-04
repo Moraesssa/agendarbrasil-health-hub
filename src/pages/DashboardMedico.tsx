@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { financeService } from "@/services/financeService";
 import { PageLoader } from "@/components/PageLoader";
+import HealthSummary from "@/components/HealthSummary"; // Import HealthSummary
 
 // Tipagem para os dados do dashboard
 interface DashboardData {
@@ -26,6 +27,19 @@ interface DashboardData {
   consultasChart: { dia: string; consultas: number }[];
   tiposConsultaChart: { tipo: string; valor: number; cor: string }[];
 }
+
+// Mock data for HealthSummary (replace with actual data fetching)
+const mockHealthMetrics = [
+  { label: "Pressão Arterial", value: "120/80", unit: "mmHg", status: "normal", icon: Activity, color: "text-green-600" },
+  { label: "Frequência Cardíaca", value: "72", unit: "bpm", status: "normal", icon: Activity, color: "text-blue-600" },
+  { label: "Temperatura", value: "36.5", unit: "°C", status: "normal", icon: Activity, color: "text-orange-600" },
+  { label: "Peso", value: "70.2", unit: "kg", status: "ideal", icon: Activity, color: "text-purple-600" },
+] as const;
+
+const mockHealthScore = {
+  value: 85,
+  message: "Excelente! Continue mantendo seus hábitos saudáveis.",
+};
 
 const DashboardMedico = () => {
   const { toast } = useToast();
@@ -185,6 +199,11 @@ const DashboardMedico = () => {
                   <AlertsSection />
                 </div>
               </div>
+              {/* Health Summary Component */}
+              <HealthSummary
+                healthMetrics={mockHealthMetrics}
+                healthScore={mockHealthScore}
+              />
             </div>
           </main>
         </SidebarInset>
