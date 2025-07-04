@@ -27,7 +27,6 @@ const NovoPacienteModal: React.FC<NovoPacienteModalProps> = ({ isOpen, onClose, 
     if (isOpen) {
       setDisplayName('');
       setEmail('');
-      setUserType('paciente');
       setIsLoading(false);
     }
   }, [isOpen]);
@@ -99,7 +98,6 @@ const NovoPacienteModal: React.FC<NovoPacienteModalProps> = ({ isOpen, onClose, 
               />
             </div>
             {/* Assuming user_type selection might be needed in the future, but for now, it's fixed to 'paciente' */}
-            {/*
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="userType" className="text-right">Tipo de Usuário</Label>
               <Select value={userType} onValueChange={setUserType} disabled={isLoading}>
@@ -112,7 +110,6 @@ const NovoPacienteModal: React.FC<NovoPacienteModalProps> = ({ isOpen, onClose, 
                 </SelectContent>
               </Select>
             </div>
-            */}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
