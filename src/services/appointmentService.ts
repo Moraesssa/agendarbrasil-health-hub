@@ -215,5 +215,78 @@ export const appointmentService = {
       logger.error("Failed to schedule appointment", "AppointmentService", error);
       throw error;
     }
-  }
+  },
+
+  async getHistory() {
+    const user = await checkAuthentication();
+
+    const { data: consultasData, error: consultasError } = await supabase
+      .from('consultas')
+      .select(`
+        id,
+        data_consulta,
+        status,
+        tipo_consulta,
+        diagnostico_resumo,
+        receita_emitida,
+        medico:medicos (
+          perfil:perfis (
+            display_name,
+            especialidade
+          )
+        )
+      `)
+      .eq('paciente_id', user.id)
+      .order('data_consulta', { ascending: false });
+
+    if (consultasError) {
+      logger.error('Error fetching history (consultas)', 'appointmentService', consultasError);
+      throw new Error('Não foi possível carregar o histórico de consultas.');
+    }
+
+    const { data: examesData, error: examesError } = await supabase
+      .from('exames')
+      .select(`
+        id,
+        nome,
+        data_exame,
+        status,
+        resultado,
+        medico_solicitante:medicos (
+          perfil:perfis (
+            display_name
+          )
+        )
+      `)
+      .eq('paciente_id', user.id)
+      .order('data_exame', { ascending: false });
+
+    if (examesError) {
+      logger.warn('Could not fetch exams, maybe the table does not exist or the user has no exams.', 'appointmentService', examesError);
+    }
+
+    const consultas = (consultasData || []).map((c: any) => ({
+      id: c.id,
+      data: new Date(c.data_consulta).toLocaleDateString('pt-BR'),
+      medico: c.medico?.perfil?.display_name || 'N/A',
+      especialidade: c.medico?.perfil?.especialidade || c.tipo_consulta,
+      diagnostico: c.diagnostico_resumo || 'Diagnóstico não disponível.',
+      status: c.status,
+      receita: c.receita_emitida || false,
+    }));
+
+    const exames = (examesData || []).map((e: any) => ({
+      id: e.id,
+      nome: e.nome,
+      data: new Date(e.data_exame).toLocaleDateString('pt-BR'),
+      medico: e.medico_solicitante?.perfil?.display_name || 'N/A',
+      status: e.status,
+      resultado: e.resultado,
+    }));
+
+    return {
+      consultas,
+      exames
+    };
+  },
 };
