@@ -10,11 +10,31 @@ type HealthMetricFromDB = Tables<'health_metrics'>
 // A simple function to calculate a health score.
 // This is a placeholder and should be replaced with a more robust algorithm.
 const calculateHealthScore = (metrics: HealthMetricFromDB[]): number => {
-  if (metrics.length === 0) return 75 // Default score if no metrics
-  // Simple average of a "normalized" value. This is highly simplistic.
-  // Example: Let's pretend 'weight' is a metric and we normalize it.
-  const score = metrics.length * 10; // Dummy calculation
-  return Math.min(Math.max(score, 0), 100); // Clamp between 0 and 100
+  let score = 100
+
+  // Rule 1: Blood Pressure
+  const bpMetric = metrics.find((m) => m.metric_type === 'blood_pressure')
+  if (
+    bpMetric &&
+    typeof bpMetric.value === 'object' &&
+    bpMetric.value &&
+    'systolic' in bpMetric.value
+  ) {
+    const systolic = (bpMetric.value as { systolic: number }).systolic
+    if (systolic > 130) {
+      score -= 15
+    }
+  }
+
+  // Rule 2: Weight
+  const weightMetric = metrics.find((m) => m.metric_type === 'weight')
+  if (weightMetric && typeof weightMetric.value === 'number') {
+    if (weightMetric.value > 90) {
+      score -= 10
+    }
+  }
+
+  return Math.max(0, score) // Ensure score doesn't go below 0
 }
 
 // A function to transform DB data into the format the component expects
