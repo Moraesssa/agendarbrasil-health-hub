@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useHealthDataCache } from '@/contexts/HealthDataCacheContext'
 import { getHealthMetricsForPatient } from '@/services/healthService'
-import { Tables } from '@/integrations/supabase/types'
 import type { HealthSummaryProps, HealthMetric } from '@/components/HealthSummary'
 import { HeartPulse, Weight, Thermometer, Droplets } from 'lucide-react'
 
 // Define a type for the raw metric from the DB
-type HealthMetricFromDB = Tables<'health_metrics'>
+// Manually defined to avoid issues with generated types
+interface HealthMetricFromDB {
+  id: string
+  patient_id: string
+  metric_type: string
+  value: string | number | { [key: string]: any }
+  unit?: string | null
+  created_at: string
+}
 
 // A simple function to calculate a health score.
 // This is a placeholder and should be replaced with a more robust algorithm.
@@ -19,23 +26,40 @@ const calculateHealthScore = (metrics: HealthMetricFromDB[]): number => {
     bpMetric &&
     typeof bpMetric.value === 'object' &&
     bpMetric.value &&
-    'systolic' in bpMetric.value
+    'systolic' in bpMetric.value &&
+    'diastolic' in bpMetric.value
   ) {
-    const systolic = (bpMetric.value as { systolic: number }).systolic
-    if (systolic > 130) {
-      score -= 15
+    const { systolic, diastolic } = bpMetric.value as { systolic: number; diastolic: number }
+
+    if (systolic > 180 || diastolic > 120) {
+      score -= 50 // Hypertensive Crisis
+    } else if (systolic >= 140 || diastolic >= 90) {
+      score -= 30 // Hypertension Stage 2
+    } else if (systolic >= 130 || diastolic >= 80) {
+      score -= 20 // Hypertension Stage 1
+    } else if (systolic >= 120) {
+      score -= 10 // Elevated
     }
   }
 
-  // Rule 2: Weight
+  // Rule 2: Weight (example, can be improved with BMI)
   const weightMetric = metrics.find((m) => m.metric_type === 'weight')
   if (weightMetric && typeof weightMetric.value === 'number') {
+    // This is a very simplistic model. A real-world scenario would use BMI.
     if (weightMetric.value > 90) {
+      // Assuming an average height, this might indicate overweight.
       score -= 10
     }
   }
 
   return Math.max(0, score) // Ensure score doesn't go below 0
+}
+
+const metricTranslations: Record<string, string> = {
+  blood_pressure: 'Pressão Arterial',
+  weight: 'Peso',
+  blood_glucose: 'Glicemia',
+  temperature: 'Temperatura',
 }
 
 // A function to transform DB data into the format the component expects
@@ -72,9 +96,13 @@ const transformMetricsForSummary = (metrics: HealthMetricFromDB[]): HealthSummar
     }
     const visuals = getMetricVisuals(metric.metric_type)
 
+    const translatedLabel =
+      metricTranslations[metric.metric_type] ||
+      metric.metric_type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+
     return {
       icon: visuals.icon,
-      label: metric.metric_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      label: translatedLabel,
       value: valueDisplay,
       unit: metric.unit,
       status: 'normal', // Placeholder status

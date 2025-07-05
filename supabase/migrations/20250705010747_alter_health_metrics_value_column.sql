@@ -1,0 +1,1 @@
+ALTER TABLE public.health_metrics ALTER COLUMN value TYPE jsonb USING value::jsonb;
