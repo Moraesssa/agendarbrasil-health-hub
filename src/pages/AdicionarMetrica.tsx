@@ -38,18 +38,35 @@ import { createHealthMetric, getPatientProfileByUserId } from '@/services/health
 
 const formSchema = z.object({
   metric_type: z.enum(['blood_pressure', 'weight', 'blood_glucose']),
-  value: z.string().min(1, 'Valor é obrigatório'),
+  value: z.string().optional(),
   systolic: z.string().optional(),
   diastolic: z.string().optional(),
   unit: z.string().min(1, 'Unidade é obrigatória'),
-}).refine(data => {
-    if (data.metric_type === 'blood_pressure') {
-        return !!data.systolic && !!data.diastolic;
+}).superRefine((data, ctx) => {
+  if (data.metric_type === 'blood_pressure') {
+    if (!data.systolic || data.systolic.trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['systolic'],
+        message: 'Pressão sistólica é obrigatória.',
+      });
     }
-    return true;
-}, {
-    message: 'Pressão sistólica e diastólica são obrigatórias',
-    path: ['systolic'],
+    if (!data.diastolic || data.diastolic.trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['diastolic'],
+        message: 'Pressão diastólica é obrigatória.',
+      });
+    }
+  } else {
+    if (!data.value || data.value.trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Valor é obrigatório.',
+      });
+    }
+  }
 });
 
 type FormValues = z.infer<typeof formSchema>;
