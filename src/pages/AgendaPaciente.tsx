@@ -112,14 +112,20 @@ const AgendaPaciente = () => {
       data: apt,
     }));
 
-    const medicationEvents = medications.flatMap(med =>
-      med.today_doses?.map(dose => ({
-        id: dose.id,
-        date: new Date(dose.scheduled_time),
-        type: 'medication' as const,
-        data: { ...med, dose },
-      })) || []
-    );
+    const medicationEvents = medications.flatMap(med => {
+      if (!med || !med.today_doses) {
+        return [];
+      }
+      return med.today_doses.map(dose => {
+        if (!dose) return null;
+        return {
+          id: dose.id,
+          date: new Date(dose.scheduled_time),
+          type: 'medication' as const,
+          data: { ...med, dose },
+        };
+      }).filter(Boolean);
+    });
 
     const allEvents = [...appointmentEvents, ...medicationEvents].sort((a, b) => a.date.getTime() - b.date.getTime());
 
