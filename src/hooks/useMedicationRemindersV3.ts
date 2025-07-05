@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { useToast } from "@/hooks/use-toast";
 import { medicationServiceV2 } from "@/services/medicationServiceV2";
 import { logger } from "@/utils/logger";

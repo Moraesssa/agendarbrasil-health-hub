@@ -1,14 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Bell, Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { useNavigate } from "react-router-dom";
-import { useNotifications } from "@/contexts/NotificationContext"; // <-- Nova importação
+import { useNotifications } from "@/contexts/NotificationContext";
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { unreadCount } = useNotifications(); // <-- Novo hook
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [isLogoAnimated, setIsLogoAnimated] = useState(false);
 
