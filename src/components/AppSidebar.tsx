@@ -1,5 +1,6 @@
-import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin, DollarSign } from "lucide-react";
+import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin, DollarSign, Bell } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +12,10 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  SidebarSeparator
+  SidebarSeparator,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -82,12 +86,6 @@ const settingsItems = [
     url: "/gerenciar-agenda",
     icon: Clock,
     description: "Gerenciar dias e horários de atendimento"
-  },
-  {
-    title: "Configurações",
-    url: "/settings",
-    icon: Settings,
-    description: "Configurações do sistema"
   }
 ];
 
@@ -96,6 +94,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { toast } = useToast();
   const { userData, logout } = useAuth();
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
 
   const handleNavigation = (url: string, title: string) => {
     if (url === "/settings") {
@@ -205,6 +204,33 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setSettingsOpen(!isSettingsOpen)}
+                  className="flex items-center gap-3 w-full"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Configurações</span>
+                </SidebarMenuButton>
+                {isSettingsOpen && (
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/perfil/notificacoes'}
+                      >
+                        <button
+                          onClick={() => handleNavigation('/perfil/notificacoes', 'Notificações')}
+                          className="w-full"
+                        >
+                          <Bell className="h-4 w-4" />
+                          <span>Notificações</span>
+                        </button>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

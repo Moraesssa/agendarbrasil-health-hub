@@ -79,19 +79,6 @@ const PerfilMedico = () => {
       variant: 'outline' as const,
       className: "border-purple-200 hover:bg-purple-50"
     },
-    {
-      label: "Configurações",
-      icon: Settings,
-      variant: 'outline' as const,
-      className: "border-gray-200 hover:bg-gray-50",
-      subItems: [
-        {
-          label: 'Notificações',
-          path: '/perfil/notificacoes',
-          icon: Bell,
-        },
-      ]
-    }
   ];
 
   return (
