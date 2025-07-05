@@ -38,7 +38,7 @@ export const useMedicationRemindersV2 = () => {
     }
   }, [user, toast]);
 
-  const markAsTaken = async (medicationId: string) => {
+  const markAsTaken = useCallback(async (medicationId: string) => {
     const medication = medications.find(m => m.id === medicationId);
     if (!medication) {
       toast({ title: "Erro", description: "Medicamento não encontrado.", variant: "destructive" });
@@ -96,9 +96,9 @@ export const useMedicationRemindersV2 = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [medications, toast, loadMedications]);
 
-  const markAsSkipped = async (medicationId: string) => {
+  const markAsSkipped = useCallback(async (medicationId: string) => {
     const medication = medications.find(m => m.id === medicationId);
     if (!medication) {
       toast({ title: "Erro", description: "Medicamento não encontrado.", variant: "destructive" });
@@ -156,9 +156,9 @@ export const useMedicationRemindersV2 = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [medications, toast, loadMedications]);
 
-  const createMedication = async (medication: Parameters<typeof medicationServiceV2.createMedicationReminder>[0]) => {
+  const createMedication = useCallback(async (medication: Parameters<typeof medicationServiceV2.createMedicationReminder>[0]) => {
     setIsSubmitting(true);
     try {
       const newMedication = await medicationServiceV2.createMedicationReminder(medication);
@@ -181,9 +181,9 @@ export const useMedicationRemindersV2 = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [toast, loadMedications]);
 
-  const updateMedication = async (id: string, updates: Parameters<typeof medicationServiceV2.updateMedicationReminder>[1]) => {
+  const updateMedication = useCallback(async (id: string, updates: Parameters<typeof medicationServiceV2.updateMedicationReminder>[1]) => {
     setIsSubmitting(true);
     try {
       await medicationServiceV2.updateMedicationReminder(id, updates);
@@ -203,9 +203,9 @@ export const useMedicationRemindersV2 = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [toast, loadMedications]);
 
-  const deleteMedication = async (id: string) => {
+  const deleteMedication = useCallback(async (id: string) => {
     setIsSubmitting(true);
     try {
       await medicationServiceV2.deleteMedicationReminder(id);
@@ -225,7 +225,7 @@ export const useMedicationRemindersV2 = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [toast, loadMedications]);
 
   useEffect(() => {
     loadMedications();

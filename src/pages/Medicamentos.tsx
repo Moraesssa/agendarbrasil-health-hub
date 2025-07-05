@@ -59,7 +59,8 @@ const Medicamentos = () => {
   };
 
   const handleMedicationAdded = () => {
-    loadMedications();
+    // A função `createMedication` dentro do hook já chama `loadMedications`.
+    // Esta chamada é redundante e foi removida.
     setShowAddDialog(false);
   };
 

@@ -14,7 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { financeService } from "@/services/financeService";
 import { PageLoader } from "@/components/PageLoader";
-import HealthSummary from "@/components/HealthSummary"; // Import HealthSummary
+import HealthSummary from "@/components/HealthSummary";
+import { useHealthMetrics } from "@/hooks/useHealthMetrics";
 
 // Tipagem para os dados do dashboard
 interface DashboardData {
@@ -28,18 +29,6 @@ interface DashboardData {
   tiposConsultaChart: { tipo: string; valor: number; cor: string }[];
 }
 
-// Mock data for HealthSummary (replace with actual data fetching)
-const mockHealthMetrics = [
-  { label: "Pressão Arterial", value: "120/80", unit: "mmHg", status: "normal", icon: Activity, color: "text-green-600" },
-  { label: "Frequência Cardíaca", value: "72", unit: "bpm", status: "normal", icon: Activity, color: "text-blue-600" },
-  { label: "Temperatura", value: "36.5", unit: "°C", status: "normal", icon: Activity, color: "text-orange-600" },
-  { label: "Peso", value: "70.2", unit: "kg", status: "ideal", icon: Activity, color: "text-purple-600" },
-] as const;
-
-const mockHealthScore = {
-  value: 85,
-  message: "Excelente! Continue mantendo seus hábitos saudáveis.",
-};
 
 const DashboardMedico = () => {
   const { toast } = useToast();
@@ -47,6 +36,10 @@ const DashboardMedico = () => {
   
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Supondo que o ID do paciente esteja disponível, por exemplo, do primeiro paciente da lista
+  // Em um cenário real, este ID viria de uma seleção de paciente no dashboard
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const { summaryData: healthSummaryData, isLoading: healthLoading, error: healthError } = useHealthMetrics(selectedPatientId || '');
 
   useEffect(() => {
     toast({
@@ -199,11 +192,15 @@ const DashboardMedico = () => {
                   <AlertsSection />
                 </div>
               </div>
-              {/* Health Summary Component */}
-              <HealthSummary
-                healthMetrics={mockHealthMetrics}
-                healthScore={mockHealthScore}
-              />
+              {/* Health Summary Component Dinâmico */}
+              {selectedPatientId && !healthLoading && healthSummaryData && (
+                <HealthSummary
+                  healthMetrics={healthSummaryData.healthMetrics}
+                  healthScore={healthSummaryData.healthScore}
+                />
+              )}
+              {selectedPatientId && healthLoading && <p>Carregando resumo de saúde...</p>}
+              {healthError && <p className="text-red-500">Erro ao carregar resumo de saúde.</p>}
             </div>
           </main>
         </SidebarInset>

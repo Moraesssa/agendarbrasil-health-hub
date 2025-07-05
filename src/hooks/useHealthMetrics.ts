@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useHealthDataCache } from '@/contexts/HealthDataCacheContext'
 import { getHealthMetricsForPatient } from '@/services/healthService'
 import type { HealthSummaryProps, HealthMetric } from '@/components/HealthSummary'
@@ -120,33 +120,37 @@ const transformMetricsForSummary = (metrics: HealthMetricFromDB[]): HealthSummar
 }
 
 export const useHealthMetrics = (patientId: string) => {
-  const [summaryData, setSummaryData] = useState<HealthSummaryProps | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const { lastUpdated } = useHealthDataCache()
+  const [rawMetrics, setRawMetrics] = useState<HealthMetricFromDB[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { lastUpdated } = useHealthDataCache();
 
   useEffect(() => {
     if (!patientId) {
-      setIsLoading(false)
-      return
+      setIsLoading(false);
+      return;
     }
 
     const fetchMetrics = async () => {
       try {
-        setIsLoading(true)
-        const metrics = await getHealthMetricsForPatient(patientId)
-        const transformedData = transformMetricsForSummary(metrics)
-        setSummaryData(transformedData)
+        setIsLoading(true);
+        const metrics = await getHealthMetricsForPatient(patientId);
+        setRawMetrics(metrics);
       } catch (err) {
-        setError(err as Error)
-        console.error(err)
+        setError(err as Error);
+        console.error(err);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchMetrics()
-  }, [patientId, lastUpdated])
+    fetchMetrics();
+  }, [patientId, lastUpdated]);
 
-  return { summaryData, isLoading, error }
-}
+  const summaryData = useMemo(() => {
+    if (!rawMetrics) return null;
+    return transformMetricsForSummary(rawMetrics);
+  }, [rawMetrics]);
+
+  return { summaryData, isLoading, error };
+};

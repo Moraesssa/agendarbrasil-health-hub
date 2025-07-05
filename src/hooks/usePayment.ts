@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,12 +9,17 @@ export const usePayment = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const processPayment = async (paymentData: {
+  const processPayment = useCallback(async (paymentData: {
     consultaId: string;
     medicoId: string;
     valor: number;
     metodo: 'credit_card' | 'pix';
   }) => {
+    if (processing) {
+      console.warn("Pagamento já em andamento.");
+      return { success: false, error: new Error("Processo já iniciado.") };
+    }
+
     if (!user) {
       toast({
         title: "Erro de autenticação",
@@ -149,9 +154,9 @@ export const usePayment = () => {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [processing, user, toast]);
 
-  const createCustomerPortalSession = async () => {
+  const createCustomerPortalSession = useCallback(async () => {
     if (!user) {
       toast({
         title: "Erro de autenticação",
@@ -202,7 +207,7 @@ export const usePayment = () => {
       });
       return { success: false, error };
     }
-  };
+  }, [user, toast]);
 
   return {
     processing,

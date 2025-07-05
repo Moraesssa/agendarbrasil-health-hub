@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,7 @@ export const useAgendaManagement = () => {
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [locais, setLocais] = useState<LocalAtendimento[]>([]);
+    const [medicoConfig, setMedicoConfig] = useState<any>(null);
 
     const form = useForm<AgendaFormData>({
         resolver: zodResolver(agendaSchema),
@@ -79,7 +80,7 @@ export const useAgendaManagement = () => {
     }, [watchedValues]);
 
     // Remove dependency on isValid - only check if there are valid blocks
-    const canSave = hasValidBlocks();
+    const canSave = useMemo(() => hasValidBlocks(), [hasValidBlocks]);
     console.log("🚀 canSave:", canSave);
 
     const fetchInitialData = useCallback(async () => {
@@ -99,13 +100,16 @@ export const useAgendaManagement = () => {
             let horarioAtendimento = {};
             if (medicoData.data?.configuracoes) {
                 try {
-                    const config = typeof medicoData.data.configuracoes === 'string' 
-                        ? JSON.parse(medicoData.data.configuracoes) 
+                    const config = typeof medicoData.data.configuracoes === 'string'
+                        ? JSON.parse(medicoData.data.configuracoes)
                         : medicoData.data.configuracoes;
                     
-                    if (config && typeof config === 'object' && config.horarioAtendimento) {
-                        horarioAtendimento = config.horarioAtendimento;
-                    }
+                    if (config && typeof config === 'object') {
+                       setMedicoConfig(config);
+                       if (config.horarioAtendimento) {
+                           horarioAtendimento = config.horarioAtendimento;
+                       }
+                   }
                 } catch (e) {
                     logger.error("Erro ao fazer parse das configurações", "GerenciarAgenda", e);
                 }
@@ -120,15 +124,9 @@ export const useAgendaManagement = () => {
         }
     }, [user?.id, reset, toast]);
 
-    const onSubmit = async (data: AgendaFormData) => {
-        console.log("🔥 onSubmit called with data:", data);
-        
-        if (!user?.id) {
-            console.log("❌ No user ID");
-            return;
-        }
-        
-        // Custom validation for active blocks only
+    const onSubmit = useCallback(async (data: AgendaFormData) => {
+        if (!user?.id) return;
+
         let hasValidActiveBlocks = false;
         for (const dia of diasDaSemana) {
             const blocosDoDia = data.horarios[dia.key];
@@ -136,11 +134,10 @@ export const useAgendaManagement = () => {
                 for (const bloco of blocosDoDia) {
                     if (bloco.ativo) {
                         if (!bloco.local_id || !bloco.inicio || !bloco.fim || bloco.inicio >= bloco.fim) {
-                            console.log("❌ Bloco inválido encontrado:", bloco);
-                            toast({ 
-                                title: "Erro de validação", 
+                            toast({
+                                title: "Erro de validação",
                                 description: `Bloco ativo em ${dia.label} possui dados inválidos.`,
-                                variant: "destructive" 
+                                variant: "destructive"
                             });
                             return;
                         }
@@ -151,51 +148,36 @@ export const useAgendaManagement = () => {
         }
 
         if (!hasValidActiveBlocks) {
-            console.log("❌ Nenhum bloco ativo válido encontrado");
-            toast({ 
-                title: "Erro de validação", 
+            toast({
+                title: "Nenhum horário definido",
                 description: "É necessário ter pelo menos um bloco ativo e válido para salvar.",
-                variant: "destructive" 
+                variant: "destructive"
             });
             return;
         }
 
-        console.log("✅ Validação passou, iniciando save...");
         setIsSubmitting(true);
         try {
-            const { data: medicoData, error: fetchError } = await supabase.from('medicos').select('configuracoes').eq('user_id', user.id).single();
-            if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
-
-            // Safe parsing and merging of configurations
-            let existingConfig = {};
-            if (medicoData?.configuracoes) {
-                try {
-                    existingConfig = typeof medicoData.configuracoes === 'string' 
-                        ? JSON.parse(medicoData.configuracoes) 
-                        : medicoData.configuracoes;
-                } catch (e) {
-                    logger.error("Erro ao fazer parse das configurações existentes", "GerenciarAgenda", e);
-                }
-            }
-
-            const newConfiguracoes = { 
-                ...existingConfig, 
-                horarioAtendimento: data.horarios 
+            const finalConfig = {
+                ...medicoConfig,
+                horarioAtendimento: data.horarios,
             };
-            
-            await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
 
-            console.log("✅ Dados salvos com sucesso!");
+            await supabase
+                .from('medicos')
+                .update({ configuracoes: finalConfig })
+                .eq('user_id', user.id)
+                .throwOnError();
+
             toast({ title: "Agenda atualizada com sucesso!" });
             reset(data);
         } catch (error) {
-            console.log("❌ Erro ao salvar:", error);
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
             toast({ title: "Erro ao salvar agenda", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }, [user?.id, toast, reset, medicoConfig]);
 
     return {
         form,

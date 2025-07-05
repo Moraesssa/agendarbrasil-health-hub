@@ -27,7 +27,7 @@ export const useAppointments = (): UseAppointmentsReturn => {
 
   useEffect(() => {
     const fetchAppointments = async () => {
-      if (!user) {
+      if (!user?.id) {
         setIsLoading(false);
         return;
       }
@@ -48,7 +48,7 @@ export const useAppointments = (): UseAppointmentsReturn => {
     };
 
     fetchAppointments();
-  }, [user]);
+  }, [user?.id]);
 
   return { appointments, isLoading, error };
 };
