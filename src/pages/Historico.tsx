@@ -13,6 +13,7 @@ import { useHealthMetrics } from "@/hooks/useHealthMetrics";
 import { useAuth } from "@/contexts/AuthContext";
  
  const Historico = () => {
+  console.log(`[Historico Page] Re-rendering at ${new Date().toISOString()}`);
    const navigate = useNavigate();
    const { user } = useAuth();
    const { data, isLoading: isLoadingHistory, error: historyError } = useHistory();

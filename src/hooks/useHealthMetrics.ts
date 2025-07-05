@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useHealthDataCache } from '@/contexts/HealthDataCacheContext'
 import { getHealthMetricsForPatient } from '@/services/healthService'
 import { Tables } from '@/integrations/supabase/types'
 import type { HealthSummaryProps, HealthMetric } from '@/components/HealthSummary'
@@ -94,6 +95,7 @@ export const useHealthMetrics = (patientId: string) => {
   const [summaryData, setSummaryData] = useState<HealthSummaryProps | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const { lastUpdated } = useHealthDataCache()
 
   useEffect(() => {
     if (!patientId) {
@@ -116,7 +118,7 @@ export const useHealthMetrics = (patientId: string) => {
     }
 
     fetchMetrics()
-  }, [patientId])
+  }, [patientId, lastUpdated])
 
   return { summaryData, isLoading, error }
 }

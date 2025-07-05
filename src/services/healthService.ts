@@ -9,6 +9,7 @@ export type HealthMetric = TablesInsert<'health_metrics'>
  * @returns A promise that resolves to an array of health metrics.
  */
 export const getHealthMetricsForPatient = async (patientId: string) => {
+  console.log(`[HealthService] Fetching metrics for patient ${patientId} at ${new Date().toISOString()}`);
   const { data, error } = await supabase
     .from('health_metrics')
     .select('*')

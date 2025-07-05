@@ -33,6 +33,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHealthDataCache } from '@/contexts/HealthDataCacheContext';
 import { createHealthMetric, getPatientProfileByUserId } from '@/services/healthService';
 
 const formSchema = z.object({
@@ -57,6 +58,7 @@ const AdicionarMetrica = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { triggerRefetch } = useHealthDataCache();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,6 +145,7 @@ const AdicionarMetrica = () => {
         console.log('Dados enviados para createHealthMetric (metricData):', metricData);
         console.log('--- DEBUG FIM ---');
         await createHealthMetric(metricData as any);
+        triggerRefetch();
 
         toast({
             title: 'Sucesso!',
