@@ -1,4 +1,4 @@
-
+import { useState, useEffect } from "react";
 import { ArrowLeft, FileText, Download, Eye, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,20 +11,40 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import HealthSummary from "@/components/HealthSummary";
 import { useHealthMetrics } from "@/hooks/useHealthMetrics";
 import { useAuth } from "@/contexts/AuthContext";
- 
- const Historico = () => {
+import { getPatientProfileByUserId } from "@/services/healthService";
+
+const Historico = () => {
   console.log(`[Historico Page] Re-rendering at ${new Date().toISOString()}`);
-   const navigate = useNavigate();
-   const { user } = useAuth();
-   const { data, isLoading: isLoadingHistory, error: historyError } = useHistory();
-// LOG PARA DIAGNÓSTICO
-   if (user) {
-     console.log(`[DIAGNÓSTICO] A página de Histórico está usando o ID de usuário (${user.id}) para buscar as métricas de saúde, em vez do ID de paciente correto.`);
-   }
-   const { summaryData, isLoading: isLoadingMetrics, error: metricsError } = useHealthMetrics(user?.id || '');
-   const { consultas, exames } = data;
- 
-   const renderConsultaSkeleton = () => (
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [isLoadingPatientId, setIsLoadingPatientId] = useState(true);
+
+  useEffect(() => {
+    const fetchPatientId = async () => {
+      if (user) {
+        try {
+          const profile = await getPatientProfileByUserId(user.id);
+          if (profile) {
+            setPatientId(profile.id);
+          }
+        } catch (error) {
+          console.error("Failed to fetch patient profile", error);
+        } finally {
+          setIsLoadingPatientId(false);
+        }
+      } else {
+        setIsLoadingPatientId(false);
+      }
+    };
+    fetchPatientId();
+  }, [user]);
+
+  const { data, isLoading: isLoadingHistory, error: historyError } = useHistory();
+  const { summaryData, isLoading: isLoadingMetrics, error: metricsError } = useHealthMetrics(patientId || '');
+  const { consultas, exames } = data;
+
+  const renderConsultaSkeleton = () => (
     <div className="p-4 border rounded-lg space-y-3">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
@@ -98,7 +118,7 @@ import { useAuth } from "@/contexts/AuthContext";
         )}
  
         <div className="mb-8">
-          {isLoadingMetrics ? (
+          {(isLoadingMetrics || isLoadingPatientId) ? (
             <Skeleton className="h-80 w-full rounded-lg" />
           ) : summaryData ? (
             <HealthSummary {...summaryData} />
