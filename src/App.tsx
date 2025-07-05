@@ -33,6 +33,7 @@ import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
 import Medicamentos from '@/pages/Medicamentos';
 import AdicionarMetrica from '@/pages/AdicionarMetrica';
+import NotificacoesMedico from '@/pages/NotificacoesMedico';
  
 const queryClient = new QueryClient();
 
@@ -103,6 +104,7 @@ function App() {
                       <Route path="/dashboard-medico" element={<DashboardMedico />} />
                       <Route path="/perfil" element={<Perfil />} />
                       <Route path="/perfil-medico" element={<PerfilMedico />} />
+                      <Route path="/perfil/notificacoes" element={<NotificacoesMedico />} />
                       <Route path="/agenda-medico" element={<AgendaMedico />} />
                       <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
                       <Route path="/gerenciar-locais" element={<GerenciarLocais />} />

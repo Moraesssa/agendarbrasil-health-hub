@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, Users, BarChart3, Settings } from "lucide-react";
+import { Calendar, Users, BarChart3, Settings, Bell } from "lucide-react";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileActions } from "@/components/profile/ProfileActions";
@@ -82,9 +82,15 @@ const PerfilMedico = () => {
     {
       label: "Configurações",
       icon: Settings,
-      onClick: () => navigate("/"),
       variant: 'outline' as const,
-      className: "border-gray-200 hover:bg-gray-50"
+      className: "border-gray-200 hover:bg-gray-50",
+      subItems: [
+        {
+          label: 'Notificações',
+          path: '/perfil/notificacoes',
+          icon: Bell,
+        },
+      ]
     }
   ];
 
