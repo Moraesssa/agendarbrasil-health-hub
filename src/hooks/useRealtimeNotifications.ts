@@ -12,7 +12,12 @@ export const useRealtimeNotifications = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchInitialNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      logger.warn('fetchInitialNotifications called without a user.', 'useRealtimeNotifications');
+      return;
+    }
+    
+    logger.info('Fetching initial notifications for user:', 'useRealtimeNotifications', user.id);
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -21,7 +26,12 @@ export const useRealtimeNotifications = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Error fetching initial notifications', 'useRealtimeNotifications', error);
+        throw error;
+      }
+      
+      logger.info('Successfully fetched notifications', 'useRealtimeNotifications', { count: data.length, data });
       // Corrigido: Cast explícito para o tipo correto.
       setNotifications((data as FamilyNotification[]) || []);
     } catch (error) {
@@ -43,7 +53,7 @@ export const useRealtimeNotifications = () => {
         { event: 'INSERT', schema: 'public', table: 'family_notifications' },
         (payload) => {
           const newNotification = payload.new as FamilyNotification;
-          logger.info('New notification received', 'useRealtimeNotifications', newNotification);
+          logger.info('New realtime notification received', 'useRealtimeNotifications', newNotification);
           setNotifications((prev) => [newNotification, ...prev]);
           toast({
             title: newNotification.title,
@@ -51,9 +61,12 @@ export const useRealtimeNotifications = () => {
           });
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          logger.info('Subscribed to notifications channel', 'useRealtimeNotifications');
+          logger.info('Successfully subscribed to notifications channel', 'useRealtimeNotifications');
+        }
+        if (status === 'CHANNEL_ERROR') {
+          logger.error('Failed to subscribe to notifications channel', 'useRealtimeNotifications', err);
         }
       });
 
