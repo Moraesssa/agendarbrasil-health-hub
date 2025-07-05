@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +33,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { createHealthMetric } from '@/services/healthService';
+import { createHealthMetric, getPatientProfileByUserId } from '@/services/healthService';
 
 const formSchema = z.object({
   metric_type: z.enum(['blood_pressure', 'weight', 'blood_glucose']),
@@ -57,6 +58,9 @@ const AdicionarMetrica = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,11 +75,52 @@ const AdicionarMetrica = () => {
 
   const metricType = form.watch('metric_type');
 
+  useEffect(() => {
+    const fetchPatientProfile = async () => {
+      if (user) {
+        try {
+          setIsLoading(true);
+          const profile = await getPatientProfileByUserId(user.id);
+          if (profile) {
+            setPatientId(profile.id);
+          } else {
+            setError('Perfil de paciente não encontrado.');
+            toast({
+              title: 'Erro',
+              description: 'Não foi possível encontrar o perfil do paciente associado a este usuário.',
+              variant: 'destructive',
+            });
+          }
+        } catch (err) {
+          setError('Falha ao buscar o perfil do paciente.');
+          toast({
+            title: 'Erro',
+            description: 'Ocorreu um erro ao buscar seus dados. Tente novamente mais tarde.',
+            variant: 'destructive',
+          });
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+        setError('Usuário não autenticado.');
+        navigate('/login');
+      }
+    };
+
+    fetchPatientProfile();
+  }, [user, navigate, toast]);
+
   const onSubmit = async (values: FormValues) => {
-    if (!user) {
+    console.log('--- DEBUG INÍCIO ---');
+    console.log('Usuário autenticado (user):', user);
+    console.log('ID do Paciente (patientId state):', patientId);
+
+    if (!user || !patientId) {
         toast({
             title: 'Erro',
-            description: 'Você precisa estar logado para adicionar uma métrica.',
+            description: 'Dados do paciente não carregados. Não é possível adicionar a métrica.',
             variant: 'destructive',
         });
         return;
@@ -85,15 +130,18 @@ const AdicionarMetrica = () => {
 
     try {
         const metricData = {
-            patient_id: user.id,
+            patient_id: patientId,
             metric_type: values.metric_type,
             value: values.metric_type === 'blood_pressure'
                 ? { systolic: Number(values.systolic), diastolic: Number(values.diastolic) }
-                : { value: Number(values.value) },
+                : Number(values.value),
             unit: values.unit,
             recorded_at: new Date().toISOString(),
         };
 
+        // Adicione este log logo antes da chamada a createHealthMetric
+        console.log('Dados enviados para createHealthMetric (metricData):', metricData);
+        console.log('--- DEBUG FIM ---');
         await createHealthMetric(metricData as any);
 
         toast({
@@ -112,6 +160,7 @@ const AdicionarMetrica = () => {
         setIsSubmitting(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -134,6 +183,16 @@ const AdicionarMetrica = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {isLoading && <p className="text-center mb-4">Carregando dados do paciente...</p>}
+            {!isLoading && !patientId && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Erro de Carregamento</AlertTitle>
+                <AlertDescription>
+                  Não foi possível encontrar um perfil de paciente associado à sua conta. Não é possível adicionar métricas.
+                </AlertDescription>
+              </Alert>
+            )}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -223,8 +282,8 @@ const AdicionarMetrica = () => {
                   )}
                 />
 
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? 'Salvando...' : 'Salvar Métrica'}
+                <Button type="submit" disabled={isLoading || isSubmitting || !patientId} className="w-full">
+                  {isSubmitting || isLoading ? 'Carregando...' : 'Salvar Métrica'}
                 </Button>
               </form>
             </Form>

@@ -42,3 +42,22 @@ export const createHealthMetric = async (metricData: HealthMetric) => {
 
   return data
 }
+/**
+ * Fetches the patient profile for a specific user.
+ * @param userId - The UUID of the user.
+ * @returns A promise that resolves to the patient profile.
+ */
+export const getPatientProfileByUserId = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('pacientes')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching patient profile:', error)
+    throw error
+  }
+
+  return data
+}
