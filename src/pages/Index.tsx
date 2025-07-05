@@ -8,12 +8,16 @@ import QuickActions from "@/components/QuickActions";
 import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
 import MedicationRemindersV2 from "@/components/MedicationRemindersV2";
+import MedicationRemindersV3 from "@/components/MedicationRemindersV3";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useMedicalManagement } from "@/hooks/useMedicalManagement";
 import { useMedicationRemindersV2 } from "@/hooks/useMedicationRemindersV2";
 import AppointmentSkeleton from "@/components/appointments/AppointmentSkeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LoadingFallback } from "@/components/LoadingFallback";
+import { ErrorFallback } from "@/components/ErrorFallback";
 
 // Mock data for HealthSummary as a fallback
 const mockHealthMetrics = [
@@ -306,7 +310,12 @@ const Index = () => {
         </div>
 
         {/* Quick Actions */}
-        <QuickActions onAction={handleQuickAction} />
+        <ErrorBoundary 
+          context="QuickActions"
+          fallback={<ErrorFallback title="Erro nas ações rápidas" />}
+        >
+          <QuickActions onAction={handleQuickAction} />
+        </ErrorBoundary>
 
         {user ? (
           <>
@@ -314,113 +323,125 @@ const Index = () => {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
               {/* Left Column - Appointments */}
               <div className="xl:col-span-2 space-y-4 sm:space-y-6">
-                <UpcomingAppointments />
+                <ErrorBoundary 
+                  context="UpcomingAppointments"
+                  fallback={<ErrorFallback title="Erro ao carregar consultas" />}
+                >
+                  <UpcomingAppointments />
+                </ErrorBoundary>
                 
                 {/* Calendar Overview */}
-                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Agenda do Mês
-                      </CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
-                        className="text-blue-600 hover:text-blue-700"
-                        title="Ver agenda completa"
-                      >
-                        Ver detalhes
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 sm:px-6">
-                    {isLoading ? (
-                      <div className="space-y-4">
-                        <AppointmentSkeleton className="h-32" />
-                        <AppointmentSkeleton className="h-8" />
+                <ErrorBoundary 
+                  context="Calendar"
+                  fallback={<ErrorFallback title="Erro no calendário" />}
+                >
+                  <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="pb-3 px-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
+                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                          Agenda do Mês
+                        </CardTitle>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
+                          className="text-blue-600 hover:text-blue-700"
+                          title="Ver agenda completa"
+                        >
+                          Ver detalhes
+                        </Button>
                       </div>
-                    ) : error ? (
-                      <div className="text-center py-8 text-red-600">
-                        <AlertCircle className="mx-auto h-12 w-12" />
-                        <p className="mt-4 font-semibold">Erro ao carregar agenda</p>
-                        <p className="text-sm text-gray-600">{error}</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
-                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                            <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
-                              {day}
+                    </CardHeader>
+                    <CardContent className="px-4 sm:px-6">
+                      {isLoading ? (
+                        <LoadingFallback message="Carregando agenda..." />
+                      ) : error ? (
+                        <ErrorFallback 
+                          title="Erro ao carregar agenda"
+                          description={error}
+                        />
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
+                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                              <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
+                                {day}
+                              </div>
+                            ))}
+                            {(() => {
+                              const now = new Date();
+                              const year = now.getFullYear();
+                              const month = now.getMonth();
+                              const firstDayOfMonth = new Date(year, month, 1).getDay();
+                              const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+                              const totalCells = Math.ceil((firstDayOfMonth + totalDaysInMonth) / 7) * 7;
+
+                              return Array.from({ length: totalCells }, (_, i) => {
+                                const day = i - firstDayOfMonth + 1;
+                                const hasAppointment = calendarData.daysWithAppointments.has(day);
+                                const hasMedication = calendarData.daysWithMedication.has(day);
+                                const isCurrentMonth = day > 0 && day <= totalDaysInMonth;
+
+                                return (
+                                  <div
+                                    key={i}
+                                    className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
+                                      !isCurrentMonth
+                                        ? 'text-gray-300'
+                                        : hasAppointment
+                                          ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600'
+                                          : hasMedication
+                                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                            : 'hover:bg-gray-100'
+                                    }`}
+                                    onClick={() => isCurrentMonth && handleDayClick(day, hasAppointment, hasMedication)}
+                                    title={
+                                      isCurrentMonth
+                                        ? hasAppointment
+                                          ? `Consulta agendada para o dia ${day} - Clique para ver detalhes`
+                                          : hasMedication
+                                            ? `Lembrete de medicamento para o dia ${day}`
+                                            : 'Clique para agendar uma consulta'
+                                        : ''
+                                    }
+                                  >
+                                    {isCurrentMonth ? day : ''}
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                          <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                              <span>Consultas</span>
                             </div>
-                          ))}
-                          {(() => {
-                            const now = new Date();
-                            const year = now.getFullYear();
-                            const month = now.getMonth();
-                            const firstDayOfMonth = new Date(year, month, 1).getDay();
-                            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
-                            const totalCells = Math.ceil((firstDayOfMonth + totalDaysInMonth) / 7) * 7;
-
-                            return Array.from({ length: totalCells }, (_, i) => {
-                              const day = i - firstDayOfMonth + 1;
-                              const hasAppointment = calendarData.daysWithAppointments.has(day);
-                              const hasMedication = calendarData.daysWithMedication.has(day);
-                              const isCurrentMonth = day > 0 && day <= totalDaysInMonth;
-
-                              return (
-                                <div
-                                  key={i}
-                                  className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
-                                    !isCurrentMonth
-                                      ? 'text-gray-300'
-                                      : hasAppointment
-                                        ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600'
-                                        : hasMedication
-                                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                          : 'hover:bg-gray-100'
-                                  }`}
-                                  onClick={() => isCurrentMonth && handleDayClick(day, hasAppointment, hasMedication)}
-                                  title={
-                                    isCurrentMonth
-                                      ? hasAppointment
-                                        ? `Consulta agendada para o dia ${day} - Clique para ver detalhes`
-                                        : hasMedication
-                                          ? `Lembrete de medicamento para o dia ${day}`
-                                          : 'Clique para agendar uma consulta'
-                                      : ''
-                                  }
-                                >
-                                  {isCurrentMonth ? day : ''}
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                        <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                            <span>Consultas</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 bg-green-100 rounded"></div>
+                              <span>Medicamentos</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-green-100 rounded"></div>
-                            <span>Medicamentos</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </ErrorBoundary>
               </div>
 
               {/* Right Column - Health & Reminders */}
               <div className="space-y-4 sm:space-y-6">
-                <HealthSummary
-                  healthMetrics={mockHealthMetrics}
-                  healthScore={mockHealthScore}
-                />
-                <MedicationRemindersV2 />
+                <ErrorBoundary 
+                  context="HealthSummary"
+                  fallback={<ErrorFallback title="Erro nos dados de saúde" />}
+                >
+                  <HealthSummary
+                    healthMetrics={mockHealthMetrics}
+                    healthScore={mockHealthScore}
+                  />
+                </ErrorBoundary>
+                
+                <MedicationRemindersV3 />
               </div>
             </div>
           </>
