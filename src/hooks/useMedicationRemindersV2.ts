@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useHealthDataCache } from "@/contexts/HealthDataCacheContext";
 import { medicationServiceV2 } from "@/services/medicationServiceV2";
 import { logger } from "@/utils/logger";
 import { MedicationWithDoses } from "@/types/medication";
@@ -10,6 +11,7 @@ import { findDoseToAct } from "@/utils/medicationStatusUtils";
 export const useMedicationRemindersV2 = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { lastUpdated, triggerRefetch } = useHealthDataCache();
   
   const [medications, setMedications] = useState<MedicationWithDoses[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -168,7 +170,7 @@ export const useMedicationRemindersV2 = () => {
         description: `${medication.medication_name} foi adicionado aos seus lembretes.`
       });
       
-      await loadMedications();
+      triggerRefetch();
       return newMedication;
     } catch (error) {
       logger.error("Erro ao criar medicamento", "createMedication", error);
@@ -191,7 +193,7 @@ export const useMedicationRemindersV2 = () => {
         title: "Medicamento atualizado!",
         description: "As alterações foram salvas com sucesso."
       });
-      await loadMedications();
+      triggerRefetch();
     } catch (error) {
       logger.error("Erro ao atualizar medicamento", "updateMedication", error);
       toast({
@@ -213,7 +215,7 @@ export const useMedicationRemindersV2 = () => {
         title: "Medicamento removido",
         description: "O lembrete foi removido com sucesso."
       });
-      await loadMedications();
+      triggerRefetch();
     } catch (error) {
       logger.error("Erro ao deletar medicamento", "deleteMedication", error);
       toast({
@@ -229,7 +231,7 @@ export const useMedicationRemindersV2 = () => {
 
   useEffect(() => {
     loadMedications();
-  }, [loadMedications]);
+  }, [loadMedications, lastUpdated]);
 
   return {
     medications,
