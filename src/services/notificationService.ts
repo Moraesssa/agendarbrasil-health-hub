@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client'
-import { type NotificationSettings } from '@/types/notification'
+import { type NotificationSettings } from '../types/notification'
 
 /**
  * Busca as configurações de notificação do usuário logado.
