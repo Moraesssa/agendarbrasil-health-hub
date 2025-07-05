@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,7 @@ import { TiposConsultaChart } from "@/components/dashboard/TiposConsultaChart";
 import { PacientesRecentes } from "@/components/dashboard/PacientesRecentes";
 import { AlertsSection } from "@/components/dashboard/AlertsSection";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { supabase } from "@/integrations/supabase/client";
 import { financeService } from "@/services/financeService";
 import { PageLoader } from "@/components/PageLoader";
@@ -28,7 +27,6 @@ interface DashboardData {
   consultasChart: { dia: string; consultas: number }[];
   tiposConsultaChart: { tipo: string; valor: number; cor: string }[];
 }
-
 
 const DashboardMedico = () => {
   const { toast } = useToast();
@@ -74,11 +72,9 @@ const DashboardMedico = () => {
         
         if (error) throw error;
 
-        // Processar dados para as métricas
         const todayString = new Date().toISOString().split('T')[0];
         const todayAppointments = weeklyAppointments.filter(c => c.data_consulta.startsWith(todayString));
         
-        // Buscar receita semanal real dos pagamentos
         try {
           const resumoFinanceiro = await financeService.getResumoFinanceiro(user.id);
           const receitaSemanal = resumoFinanceiro.receitaSemanal;
@@ -92,7 +88,6 @@ const DashboardMedico = () => {
             tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 30,
           };
 
-          // Processar dados para o gráfico de consultas
           const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
           const consultasSemanais = weekDays.map(dia => ({ dia, consultas: 0 }));
           weeklyAppointments.forEach(c => {
@@ -100,7 +95,6 @@ const DashboardMedico = () => {
             consultasSemanais[dayIndex].consultas++;
           });
 
-          // Processar dados para o gráfico de tipos de consulta
           const tiposMap: { [key: string]: number } = {};
           weeklyAppointments.forEach(c => {
             const tipo = c.tipo_consulta || 'Outro';
@@ -122,7 +116,6 @@ const DashboardMedico = () => {
           });
         } catch (financeError) {
           console.error("Erro ao buscar dados financeiros:", financeError);
-          // Fallback para dados básicos sem receita
           const metrics = {
             pacientesHoje: todayAppointments.length,
             receitaSemanal: 0,
@@ -192,7 +185,6 @@ const DashboardMedico = () => {
                   <AlertsSection />
                 </div>
               </div>
-              {/* Health Summary Component Dinâmico */}
               {selectedPatientId && !healthLoading && healthSummaryData && (
                 <HealthSummary
                   healthMetrics={healthSummaryData.healthMetrics}

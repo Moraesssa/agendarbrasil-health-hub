@@ -20,7 +20,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 
 const mainMenuItems = [
   {
@@ -67,7 +67,6 @@ const mainMenuItems = [
   }
 ];
 
-// Array de configurações atualizado
 const settingsItems = [
   {
     title: "Perfil",
@@ -76,7 +75,7 @@ const settingsItems = [
     description: "Configurações do perfil médico"
   },
   {
-    title: "Meus Locais", // <-- NOVO ITEM
+    title: "Meus Locais",
     url: "/gerenciar-locais",
     icon: MapPin,
     description: "Gerenciar seus locais de atendimento"

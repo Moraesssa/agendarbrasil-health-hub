@@ -7,16 +7,15 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/AppSidebar";
 import { Users, Search, Calendar, Phone, Mail, MapPin, Clock, Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { supabase } from "@/integrations/supabase/client";
-import NovoPacienteModal from "@/components/NovoPacienteModal"; // Import the new modal component
+import NovoPacienteModal from "@/components/NovoPacienteModal";
 
 // Tipagem para os dados do paciente
 interface Paciente {
   id: string;
   display_name: string;
   email: string;
-  // Adicione outros campos conforme necessário da sua tabela 'profiles' ou 'pacientes'
 }
 
 const PacientesMedico = () => {
@@ -25,7 +24,7 @@ const PacientesMedico = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // CORREÇÃO: Busca de dados reais
   useEffect(() => {
@@ -70,7 +69,7 @@ const PacientesMedico = () => {
   );
 
   const handleNovoPaciente = () => {
-    setIsModalOpen(true); // Open the modal
+    setIsModalOpen(true);
   };
   
   const handleCreatePaciente = async (patientData: { display_name: string; email: string; user_type: string }) => {
@@ -79,10 +78,10 @@ const PacientesMedico = () => {
         .from('profiles')
         .insert([
           {
-            id: crypto.randomUUID(), // Generate a UUID for the new profile
+            id: crypto.randomUUID(),
             display_name: patientData.display_name,
             email: patientData.email,
-            user_type: 'paciente', // Defaulting to 'paciente'
+            user_type: 'paciente',
             onboarding_completed: false,
             last_login: new Date().toISOString(),
             is_active: true,
@@ -95,7 +94,7 @@ const PacientesMedico = () => {
   
       setPacientes(prevPacientes => [...prevPacientes, ...(data as Paciente[])]);
       toast({ title: "Paciente criado com sucesso!", description: `O paciente ${patientData.display_name} foi adicionado.` });
-      setIsModalOpen(false); // Close the modal after successful creation
+      setIsModalOpen(false);
     } catch (error: any) {
       console.error("Error creating patient:", error);
       toast({ title: "Erro ao criar paciente", description: error.message || "Tente novamente.", variant: "destructive" });
@@ -111,7 +110,6 @@ const PacientesMedico = () => {
       title: "Histórico do Paciente",
       description: `Visualizando histórico de ${nomePaciente}`,
     });
-    // navigate(`/historico/${pacienteId}`);
   };
   
   const handleNovaConsulta = (pacienteId: string, nomePaciente: string | null) => {
@@ -119,7 +117,6 @@ const PacientesMedico = () => {
       title: "Nova Consulta",
       description: `Abrindo agendamento para ${nomePaciente}`,
     });
-    // navigate(`/agendamento/${pacienteId}`); // Assuming a route for scheduling
   };
   
   return (
@@ -143,7 +140,6 @@ const PacientesMedico = () => {
 
           <main className="flex-1 overflow-auto">
             <div className="container max-w-7xl mx-auto p-6 space-y-6">
-              {/* CORREÇÃO: As estatísticas agora devem vir de dados reais */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="shadow-lg">
                   <CardContent className="p-4 text-center">
@@ -152,7 +148,6 @@ const PacientesMedico = () => {
                     <p className="text-sm text-gray-600">Total de Pacientes</p>
                   </CardContent>
                 </Card>
-                {/* Outros cards de estatísticas precisariam de suas próprias lógicas de busca */}
               </div>
 
               <Card className="shadow-lg">
@@ -200,7 +195,6 @@ const PacientesMedico = () => {
                             <Mail className="w-4 h-4 text-gray-400" />
                             <span>{paciente.email}</span>
                           </div>
-                          {/* Outros dados do paciente seriam exibidos aqui */}
                         </div>
                       </CardContent>
                     </Card>
