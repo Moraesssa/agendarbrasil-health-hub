@@ -98,7 +98,7 @@ export const MedicationCard = ({
         <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span>{medication.times.join(', ')}</span>
+            <span>{(medication.times || []).join(', ')}</span>
           </div>
           {nextDoseTime && (
             <span className="text-xs sm:text-sm font-medium text-blue-600">
