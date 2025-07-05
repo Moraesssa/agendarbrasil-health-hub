@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../test-utils';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Agendamento from '@/pages/Agendamento';
@@ -10,6 +10,52 @@ import { useToast } from '@/hooks/use-toast';
 
 vi.mock('@/services/appointmentService');
 vi.mock('@/hooks/use-toast');
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: 'test-user-id',
+            email: 'test@test.com',
+          },
+        },
+        error: null,
+      }),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+      getSession: vi.fn().mockResolvedValue({
+        data: {
+          session: {
+            access_token: 'mock-token',
+            user: { id: 'test-user-id', email: 'test@test.com' },
+          },
+        },
+        error: null,
+      }),
+    },
+    channel: vi.fn(() => ({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn(),
+    })),
+    removeChannel: vi.fn(),
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: {}, error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    })),
+    rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+  },
+}));
 
 const mockToast = vi.fn();
 const mockDismiss = vi.fn();
@@ -99,7 +145,9 @@ describe('Agendamento de Consultas', () => {
     );
 
     expect(screen.getByText('Agendar Consulta')).toBeInTheDocument();
-    expect(screen.getByText('Filtros e Agendamento')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Filtros de Agendamento')).toBeInTheDocument();
+    });
   });
 
   it('deve carregar especialidades na inicialização', async () => {
