@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client'
 import { type NotificationSettings } from '../types/notification'
 
@@ -17,7 +18,7 @@ export const getNotificationSettings = async (): Promise<NotificationSettings | 
   const { data, error } = await supabase
     .from('notification_settings')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('profile_id', user.id) // Changed from user_id to profile_id
     .single()
 
   if (error && error.code !== 'PGRST116') {
@@ -26,7 +27,19 @@ export const getNotificationSettings = async (): Promise<NotificationSettings | 
     throw error
   }
 
-  return data
+  // Transform the data to match NotificationSettings interface
+  if (data) {
+    return {
+      user_id: data.user_id || data.profile_id,
+      email_notifications: data.email_notifications,
+      sms_notifications: false, // Default value since sms_notifications doesn't exist in schema
+      push_notifications: data.push_notifications,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    }
+  }
+
+  return null
 }
 
 /**
@@ -46,14 +59,16 @@ export const updateNotificationSettings = async (
   }
 
   const updates = {
-    ...settings,
-    user_id: user.id,
+    profile_id: user.id, // Use profile_id instead of user_id
+    email_notifications: settings.email_notifications,
+    push_notifications: settings.push_notifications,
+    // Remove sms_notifications since it doesn't exist in the schema
     updated_at: new Date().toISOString(),
   }
 
   const { data, error } = await supabase
     .from('notification_settings')
-    .upsert(updates, { onConflict: 'user_id' })
+    .upsert(updates, { onConflict: 'profile_id' })
     .select()
     .single()
 
@@ -62,5 +77,13 @@ export const updateNotificationSettings = async (
     throw error
   }
 
-  return data
+  // Transform the response to match NotificationSettings interface
+  return {
+    user_id: data.user_id || data.profile_id,
+    email_notifications: data.email_notifications,
+    sms_notifications: false, // Default value
+    push_notifications: data.push_notifications,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  }
 }

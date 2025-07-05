@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
@@ -227,13 +228,11 @@ export const appointmentService = {
         data_consulta,
         status,
         tipo_consulta,
-        diagnostico_resumo,
-        receita_emitida,
+        diagnostico,
         medico:medicos (
-          perfil:perfis (
-            display_name,
-            especialidade
-          )
+          user_id,
+          crm,
+          especialidades
         )
       `)
       .eq('paciente_id', user.id)
@@ -242,52 +241,22 @@ export const appointmentService = {
     if (consultasError) {
       logger.error('Error fetching history (consultas)', 'appointmentService', consultasError);
       // Não lança mais o erro, apenas loga e retorna um array vazio para consultas.
-      // throw new Error('Não foi possível carregar o histórico de consultas.');
     }
 
-    const { data: examesData, error: examesError } = await supabase
-      .from('exames')
-      .select(`
-        id,
-        nome,
-        data_exame,
-        status,
-        resultado,
-        medico_solicitante:medicos (
-          perfil:perfis (
-            display_name
-          )
-        )
-      `)
-      .eq('paciente_id', user.id)
-      .order('data_exame', { ascending: false });
-
-    if (examesError) {
-      logger.warn('Could not fetch exams, maybe the table does not exist or the user has no exams.', 'appointmentService', examesError);
-    }
-
+    // Removed the exames query since 'exames' table doesn't exist in current schema
     const consultas = (consultasData || []).map((c: any) => ({
       id: c.id,
       data: new Date(c.data_consulta).toLocaleDateString('pt-BR'),
-      medico: c.medico?.perfil?.display_name || 'N/A',
-      especialidade: c.medico?.perfil?.especialidade || c.tipo_consulta,
-      diagnostico: c.diagnostico_resumo || 'Diagnóstico não disponível.',
+      medico: c.medico?.user_id || 'N/A',
+      especialidade: c.medico?.especialidades?.[0] || c.tipo_consulta,
+      diagnostico: c.diagnostico || 'Diagnóstico não disponível.',
       status: c.status,
-      receita: c.receita_emitida || false,
-    }));
-
-    const exames = (examesData || []).map((e: any) => ({
-      id: e.id,
-      nome: e.nome,
-      data: new Date(e.data_exame).toLocaleDateString('pt-BR'),
-      medico: e.medico_solicitante?.perfil?.display_name || 'N/A',
-      status: e.status,
-      resultado: e.resultado,
+      receita: false, // Default value since receita_emitida is not in current schema
     }));
 
     return {
       consultas,
-      exames
+      exames: [] // Return empty array since exames table doesn't exist
     };
   },
 };

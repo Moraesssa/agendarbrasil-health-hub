@@ -1,16 +1,16 @@
+
 import { useState, useEffect, useMemo } from 'react'
 import { useHealthDataCache } from '@/contexts/HealthDataCacheContext'
 import { getHealthMetricsForPatient } from '@/services/healthService'
 import type { HealthSummaryProps, HealthMetric } from '@/components/HealthSummary'
 import { HeartPulse, Weight, Thermometer, Droplets } from 'lucide-react'
 
-// Define a type for the raw metric from the DB
-// Manually defined to avoid issues with generated types
+// Define a type for the raw metric from the DB compatible with Supabase Json type
 interface HealthMetricFromDB {
   id: string
   patient_id: string
   metric_type: string
-  value: string | number | { [key: string]: any }
+  value: any // Changed from string | number | { [key: string]: any } to any to handle Json type
   unit?: string | null
   created_at: string
 }
@@ -135,7 +135,16 @@ export const useHealthMetrics = (patientId: string) => {
       try {
         setIsLoading(true);
         const metrics = await getHealthMetricsForPatient(patientId);
-        setRawMetrics(metrics);
+        // Transform the metrics to match our interface
+        const transformedMetrics: HealthMetricFromDB[] = metrics.map(m => ({
+          id: m.id,
+          patient_id: m.patient_id,
+          metric_type: m.metric_type,
+          value: m.value,
+          unit: m.unit,
+          created_at: m.created_at
+        }));
+        setRawMetrics(transformedMetrics);
       } catch (err) {
         setError(err as Error);
         console.error(err);

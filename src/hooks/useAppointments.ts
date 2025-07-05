@@ -1,25 +1,13 @@
+
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useHealthDataCache } from "@/contexts/HealthDataCacheContext";
+import { Tables } from "@/integrations/supabase/types";
 
-// Temporary local type definition to avoid issues with generated types
-type Consulta = {
-  id: string;
-  created_at: string;
-  paciente_id: string | null;
-  medico_id: string | null;
-  data_consulta: string;
-  tipo_consulta: string | null;
-  status: string;
-  local_consulta: string | null;
-  observacoes: string | null;
-  preco: number | null;
-  pago: boolean;
-  metodo_pagamento: string | null;
-  pagamento_id: string | null;
-};
+// Use the generated type from Supabase
+type Consulta = Tables<'consultas'>;
 
 // Type for appointments with doctor info from profiles table
 export type AppointmentWithDoctor = Consulta & {
@@ -35,6 +23,7 @@ export const useAppointments = () => {
   
   const [appointments, setAppointments] = useState<AppointmentWithDoctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAppointments = useCallback(async () => {
     if (!user) {
@@ -42,6 +31,7 @@ export const useAppointments = () => {
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from("consultas")
@@ -56,7 +46,9 @@ export const useAppointments = () => {
       setAppointments(data || []);
     } catch (error) {
       console.error("Erro ao buscar agenda:", error);
-      toast({ title: "Erro", description: "Não foi possível carregar sua agenda.", variant: "destructive" });
+      const errorMessage = "Não foi possível carregar sua agenda.";
+      setError(errorMessage);
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -107,6 +99,7 @@ export const useAppointments = () => {
   return {
     appointments,
     loading,
+    error,
     handleConfirmAppointment,
     handleCancelAppointment,
     refetchAppointments: fetchAppointments,

@@ -10,7 +10,7 @@ import HealthSummary from "@/components/HealthSummary";
 import MedicationRemindersV2 from "@/components/MedicationRemindersV2";
 import MedicationRemindersV3 from "@/components/MedicationRemindersV3";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useMedicalManagement } from "@/hooks/useMedicalManagement";
 import { useMedicationRemindersV2 } from "@/hooks/useMedicationRemindersV2";
@@ -38,7 +38,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { appointments, isLoading, error } = useAppointments();
+  const { appointments, loading, error } = useAppointments();
   const { medications } = useMedicationRemindersV2();
 
   useEffect(() => {
@@ -64,12 +64,9 @@ const Index = () => {
 
     if (appointments) {
       appointments.forEach(app => {
-        const dateParts = app.data.split('/');
-        if (dateParts.length === 3) {
-          const date = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]));
-          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
-            daysWithAppointments.add(date.getDate());
-          }
+        const appointmentDate = new Date(app.data_consulta);
+        if (appointmentDate.getMonth() === currentMonth && appointmentDate.getFullYear() === currentYear) {
+          daysWithAppointments.add(appointmentDate.getDate());
         }
       });
     }
@@ -354,7 +351,7 @@ const Index = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="px-4 sm:px-6">
-                      {isLoading ? (
+                      {loading ? (
                         <LoadingFallback message="Carregando agenda..." />
                       ) : error ? (
                         <ErrorFallback 
