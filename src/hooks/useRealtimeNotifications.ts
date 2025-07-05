@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FamilyNotification } from '@/types/medical';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContextV2';
 import { logger } from '@/utils/logger';
 import { useToast } from './use-toast';
 
