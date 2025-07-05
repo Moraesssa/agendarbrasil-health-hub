@@ -17,6 +17,10 @@ import { useAuth } from "@/contexts/AuthContext";
    const navigate = useNavigate();
    const { user } = useAuth();
    const { data, isLoading: isLoadingHistory, error: historyError } = useHistory();
+// LOG PARA DIAGNÓSTICO
+   if (user) {
+     console.log(`[DIAGNÓSTICO] A página de Histórico está usando o ID de usuário (${user.id}) para buscar as métricas de saúde, em vez do ID de paciente correto.`);
+   }
    const { summaryData, isLoading: isLoadingMetrics, error: metricsError } = useHealthMetrics(user?.id || '');
    const { consultas, exames } = data;
  
