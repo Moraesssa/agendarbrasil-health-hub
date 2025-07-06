@@ -14,7 +14,6 @@ export const healthService = {
         .select('*')
         .order('recorded_at', { ascending: false });
 
-      // Se patientId não for fornecido, busca métricas do próprio usuário
       if (patientId) {
         query = query.eq('patient_id', patientId);
       } else {
@@ -40,21 +39,19 @@ export const healthService = {
   },
 
   async createHealthMetric(metricData: CreateHealthMetricData): Promise<void> {
-    logger.info("Creating health metric", "HealthService", {
+    logger.info("Creating health metric", "HealthService", { 
       metric_type: metricData.metric_type,
-      patient_id: metricData.patient_id
+      patient_id: metricData.patient_id 
     });
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      logger.info("Forcing insert with authenticated user ID", "HealthService", { authUserId: user.id });
-
       const { error } = await supabase
         .from('health_metrics')
         .insert({
           ...metricData,
-          patient_id: user.id, // FORÇA O USO DO ID CORRETO DO USUÁRIO LOGADO
+          patient_id: user.id, // Garante que o ID do usuário logado seja usado
           recorded_at: metricData.recorded_at || new Date().toISOString()
         });
 
@@ -66,26 +63,6 @@ export const healthService = {
       logger.info("Health metric created successfully", "HealthService");
     } catch (error) {
       logger.error("Failed to create health metric", "HealthService", error);
-      throw error;
-    }
-  },
-
-  async getLatestMetricsByType(patientId?: string): Promise<Map<string, HealthMetric>> {
-    logger.info("Fetching latest metrics by type", "HealthService", { patientId });
-    try {
-      const metrics = await this.getHealthMetrics(patientId);
-      const latestMetrics = new Map<string, HealthMetric>();
-
-      metrics.forEach(metric => {
-        const existing = latestMetrics.get(metric.metric_type);
-        if (!existing || new Date(metric.recorded_at) > new Date(existing.recorded_at)) {
-          latestMetrics.set(metric.metric_type, metric);
-        }
-      });
-
-      return latestMetrics;
-    } catch (error) {
-      logger.error("Failed to fetch latest metrics by type", "HealthService", error);
       throw error;
     }
   },
