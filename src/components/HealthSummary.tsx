@@ -1,50 +1,35 @@
-
-import { Heart, Plus } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { useHealthMetrics } from "@/hooks/useHealthMetrics";
 import { AddHealthMetricModal } from "@/components/health/AddHealthMetricModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const HealthSummary = () => {
   const { displayMetrics, healthScore, loading, isSubmitting, createMetric } = useHealthMetrics();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'normal':
-      case 'ideal': 
-        return 'bg-success/10 text-success border-success/20';
-      case 'attention': 
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'critical': 
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      default: 
-        return 'bg-muted text-muted-foreground border-border';
+  const getVariantForStatus = (status: string): 'default' | 'destructive' | 'outline' | 'secondary' => {
+    if (status === 'critical') {
+      return 'destructive';
     }
-  };
-
-  const getIconColor = (status: string) => {
-    switch (status) {
-      case 'normal':
-      case 'ideal': 
-        return 'text-success bg-success/10';
-      case 'attention': 
-        return 'text-warning bg-warning/10';
-      case 'critical': 
-        return 'text-destructive bg-destructive/10';
-      default: 
-        return 'text-muted-foreground bg-muted';
+    if (status === 'attention') {
+      return 'default'; // Usando 'default' para amarelo, pode ajustar conforme o tema
     }
-  };
+    if (status === 'normal' || status === 'ideal') {
+      return 'secondary'; // Usando 'secondary' para verde, pode ajustar
+    }
+    return 'outline';
+  }
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-success';
-    if (score >= 75) return 'text-primary';
-    if (score >= 50) return 'text-warning';
-    return 'text-destructive';
+    if (score >= 90) return 'text-green-500'; // Success color
+    if (score >= 75) return 'text-blue-500'; // Primary color
+    if (score >= 50) return 'text-yellow-500'; // Warning color
+    return 'text-red-500'; // Destructive color
   };
 
   if (loading) {
@@ -108,7 +93,11 @@ const HealthSummary = () => {
                 className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`p-2 rounded-full flex-shrink-0 ${getIconColor(metric.status)}`}>
+                  <div
+                    className={cn("p-2 rounded-full flex-shrink-0", badgeVariants({
+                      variant: getVariantForStatus(metric.status)
+                    }))}
+                  >
                     <metric.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -116,7 +105,7 @@ const HealthSummary = () => {
                       {metric.label}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {metric.lastRecorded 
+                      {metric.lastRecorded
                         ? `${format(new Date(metric.lastRecorded), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
                         : 'Sem registro'
                       }
@@ -127,10 +116,10 @@ const HealthSummary = () => {
                   <p className="font-semibold text-foreground text-sm">
                     {metric.value} <span className="text-xs text-muted-foreground">{metric.unit}</span>
                   </p>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(metric.status)}`}>
-                    {metric.status === 'normal' || metric.status === 'ideal' ? 'Normal' :
-                     metric.status === 'attention' ? 'Atenção' : 'Crítico'}
-                  </span>
+                  <Badge variant={getVariantForStatus(metric.status)}>
+                     {metric.status === 'normal' || metric.status === 'ideal' ? 'Normal' :
+                      metric.status === 'attention' ? 'Atenção' : 'Crítico'}
+                  </Badge>
                 </div>
               </div>
             ))}
