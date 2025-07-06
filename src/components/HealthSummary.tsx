@@ -1,8 +1,8 @@
-import { Heart } from "lucide-react";
+import { Heart, Activity, Thermometer, Weight, Ruler, Droplet, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, badgeVariants } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { useHealthMetrics } from "@/hooks/useHealthMetrics";
 import { AddHealthMetricModal } from "@/components/health/AddHealthMetricModal";
 import { format } from "date-fns";
@@ -12,24 +12,26 @@ import { cn } from "@/lib/utils";
 const HealthSummary = () => {
   const { displayMetrics, healthScore, loading, isSubmitting, createMetric } = useHealthMetrics();
 
-  const getVariantForStatus = (status: string): 'default' | 'destructive' | 'outline' | 'secondary' => {
-    if (status === 'critical') {
-      return 'destructive';
+  // Função de estilo aprimorada para retornar classes de Tailwind diretamente
+  const getStatusClasses = (status: string): string => {
+    switch (status) {
+      case 'ideal':
+      case 'normal':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'attention':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'critical':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-    if (status === 'attention') {
-      return 'default'; // Usando 'default' para amarelo, pode ajustar conforme o tema
-    }
-    if (status === 'normal' || status === 'ideal') {
-      return 'secondary'; // Usando 'secondary' para verde, pode ajustar
-    }
-    return 'outline';
-  }
+  };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-500'; // Success color
-    if (score >= 75) return 'text-blue-500'; // Primary color
-    if (score >= 50) return 'text-yellow-500'; // Warning color
-    return 'text-red-500'; // Destructive color
+    if (score >= 90) return 'text-green-500';
+    if (score >= 75) return 'text-blue-500';
+    if (score >= 50) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   if (loading) {
@@ -67,7 +69,7 @@ const HealthSummary = () => {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-foreground">
-            <Heart className="h-5 w-5" />
+            <Heart className="h-5 w-5 text-blue-600" />
             Resumo da Saúde
           </CardTitle>
           <AddHealthMetricModal onAddMetric={createMetric} isSubmitting={isSubmitting} />
@@ -94,9 +96,7 @@ const HealthSummary = () => {
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div
-                    className={cn("p-2 rounded-full flex-shrink-0", badgeVariants({
-                      variant: getVariantForStatus(metric.status)
-                    }))}
+                    className={cn("p-2 rounded-full flex-shrink-0", getStatusClasses(metric.status))}
                   >
                     <metric.icon className="h-4 w-4" />
                   </div>
@@ -116,7 +116,7 @@ const HealthSummary = () => {
                   <p className="font-semibold text-foreground text-sm">
                     {metric.value} <span className="text-xs text-muted-foreground">{metric.unit}</span>
                   </p>
-                  <Badge variant={getVariantForStatus(metric.status)}>
+                  <Badge className={cn("border-0", getStatusClasses(metric.status))}>
                      {metric.status === 'normal' || metric.status === 'ideal' ? 'Normal' :
                       metric.status === 'attention' ? 'Atenção' : 'Crítico'}
                   </Badge>
@@ -124,8 +124,8 @@ const HealthSummary = () => {
               </div>
             ))}
 
-            {/* Health Score */}
-            <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-success/5 border border-primary/10">
+            {/* Health Score com design aprimorado */}
+            <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-green-50 border border-blue-100/50">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-foreground">Score de Saúde</h3>
                 <span className={`text-2xl font-bold ${getScoreColor(healthScore.score)}`}>
@@ -141,8 +141,8 @@ const HealthSummary = () => {
                   <p className="text-xs font-medium text-muted-foreground">Recomendações:</p>
                   <ul className="text-xs text-muted-foreground/80 space-y-1">
                     {healthScore.recommendations.slice(0, 2).map((rec, i) => (
-                      <li key={i} className="flex items-start gap-1">
-                        <span className="text-primary">•</span>
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-blue-500 font-bold">•</span>
                         {rec}
                       </li>
                     ))}
