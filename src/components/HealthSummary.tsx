@@ -26,22 +26,12 @@ const HealthSummary = () => {
     }
   };
 
-  // Função que retorna a CLASSE de cor para o texto do score
-  const getScoreTextColor = (score: number) => {
-    if (score >= 90) return 'text-green-500';
-    if (score >= 75) return 'text-blue-500';
-    if (score >= 50) return 'text-yellow-500';
-    return 'text-red-500';
-  };
-
-  // =================================================================
-  // NOVA FUNÇÃO para retornar o CÓDIGO HEX da cor para a barra
-  // =================================================================
-  const getScoreHexColor = (score: number): string => {
-    if (score >= 90) return '#22C55E'; // green-500
-    if (score >= 75) return '#3B82F6'; // blue-500
-    if (score >= 50) return '#EAB308'; // yellow-500
-    return '#EF4444'; // red-500
+  // Função que retorna a CLASSE de cor para o texto e a BARRA
+  const getScoreColorClass = (score: number) => {
+    if (score >= 90) return 'text-green-500 bg-green-500';
+    if (score >= 75) return 'text-blue-500 bg-blue-500';
+    if (score >= 50) return 'text-yellow-500 bg-yellow-500';
+    return 'text-red-500 bg-red-500';
   };
 
   const primaryColor = '#2563EB'; // Cor azul para o ícone e bullets
@@ -102,7 +92,7 @@ const HealthSummary = () => {
                     {metric.value} <span className="text-xs text-muted-foreground">{metric.unit}</span>
                   </p>
                   <Badge className={cn("border-0", getStatusClasses(metric.status))}>
-                    {metric.status === 'normal' || metric.status === 'ideal' ? 'Normal' :
+                    {metric.status === 'normal' || 'ideal' ? 'Normal' :
                       metric.status === 'attention' ? 'Atenção' : 'Crítico'}
                   </Badge>
                 </div>
@@ -112,17 +102,17 @@ const HealthSummary = () => {
             <div className="mt-6 p-4 rounded-xl bg-white/90 backdrop-blur-sm border border-black/5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-foreground">Score de Saúde</h3>
-                <span className={`text-2xl font-bold ${getScoreTextColor(healthScore.score)}`}>
+                <span className={cn("text-2xl font-bold", getScoreColorClass(healthScore.score))}>
                   {healthScore.score}%
                 </span>
               </div>
               {/* ============================================================== */}
-              {/* CORREÇÃO APLICADA AQUI para a cor da barra de progresso    */}
+              {/* CORREÇÃO FINAL APLICADA AQUI                             */}
               {/* ============================================================== */}
               <Progress 
                 value={healthScore.score} 
                 className="h-2 mb-3" 
-                style={{ "--progress-indicator-fill": getScoreHexColor(healthScore.score) } as React.CSSProperties}
+                indicatorClassName={getScoreColorClass(healthScore.score)}
               />
               <p className="text-sm text-muted-foreground mb-2">{healthScore.message}</p>
               {healthScore.recommendations.length > 0 && (
