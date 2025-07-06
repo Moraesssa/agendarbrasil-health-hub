@@ -17,19 +17,19 @@ const HealthSummary = () => {
       return 'destructive';
     }
     if (status === 'attention') {
-      return 'default'; // Usando 'default' para amarelo, pode ajustar conforme o tema
+      return 'default';
     }
     if (status === 'normal' || status === 'ideal') {
-      return 'secondary'; // Usando 'secondary' para verde, pode ajustar
+      return 'secondary';
     }
     return 'outline';
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-500'; // Success color
-    if (score >= 75) return 'text-blue-500'; // Primary color
-    if (score >= 50) return 'text-yellow-500'; // Warning color
-    return 'text-red-500'; // Destructive color
+    if (score >= 90) return 'text-green-500';
+    if (score >= 75) return 'text-blue-500';
+    if (score >= 50) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   if (loading) {
@@ -124,7 +124,6 @@ const HealthSummary = () => {
               </div>
             ))}
 
-            {/* Health Score */}
             <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-success/5 border border-primary/10">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-foreground">Score de Saúde</h3>
