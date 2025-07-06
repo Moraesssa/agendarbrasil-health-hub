@@ -1,9 +1,11 @@
 
+// src/pages/Login.tsx
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContextV2";
+import { useAuth } from "@/contexts/AuthContext";
 import { Chrome, ArrowLeft, Home } from "lucide-react";
 
 const Login = () => {
@@ -33,18 +35,15 @@ const Login = () => {
 
   // Mantemos uma tela de loading simples para o caso do clique no botão
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+    return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Processando...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Navigation Header */}
         <div className="flex items-center justify-between mb-6">
@@ -64,7 +63,7 @@ const Login = () => {
             <div className="relative group">
               <img 
                 alt="AgendarBrasil Logo" 
-                src="/android-icon-192x192.png" 
+                src="/lovable-uploads/02f3fe33-08a6-47d9-92c6-15cc5908aca4.png" 
                 className="w-48 h-48 object-cover rounded-2xl shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-blue-200/30"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
@@ -131,8 +130,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 
 export default Login;

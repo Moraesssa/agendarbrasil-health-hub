@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,11 @@ const GerenciarLocais = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
 
-    const fetchLocais = useCallback(async () => {
+    useEffect(() => {
+        fetchLocais();
+    }, []);
+
+    const fetchLocais = async () => {
         try {
             setLoading(true);
             const data = await locationService.getLocations();
@@ -28,11 +32,7 @@ const GerenciarLocais = () => {
         } finally {
             setLoading(false);
         }
-    }, [toast]);
-
-    useEffect(() => {
-        fetchLocais();
-    }, [fetchLocais]);
+    };
     
     const handleAddLocal = async (formData: any) => {
         try {

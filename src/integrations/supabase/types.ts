@@ -16,7 +16,6 @@ export type Database = {
           data_consulta: string
           diagnostico: string | null
           duracao_minutos: number
-          expires_at: string | null
           follow_up_required: boolean | null
           id: string
           local_consulta: string | null
@@ -41,7 +40,6 @@ export type Database = {
           data_consulta: string
           diagnostico?: string | null
           duracao_minutos?: number
-          expires_at?: string | null
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
@@ -66,7 +64,6 @@ export type Database = {
           data_consulta?: string
           diagnostico?: string | null
           duracao_minutos?: number
-          expires_at?: string | null
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
@@ -344,54 +341,6 @@ export type Database = {
           },
         ]
       }
-      health_metrics: {
-        Row: {
-          appointment_id: string | null
-          created_at: string
-          id: string
-          metric_type: string
-          patient_id: string
-          recorded_at: string
-          unit: string
-          value: Json
-        }
-        Insert: {
-          appointment_id?: string | null
-          created_at?: string
-          id?: string
-          metric_type: string
-          patient_id: string
-          recorded_at?: string
-          unit: string
-          value: Json
-        }
-        Update: {
-          appointment_id?: string | null
-          created_at?: string
-          id?: string
-          metric_type?: string
-          patient_id?: string
-          recorded_at?: string
-          unit?: string
-          value?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "health_metrics_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "consultas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "health_metrics_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "pacientes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       locais_atendimento: {
         Row: {
           ativo: boolean
@@ -592,95 +541,6 @@ export type Database = {
           },
         ]
       }
-      medication_doses: {
-        Row: {
-          created_at: string
-          id: string
-          notes: string | null
-          reminder_id: string
-          scheduled_date: string
-          scheduled_time: string
-          status: string
-          taken_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reminder_id: string
-          scheduled_date: string
-          scheduled_time: string
-          status?: string
-          taken_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reminder_id?: string
-          scheduled_date?: string
-          scheduled_time?: string
-          status?: string
-          taken_at?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "medication_doses_reminder_id_fkey"
-            columns: ["reminder_id"]
-            isOneToOne: false
-            referencedRelation: "medication_reminders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      medication_reminders: {
-        Row: {
-          created_at: string
-          dosage: string
-          end_date: string | null
-          frequency: string
-          id: string
-          instructions: string | null
-          is_active: boolean
-          medication_name: string
-          start_date: string
-          times: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          dosage: string
-          end_date?: string | null
-          frequency: string
-          id?: string
-          instructions?: string | null
-          is_active?: boolean
-          medication_name: string
-          start_date?: string
-          times?: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          dosage?: string
-          end_date?: string | null
-          frequency?: string
-          id?: string
-          instructions?: string | null
-          is_active?: boolean
-          medication_name?: string
-          start_date?: string
-          times?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       medicos: {
         Row: {
           configuracoes: Json
@@ -729,50 +589,6 @@ export type Database = {
             foreignKeyName: "medicos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notification_settings: {
-        Row: {
-          created_at: string
-          email_notifications: boolean
-          id: number
-          new_messages: boolean
-          patient_reminders: boolean
-          profile_id: string
-          push_notifications: boolean
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          email_notifications?: boolean
-          id?: number
-          new_messages?: boolean
-          patient_reminders?: boolean
-          profile_id: string
-          push_notifications?: boolean
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          email_notifications?: boolean
-          id?: number
-          new_messages?: boolean
-          patient_reminders?: boolean
-          profile_id?: string
-          push_notifications?: boolean
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notification_settings_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1018,13 +834,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      confirm_appointment_payment: {
-        Args: { p_appointment_id: string; p_payment_intent_id: string }
-        Returns: {
-          success: boolean
-          message: string
-        }[]
-      }
       get_available_cities: {
         Args: { state_uf: string }
         Returns: {
@@ -1086,21 +895,6 @@ export type Database = {
       get_specialties: {
         Args: Record<PropertyKey, never>
         Returns: string[]
-      }
-      reserve_appointment_slot: {
-        Args: {
-          p_doctor_id: string
-          p_patient_id: string
-          p_family_member_id: string
-          p_scheduled_by_id: string
-          p_appointment_datetime: string
-          p_specialty: string
-        }
-        Returns: {
-          success: boolean
-          message: string
-          appointment_id: string
-        }[]
       }
     }
     Enums: {

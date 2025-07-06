@@ -1,5 +1,4 @@
-
-import { Calendar, Users, FileText, User, LogOut, Home, Clock, Activity, DollarSign, Settings, Bell } from "lucide-react";
+import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin, DollarSign } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -17,53 +16,72 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContextV2";
+import { useAuth } from "@/contexts/AuthContext";
 
-const doctorMenuItems = [
+const mainMenuItems = [
   {
     title: "Dashboard",
     url: "/dashboard-medico",
-    icon: Home,
-    description: "Visão geral do painel médico"
+    icon: BarChart3,
+    description: "Visão geral da prática médica"
   },
   {
     title: "Agenda",
     url: "/agenda-medico",
     icon: Calendar,
-    description: "Gerenciar agenda de consultas"
+    description: "Visualizar consultas e horários"
   },
   {
     title: "Pacientes",
     url: "/pacientes-medico",
     icon: Users,
-    description: "Lista de pacientes"
-  },
-  {
-    title: "Encaminhamentos",
-    url: "/encaminhamentos-medico",
-    icon: FileText,
-    description: "Gerenciar encaminhamentos"
+    description: "Lista de pacientes do médico"
   },
   {
     title: "Financeiro",
     url: "/financeiro",
     icon: DollarSign,
-    description: "Relatórios financeiros"
+    description: "Relatórios financeiros e receitas"
+  },
+  {
+    title: "Encaminhamento",
+    url: "/encaminhamentos-medico",
+    icon: ArrowRightLeft,
+    description: "Encaminhamentos entre médicos"
+  },
+  {
+    title: "Histórico",
+    url: "/historico",
+    icon: FileText,
+    description: "Histórico de atendimentos"
   }
 ];
 
+// Array de configurações atualizado
 const settingsItems = [
   {
     title: "Perfil",
     url: "/perfil-medico",
     icon: User,
-    description: "Configurações do perfil"
+    description: "Configurações do perfil médico"
   },
   {
-    title: "Notificações",
-    url: "/perfil/notificacoes",
-    icon: Bell,
-    description: "Gerenciar notificações"
+    title: "Meus Locais", // <-- NOVO ITEM
+    url: "/gerenciar-locais",
+    icon: MapPin,
+    description: "Gerenciar seus locais de atendimento"
+  },
+  {
+    title: "Meus Horários",
+    url: "/gerenciar-agenda",
+    icon: Clock,
+    description: "Gerenciar dias e horários de atendimento"
+  },
+  {
+    title: "Configurações",
+    url: "/settings",
+    icon: Settings,
+    description: "Configurações do sistema"
   }
 ];
 
@@ -74,6 +92,14 @@ export function AppSidebar() {
   const { userData, logout } = useAuth();
 
   const handleNavigation = (url: string, title: string) => {
+    if (url === "/settings") {
+      toast({
+        title: "Configurações",
+        description: "Página em desenvolvimento.",
+      });
+      return;
+    }
+    
     navigate(url);
     toast({
       title: `Navegando para ${title}`,
@@ -108,14 +134,12 @@ export function AppSidebar() {
               alt="AgendarBrasil Logo" 
               className="w-14 h-14 object-cover rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-200/40" 
             />
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/15 to-green-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-green-600 rounded-xl opacity-15 group-hover:opacity-25 blur-sm transition-all duration-300"></div>
           </div>
           <div>
             <h2 className="text-lg font-bold bg-gradient-to-r from-blue-800 to-green-600 bg-clip-text text-transparent">
               AgendarBrasil
             </h2>
-            <p className="text-xs text-gray-600">Painel Médico</p>
+            <p className="text-xs text-gray-600">Portal Médico</p>
           </div>
         </div>
       </SidebarHeader>
@@ -127,7 +151,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {doctorMenuItems.map((item) => (
+              {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
@@ -185,7 +209,7 @@ export function AppSidebar() {
           <Avatar className="h-8 w-8">
             <AvatarImage src={userData?.photoURL} />
             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-green-500 text-white text-sm font-semibold">
-              {userData?.displayName?.charAt(0) || 'M'}
+              Dr
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -193,7 +217,7 @@ export function AppSidebar() {
               Dr(a). {userData?.displayName || 'Médico'}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              Painel Médico
+              {userData?.especialidades?.[0] || 'Especialista'}
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { encaminhamentoService, Encaminhamento, CreateEncaminhamentoData, UpdateEncaminhamentoData } from '@/services/encaminhamentoService';
 import { useAuthState } from '@/hooks/useAuthState';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,7 @@ export const useEncaminhamentos = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const carregarEncaminhamentos = useCallback(async () => {
+  const carregarEncaminhamentos = async () => {
     if (!user?.id) return;
 
     setLoading(true);
@@ -36,7 +36,7 @@ export const useEncaminhamentos = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]);
+  };
 
   const criarEncaminhamento = async (data: CreateEncaminhamentoData) => {
     const result = await encaminhamentoService.criarEncaminhamento(data);
@@ -97,7 +97,7 @@ export const useEncaminhamentos = () => {
 
   useEffect(() => {
     carregarEncaminhamentos();
-  }, [carregarEncaminhamentos]);
+  }, [user?.id]);
 
   return {
     encaminhamentosEnviados,

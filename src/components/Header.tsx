@@ -1,24 +1,14 @@
-
-import { useState, useEffect } from "react";
 import { Bell, Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContextV2";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useNotifications } from "@/contexts/NotificationContext";
+import { useNotifications } from "@/contexts/NotificationContext"; // <-- Nova importação
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount } = useNotifications(); // <-- Novo hook
   const navigate = useNavigate();
-  const [isLogoAnimated, setIsLogoAnimated] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLogoAnimated(true);
-    }, 300); // Pequeno atraso para a transição ser visível
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleAuthAction = () => {
     if (user) {
@@ -33,17 +23,17 @@ const Header = () => {
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer">
+          <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
             <div className="relative">
-              <img alt="AgendarBrasil Logo" src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 object-cover rounded-xl shadow-md transition-all duration-300 ${isLogoAnimated ? 'scale-110 shadow-xl shadow-blue-200/50' : ''}`} />
-              <div className={`absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-green-500/20 transition-opacity duration-300 rounded-bl-lg rounded-bl-lg bg-[#000a00]/0 ${isLogoAnimated ? 'opacity-100' : 'opacity-0'}`}></div>
+              <img alt="AgendarBrasil Logo" src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-200/50" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-green-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-bl-lg rounded-bl-lg bg-[#000a00]/0"></div>
             </div>
             <div className="relative">
-              <h1 className={`text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent leading-tight transition-all duration-300 ${isLogoAnimated ? 'from-blue-900 via-blue-700 to-green-700' : 'from-blue-800 via-blue-600 to-green-600'}`}>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent leading-tight group-hover:from-blue-900 group-hover:via-blue-700 group-hover:to-green-700 transition-all duration-300">
                 AgendarBrasil
               </h1>
-              <div className={`absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-green-500 rounded-full transition-transform duration-300 ${isLogoAnimated ? 'scale-x-100' : 'scale-x-0'}`}></div>
-              <p className={`text-xs sm:text-sm text-gray-600 hidden sm:block mt-0.5 font-medium transition-colors duration-300 ${isLogoAnimated ? 'text-gray-700' : ''}`}>
+              <div className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-green-500 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block mt-0.5 font-medium group-hover:text-gray-700 transition-colors duration-300">
                 🏥 Sua saúde em primeiro lugar
               </p>
             </div>

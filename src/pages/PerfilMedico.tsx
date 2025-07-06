@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContextV2";
-import { Calendar, Users, BarChart3, Settings, Bell } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Calendar, Users, BarChart3, Settings } from "lucide-react";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileActions } from "@/components/profile/ProfileActions";
@@ -41,7 +41,9 @@ const PerfilMedico = () => {
   };
 
   const handleProfileUpdate = () => {
+    // Force re-render to update displayed data
     setRefreshKey(prev => prev + 1);
+    // In a real app, you might want to refetch user data here
   };
 
   if (loading || !userData) {
@@ -77,6 +79,13 @@ const PerfilMedico = () => {
       variant: 'outline' as const,
       className: "border-purple-200 hover:bg-purple-50"
     },
+    {
+      label: "Configurações",
+      icon: Settings,
+      onClick: () => navigate("/"),
+      variant: 'outline' as const,
+      className: "border-gray-200 hover:bg-gray-50"
+    }
   ];
 
   return (

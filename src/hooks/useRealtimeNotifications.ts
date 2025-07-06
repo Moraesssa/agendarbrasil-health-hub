@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FamilyNotification } from '@/types/medical';
-import { useAuth } from '@/contexts/AuthContextV2';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
 import { useToast } from './use-toast';
 
@@ -13,12 +12,7 @@ export const useRealtimeNotifications = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchInitialNotifications = useCallback(async () => {
-    if (!user) {
-      logger.warn('fetchInitialNotifications called without a user.', 'useRealtimeNotifications');
-      return;
-    }
-    
-    logger.info('Fetching initial notifications for user:', 'useRealtimeNotifications', user.id);
+    if (!user) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -27,12 +21,7 @@ export const useRealtimeNotifications = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) {
-        logger.error('Error fetching initial notifications', 'useRealtimeNotifications', error);
-        throw error;
-      }
-      
-      logger.info('Successfully fetched notifications', 'useRealtimeNotifications', { count: data.length, data });
+      if (error) throw error;
       // Corrigido: Cast explícito para o tipo correto.
       setNotifications((data as FamilyNotification[]) || []);
     } catch (error) {
@@ -54,7 +43,7 @@ export const useRealtimeNotifications = () => {
         { event: 'INSERT', schema: 'public', table: 'family_notifications' },
         (payload) => {
           const newNotification = payload.new as FamilyNotification;
-          logger.info('New realtime notification received', 'useRealtimeNotifications', newNotification);
+          logger.info('New notification received', 'useRealtimeNotifications', newNotification);
           setNotifications((prev) => [newNotification, ...prev]);
           toast({
             title: newNotification.title,
@@ -62,12 +51,9 @@ export const useRealtimeNotifications = () => {
           });
         }
       )
-      .subscribe((status, err) => {
+      .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          logger.info('Successfully subscribed to notifications channel', 'useRealtimeNotifications');
-        }
-        if (status === 'CHANNEL_ERROR') {
-          logger.error('Failed to subscribe to notifications channel', 'useRealtimeNotifications', err);
+          logger.info('Subscribed to notifications channel', 'useRealtimeNotifications');
         }
       });
 

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { familyService } from '@/services/familyService';
 import { FamilyMember, AddFamilyMemberData } from '@/types/family';
@@ -13,7 +13,7 @@ export const useFamilyManagement = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadFamilyMembers = useCallback(async () => {
+  const loadFamilyMembers = async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -33,7 +33,7 @@ export const useFamilyManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  };
 
   const addFamilyMember = async (memberData: AddFamilyMemberData) => {
     try {
@@ -106,7 +106,7 @@ export const useFamilyManagement = () => {
 
   useEffect(() => {
     loadFamilyMembers();
-  }, [loadFamilyMembers]);
+  }, [user]);
 
   return {
     familyMembers,

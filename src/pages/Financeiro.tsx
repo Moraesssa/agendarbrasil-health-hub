@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Filter, Download, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +25,7 @@ const Financeiro = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadFinancialData = useCallback(async () => {
+  const loadFinancialData = async () => {
     if (!user) return;
     
     try {
@@ -40,11 +40,11 @@ const Financeiro = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, fetchFinancialData]);
+  };
 
   useEffect(() => {
     loadFinancialData();
-  }, [loadFinancialData]);
+  }, [user]);
 
   const handleOpenCustomerPortal = async () => {
     await createCustomerPortalSession();

@@ -49,7 +49,7 @@ serve(async (req) => {
 
     // Processar diferentes tipos de eventos
     switch (event.type) {
-      case 'checkout.session.completed': {
+      case 'checkout.session.completed':
         const session = event.data.object;
         console.log("Checkout concluído:", session.id);
 
@@ -74,7 +74,7 @@ serve(async (req) => {
         // Atualizar status da consulta
         const { error: consultaError } = await supabaseClient
           .from('consultas')
-          .update({
+          .update({ 
             status_pagamento: 'pago',
             valor: session.amount_total / 100 // Converter de centavos para reais
           })
@@ -85,9 +85,8 @@ serve(async (req) => {
         }
 
         break;
-      }
 
-      case 'payment_intent.payment_failed': {
+      case 'payment_intent.payment_failed':
         const paymentIntent = event.data.object;
         console.log("Pagamento falhou:", paymentIntent.id);
         
@@ -105,7 +104,6 @@ serve(async (req) => {
         }
         
         break;
-      }
 
       default:
         console.log("Evento não processado:", event.type);

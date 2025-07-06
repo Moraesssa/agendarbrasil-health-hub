@@ -1,11 +1,10 @@
-
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Clock, User, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContextV2";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -31,7 +30,7 @@ const UpcomingAppointments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAppointments = useCallback(async () => {
+  const fetchAppointments = async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -61,11 +60,11 @@ const UpcomingAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     fetchAppointments();
-  }, [fetchAppointments]);
+  }, [user]);
 
   const handleRetry = () => {
     fetchAppointments();

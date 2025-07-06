@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
@@ -216,47 +215,5 @@ export const appointmentService = {
       logger.error("Failed to schedule appointment", "AppointmentService", error);
       throw error;
     }
-  },
-
-  async getHistory() {
-    const user = await checkAuthentication();
-
-    const { data: consultasData, error: consultasError } = await supabase
-      .from('consultas')
-      .select(`
-        id,
-        data_consulta,
-        status,
-        tipo_consulta,
-        diagnostico,
-        medico:medicos (
-          user_id,
-          crm,
-          especialidades
-        )
-      `)
-      .eq('paciente_id', user.id)
-      .order('data_consulta', { ascending: false });
-
-    if (consultasError) {
-      logger.error('Error fetching history (consultas)', 'appointmentService', consultasError);
-      // Não lança mais o erro, apenas loga e retorna um array vazio para consultas.
-    }
-
-    // Removed the exames query since 'exames' table doesn't exist in current schema
-    const consultas = (consultasData || []).map((c: any) => ({
-      id: c.id,
-      data: new Date(c.data_consulta).toLocaleDateString('pt-BR'),
-      medico: c.medico?.user_id || 'N/A',
-      especialidade: c.medico?.especialidades?.[0] || c.tipo_consulta,
-      diagnostico: c.diagnostico || 'Diagnóstico não disponível.',
-      status: c.status,
-      receita: false, // Default value since receita_emitida is not in current schema
-    }));
-
-    return {
-      consultas,
-      exames: [] // Return empty array since exames table doesn't exist
-    };
-  },
+  }
 };
