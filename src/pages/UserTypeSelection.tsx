@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { useToast } from "@/hooks/use-toast";
 import UserTypeNavigation from "@/components/usertype/UserTypeNavigation";
 import UserTypeHeader from "@/components/usertype/UserTypeHeader";

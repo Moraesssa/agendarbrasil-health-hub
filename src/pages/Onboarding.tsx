@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContextV2";
 import { OnboardingSteps } from "@/components/onboarding/OnboardingSteps";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
 
@@ -57,7 +57,7 @@ const Onboarding = () => {
             <div className="flex justify-center mb-6">
               <div className="relative group">
                 <img 
-                  src="/lovable-uploads/c5b5dd2b-14c7-467f-b27b-c0f0805a4306.png" 
+                  src="/android-icon-192x192.png" 
                   alt="AgendarBrasil Logo" 
                   className="w-32 h-32 object-cover rounded-2xl shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-blue-200/30" 
                 />

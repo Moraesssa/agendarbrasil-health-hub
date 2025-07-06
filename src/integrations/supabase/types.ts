@@ -16,6 +16,7 @@ export type Database = {
           data_consulta: string
           diagnostico: string | null
           duracao_minutos: number
+          expires_at: string | null
           follow_up_required: boolean | null
           id: string
           local_consulta: string | null
@@ -40,6 +41,7 @@ export type Database = {
           data_consulta: string
           diagnostico?: string | null
           duracao_minutos?: number
+          expires_at?: string | null
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           data_consulta?: string
           diagnostico?: string | null
           duracao_minutos?: number
+          expires_at?: string | null
           follow_up_required?: boolean | null
           id?: string
           local_consulta?: string | null
@@ -1015,6 +1018,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_appointment_payment: {
+        Args: { p_appointment_id: string; p_payment_intent_id: string }
+        Returns: {
+          success: boolean
+          message: string
+        }[]
+      }
       get_available_cities: {
         Args: { state_uf: string }
         Returns: {
@@ -1076,6 +1086,21 @@ export type Database = {
       get_specialties: {
         Args: Record<PropertyKey, never>
         Returns: string[]
+      }
+      reserve_appointment_slot: {
+        Args: {
+          p_doctor_id: string
+          p_patient_id: string
+          p_family_member_id: string
+          p_scheduled_by_id: string
+          p_appointment_datetime: string
+          p_specialty: string
+        }
+        Returns: {
+          success: boolean
+          message: string
+          appointment_id: string
+        }[]
       }
     }
     Enums: {

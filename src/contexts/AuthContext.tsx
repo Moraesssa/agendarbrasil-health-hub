@@ -1,8 +1,9 @@
 
 import { createContext, useContext } from 'react';
 import { AuthContextType, AuthProviderProps } from '@/types/auth';
-import { useAuthState } from '@/hooks/useAuthState';
+import { useAuthStateV2 } from '@/hooks/useAuthStateV2';
 import { useAuthActions } from '@/hooks/useAuthActions';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -20,17 +21,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     session,
     userData,
     loading,
-    onboardingStatus,
-    setUserData,
-    setOnboardingStatus
-  } = useAuthState();
+    error,
+    retry,
+    setUserData
+  } = useAuthStateV2();
 
   const authActions = useAuthActions(
     user,
     userData,
-    onboardingStatus,
+    null, // onboardingStatus removido para simplificar
     setUserData,
-    setOnboardingStatus
+    () => {} // setOnboardingStatus removido
   );
 
   const value: AuthContextType = {
@@ -38,14 +39,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     session,
     userData,
     loading,
-    onboardingStatus,
+    onboardingStatus: null, // Simplificado
     ...authActions
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <ErrorBoundary context="AuthProvider">
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    </ErrorBoundary>
   );
 };
 
