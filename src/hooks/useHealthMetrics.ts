@@ -39,6 +39,10 @@ export const useHealthMetrics = (patientId?: string) => {
   const createMetric = async (metricData: CreateHealthMetricData) => {
     try {
       setIsSubmitting(true);
+      
+      // LINHA ADICIONADA PARA DEBUG
+      console.log('Enviando para o healthService com os seguintes dados:', metricData);
+
       await healthService.createHealthMetric(metricData);
       await loadHealthMetrics();
       toast({
