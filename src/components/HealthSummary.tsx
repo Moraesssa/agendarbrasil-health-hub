@@ -34,7 +34,7 @@ const HealthSummary = () => {
 
   if (loading) {
     return (
-      <Card className="shadow-sm border-border bg-card">
+      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-fit">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-foreground">
             <Heart className="h-5 w-5" />
@@ -63,7 +63,7 @@ const HealthSummary = () => {
   }
 
   return (
-    <Card className="shadow-sm border-border bg-card">
+    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-fit">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-foreground">
