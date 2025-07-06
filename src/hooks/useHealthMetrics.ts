@@ -25,7 +25,7 @@ export const useHealthMetrics = (patientId?: string) => {
       const data = await healthService.getHealthMetrics(patientId);
       setMetrics(data);
     } catch (error) {
-      logger.error("Error loading health metrics", "useHealthMetrics", error);
+      logger.error("Erro ao carregar métricas", "useHealthMetrics", error);
       toast({
         title: "Erro ao carregar métricas de saúde",
         description: "Não foi possível carregar seus dados de saúde",
@@ -37,21 +37,36 @@ export const useHealthMetrics = (patientId?: string) => {
   };
 
   const createMetric = async (metricData: CreateHealthMetricData) => {
+    if (!user) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para adicionar métricas",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
       setIsSubmitting(true);
       
-      // LINHA ADICIONADA PARA DEBUG
-      console.log('Enviando para o healthService com os seguintes dados:', metricData);
+      // Garantir que o patient_id seja sempre o user.id atual
+      const dataToCreate = {
+        ...metricData,
+        patient_id: user.id
+      };
 
-      await healthService.createHealthMetric(metricData);
+      logger.info('Criando métrica com dados:', "useHealthMetrics", dataToCreate);
+
+      await healthService.createHealthMetric(dataToCreate);
       await loadHealthMetrics();
+      
       toast({
         title: "Métrica registrada",
         description: "Sua métrica de saúde foi registrada com sucesso",
       });
       return true;
     } catch (error) {
-      logger.error("Error creating metric", "useHealthMetrics", error);
+      logger.error("Erro ao criar métrica", "useHealthMetrics", error);
       toast({
         title: "Erro ao registrar métrica",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -74,7 +89,7 @@ export const useHealthMetrics = (patientId?: string) => {
       });
       return true;
     } catch (error) {
-      logger.error("Error deleting metric", "useHealthMetrics", error);
+      logger.error("Erro ao deletar métrica", "useHealthMetrics", error);
       toast({
         title: "Erro ao remover métrica",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -148,7 +163,7 @@ export const useHealthMetrics = (patientId?: string) => {
         label: "Peso",
         value: weight.value.numeric.toString(),
         unit: weight.unit,
-        status: 'normal', // Seria necessário IMC para determinar status real
+        status: 'normal',
         icon: Weight,
         lastRecorded: weight.recorded_at,
       });

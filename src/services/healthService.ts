@@ -1,63 +1,52 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { HealthMetric, CreateHealthMetricData } from '@/types/health';
 
 export const healthService = {
   async createHealthMetric(metricData: CreateHealthMetricData): Promise<void> {
-    console.log("=============================================");
-    logger.info("INICIANDO PROCESSO DE CRIAÇÃO DE MÉTRICA", "HealthService");
+    logger.info("Criando nova métrica de saúde", "HealthService");
     
     try {
-      // 1. Verificar o usuário autenticado
+      // Verificar o usuário autenticado
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        logger.error("FALHA CRÍTICA: Usuário não autenticado. Operação abortada.", "HealthService");
+        logger.error("Usuário não autenticado", "HealthService");
         throw new Error("Usuário não autenticado. Faça o login novamente.");
       }
 
-      // 2. LOG DETALHADO DOS IDs
-      console.log(`[DEBUG] ID do paciente vindo do formulário:`, metricData.patient_id);
-      console.log(`[DEBUG] ID do usuário autenticado (auth.uid):`, user.id);
-
-      // 3. Preparar os dados para inserção, forçando o ID correto
+      // Preparar os dados para inserção usando auth.uid() diretamente
       const dataToInsert = {
         ...metricData,
-        patient_id: user.id, // AQUI GARANTIMOS O USO DO ID CORRETO
+        patient_id: user.id, // Usando user.id diretamente (profiles.id = auth.uid())
       };
       
-      console.log(`[DEBUG] Objeto final a ser enviado para o Supabase:`, dataToInsert);
-      console.log(`[DEBUG] O patient_id final é:`, dataToInsert.patient_id);
-      logger.info("Enviando dados para o Supabase...", "HealthService");
+      logger.info("Inserindo métrica no banco de dados", "HealthService", { 
+        patient_id: dataToInsert.patient_id,
+        metric_type: dataToInsert.metric_type 
+      });
 
-      // 4. Inserir no banco de dados
+      // Inserir no banco de dados
       const { error } = await supabase
         .from('health_metrics')
         .insert(dataToInsert);
 
-      // 5. Tratar o resultado
       if (error) {
-        logger.error("ERRO RETORNADO PELO SUPABASE", "HealthService", { 
-          message: error.message,
-          details: error.details,
-          code: error.code
-        });
-        throw new Error(`O banco de dados rejeitou a operação: ${error.message}`);
+        logger.error("Erro ao inserir métrica", "HealthService", error);
+        throw new Error(`Erro ao salvar métrica: ${error.message}`);
       }
 
-      logger.info("SUCESSO: Métrica de saúde criada no banco de dados.", "HealthService");
-      console.log("=============================================");
+      logger.info("Métrica de saúde criada com sucesso", "HealthService");
 
     } catch (error) {
-      logger.error("ERRO NO BLOCO CATCH GERAL", "HealthService", error);
-      console.log("=============================================");
+      logger.error("Erro no healthService.createHealthMetric", "HealthService", error);
       throw error;
     }
   },
 
-  // As outras funções permanecem as mesmas
   async getHealthMetrics(patientId?: string): Promise<HealthMetric[]> {
-    // ... (código existente)
-    logger.info("Fetching health metrics", "HealthService", { patientId });
+    logger.info("Buscando métricas de saúde", "HealthService", { patientId });
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
@@ -76,7 +65,7 @@ export const healthService = {
       const { data, error } = await query;
 
       if (error) {
-        logger.error("Error fetching health metrics", "HealthService", error);
+        logger.error("Erro ao buscar métricas", "HealthService", error);
         throw new Error(`Erro ao buscar métricas de saúde: ${error.message}`);
       }
 
@@ -86,14 +75,14 @@ export const healthService = {
         value: metric.value as HealthMetric['value']
       }));
     } catch (error) {
-      logger.error("Failed to fetch health metrics", "HealthService", error);
+      logger.error("Erro ao carregar métricas", "HealthService", error);
       throw error;
     }
   },
 
   async deleteHealthMetric(metricId: string): Promise<void> {
-    // ... (código existente)
-    logger.info("Deleting health metric", "HealthService", { metricId });
+    logger.info("Deletando métrica de saúde", "HealthService", { metricId });
+    
     try {
       const { error } = await supabase
         .from('health_metrics')
@@ -101,13 +90,13 @@ export const healthService = {
         .eq('id', metricId);
 
       if (error) {
-        logger.error("Error deleting health metric", "HealthService", error);
+        logger.error("Erro ao deletar métrica", "HealthService", error);
         throw new Error(`Erro ao deletar métrica de saúde: ${error.message}`);
       }
 
-      logger.info("Health metric deleted successfully", "HealthService");
+      logger.info("Métrica deletada com sucesso", "HealthService");
     } catch (error) {
-      logger.error("Failed to delete health metric", "HealthService", error);
+      logger.error("Erro ao deletar métrica", "HealthService", error);
       throw error;
     }
   }
