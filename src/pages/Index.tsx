@@ -1,201 +1,423 @@
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+
+import { useState } from "react";
+import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, Heart, FileText, Phone, MapPin } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import Header from "@/components/Header";
+import QuickActions from "@/components/QuickActions";
+import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
+import MedicationReminders from "@/components/MedicationReminders";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const { user, userData, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState("home");
+  const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (loading) return;
-
-    if (!user || !userData) {
-      return; // Permitir acesso à página inicial mesmo sem login
-    }
-
-    // Redirecionar médicos para seu dashboard
-    if (userData.userType === 'medico' && userData.onboardingCompleted) {
-      navigate('/dashboard-medico');
+  const requireAuth = (callback: () => void, actionName: string) => {
+    if (!user) {
+      toast({
+        title: "Login necessário",
+        description: `Para ${actionName.toLowerCase()}, você precisa fazer login primeiro`,
+        variant: "default",
+      });
+      navigate("/login");
       return;
     }
+    callback();
+  };
 
-    // Se não completou onboarding, redirecionar
-    if (!userData.onboardingCompleted) {
-      navigate('/onboarding');
-      return;
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case "Agendamento de consulta":
+        requireAuth(() => {
+          toast({
+            title: "Redirecionando para agendamento",
+            description: "Vamos ajudá-lo a marcar sua consulta",
+          });
+          navigate("/agendamento");
+        }, "agendar consulta");
+        break;
+      case "Reagendar consulta":
+        requireAuth(() => {
+          toast({
+            title: "Acessando sua agenda",
+            description: "Você pode reagendar suas consultas existentes",
+          });
+          navigate("/agenda-paciente");
+        }, "reagendar consulta");
+        break;
+      case "Ver histórico médico":
+        requireAuth(() => {
+          toast({
+            title: "Carregando histórico",
+            description: "Visualize seu histórico completo de consultas",
+          });
+          navigate("/historico");
+        }, "ver histórico médico");
+        break;
+      case "Atualizar perfil":
+        requireAuth(() => {
+          toast({
+            title: "Acessando perfil",
+            description: "Mantenha seus dados sempre atualizados",
+          });
+          navigate("/perfil");
+        }, "atualizar perfil");
+        break;
+      case "Lembrete de medicamento":
+        requireAuth(() => {
+          toast({
+            title: "Lembrete configurado!",
+            description: "Você receberá notificações sobre seus medicamentos nos horários programados",
+          });
+        }, "configurar lembrete");
+        break;
+      case "Agendamento de check-up":
+        requireAuth(() => {
+          toast({
+            title: "Agendando check-up",
+            description: "Exames preventivos são importantes para sua saúde",
+          });
+          navigate("/agendamento");
+        }, "agendar check-up");
+        break;
+      case "Consulta por telemedicina":
+        toast({
+          title: "Telemedicina em breve!",
+          description: "Esta funcionalidade estará disponível em breve. Você será notificado quando estiver pronta",
+        });
+        break;
+      case "Agendamento urgente":
+        toast({
+          title: "Urgência Médica",
+          description: "Para emergências, ligue 192 (SAMU) ou procure o pronto-socorro mais próximo imediatamente",
+          variant: "destructive"
+        });
+        break;
+      case "Agendamento familiar":
+        requireAuth(() => {
+          toast({
+            title: "Agendamento Familiar",
+            description: "Em breve você poderá gerenciar consultas de toda a família em um só lugar",
+          });
+        }, "agendar para família");
+        break;
+      default:
+        toast({
+          title: "Ação realizada!",
+          description: `${action} executada com sucesso`,
+        });
     }
-  }, [user, userData, loading, navigate]);
+  };
 
-  // Se não está logado, mostrar página inicial pública
-  if (!user || !userData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-        
-        <header className="bg-white shadow-sm">
-          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-800">AgendarBrasil</span>
-            </div>
-            <div className="space-x-4">
-              <Button variant="ghost" onClick={() => navigate('/login')}>
-                Entrar
-              </Button>
-              <Button onClick={() => navigate('/cadastrar')}>
-                Cadastrar
-              </Button>
-            </div>
-          </div>
-        </header>
+  const handleNavigation = (route: string, title?: string) => {
+    // Rotas que requerem autenticação
+    const protectedRoutes = ["/agendamento", "/agenda-paciente", "/historico", "/perfil"];
+    
+    if (protectedRoutes.includes(route)) {
+      requireAuth(() => {
+        if (title) {
+          toast({
+            title: `Navegando para ${title}`,
+            description: "Carregando página...",
+          });
+        }
+        navigate(route);
+      }, title || "acessar esta página");
+    } else {
+      if (title) {
+        toast({
+          title: `Navegando para ${title}`,
+          description: "Carregando página...",
+        });
+      }
+      navigate(route);
+    }
+  };
 
-        <main className="container mx-auto px-4 py-16">
-          <div className="text-center max-w-4xl mx-auto mb-16">
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              Sua saúde em primeiro lugar
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Conectamos você aos melhores profissionais de saúde. Agende consultas, gerencie sua saúde e cuide de quem você ama.
-            </p>
-            <div className="space-x-4">
-              <Button size="lg" onClick={() => navigate('/cadastrar')}>
-                Começar Agora
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
-                Já tenho conta
-              </Button>
-            </div>
-          </div>
+  const handleEmergencyContact = () => {
+    toast({
+      title: "Contatos de Emergência",
+      description: "SAMU: 192 | Bombeiros: 193 | Polícia: 190",
+      variant: "destructive"
+    });
+  };
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <Card>
-              <CardHeader>
-                <Calendar className="h-12 w-12 text-blue-600 mb-4" />
-                <CardTitle>Agendamento Fácil</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Encontre e agende consultas com os melhores médicos da sua região em poucos cliques.
-                </p>
-              </CardContent>
-            </Card>
+  const handleDayClick = (day: number, hasAppointment: boolean, hasMedication: boolean) => {
+    if (hasAppointment) {
+      requireAuth(() => {
+        toast({
+          title: "Consulta agendada",
+          description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
+        });
+        navigate("/agenda-paciente");
+      }, "ver detalhes da consulta");
+    } else if (hasMedication) {
+      toast({
+        title: "Lembrete de medicamento",
+        description: `Você tem medicamentos programados para o dia ${day}`,
+      });
+    } else if (day > 0 && day <= 31) {
+      requireAuth(() => {
+        toast({
+          title: "Agendar consulta",
+          description: `Gostaria de agendar uma consulta para o dia ${day}?`,
+        });
+        navigate("/agendamento");
+      }, "agendar consulta");
+    }
+  };
 
-            <Card>
-              <CardHeader>
-                <Users className="h-12 w-12 text-green-600 mb-4" />
-                <CardTitle>Gestão Familiar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Gerencie a saúde de toda sua família em um só lugar. Histórico completo e organizado.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Heart className="h-12 w-12 text-red-600 mb-4" />
-                <CardTitle>Cuidado Personalizado</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Profissionais qualificados prontos para oferecer o melhor atendimento para você.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Se é paciente logado, mostrar dashboard do paciente
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Heart className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-800">AgendarBrasil</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600">Olá, {userData.displayName}</span>
-            <Button variant="outline" onClick={() => navigate('/perfil')}>
-              Meu Perfil
+      <Header />
+      
+      <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24 sm:pb-6">
+        {/* Welcome Section */}
+        <div className="text-center mb-6 sm:mb-8 px-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-900 mb-2 leading-tight">
+            Bem-vindo ao AgendarBrasil
+          </h1>
+          <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            Sua saúde na palma da mão - rápido, seguro e sempre disponível
+          </p>
+          
+          {/* Quick Access Buttons */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6">
+            <Button 
+              onClick={() => handleNavigation("/agendamento", "Agendamento")}
+              className="bg-blue-500 hover:bg-blue-600 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all"
+              size="sm"
+              title="Agende uma nova consulta médica"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agendar Consulta
+            </Button>
+            <Button 
+              onClick={() => handleNavigation("/agenda-paciente", "Minha Agenda")}
+              variant="outline"
+              className="text-sm sm:text-base border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+              size="sm"
+              title="Visualize suas consultas agendadas"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Minha Agenda
+            </Button>
+            <Button 
+              onClick={() => handleNavigation("/historico", "Histórico Médico")}
+              variant="outline"
+              className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300"
+              size="sm"
+              title="Veja seu histórico médico completo"
+            >
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              Histórico
+            </Button>
+            <Button 
+              onClick={() => handleNavigation("/perfil", "Meu Perfil")}
+              variant="outline"
+              className="text-sm sm:text-base border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+              size="sm"
+              title="Acesse e edite seu perfil"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Perfil
+            </Button>
+            <Button 
+              onClick={handleEmergencyContact}
+              variant="outline"
+              className="text-sm sm:text-base border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+              size="sm"
+              title="Contatos de emergência"
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              Emergência
             </Button>
           </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Bem-vindo de volta, {userData.displayName}!
-            </h1>
-            <p className="text-gray-600">
-              Gerencie sua saúde e agende suas consultas
-            </p>
-          </div>
+        {/* Quick Actions */}
+        <QuickActions onAction={handleQuickAction} />
 
-          <div className="grid lg:grid-cols-3 gap-6 mb-8">
-            {/* Ações Rápidas */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Ações Rápidas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <Button 
-                      className="h-16 flex flex-col items-center justify-center space-y-2"
-                      onClick={() => navigate('/agendamento')}
-                    >
-                      <Calendar className="h-6 w-6" />
-                      <span>Agendar Consulta</span>
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      className="h-16 flex flex-col items-center justify-center space-y-2"
-                      onClick={() => navigate('/agenda-paciente')}
-                    >
-                      <FileText className="h-6 w-6" />
-                      <span>Minha Agenda</span>
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      className="h-16 flex flex-col items-center justify-center space-y-2"
-                      onClick={() => navigate('/historico')}
-                    >
-                      <FileText className="h-6 w-6" />
-                      <span>Histórico</span>
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      className="h-16 flex flex-col items-center justify-center space-y-2"
-                      onClick={() => navigate('/gerenciar-familia')}
-                    >
-                      <Users className="h-6 w-6" />
-                      <span>Família</span>
-                    </Button>
+        {user ? (
+          <>
+            {/* Main Content Grid - Logged In */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+              {/* Left Column - Appointments */}
+              <div className="xl:col-span-2 space-y-4 sm:space-y-6">
+                <UpcomingAppointments />
+                
+                {/* Calendar Overview */}
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="pb-3 px-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                        Agenda do Mês
+                      </CardTitle>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
+                        className="text-blue-600 hover:text-blue-700"
+                        title="Ver agenda completa"
+                      >
+                        Ver detalhes
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-4 sm:px-6">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
+                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                        <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
+                          {day}
+                        </div>
+                      ))}
+                      {Array.from({ length: 35 }, (_, i) => {
+                        const day = i - 6;
+                        const hasAppointment = [5, 12, 18, 25].includes(day);
+                        const hasMedication = [3, 8, 15, 22, 29].includes(day);
+                        
+                        return (
+                          <div
+                            key={i}
+                            className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
+                              day < 1 || day > 31 
+                                ? 'text-gray-300' 
+                                : hasAppointment 
+                                  ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
+                                  : hasMedication
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
+                            title={
+                              hasAppointment 
+                                ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
+                                : hasMedication 
+                                  ? `Lembrete de medicamento para o dia ${day}`
+                                  : day > 0 && day <= 31 
+                                    ? 'Clique para agendar uma consulta'
+                                    : ''
+                            }
+                          >
+                            {day > 0 && day <= 31 ? day : ''}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                        <span>Consultas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-400 rounded"></div>
+                        <span>Medicamentos</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column - Health & Reminders */}
+              <div className="space-y-4 sm:space-y-6">
+                <HealthSummary />
+                <MedicationReminders />
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ... keep existing code (Call to Action for Logged-Out Users) */
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl text-center text-blue-900">
+                Gerenciamento completo da sua saúde
+              </CardTitle>
+              <CardDescription className="text-center text-gray-600 max-w-xl mx-auto">
+                Crie sua conta ou faça login para acessar todas as funcionalidades e cuidar da sua saúde de forma integrada e digital.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <CalendarCheck className="w-6 h-6 text-blue-600" />
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Resumo da Saúde */}
-            <div>
-              <HealthSummary />
-            </div>
-          </div>
-        </div>
+                  <h3 className="font-semibold text-gray-800">Agende Consultas</h3>
+                  <p className="text-sm text-gray-500">Encontre especialistas e marque consultas online com facilidade.</p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <Pill className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Controle Medicamentos</h3>
+                  <p className="text-sm text-gray-500">Receba lembretes e nunca mais se esqueça de um horário.</p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800">Acesse seu Histórico</h3>
+                  <p className="text-sm text-gray-500">Tenha todos os seus exames e diagnósticos em um só lugar.</p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button onClick={() => navigate('/login')} size="lg" className="bg-blue-500 hover:bg-blue-600">
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Entrar
+                </Button>
+                <Button onClick={() => navigate('/login')} variant="outline" size="lg">
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  Criar Conta Grátis
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
+
+      {/* Bottom Navigation - Mobile Only */}
+      {user && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-2 sm:px-4 py-2 sm:hidden shadow-lg">
+          <div className="flex justify-around items-center max-w-md mx-auto">
+            {[
+              { id: 'home', icon: Heart, label: 'Início', route: '/', description: 'Página inicial' },
+              { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente', description: 'Ver suas consultas' },
+              { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento', description: 'Agendar nova consulta' },
+              { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico', description: 'Histórico médico' },
+              { id: 'profile', icon: User, label: 'Perfil', route: '/perfil', description: 'Configurações do perfil' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (item.route) handleNavigation(item.route, item.label);
+                }}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                  item.isMain
+                    ? 'bg-blue-500 text-white shadow-lg scale-110 hover:bg-blue-600'
+                    : activeTab === item.id
+                      ? 'text-blue-600 bg-blue-50'
+                      : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+                title={item.description}
+              >
+                <item.icon className={`h-4 w-4 ${item.isMain ? 'h-5 w-5' : ''}`} />
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      {/* Bottom spacing for mobile navigation */}
+      <div className="h-20 sm:hidden"></div>
     </div>
   );
 };
