@@ -5,15 +5,12 @@ import * as ProgressPrimitive from "@radix-ui/react-progress"
 
 import { cn } from "@/lib/utils"
 
-// Adicionamos a propriedade `indicatorClassName` à interface de props
-interface ProgressProps extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
-  indicatorClassName?: string;
-}
+interface ProgressProps extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {}
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressProps
->(({ className, value, indicatorClassName, ...props }, ref) => (
+>(({ className, value, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
@@ -23,11 +20,8 @@ const Progress = React.forwardRef<
     {...props}
   >
     <ProgressPrimitive.Indicator
-      // A mágica está aqui: usamos a nova prop `indicatorClassName`
-      // e mantemos "bg-primary" como cor padrão se nenhuma outra for passada.
       className={cn(
-        "h-full w-full flex-1 bg-primary transition-all",
-        indicatorClassName
+        "h-full w-full flex-1 rounded-full bg-gradient-to-r from-green-400 to-blue-500 transition-all"
       )}
       style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
     />
