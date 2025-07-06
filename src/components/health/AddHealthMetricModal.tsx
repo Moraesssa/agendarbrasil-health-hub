@@ -185,6 +185,7 @@ export const AddHealthMetricModal = ({ onAddMetric, isSubmitting }: AddHealthMet
             </div>
           </div>
         );
+      // CORREÇÃO APLICADA AQUI
       case 'height':
         return (
           <div>
