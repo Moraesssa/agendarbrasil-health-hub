@@ -38,7 +38,29 @@ const HealthSummary = () => {
   if (loading) {
     return (
       <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-fit">
-        {/* ... Skeleton loading state ... */}
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Heart className="h-5 w-5" />
+            Resumo da Saúde
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+              <div className="flex items-center gap-3 flex-1">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+              <div className="text-right">
+                <Skeleton className="h-4 w-16 mb-1" />
+                <Skeleton className="h-5 w-12" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
       </Card>
     );
   }
@@ -69,7 +91,8 @@ const HealthSummary = () => {
         ) : (
           <>
             {/* ======================================================= */}
-            {/* CÓDIGO DE RENDERIZAÇÃO DAS MÉTRICAS RESTAURADO AQUI  */}
+            {/* ESTE É O BLOCO QUE EXIBE A LISTA DE MÉTRICAS          */}
+            {/* Por favor, certifique-se de que ele esteja presente.  */}
             {/* ======================================================= */}
             {displayMetrics.map((metric, index) => (
               <div
