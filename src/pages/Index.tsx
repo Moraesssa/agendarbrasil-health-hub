@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText } from "lucide-react";
+import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -231,6 +231,16 @@ const Index = () => {
             >
               <User className="h-4 w-4 mr-2" />
               Perfil
+            </Button>
+            <Button 
+              onClick={() => handleNavigation("/gerenciar-conexoes", "Conexões")}
+              variant="outline"
+              className="text-sm sm:text-base border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300"
+              size="sm"
+              title="Gerenciar integrações com laboratórios e clínicas"
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              Conexões
             </Button>
             <Button 
               onClick={handleEmergencyContact}

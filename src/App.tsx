@@ -30,6 +30,7 @@ import Historico from '@/pages/Historico';
 import NotFound from '@/pages/NotFound';
 import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
+import GerenciarConexoes from '@/pages/GerenciarConexoes';
 
 const queryClient = new QueryClient();
 
@@ -110,7 +111,8 @@ function App() {
                     <Route path="/historico" element={<Historico />} />
                     <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
-                    <Route path="*" element={<NotFound />} />
+                <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
+                <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AuthRedirectController>
               </NotificationProvider>

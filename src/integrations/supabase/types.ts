@@ -232,6 +232,42 @@ export type Database = {
         }
         Relationships: []
       }
+      external_data_sources: {
+        Row: {
+          api_key: string
+          created_at: string
+          data_types: string[]
+          description: string | null
+          endpoint_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          data_types?: string[]
+          description?: string | null
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          data_types?: string[]
+          description?: string | null
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       family_members: {
         Row: {
           can_cancel: boolean
@@ -393,6 +429,57 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          patient_id: string | null
+          payload: Json | null
+          source_id: string
+          status: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          patient_id?: string | null
+          payload?: Json | null
+          source_id: string
+          status: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          patient_id?: string | null
+          payload?: Json | null
+          source_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_logs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "external_data_sources"
             referencedColumns: ["id"]
           },
         ]
@@ -983,6 +1070,63 @@ export type Database = {
           user_type?: string | null
         }
         Relationships: []
+      }
+      user_consents: {
+        Row: {
+          consent_version: string
+          created_at: string
+          granted_at: string
+          id: string
+          ip_address: unknown | null
+          patient_id: string
+          revoked_at: string | null
+          source_id: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          consent_version?: string
+          created_at?: string
+          granted_at?: string
+          id?: string
+          ip_address?: unknown | null
+          patient_id: string
+          revoked_at?: string | null
+          source_id: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          consent_version?: string
+          created_at?: string
+          granted_at?: string
+          id?: string
+          ip_address?: unknown | null
+          patient_id?: string
+          revoked_at?: string | null
+          source_id?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_consents_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "external_data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vaccination_records: {
         Row: {
