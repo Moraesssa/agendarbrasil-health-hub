@@ -9,6 +9,9 @@ import QuickActions from "@/components/QuickActions";
 import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
 import MedicationReminders from "@/components/MedicationReminders";
+import { DocumentList } from "@/components/health/DocumentList";
+import { DocumentUpload } from "@/components/health/DocumentUpload";
+import { useDocuments } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,6 +20,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { documents, loading: docsLoading, uploading, uploadDocument, deleteDocument, getDocumentUrl } = useDocuments();
 
   const requireAuth = (callback: () => void, actionName: string) => {
     if (!user) {
@@ -329,6 +333,20 @@ const Index = () => {
               <div className="space-y-4 sm:space-y-6">
                 <HealthSummary />
                 <MedicationReminders />
+                
+                {/* Documents Section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-semibold text-foreground">Documentos de Saúde</h2>
+                    <DocumentUpload onUpload={uploadDocument} isUploading={uploading} />
+                  </div>
+                  <DocumentList 
+                    documents={documents} 
+                    loading={docsLoading} 
+                    onDelete={deleteDocument}
+                    onGetUrl={getDocumentUrl}
+                  />
+                </div>
               </div>
             </div>
           </>
