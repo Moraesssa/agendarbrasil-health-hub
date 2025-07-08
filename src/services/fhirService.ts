@@ -89,11 +89,16 @@ class FhirService {
     }
 
     // Validate that the returned data has the expected structure
-    if (!data || typeof data !== 'object' || !data.resourceType) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
       throw new Error('Invalid FHIR Observation returned from database function');
     }
 
-    return data as FhirObservation;
+    const fhirData = data as Record<string, any>;
+    if (!fhirData.resourceType) {
+      throw new Error('Invalid FHIR Observation returned from database function');
+    }
+
+    return fhirData as FhirObservation;
   }
 
   // Utility function to convert profile to FHIR Patient
@@ -107,11 +112,16 @@ class FhirService {
     }
 
     // Validate that the returned data has the expected structure
-    if (!data || typeof data !== 'object' || !data.resourceType) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
       throw new Error('Invalid FHIR Patient returned from database function');
     }
 
-    return data as FhirPatient;
+    const fhirData = data as Record<string, any>;
+    if (!fhirData.resourceType) {
+      throw new Error('Invalid FHIR Patient returned from database function');
+    }
+
+    return fhirData as FhirPatient;
   }
 
   // Store FHIR resource directly in fhir_resources table
