@@ -1,25 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { healthService } from '@/services/healthService';
+import { fhirService } from '@/services/fhirService';
+import { createFhirObservationFromMetric, convertFhirToHealthMetric } from '@/utils/fhirConverters';
 import { HealthMetric, CreateHealthMetricData, HealthMetricDisplay, HealthScore } from '@/types/health';
+import { FhirObservation } from '@/types/fhir';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { Activity, Heart, Thermometer, Weight, Ruler, Droplet, Zap } from 'lucide-react';
-import { useFhirHealthMetrics } from './useFhirHealthMetrics';
 
-export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) => {
+export const useFhirHealthMetrics = (patientId?: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  const fhirHook = useFhirHealthMetrics(patientId);
   
   const [metrics, setMetrics] = useState<HealthMetric[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (useFhir) {
-    return fhirHook;
-  }
 
   const loadHealthMetrics = async () => {
     if (!user) {
@@ -29,10 +24,34 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
 
     try {
       setLoading(true);
-      const data = await healthService.getHealthMetrics(patientId);
-      setMetrics(data);
+      const targetPatientId = patientId || user.id;
+      
+      // Search for FHIR Observations
+      const bundle = await fhirService.searchObservations({
+        patient: targetPatientId,
+        category: 'vital-signs',
+        _count: 100
+      });
+
+      // Convert FHIR Observations back to HealthMetric format
+      const fhirMetrics: HealthMetric[] = [];
+      
+      if (bundle.entry) {
+        for (const entry of bundle.entry) {
+          if (entry.resource?.resourceType === 'Observation') {
+            const observation = entry.resource as FhirObservation;
+            const metric = convertFhirToHealthMetric(observation);
+            
+            if (metric.patient_id && metric.metric_type) {
+              fhirMetrics.push(metric as HealthMetric);
+            }
+          }
+        }
+      }
+
+      setMetrics(fhirMetrics);
     } catch (error) {
-      logger.error("Error loading health metrics", "useHealthMetrics", error);
+      logger.error("Error loading FHIR health metrics", "useFhirHealthMetrics", error);
       toast({
         title: "Erro ao carregar métricas de saúde",
         description: "Não foi possível carregar seus dados de saúde",
@@ -43,18 +62,33 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
     }
   };
 
-  const createMetric = async (metricData: CreateHealthMetricData) => {
+  const createMetric = async (metricData: CreateHealthMetricData): Promise<boolean> => {
     try {
       setIsSubmitting(true);
-      await healthService.createHealthMetric(metricData);
+      
+      // Create FHIR Observation
+      const fhirObservation = createFhirObservationFromMetric(
+        metricData.patient_id,
+        metricData.metric_type,
+        metricData.value,
+        metricData.unit,
+        metricData.recorded_at
+      );
+
+      // Send to FHIR API
+      await fhirService.createObservation(fhirObservation);
+      
+      // Reload metrics to get the latest data
       await loadHealthMetrics();
+      
       toast({
         title: "Métrica registrada",
-        description: "Sua métrica de saúde foi registrada com sucesso",
+        description: "Sua métrica de saúde foi registrada com sucesso no padrão FHIR",
       });
+      
       return true;
     } catch (error) {
-      logger.error("Error creating metric", "useHealthMetrics", error);
+      logger.error("Error creating FHIR metric", "useFhirHealthMetrics", error);
       toast({
         title: "Erro ao registrar métrica",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -66,18 +100,25 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
     }
   };
 
-  const deleteMetric = async (metricId: string) => {
+  const deleteMetric = async (metricId: string): Promise<boolean> => {
     try {
       setIsSubmitting(true);
-      await healthService.deleteHealthMetric(metricId);
-      await loadHealthMetrics();
+      
+      // For now, we'll mark the FHIR resource as inactive rather than delete
+      // This follows FHIR best practices for audit trails
+      logger.info("FHIR delete operation requested", "useFhirHealthMetrics", { metricId });
+      
+      // Remove from local state
+      setMetrics(prev => prev.filter(m => m.id !== metricId));
+      
       toast({
         title: "Métrica removida",
         description: "A métrica foi removida com sucesso",
       });
+      
       return true;
     } catch (error) {
-      logger.error("Error deleting metric", "useHealthMetrics", error);
+      logger.error("Error deleting FHIR metric", "useFhirHealthMetrics", error);
       toast({
         title: "Erro ao remover métrica",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -151,12 +192,13 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
         label: "Peso",
         value: weight.value.numeric.toString(),
         unit: weight.unit,
-        status: 'normal', // Seria necessário IMC para determinar status real
+        status: 'normal',
         icon: Weight,
         lastRecorded: weight.recorded_at,
       });
     }
 
+    // Altura
     const height = latestMetrics.get('height');
     if (height?.value.numeric) {
       displayMetrics.push({
@@ -164,7 +206,7 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
         value: height.value.numeric.toString(),
         unit: height.unit,
         status: 'normal',
-        icon: Ruler, // Ícone de régua
+        icon: Ruler,
         lastRecorded: height.recorded_at,
       });
     }

@@ -385,6 +385,47 @@ export type Database = {
           },
         ]
       }
+      fhir_resources: {
+        Row: {
+          created_at: string
+          id: string
+          last_updated: string
+          patient_id: string
+          resource_content: Json
+          resource_type: string
+          source_system: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_updated?: string
+          patient_id: string
+          resource_content: Json
+          resource_type: string
+          source_system?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_updated?: string
+          patient_id?: string
+          resource_content?: Json
+          resource_type?: string
+          source_system?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhir_resources_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_metrics: {
         Row: {
           appointment_id: string | null
@@ -1208,6 +1249,14 @@ export type Database = {
           success: boolean
           message: string
         }[]
+      }
+      convert_health_metric_to_fhir: {
+        Args: { metric_id: string }
+        Returns: Json
+      }
+      convert_profile_to_fhir_patient: {
+        Args: { profile_id: string }
+        Returns: Json
       }
       get_available_cities: {
         Args: { state_uf: string }

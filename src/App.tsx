@@ -111,8 +111,8 @@ function App() {
                     <Route path="/historico" element={<Historico />} />
                     <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
-                <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
-                <Route path="*" element={<NotFound />} />
+                    <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
+                    <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AuthRedirectController>
               </NotificationProvider>
