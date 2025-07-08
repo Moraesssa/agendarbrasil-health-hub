@@ -88,7 +88,7 @@ class FhirService {
       throw new Error(`Failed to convert health metric: ${error.message}`);
     }
 
-    return data as FhirObservation;
+    return data as unknown as FhirObservation;
   }
 
   // Utility function to convert profile to FHIR Patient
@@ -101,7 +101,7 @@ class FhirService {
       throw new Error(`Failed to convert profile: ${error.message}`);
     }
 
-    return data as FhirPatient;
+    return data as unknown as FhirPatient;
   }
 
   // Store FHIR resource directly in fhir_resources table

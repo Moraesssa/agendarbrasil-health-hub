@@ -2,6 +2,9 @@
 import { HealthMetric } from '@/types/health';
 import { FhirObservation, FhirPatient, FhirDocumentReference } from '@/types/fhir';
 
+// Valid metric types
+type ValidMetricType = 'blood_pressure' | 'heart_rate' | 'temperature' | 'weight' | 'height' | 'glucose' | 'oxygen_saturation';
+
 export const convertHealthMetricToFhir = (metric: HealthMetric): FhirObservation => {
   const observation: FhirObservation = {
     resourceType: 'Observation',
@@ -15,7 +18,7 @@ export const convertHealthMetricToFhir = (metric: HealthMetric): FhirObservation
       }]
     }],
     code: {
-      coding: [getLoincCoding(metric.metric_type)]
+      coding: [getLoincCoding(metric.metric_type as ValidMetricType)]
     },
     subject: {
       reference: `Patient/${metric.patient_id}`
@@ -105,8 +108,8 @@ export const convertFhirToHealthMetric = (observation: FhirObservation): Partial
   };
 };
 
-const getLoincCoding = (metricType: string) => {
-  const loincMap: Record<string, { code: string; display: string }> = {
+const getLoincCoding = (metricType: ValidMetricType) => {
+  const loincMap: Record<ValidMetricType, { code: string; display: string }> = {
     'blood_pressure': { 
       code: '85354-9', 
       display: 'Blood pressure panel with all children optional' 
@@ -137,10 +140,7 @@ const getLoincCoding = (metricType: string) => {
     }
   };
 
-  const loinc = loincMap[metricType] || { 
-    code: 'vital-signs', 
-    display: metricType 
-  };
+  const loinc = loincMap[metricType];
 
   return {
     system: 'http://loinc.org',
@@ -149,8 +149,8 @@ const getLoincCoding = (metricType: string) => {
   };
 };
 
-const getMetricTypeFromLoinc = (loincCode?: string): string => {
-  const reverseMap: Record<string, string> = {
+const getMetricTypeFromLoinc = (loincCode?: string): ValidMetricType => {
+  const reverseMap: Record<string, ValidMetricType> = {
     '85354-9': 'blood_pressure',
     '8867-4': 'heart_rate',
     '8310-5': 'temperature',
@@ -160,7 +160,7 @@ const getMetricTypeFromLoinc = (loincCode?: string): string => {
     '2708-6': 'oxygen_saturation'
   };
 
-  return reverseMap[loincCode || ''] || 'unknown';
+  return reverseMap[loincCode || ''] || 'heart_rate'; // Default fallback
 };
 
 export const createFhirObservationFromMetric = (
@@ -170,6 +170,8 @@ export const createFhirObservationFromMetric = (
   unit: string,
   effectiveDateTime?: string
 ): FhirObservation => {
+  const validMetricType = isValidMetricType(metricType) ? metricType : 'heart_rate';
+  
   const observation: FhirObservation = {
     resourceType: 'Observation',
     status: 'final',
@@ -181,7 +183,7 @@ export const createFhirObservationFromMetric = (
       }]
     }],
     code: {
-      coding: [getLoincCoding(metricType)]
+      coding: [getLoincCoding(validMetricType)]
     },
     subject: {
       reference: `Patient/${patientId}`
@@ -189,7 +191,7 @@ export const createFhirObservationFromMetric = (
     effectiveDateTime: effectiveDateTime || new Date().toISOString()
   };
 
-  if (metricType === 'blood_pressure' && value.systolic && value.diastolic) {
+  if (validMetricType === 'blood_pressure' && value.systolic && value.diastolic) {
     observation.component = [
       {
         code: {
@@ -232,3 +234,8 @@ export const createFhirObservationFromMetric = (
 
   return observation;
 };
+
+// Helper function to validate metric type
+function isValidMetricType(type: string): type is ValidMetricType {
+  return ['blood_pressure', 'heart_rate', 'temperature', 'weight', 'height', 'glucose', 'oxygen_saturation'].includes(type);
+}
