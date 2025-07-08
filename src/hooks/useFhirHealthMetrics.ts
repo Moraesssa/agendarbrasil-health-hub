@@ -42,7 +42,7 @@ export const useFhirHealthMetrics = (patientId?: string) => {
             const observation = entry.resource as FhirObservation;
             const metric = convertFhirToHealthMetric(observation);
             
-            if (metric.patient_id && metric.metric_type) {
+            if (metric.patient_id && metric.metric_type && isValidMetricType(metric.metric_type)) {
               fhirMetrics.push(metric as HealthMetric);
             }
           }
@@ -313,7 +313,11 @@ export const useFhirHealthMetrics = (patientId?: string) => {
   };
 };
 
-// Funções auxiliares para determinar status
+// Helper function to validate metric type
+function isValidMetricType(type: string): type is 'blood_pressure' | 'heart_rate' | 'temperature' | 'weight' | 'height' | 'glucose' | 'oxygen_saturation' {
+  return ['blood_pressure', 'heart_rate', 'temperature', 'weight', 'height', 'glucose', 'oxygen_saturation'].includes(type);
+}
+
 function getBloodPressureStatus(systolic: number, diastolic: number): HealthMetricDisplay['status'] {
   if (systolic < 120 && diastolic < 80) return 'ideal';
   if (systolic <= 139 && diastolic <= 89) return 'normal';
