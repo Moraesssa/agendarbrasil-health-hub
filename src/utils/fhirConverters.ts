@@ -6,6 +6,9 @@ import { FhirObservation, FhirPatient, FhirDocumentReference } from '@/types/fhi
 type ValidMetricType = 'blood_pressure' | 'heart_rate' | 'temperature' | 'weight' | 'height' | 'glucose' | 'oxygen_saturation';
 
 export const convertHealthMetricToFhir = (metric: HealthMetric): FhirObservation => {
+  // Validate and cast the metric type to a valid type
+  const validMetricType = isValidMetricType(metric.metric_type) ? metric.metric_type : 'heart_rate';
+  
   const observation: FhirObservation = {
     resourceType: 'Observation',
     id: metric.id,
@@ -18,7 +21,7 @@ export const convertHealthMetricToFhir = (metric: HealthMetric): FhirObservation
       }]
     }],
     code: {
-      coding: [getLoincCoding(metric.metric_type as ValidMetricType)]
+      coding: [getLoincCoding(validMetricType)]
     },
     subject: {
       reference: `Patient/${metric.patient_id}`
@@ -31,7 +34,7 @@ export const convertHealthMetricToFhir = (metric: HealthMetric): FhirObservation
   };
 
   // Add value based on metric type
-  if (metric.metric_type === 'blood_pressure') {
+  if (validMetricType === 'blood_pressure') {
     observation.component = [
       {
         code: {
