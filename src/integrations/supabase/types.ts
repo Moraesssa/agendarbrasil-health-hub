@@ -635,6 +635,54 @@ export type Database = {
           },
         ]
       }
+      medical_prescriptions: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          dosage: string
+          duration_days: number | null
+          frequency: string
+          id: string
+          instructions: string | null
+          is_active: boolean
+          medication_name: string
+          patient_id: string
+          prescribed_date: string
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          dosage: string
+          duration_days?: number | null
+          frequency: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          medication_name: string
+          patient_id: string
+          prescribed_date?: string
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          dosage?: string
+          duration_days?: number | null
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          medication_name?: string
+          patient_id?: string
+          prescribed_date?: string
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       medical_services: {
         Row: {
           category: string
@@ -1069,6 +1117,59 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescription_renewals: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          doctor_notes: string | null
+          id: string
+          patient_id: string
+          patient_notes: string | null
+          prescription_id: string
+          processed_date: string | null
+          request_date: string
+          requested_duration_days: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          doctor_notes?: string | null
+          id?: string
+          patient_id: string
+          patient_notes?: string | null
+          prescription_id: string
+          processed_date?: string | null
+          request_date?: string
+          requested_duration_days?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          doctor_notes?: string | null
+          id?: string
+          patient_id?: string
+          patient_notes?: string | null
+          prescription_id?: string
+          processed_date?: string | null
+          request_date?: string
+          requested_duration_days?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_renewals_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "medical_prescriptions"
             referencedColumns: ["id"]
           },
         ]
