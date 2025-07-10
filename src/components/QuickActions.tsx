@@ -21,10 +21,10 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
     },
     {
       icon: Pill,
-      label: "Lembrete Remédio",
+      label: "Medicamentos",
       color: "bg-green-500 hover:bg-green-600",
-      action: "Lembrete de medicamento",
-      description: "Configure alertas para medicamentos"
+      action: "gestao-medicamentos",
+      description: "Gerencie suas prescrições e medicamentos"
     },
     {
       icon: Heart,
@@ -61,6 +61,8 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
       navigate("/agendamento");
     } else if (action === "familia") {
       navigate("/gerenciar-familia");
+    } else if (action === "gestao-medicamentos") {
+      navigate("/gestao-medicamentos");
     } else {
       onAction(action);
     }

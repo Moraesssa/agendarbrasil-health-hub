@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,14 +72,6 @@ const Index = () => {
           navigate("/perfil");
         }, "atualizar perfil");
         break;
-      case "Lembrete de medicamento":
-        requireAuth(() => {
-          toast({
-            title: "Lembrete configurado!",
-            description: "Você receberá notificações sobre seus medicamentos nos horários programados",
-          });
-        }, "configurar lembrete");
-        break;
       case "Agendamento de check-up":
         requireAuth(() => {
           toast({
@@ -121,7 +112,7 @@ const Index = () => {
 
   const handleNavigation = (route: string, title?: string) => {
     // Rotas que requerem autenticação
-    const protectedRoutes = ["/agendamento", "/agenda-paciente", "/historico", "/perfil"];
+    const protectedRoutes = ["/agendamento", "/agenda-paciente", "/historico", "/perfil", "/gestao-medicamentos"];
     
     if (protectedRoutes.includes(route)) {
       requireAuth(() => {
@@ -211,6 +202,16 @@ const Index = () => {
             >
               <Calendar className="h-4 w-4 mr-2" />
               Minha Agenda
+            </Button>
+            <Button 
+              onClick={() => handleNavigation("/gestao-medicamentos", "Medicamentos")}
+              variant="outline"
+              className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300"
+              size="sm"
+              title="Gerencie suas prescrições e medicamentos"
+            >
+              <Pill className="h-4 w-4 mr-2" />
+              Medicamentos
             </Button>
             <Button 
               onClick={() => handleNavigation("/historico", "Histórico Médico")}
@@ -361,7 +362,6 @@ const Index = () => {
             </div>
           </>
         ) : (
-          /* ... keep existing code (Call to Action for Logged-Out Users) */
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl text-center text-blue-900">
@@ -418,7 +418,7 @@ const Index = () => {
               { id: 'home', icon: Heart, label: 'Início', route: '/', description: 'Página inicial' },
               { id: 'calendar', icon: Calendar, label: 'Agenda', route: '/agenda-paciente', description: 'Ver suas consultas' },
               { id: 'add', icon: Plus, label: 'Agendar', isMain: true, route: '/agendamento', description: 'Agendar nova consulta' },
-              { id: 'reminders', icon: Bell, label: 'Histórico', route: '/historico', description: 'Histórico médico' },
+              { id: 'medications', icon: Pill, label: 'Medicamentos', route: '/gestao-medicamentos', description: 'Gerenciar medicamentos' },
               { id: 'profile', icon: User, label: 'Perfil', route: '/perfil', description: 'Configurações do perfil' },
             ].map((item) => (
               <button
