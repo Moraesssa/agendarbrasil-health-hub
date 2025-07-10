@@ -10,7 +10,7 @@ interface AgendaPageHeaderProps {
 export const AgendaPageHeader = ({ canSave, isDirty, hasCompleteBlocks }: AgendaPageHeaderProps) => {
   const getStatusMessage = () => {
     if (!canSave) {
-      return "• Preencha pelo menos um bloco para habilitar o salvamento";
+      return "• Preencha pelo menos um campo de qualquer bloco para habilitar o salvamento";
     }
     
     if (isDirty && canSave && hasCompleteBlocks) {
@@ -18,7 +18,7 @@ export const AgendaPageHeader = ({ canSave, isDirty, hasCompleteBlocks }: Agenda
     }
     
     if (isDirty && canSave && !hasCompleteBlocks) {
-      return "• Complete pelo menos um bloco ativo para salvar";
+      return "• Ative e complete pelo menos um bloco para salvar com sucesso";
     }
     
     return "";

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,23 +29,21 @@ export const useAgendaManagement = () => {
     // Watch all form values to check for any filled blocks
     const watchedValues = useWatch({ control, name: "horarios" });
 
-    // Function to check if there are any filled blocks (at least one field filled)
+    // Function to check if there are any blocks with ANY field filled
     const hasAnyFilledBlocks = useCallback(() => {
-        console.log("🔍 hasAnyFilledBlocks - watchedValues:", watchedValues);
+        console.log("🔍 Verificando blocos preenchidos - watchedValues:", watchedValues);
         
         if (!watchedValues || typeof watchedValues !== 'object') {
-            console.log("❌ hasAnyFilledBlocks - watchedValues is invalid");
+            console.log("❌ watchedValues é inválido");
             return false;
         }
-        
-        let filledBlocksFound = 0;
         
         for (const dia of diasDaSemana) {
             const blocosDoDia = watchedValues[dia.key];
             console.log(`🔍 Verificando ${dia.label} (${dia.key}):`, blocosDoDia);
             
-            if (Array.isArray(blocosDoDia)) {
-                const filledBlocks = blocosDoDia.filter((bloco: any) => {
+            if (Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
+                for (const bloco of blocosDoDia) {
                     const hasAtivo = bloco?.ativo === true;
                     const hasLocalId = bloco?.local_id && bloco.local_id !== null && bloco.local_id !== '';
                     const hasInicio = bloco?.inicio && bloco.inicio !== '';
@@ -58,23 +57,19 @@ export const useAgendaManagement = () => {
                         local_id: bloco?.local_id,
                         inicio: bloco?.inicio,
                         fim: bloco?.fim,
-                        hasLocalId,
-                        hasInicio,
-                        hasFim,
                         isFilled
                     });
                     
-                    return isFilled;
-                });
-                
-                filledBlocksFound += filledBlocks.length;
-                console.log(`   ✅ ${dia.label}: ${filledBlocks.length} blocos preenchidos`);
+                    if (isFilled) {
+                        console.log(`✅ Encontrado bloco preenchido em ${dia.label}`);
+                        return true;
+                    }
+                }
             }
         }
         
-        const result = filledBlocksFound > 0;
-        console.log(`🎯 hasAnyFilledBlocks resultado: ${result} (${filledBlocksFound} blocos preenchidos encontrados)`);
-        return result;
+        console.log(`❌ Nenhum bloco preenchido encontrado`);
+        return false;
     }, [watchedValues]);
 
     // Check if there are valid complete blocks for validation messages
@@ -106,7 +101,8 @@ export const useAgendaManagement = () => {
 
     const canSave = hasAnyFilledBlocks();
     const hasCompleteBlocks = hasValidCompleteBlocks();
-    console.log("🚀 canSave:", canSave, "hasCompleteBlocks:", hasCompleteBlocks);
+    
+    console.log("🚀 Estado atual:", { canSave, hasCompleteBlocks, isDirty });
 
     const fetchInitialData = useCallback(async () => {
         if (!user?.id) { setLoading(false); return; }
