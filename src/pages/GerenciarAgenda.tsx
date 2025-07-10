@@ -21,6 +21,7 @@ const GerenciarAgenda = () => {
         locais,
         isDirty,
         canSave,
+        hasCompleteBlocks,
         fetchInitialData
     } = useAgendaManagement();
 
@@ -35,7 +36,11 @@ const GerenciarAgenda = () => {
             <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-green-50">
                 <AppSidebar />
                 <SidebarInset className="flex-1">
-                    <AgendaPageHeader canSave={canSave} isDirty={isDirty} />
+                    <AgendaPageHeader 
+                        canSave={canSave} 
+                        isDirty={isDirty} 
+                        hasCompleteBlocks={hasCompleteBlocks}
+                    />
                     <main className="p-6">
                         <Form {...form}>
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto">
