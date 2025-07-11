@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FamilyNotification } from '@/types/medical';
@@ -22,7 +23,6 @@ export const useRealtimeNotifications = () => {
         .limit(50);
 
       if (error) throw error;
-      // Corrigido: Cast explícito para o tipo correto.
       setNotifications((data as FamilyNotification[]) || []);
     } catch (error) {
       logger.error('Failed to fetch initial notifications', 'useRealtimeNotifications', error);
@@ -37,7 +37,9 @@ export const useRealtimeNotifications = () => {
 
     fetchInitialNotifications();
 
-    const channel = supabase.channel('family_notifications_channel')
+    // Use um nome de canal único para evitar conflitos
+    const channelName = `family_notifications_${user.id}`;
+    const channel = supabase.channel(channelName)
       .on<FamilyNotification>(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'family_notifications' },
@@ -53,7 +55,7 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          logger.info('Subscribed to notifications channel', 'useRealtimeNotifications');
+          logger.info('Subscribed to family notifications channel', 'useRealtimeNotifications');
         }
       });
 

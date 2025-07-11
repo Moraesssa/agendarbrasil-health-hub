@@ -121,12 +121,13 @@ export const useNotifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Setup realtime subscription for encaminhamentos
+  // Setup realtime subscription for encaminhamentos APENAS UMA VEZ
   useEffect(() => {
     if (!user?.id) return;
 
+    const channelName = `notifications_${user.id}`;
     const channel = supabase
-      .channel('notifications')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { 
