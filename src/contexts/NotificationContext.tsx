@@ -1,33 +1,43 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
-import { FamilyNotification } from '@/types/medical';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
 
 interface NotificationContextType {
-  notifications: FamilyNotification[];
+  notifications: Notification[];
   loading: boolean;
   unreadCount: number;
   markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  refetch: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const useNotifications = () => {
+export const useNotificationContext = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error('useNotificationContext must be used within a NotificationProvider');
   }
   return context;
 };
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const { notifications, loading, markAsRead } = useRealtimeNotifications();
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const {
+    notifications,
+    loading,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    refetch
+  } = useNotifications();
 
   const value = {
     notifications,
     loading,
     unreadCount,
     markAsRead,
+    markAllAsRead,
+    refetch,
   };
 
   return (
