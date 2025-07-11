@@ -64,7 +64,7 @@ export const medicationService = {
             nextDose: nextDoses?.[0] ? {
               ...nextDoses[0],
               status: nextDoses[0].status as MedicationDose['status']
-            } : null
+            } : undefined
           };
         })
       );

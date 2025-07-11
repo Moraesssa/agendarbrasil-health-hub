@@ -152,6 +152,11 @@ const MedicationReminders = () => {
                         Tomar agora
                       </Button>
                     )}
+                    {medication.status === 'tomado' && (
+                      <span className="text-xs text-green-600 font-medium">
+                        ✓ Tomado
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

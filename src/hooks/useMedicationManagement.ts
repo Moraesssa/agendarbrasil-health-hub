@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { medicationService } from '@/services/medicationService';
@@ -116,27 +117,37 @@ export const useMedicationManagement = () => {
 
   // Get pending doses with status information
   const getPendingDoses = (): PendingDoseDisplay[] => {
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
+    const today = now.toISOString().split('T')[0];
+    
     return medications.flatMap(medication => {
-      const now = new Date();
-      const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
-      const today = now.toISOString().split('T')[0];
-      
       return (medication.todayDoses || []).map(dose => {
         let status: PendingDoseDisplay['status'] = 'pendente';
         let nextDose = 'hoje';
         
-        if (dose.status === 'pending' && dose.scheduled_date === today) {
-          if (dose.scheduled_time < currentTime) {
-            status = 'atrasado';
-            nextDose = 'agora';
-          } else {
-            status = 'pendente';
-            const timeDiff = getTimeDifference(dose.scheduled_time, currentTime);
-            nextDose = timeDiff;
-          }
-        } else if (dose.status === 'taken') {
+        // Check if the dose was already taken
+        if (dose.status === 'taken') {
           status = 'tomado';
           nextDose = 'amanhã';
+        } else if (dose.status === 'pending') {
+          // Only check timing for pending doses
+          if (dose.scheduled_date === today) {
+            if (dose.scheduled_time < currentTime) {
+              status = 'atrasado';
+              nextDose = 'agora';
+            } else {
+              status = 'pendente';
+              const timeDiff = getTimeDifference(dose.scheduled_time, currentTime);
+              nextDose = timeDiff;
+            }
+          }
+        } else if (dose.status === 'missed') {
+          status = 'atrasado';
+          nextDose = 'perdido';
+        } else if (dose.status === 'skipped') {
+          // Don't show skipped doses
+          return null;
         }
         
         return {
@@ -149,14 +160,26 @@ export const useMedicationManagement = () => {
           nextDose,
           reminderId: medication.id
         };
-      });
-    }).sort((a, b) => a.time.localeCompare(b.time));
+      }).filter(Boolean); // Remove null entries (skipped doses)
+    }).sort((a, b) => {
+      // Sort by status priority first (taken last), then by time
+      const statusOrder = { 'atrasado': 0, 'pendente': 1, 'tomado': 2 };
+      const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+      if (statusDiff !== 0) return statusDiff;
+      
+      return a.time.localeCompare(b.time);
+    });
   };
 
   const getTimeDifference = (scheduledTime: string, currentTime: string) => {
     const scheduled = new Date(`2000-01-01T${scheduledTime}`);
     const current = new Date(`2000-01-01T${currentTime}`);
     const diffMs = scheduled.getTime() - current.getTime();
+    
+    if (diffMs <= 0) {
+      return 'agora';
+    }
+    
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     
