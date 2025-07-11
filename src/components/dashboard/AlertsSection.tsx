@@ -3,11 +3,11 @@ import { AlertCircle, Heart, Clock, Bell, Mail, Calendar, User } from "lucide-re
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationContext } from "@/contexts/NotificationContext";
 import { useNavigate } from "react-router-dom";
 
 export function AlertsSection() {
-  const { notifications, loading, markAsRead } = useNotifications();
+  const { notifications, loading, markAsRead } = useNotificationContext();
   const navigate = useNavigate();
 
   const getPriorityColor = (priority: string) => {
