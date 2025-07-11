@@ -22,6 +22,7 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [channelRef, setChannelRef] = useState<any>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -121,11 +122,16 @@ export const useNotifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Setup realtime subscription for encaminhamentos APENAS UMA VEZ
+  // Setup realtime subscription - APENAS UMA SUBSCRIÇÃO
   useEffect(() => {
     if (!user?.id) return;
 
-    const channelName = `notifications_${user.id}`;
+    // Limpar canal anterior se existir
+    if (channelRef) {
+      supabase.removeChannel(channelRef);
+    }
+
+    const channelName = `user_notifications_${user.id}_${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -145,10 +151,16 @@ export const useNotifications = () => {
           fetchNotifications();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        logger.info(`Canal de notificações: ${status}`, 'useNotifications');
+      });
+
+    setChannelRef(channel);
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [user?.id, fetchNotifications, toast]);
 
