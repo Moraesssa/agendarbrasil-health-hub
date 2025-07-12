@@ -1,19 +1,22 @@
-
 import { Pill, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMedicationManagement } from "@/hooks/useMedicationManagement";
 import { AddMedicationDialog } from "@/components/medication/AddMedicationDialog";
+import { EditMedicationDialog } from "@/components/medication/EditMedicationDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MedicationReminders = () => {
   const { 
+    medications,
     pendingDoses, 
     loading, 
     isSubmitting, 
     createMedication, 
-    markDoseAsTaken 
+    editMedication,
+    markDoseAsTaken,
+    deleteMedication
   } = useMedicationManagement();
 
   const getStatusIcon = (status: string) => {
@@ -78,9 +81,14 @@ const MedicationReminders = () => {
             <Pill className="h-4 w-4 sm:h-5 sm:w-5" />
             Medicamentos
           </div>
-          <Button variant="ghost" size="sm" className="text-blue-600 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3">
-            Gerenciar
-          </Button>
+          {medications.length > 0 && (
+            <EditMedicationDialog
+              medication={medications[0]}
+              onEdit={editMedication}
+              onDelete={deleteMedication}
+              isLoading={isSubmitting}
+            />
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
@@ -92,75 +100,88 @@ const MedicationReminders = () => {
           </div>
         ) : (
           <>
-            {pendingDoses.map((medication) => (
-              <div
-                key={medication.id}
-                className={`p-3 sm:p-4 rounded-xl border transition-all ${
-                  medication.status === 'atrasado' 
-                    ? 'bg-red-50 border-red-200' 
-                    : medication.status === 'tomado'
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-yellow-50 border-yellow-200'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2 sm:mb-3">
-                  <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-                    <div className="mt-1 flex-shrink-0">
-                      {getStatusIcon(medication.status)}
+            {pendingDoses.map((medication) => {
+              const medicationData = medications.find(m => m.id === medication.reminderId);
+              return (
+                <div
+                  key={medication.id}
+                  className={`p-3 sm:p-4 rounded-xl border transition-all ${
+                    medication.status === 'atrasado' 
+                      ? 'bg-red-50 border-red-200' 
+                      : medication.status === 'tomado'
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-yellow-50 border-yellow-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="mt-1 flex-shrink-0">
+                        {getStatusIcon(medication.status)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                            {medication.name}
+                          </h3>
+                          {medicationData && (
+                            <EditMedicationDialog
+                              medication={medicationData}
+                              onEdit={editMedication}
+                              onDelete={deleteMedication}
+                              isLoading={isSubmitting}
+                            />
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {medication.dosage} • {medication.frequency}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                        {medication.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600">
-                        {medication.dosage} • {medication.frequency}
-                      </p>
-                    </div>
+                    <Badge className={`${getStatusColor(medication.status)} border-0 text-xs flex-shrink-0 ml-2`}>
+                      {getStatusText(medication.status)}
+                    </Badge>
                   </div>
-                  <Badge className={`${getStatusColor(medication.status)} border-0 text-xs flex-shrink-0 ml-2`}>
-                    {getStatusText(medication.status)}
-                  </Badge>
-                </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{medication.time}</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>{medication.time}</span>
+                      </div>
+                      <span className="text-xs sm:text-sm">Próxima: {medication.nextDose}</span>
                     </div>
-                    <span className="text-xs sm:text-sm">Próxima: {medication.nextDose}</span>
-                  </div>
-                  <div className="w-full sm:w-auto">
-                    {medication.status === 'pendente' && (
-                      <Button 
-                        size="sm" 
-                        className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-green-500 hover:bg-green-600 w-full sm:w-auto"
-                        onClick={() => handleMarkAsTaken(medication.id)}
-                        disabled={isSubmitting}
-                      >
-                        Marcar como tomado
-                      </Button>
-                    )}
-                    {medication.status === 'atrasado' && (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-7 sm:h-8 px-2 sm:px-3 text-xs border-red-200 text-red-600 hover:bg-red-50 w-full sm:w-auto"
-                        onClick={() => handleMarkAsTaken(medication.id)}
-                        disabled={isSubmitting}
-                      >
-                        Tomar agora
-                      </Button>
-                    )}
-                    {medication.status === 'tomado' && (
-                      <span className="text-xs text-green-600 font-medium">
-                        ✓ Tomado
-                      </span>
-                    )}
+                    <div className="w-full sm:w-auto">
+                      {medication.status === 'pendente' && (
+                        <Button 
+                          size="sm" 
+                          className="h-7 sm:h-8 px-2 sm:px-3 text-xs bg-green-500 hover:bg-green-600 w-full sm:w-auto"
+                          onClick={() => handleMarkAsTaken(medication.id)}
+                          disabled={isSubmitting}
+                        >
+                          Marcar como tomado
+                        </Button>
+                      )}
+                      {medication.status === 'atrasado' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-7 sm:h-8 px-2 sm:px-3 text-xs border-red-200 text-red-600 hover:bg-red-50 w-full sm:w-auto"
+                          onClick={() => handleMarkAsTaken(medication.id)}
+                          disabled={isSubmitting}
+                        >
+                          Tomar agora
+                        </Button>
+                      )}
+                      {medication.status === 'tomado' && (
+                        <span className="text-xs text-green-600 font-medium">
+                          ✓ Tomado
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Add Medication Button */}
             <AddMedicationDialog onAdd={createMedication} isLoading={isSubmitting} />

@@ -204,7 +204,7 @@ export const medicationService = {
   },
 
   // Update medication reminder
-  async updateMedicationReminder(id: string, updates: Partial<MedicationReminder>): Promise<void> {
+  async updateMedicationReminder(id: string, updates: Partial<CreateMedicationData>): Promise<void> {
     logger.info("Updating medication reminder", "MedicationService", { id });
     try {
       const { error } = await supabase
@@ -218,6 +218,23 @@ export const medicationService = {
       if (error) {
         logger.error("Error updating medication reminder", "MedicationService", error);
         throw new Error(`Erro ao atualizar medicamento: ${error.message}`);
+      }
+
+      // If times were updated, regenerate future doses
+      if (updates.times) {
+        // Delete future doses (from tomorrow onwards)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        await supabase
+          .from('medication_doses')
+          .delete()
+          .eq('reminder_id', id)
+          .gte('scheduled_date', tomorrowStr);
+
+        // Generate new doses
+        await this.generateDoses(id, updates.times, tomorrowStr);
       }
 
       logger.info("Medication reminder updated successfully", "MedicationService");

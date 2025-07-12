@@ -72,6 +72,29 @@ export const useMedicationManagement = () => {
     }
   };
 
+  const editMedication = async (medicationId: string, medicationData: CreateMedicationData) => {
+    try {
+      setIsSubmitting(true);
+      await medicationService.updateMedicationReminder(medicationId, medicationData);
+      await loadMedicationData(); // Reload data
+      toast({
+        title: "Medicamento atualizado",
+        description: "O medicamento foi atualizado com sucesso",
+      });
+      return true;
+    } catch (error) {
+      logger.error("Error updating medication", "useMedicationManagement", error);
+      toast({
+        title: "Erro ao atualizar medicamento",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const markDoseAsTaken = async (doseId: string, notes?: string) => {
     try {
       await medicationService.markDoseAsTaken(doseId, notes);
@@ -203,6 +226,7 @@ export const useMedicationManagement = () => {
     loading,
     isSubmitting,
     createMedication,
+    editMedication,
     markDoseAsTaken,
     deleteMedication,
     refetch: loadMedicationData
