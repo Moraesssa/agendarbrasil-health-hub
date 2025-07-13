@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,18 +126,18 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
           documents.map((document) => (
             <div
               key={document.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="p-2 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                     <p className="font-medium text-foreground text-sm truncate">
                       {document.document_name}
                     </p>
-                    <Badge className={`text-xs ${getDocumentTypeColor(document.document_type)}`}>
+                    <Badge className={`text-xs w-fit ${getDocumentTypeColor(document.document_type)}`}>
                       {getDocumentTypeLabel(document.document_type)}
                     </Badge>
                   </div>
@@ -147,16 +148,16 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+              <div className="flex items-center justify-end gap-2 flex-shrink-0 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleView(document)}
                   disabled={loadingUrl === document.id}
-                  className="gap-1"
+                  className="flex-1 sm:flex-none gap-1 text-xs sm:text-sm"
                 >
                   <Eye className="h-3 w-3" />
-                  Ver
+                  <span className="hidden xs:inline">Ver</span>
                 </Button>
                 
                 <Button
@@ -164,15 +165,21 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                   size="sm"
                   onClick={() => handleDownload(document)}
                   disabled={loadingUrl === document.id}
-                  className="gap-1"
+                  className="flex-1 sm:flex-none gap-1 text-xs sm:text-sm"
                 >
                   <Download className="h-3 w-3" />
-                  {loadingUrl === document.id ? '...' : 'Baixar'}
+                  <span className="hidden xs:inline">
+                    {loadingUrl === document.id ? '...' : 'Baixar'}
+                  </span>
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700 flex-shrink-0 p-2 sm:px-3"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </AlertDialogTrigger>
