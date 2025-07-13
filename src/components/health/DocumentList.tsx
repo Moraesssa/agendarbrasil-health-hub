@@ -126,38 +126,36 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
           documents.map((document) => (
             <div
               key={document.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-3"
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
-                    <p className="font-medium text-foreground text-sm truncate">
-                      {document.document_name}
-                    </p>
-                    <Badge className={`text-xs w-fit ${getDocumentTypeColor(document.document_type)}`}>
-                      {getDocumentTypeLabel(document.document_type)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground text-sm truncate mb-1">
+                    {document.document_name}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <Calendar className="h-3 w-3" />
                     {format(new Date(document.uploaded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </div>
+                  <Badge className={`text-xs w-fit ${getDocumentTypeColor(document.document_type)}`}>
+                    {getDocumentTypeLabel(document.document_type)}
+                  </Badge>
                 </div>
               </div>
               
-              <div className="flex items-center justify-end gap-2 flex-shrink-0 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleView(document)}
                   disabled={loadingUrl === document.id}
-                  className="flex-1 sm:flex-none gap-1 text-xs sm:text-sm"
+                  className="flex-1 sm:flex-none gap-2 text-xs"
                 >
                   <Eye className="h-3 w-3" />
-                  <span className="hidden xs:inline">Ver</span>
+                  Ver
                 </Button>
                 
                 <Button
@@ -165,12 +163,10 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                   size="sm"
                   onClick={() => handleDownload(document)}
                   disabled={loadingUrl === document.id}
-                  className="flex-1 sm:flex-none gap-1 text-xs sm:text-sm"
+                  className="flex-1 sm:flex-none gap-2 text-xs"
                 >
                   <Download className="h-3 w-3" />
-                  <span className="hidden xs:inline">
-                    {loadingUrl === document.id ? '...' : 'Baixar'}
-                  </span>
+                  {loadingUrl === document.id ? '...' : 'Baixar'}
                 </Button>
 
                 <AlertDialog>
@@ -178,9 +174,10 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-600 hover:text-red-700 flex-shrink-0 p-2 sm:px-3"
+                      className="text-red-600 hover:text-red-700 flex-1 sm:flex-none gap-2 text-xs"
                     >
                       <Trash2 className="h-3 w-3" />
+                      Excluir
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
