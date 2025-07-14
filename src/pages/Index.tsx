@@ -8,6 +8,7 @@ import QuickActions from "@/components/QuickActions";
 import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
 import MedicationReminders from "@/components/MedicationReminders";
+import MonthlyCalendar from "@/components/calendar/MonthlyCalendar";
 import { DocumentList } from "@/components/health/DocumentList";
 import { DocumentUpload } from "@/components/health/DocumentUpload";
 import { useDocuments } from "@/hooks/useDocuments";
@@ -143,30 +144,6 @@ const Index = () => {
     });
   };
 
-  const handleDayClick = (day: number, hasAppointment: boolean, hasMedication: boolean) => {
-    if (hasAppointment) {
-      requireAuth(() => {
-        toast({
-          title: "Consulta agendada",
-          description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
-        });
-        navigate("/agenda-paciente");
-      }, "ver detalhes da consulta");
-    } else if (hasMedication) {
-      toast({
-        title: "Lembrete de medicamento",
-        description: `Você tem medicamentos programados para o dia ${day}`,
-      });
-    } else if (day > 0 && day <= 31) {
-      requireAuth(() => {
-        toast({
-          title: "Agendar consulta",
-          description: `Gostaria de agendar uma consulta para o dia ${day}?`,
-        });
-        navigate("/agendamento");
-      }, "agendar consulta");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -268,76 +245,7 @@ const Index = () => {
                 <UpcomingAppointments />
                 
                 {/* Calendar Overview */}
-                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="pb-3 px-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Agenda do Mês
-                      </CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
-                        className="text-blue-600 hover:text-blue-700"
-                        title="Ver agenda completa"
-                      >
-                        Ver detalhes
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 sm:px-6">
-                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">
-                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                        <div key={day} className="p-1 sm:p-2 font-medium text-gray-600 text-xs sm:text-sm">
-                          {day}
-                        </div>
-                      ))}
-                      {Array.from({ length: 35 }, (_, i) => {
-                        const day = i - 6;
-                        const hasAppointment = [5, 12, 18, 25].includes(day);
-                        const hasMedication = [3, 8, 15, 22, 29].includes(day);
-                        
-                        return (
-                          <div
-                            key={i}
-                            className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
-                              day < 1 || day > 31 
-                                ? 'text-gray-300' 
-                                : hasAppointment 
-                                  ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
-                                  : hasMedication
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    : 'hover:bg-gray-100'
-                            }`}
-                            onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
-                            title={
-                              hasAppointment 
-                                ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
-                                : hasMedication 
-                                  ? `Lembrete de medicamento para o dia ${day}`
-                                  : day > 0 && day <= 31 
-                                    ? 'Clique para agendar uma consulta'
-                                    : ''
-                            }
-                          >
-                            {day > 0 && day <= 31 ? day : ''}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                        <span>Consultas</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-green-400 rounded"></div>
-                        <span>Medicamentos</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <MonthlyCalendar />
               </div>
 
               {/* Right Column - Health & Reminders */}
