@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Pill, Clock, FileText, RotateCcw, AlertCircle, Plus } from "lucide-react";
+import { Pill, Clock, FileText, RotateCcw, AlertCircle, Plus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +14,10 @@ import PrescriptionHistoryDialog from "@/components/medication/PrescriptionHisto
 import MedicationReminders from "@/components/MedicationReminders";
 import { AddMedicationDialog } from "@/components/medication/AddMedicationDialog";
 import { CreateRenewalRequest } from "@/types/prescription";
+import { useNavigate } from "react-router-dom";
 
 const GestaoMedicamentos = () => {
+  const navigate = useNavigate();
   const {
     prescriptions,
     activePrescriptions,
@@ -43,6 +46,10 @@ const GestaoMedicamentos = () => {
       setSelectedPrescriptionForRenewal(null);
     }
     return success;
+  };
+
+  const handleGoBack = () => {
+    navigate(-1);
   };
 
   if (prescriptionLoading) {
@@ -74,9 +81,20 @@ const GestaoMedicamentos = () => {
     <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-blue-900 mb-2">
-          Gestão de Medicamentos
-        </h1>
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleGoBack}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+          <h1 className="text-3xl font-bold text-blue-900">
+            Gestão de Medicamentos
+          </h1>
+        </div>
         <p className="text-gray-600">
           Gerencie suas prescrições, lembretes e solicitações de renovação
         </p>
