@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Search, Filter, AlertCircle, CheckCircle, Clock, FileText } from "lucide-react";
 import PrescriptionCard from "./PrescriptionCard";
 import PrescriptionHistoryDialog from "./PrescriptionHistoryDialog";
 import { usePrescriptionManagement } from "@/hooks/usePrescriptionManagement";
