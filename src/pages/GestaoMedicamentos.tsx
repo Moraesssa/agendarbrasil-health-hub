@@ -1,8 +1,10 @@
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pill, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MedicationReminders from "@/components/MedicationReminders";
+import PrescriptionsList from "@/components/medication/PrescriptionsList";
 
 const GestaoMedicamentos = () => {
   const navigate = useNavigate();
@@ -30,9 +32,50 @@ const GestaoMedicamentos = () => {
           </h1>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
-          <MedicationReminders />
+        {/* Main Content with Tabs */}
+        <div className="max-w-6xl mx-auto">
+          <Tabs defaultValue="meus-medicamentos" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm">
+              <TabsTrigger 
+                value="meus-medicamentos" 
+                className="flex items-center gap-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+              >
+                <Pill className="h-4 w-4" />
+                Meus Medicamentos
+              </TabsTrigger>
+              <TabsTrigger 
+                value="prescricoes" 
+                className="flex items-center gap-2 data-[state=active]:bg-green-500 data-[state=active]:text-white"
+              >
+                <FileText className="h-4 w-4" />
+                Prescrições Médicas
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="meus-medicamentos" className="space-y-6">
+              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 sm:p-6">
+                <h2 className="text-xl font-semibold text-blue-900 mb-4">
+                  Lembretes de Medicamentos
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Gerencie seus medicamentos pessoais, horários e lembretes.
+                </p>
+                <MedicationReminders />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="prescricoes" className="space-y-6">
+              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 sm:p-6">
+                <h2 className="text-xl font-semibold text-green-900 mb-4">
+                  Prescrições Médicas
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Visualize suas receitas médicas, renove prescrições e acompanhe o histórico.
+                </p>
+                <PrescriptionsList />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
