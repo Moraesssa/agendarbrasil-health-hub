@@ -31,8 +31,8 @@ import GerenciarFamilia from "./pages/GerenciarFamilia";
 import GerenciarConexoes from "./pages/GerenciarConexoes";
 import Financeiro from "./pages/Financeiro";
 import NotFound from "./pages/NotFound";
-import ErrorBoundary from "./components/ErrorBoundary";
-import AuthRedirectController from "./components/AuthRedirectController";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AuthRedirectController } from "./components/AuthRedirectController";
 
 const queryClient = new QueryClient();
 
@@ -46,33 +46,34 @@ const App = () => (
           <AuthProvider>
             <NotificationProvider>
               <MedicationProvider>
-                <AuthRedirectController />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/cadastrar" element={<Cadastrar />} />
-                  <Route path="/tipo-usuario" element={<UserTypeSelection />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
-                  <Route path="/cadastro-medico" element={<CadastroMedico />} />
-                  <Route path="/perfil" element={<Perfil />} />
-                  <Route path="/perfil-medico" element={<PerfilMedico />} />
-                  <Route path="/agendamento" element={<Agendamento />} />
-                  <Route path="/agenda-paciente" element={<AgendaPaciente />} />
-                  <Route path="/agenda-medico" element={<AgendaMedico />} />
-                  <Route path="/dashboard-medico" element={<DashboardMedico />} />
-                  <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
-                  <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
-                  <Route path="/gerenciar-locais" element={<GerenciarLocais />} />
-                  <Route path="/pacientes-medico" element={<PacientesMedico />} />
-                  <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                  <Route path="/historico" element={<Historico />} />
-                  <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
-                  <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
-                  <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
-                  <Route path="/financeiro" element={<Financeiro />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <AuthRedirectController>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/cadastrar" element={<Cadastrar />} />
+                    <Route path="/user-type" element={<UserTypeSelection />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
+                    <Route path="/cadastro-medico" element={<CadastroMedico />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/perfil-medico" element={<PerfilMedico />} />
+                    <Route path="/agendamento" element={<Agendamento />} />
+                    <Route path="/agenda-paciente" element={<AgendaPaciente />} />
+                    <Route path="/agenda-medico" element={<AgendaMedico />} />
+                    <Route path="/dashboard-medico" element={<DashboardMedico />} />
+                    <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
+                    <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
+                    <Route path="/gerenciar-locais" element={<GerenciarLocais />} />
+                    <Route path="/pacientes-medico" element={<PacientesMedico />} />
+                    <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                    <Route path="/historico" element={<Historico />} />
+                    <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
+                    <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
+                    <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
+                    <Route path="/financeiro" element={<Financeiro />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AuthRedirectController>
               </MedicationProvider>
             </NotificationProvider>
           </AuthProvider>
