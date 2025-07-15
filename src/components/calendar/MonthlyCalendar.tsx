@@ -1,4 +1,3 @@
-
 import { ChevronLeft, ChevronRight, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { DayActionDropdown } from './DayActionDropdown';
 import { AddMedicationDialog } from '@/components/medication/AddMedicationDialog';
-import { useMedicationManagement } from '@/hooks/useMedicationManagement';
+import { useMedicationContext } from '@/contexts/MedicationContext';
 
 const MonthlyCalendar = () => {
   const navigate = useNavigate();
@@ -30,7 +29,7 @@ const MonthlyCalendar = () => {
   const {
     createMedication,
     isSubmitting: medicationSubmitting
-  } = useMedicationManagement();
+  } = useMedicationContext();
 
   const handleDayClick = (day: any) => {
     if (!day.isCurrentMonth) return;
