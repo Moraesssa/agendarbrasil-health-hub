@@ -93,16 +93,16 @@ const LocationMapModal = ({
   const geocodeAddress = async (address: string) => {
     setIsLoadingCoordinates(true);
     try {
-      // Using a public geocoding service as fallback
+      // Using OpenStreetMap Nominatim for geocoding (free service)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=br`
       );
       const data = await response.json();
       
       if (data && data.length > 0) {
         const lat = parseFloat(data[0].lat);
         const lon = parseFloat(data[0].lon);
-        setCoordinates([lon, lat]); // Mapbox uses [longitude, latitude]
+        setCoordinates([lon, lat]); // [longitude, latitude]
       } else {
         // Default to Brazil center if geocoding fails
         setCoordinates([-47.8825, -15.7942]);

@@ -1,7 +1,35 @@
 
-import React, { useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default markers in Leaflet with Webpack/Vite
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom icons for different markers
+const locationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const userIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 interface InteractiveMapProps {
   coordinates: [number, number];
@@ -10,136 +38,138 @@ interface InteractiveMapProps {
   address: string;
 }
 
+// Component to handle map fitting bounds
+const MapController = ({ 
+  coordinates, 
+  userLocation 
+}: { 
+  coordinates: [number, number]; 
+  userLocation?: [number, number] | null; 
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (userLocation) {
+      // Convert coordinates to Leaflet format [lat, lng]
+      const locationLatLng: [number, number] = [coordinates[1], coordinates[0]];
+      const userLatLng: [number, number] = [userLocation[1], userLocation[0]];
+      
+      // Create bounds that include both points
+      const bounds = L.latLngBounds([locationLatLng, userLatLng]);
+      map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
+    } else {
+      // Center on location only
+      const locationLatLng: [number, number] = [coordinates[1], coordinates[0]];
+      map.setView(locationLatLng, 15);
+    }
+  }, [map, coordinates, userLocation]);
+
+  return null;
+};
+
+// Component to add route line between user and destination
+const RouteLine = ({ 
+  userLocation, 
+  coordinates 
+}: { 
+  userLocation: [number, number]; 
+  coordinates: [number, number]; 
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    // Convert to Leaflet format [lat, lng]
+    const userLatLng: [number, number] = [userLocation[1], userLocation[0]];
+    const locationLatLng: [number, number] = [coordinates[1], coordinates[0]];
+
+    // Create polyline
+    const routeLine = L.polyline([userLatLng, locationLatLng], {
+      color: '#3B82F6',
+      weight: 3,
+      opacity: 0.6,
+      dashArray: '10, 10'
+    }).addTo(map);
+
+    return () => {
+      map.removeLayer(routeLine);
+    };
+  }, [map, userLocation, coordinates]);
+
+  return null;
+};
+
 const InteractiveMap = ({ 
   coordinates, 
   userLocation, 
   locationName, 
   address 
 }: InteractiveMapProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!mapContainer.current) return;
+  // Convert coordinates to Leaflet format [lat, lng]
+  const locationLatLng: [number, number] = [coordinates[1], coordinates[0]];
+  const userLatLng: [number, number] | undefined = userLocation 
+    ? [userLocation[1], userLocation[0]] 
+    : undefined;
 
-    // Set Mapbox access token from environment variable
-    // In production, this should be set via Supabase Edge Function secrets
-    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoidGVzdCIsImEiOiJjbGthYWkwOWcwNWxhM3FzOWtoanRzM2gxIn0.J5f0LX0g8FE1gZWOOgE5jQ';
-
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: coordinates,
-      zoom: 15,
-      pitch: 0,
-      bearing: 0
-    });
-
-    // Add navigation controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      'top-right'
-    );
-
-    // Add fullscreen control
-    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-
-    // Create custom marker for the location
-    const locationMarker = new mapboxgl.Marker({
-      color: '#3B82F6', // Blue color
-      scale: 1.2
-    })
-      .setLngLat(coordinates)
-      .setPopup(
-        new mapboxgl.Popup({ offset: 25 }).setHTML(
-          `<div class="p-2">
-            <h3 class="font-semibold text-sm mb-1">${locationName}</h3>
-            <p class="text-xs text-gray-600">${address}</p>
-          </div>`
-        )
-      )
-      .addTo(map.current);
-
-    // Add user location marker if available
-    if (userLocation) {
-      const userMarker = new mapboxgl.Marker({
-        color: '#10B981', // Green color
-        scale: 0.8
-      })
-        .setLngLat(userLocation)
-        .setPopup(
-          new mapboxgl.Popup({ offset: 25 }).setHTML(
-            `<div class="p-2">
-              <h3 class="font-semibold text-sm">Sua Localização</h3>
-            </div>`
-          )
-        )
-        .addTo(map.current);
-
-      // Add route line between user and destination
-      map.current.on('load', () => {
-        if (map.current) {
-          map.current.addSource('route', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'LineString',
-                coordinates: [userLocation, coordinates]
-              }
-            }
-          });
-
-          map.current.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#3B82F6',
-              'line-width': 3,
-              'line-opacity': 0.6,
-              'line-dasharray': [2, 4]
-            }
-          });
-
-          // Fit map to show both markers
-          const bounds = new mapboxgl.LngLatBounds()
-            .extend(coordinates)
-            .extend(userLocation);
-          
-          map.current.fitBounds(bounds, {
-            padding: 50,
-            maxZoom: 16
-          });
-        }
-      });
-    }
-
-    // Show popup on load
-    setTimeout(() => {
-      locationMarker.getPopup().addTo(map.current!);
-    }, 500);
-
-    // Cleanup
-    return () => {
-      map.current?.remove();
-    };
-  }, [coordinates, userLocation, locationName, address]);
+  const handleMapLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mapContainer} className="absolute inset-0" />
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-50 flex items-center justify-center z-10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando mapa...</p>
+          </div>
+        </div>
+      )}
+      
+      <MapContainer
+        center={locationLatLng}
+        zoom={15}
+        className="absolute inset-0 z-0"
+        whenReady={handleMapLoad}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {/* Location marker */}
+        <Marker position={locationLatLng} icon={locationIcon}>
+          <Popup>
+            <div className="p-2">
+              <h3 className="font-semibold text-sm mb-1">{locationName}</h3>
+              <p className="text-xs text-gray-600">{address}</p>
+            </div>
+          </Popup>
+        </Marker>
+
+        {/* User location marker */}
+        {userLatLng && (
+          <Marker position={userLatLng} icon={userIcon}>
+            <Popup>
+              <div className="p-2">
+                <h3 className="font-semibold text-sm">Sua Localização</h3>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
+        {/* Route line */}
+        {userLatLng && (
+          <RouteLine userLocation={userLocation!} coordinates={coordinates} />
+        )}
+
+        {/* Map controller for bounds fitting */}
+        <MapController coordinates={coordinates} userLocation={userLocation} />
+      </MapContainer>
       
       {/* Map attribution overlay */}
-      <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded px-2 py-1 text-xs text-gray-600">
+      <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded px-2 py-1 text-xs text-gray-600 z-10">
         📍 {locationName}
       </div>
     </div>
