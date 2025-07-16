@@ -71,7 +71,7 @@ const NavigationOptions = ({ address, coordinates }: NavigationOptionsProps) => 
     {
       name: "Google Maps",
       icon: MapPin,
-      description: "Navegação completa com trânsito",
+      description: "Navegação com trânsito",
       color: "bg-blue-500 hover:bg-blue-600",
       action: openGoogleMaps
     },
@@ -107,29 +107,29 @@ const NavigationOptions = ({ address, coordinates }: NavigationOptionsProps) => 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {navigationOptions.map((option) => (
             <Button
               key={option.name}
               variant="outline"
-              className="h-auto p-3 flex flex-col items-start text-left hover:shadow-md transition-all"
+              className="h-auto p-4 flex flex-col items-start text-left hover:shadow-md transition-all min-h-[5rem]"
               onClick={option.action}
             >
-              <div className="flex items-center gap-2 w-full mb-1">
-                <div className={`p-1.5 rounded ${option.color} text-white`}>
+              <div className="flex items-center gap-3 w-full mb-2">
+                <div className={`p-2 rounded-lg ${option.color} text-white flex-shrink-0`}>
                   <option.icon className="h-4 w-4" />
                 </div>
-                <span className="font-medium text-sm">{option.name}</span>
-                <ExternalLink className="h-3 w-3 ml-auto text-gray-400" />
+                <span className="font-medium text-sm flex-grow">{option.name}</span>
+                <ExternalLink className="h-3 w-3 text-gray-400 flex-shrink-0" />
               </div>
-              <span className="text-xs text-gray-600 text-left">
+              <span className="text-sm text-gray-600 text-left leading-relaxed break-words w-full">
                 {option.description}
               </span>
             </Button>
           ))}
         </div>
         
-        <div className="text-xs text-gray-500 text-center pt-2 border-t">
+        <div className="text-xs text-gray-500 text-center pt-3 border-t">
           Clique em qualquer opção para abrir o app de navegação
         </div>
       </CardContent>
