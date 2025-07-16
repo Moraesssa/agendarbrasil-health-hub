@@ -116,15 +116,6 @@ const UpcomingAppointments = () => {
     }
   };
 
-  const handleGetDirections = (appointment: AppointmentWithDoctor) => {
-    if (appointment.tipo_consulta !== 'Online') {
-      toast({
-        title: "Abrindo mapa",
-        description: `Direções para ${appointment.local_consulta}`,
-      });
-    }
-  };
-
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-3">
@@ -165,7 +156,7 @@ const UpcomingAppointments = () => {
               appointment={appointment}
               onConfirm={handleConfirmAppointment}
               onViewDetails={handleViewDetails}
-              onGetDirections={handleGetDirections}
+              onGetDirections={() => {}} // Keep for compatibility, but it's handled internally now
             />
           ))
         )}
