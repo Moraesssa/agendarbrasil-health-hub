@@ -1,9 +1,8 @@
-
 import { Pill, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useMedicationContext } from "@/contexts/MedicationContext";
+import { useMedicationManagement } from "@/hooks/useMedicationManagement";
 import { AddMedicationDialog } from "@/components/medication/AddMedicationDialog";
 import { EditMedicationDialog } from "@/components/medication/EditMedicationDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +17,7 @@ const MedicationReminders = () => {
     editMedication,
     markDoseAsTaken,
     deleteMedication
-  } = useMedicationContext();
+  } = useMedicationManagement();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -184,6 +183,7 @@ const MedicationReminders = () => {
               );
             })}
 
+            {/* Add Medication Button */}
             <AddMedicationDialog onAdd={createMedication} isLoading={isSubmitting} />
           </>
         )}

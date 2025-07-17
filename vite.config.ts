@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Production optimizations
-    target: 'es2018', // Updated from es2015 to support modern features
+    target: 'es2015',
     minify: mode === 'production' ? 'terser' : false,
     sourcemap: mode === 'development',
     rollupOptions: {
@@ -41,8 +41,6 @@ export default defineConfig(({ mode }) => ({
           'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-toast', '@radix-ui/react-tooltip'],
           'query-vendor': ['@tanstack/react-query'],
           'supabase-vendor': ['@supabase/supabase-js'],
-          'leaflet-vendor': ['leaflet', 'react-leaflet'], // Added Leaflet chunk
-          'animation-vendor': ['animejs'], // Added anime.js chunk
         },
       },
     },
@@ -58,17 +56,6 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       '@supabase/supabase-js',
       'lucide-react',
-      'leaflet', // Added Leaflet to pre-bundling
-      'react-leaflet',
-      'animejs', // Added anime.js to pre-bundling
     ],
   },
-  // CSS handling for Leaflet
-  css: {
-    preprocessorOptions: {
-      css: {
-        charset: false
-      }
-    }
-  }
 }));

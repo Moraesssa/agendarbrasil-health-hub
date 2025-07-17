@@ -1,231 +1,229 @@
-
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Plus, X, Pill } from "lucide-react";
 import { CreateMedicationData } from "@/types/medication";
-import { useToast } from "@/hooks/use-toast";
 
 interface AddMedicationDialogProps {
-  onAdd: (data: CreateMedicationData) => Promise<boolean>;
+  onAdd: (medication: CreateMedicationData) => Promise<boolean>;
   isLoading: boolean;
-  onClose?: () => void;
 }
 
-export const AddMedicationDialog = ({ onAdd, isLoading, onClose }: AddMedicationDialogProps) => {
-  const [open, setOpen] = useState(!!onClose); // Se onClose existe, inicia aberto
-  const [formData, setFormData] = useState({
+const frequencyOptions = [
+  { value: "daily", label: "Diário" },
+  { value: "twice_daily", label: "2x ao dia" },
+  { value: "three_times_daily", label: "3x ao dia" },
+  { value: "weekly", label: "Semanal" },
+  { value: "as_needed", label: "Conforme necessário" }
+];
+
+export const AddMedicationDialog = ({ onAdd, isLoading }: AddMedicationDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState<CreateMedicationData>({
     medication_name: "",
     dosage: "",
     frequency: "",
     instructions: "",
-    times: [""],
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: ""
+    times: [],
+    start_date: new Date().toISOString().split('T')[0]
   });
-  const { toast } = useToast();
+  const [newTime, setNewTime] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.medication_name || !formData.dosage || !formData.frequency) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha nome, dosagem e frequência do medicamento",
-        variant: "destructive"
-      });
+    if (!formData.medication_name || !formData.dosage || !formData.frequency || formData.times.length === 0) {
       return;
     }
 
-    // Filtrar horários vazios
-    const filteredTimes = formData.times.filter(time => time.trim() !== "");
-    
-    const success = await onAdd({
-      ...formData,
-      times: filteredTimes,
-      end_date: formData.end_date || undefined
-    });
-
+    const success = await onAdd(formData);
     if (success) {
       setFormData({
         medication_name: "",
         dosage: "",
         frequency: "",
         instructions: "",
-        times: [""],
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: ""
+        times: [],
+        start_date: new Date().toISOString().split('T')[0]
       });
+      setNewTime("");
       setOpen(false);
-      if (onClose) onClose();
     }
   };
 
-  const addTimeSlot = () => {
-    setFormData(prev => ({
-      ...prev,
-      times: [...prev.times, ""]
-    }));
-  };
-
-  const removeTimeSlot = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      times: prev.times.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateTimeSlot = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      times: prev.times.map((time, i) => i === index ? value : time)
-    }));
-  };
-
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-    if (!newOpen && onClose) {
-      onClose();
+  const addTime = () => {
+    if (newTime && !formData.times.includes(newTime)) {
+      setFormData(prev => ({
+        ...prev,
+        times: [...prev.times, newTime].sort()
+      }));
+      setNewTime("");
     }
+  };
+
+  const removeTime = (timeToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      times: prev.times.filter(time => time !== timeToRemove)
+    }));
+  };
+
+  const addPredefinedTimes = (frequency: string) => {
+    let times: string[] = [];
+    
+    switch (frequency) {
+      case "daily":
+        times = ["08:00"];
+        break;
+      case "twice_daily":
+        times = ["08:00", "20:00"];
+        break;
+      case "three_times_daily":
+        times = ["08:00", "14:00", "20:00"];
+        break;
+      default:
+        times = [];
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      frequency,
+      times
+    }));
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      {!onClose && (
-        <DialogTrigger asChild>
-          <Button className="bg-green-500 hover:bg-green-600">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Medicamento
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="outline" 
+          className="w-full border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 h-10 sm:h-11 text-sm"
+        >
+          <Pill className="h-4 w-4 mr-2" />
+          Adicionar Medicamento
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Medicamento</DialogTitle>
-          <DialogDescription>
-            Configure um novo lembrete de medicamento
-          </DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Pill className="h-5 w-5 text-blue-600" />
+            Adicionar Medicamento
+          </DialogTitle>
         </DialogHeader>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="medication_name">Nome do Medicamento *</Label>
             <Input
               id="medication_name"
               value={formData.medication_name}
               onChange={(e) => setFormData(prev => ({ ...prev, medication_name: e.target.value }))}
-              placeholder="Ex: Paracetamol"
+              placeholder="Ex: Losartana 50mg"
               required
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="dosage">Dosagem *</Label>
             <Input
               id="dosage"
               value={formData.dosage}
               onChange={(e) => setFormData(prev => ({ ...prev, dosage: e.target.value }))}
-              placeholder="Ex: 500mg"
+              placeholder="Ex: 1 comprimido"
               required
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="frequency">Frequência *</Label>
-            <Input
-              id="frequency"
-              value={formData.frequency}
-              onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-              placeholder="Ex: A cada 8 horas"
+            <Select 
+              value={formData.frequency} 
+              onValueChange={(value) => addPredefinedTimes(value)}
               required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a frequência" />
+              </SelectTrigger>
+              <SelectContent>
+                {frequencyOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Horários *</Label>
+            <div className="flex gap-2">
+              <Input
+                type="time"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="button" onClick={addTime} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {formData.times.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {formData.times.map(time => (
+                  <Badge key={time} variant="secondary" className="flex items-center gap-1">
+                    {time}
+                    <X 
+                      className="h-3 w-3 cursor-pointer" 
+                      onClick={() => removeTime(time)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="start_date">Data de Início</Label>
+            <Input
+              id="start_date"
+              type="date"
+              value={formData.start_date}
+              onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
             />
           </div>
 
-          <div>
-            <Label>Horários</Label>
-            {formData.times.map((time, index) => (
-              <div key={index} className="flex gap-2 mt-2">
-                <Input
-                  type="time"
-                  value={time}
-                  onChange={(e) => updateTimeSlot(index, e.target.value)}
-                  className="flex-1"
-                />
-                {formData.times.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => removeTimeSlot(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addTimeSlot}
-              className="mt-2"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Horário
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="end_date">Data de Fim (opcional)</Label>
+            <Input
+              id="end_date"
+              type="date"
+              value={formData.end_date || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value || undefined }))}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="start_date">Data de Início</Label>
-              <Input
-                id="start_date"
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="end_date">Data de Fim (opcional)</Label>
-              <Input
-                id="end_date"
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="instructions">Instruções (opcional)</Label>
             <Textarea
               id="instructions"
               value={formData.instructions}
               onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
-              placeholder="Instruções especiais para o medicamento..."
+              placeholder="Ex: Tomar com o estômago vazio"
               rows={3}
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => handleOpenChange(false)}
-            >
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Salvando..." : "Salvar"}
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? "Adicionando..." : "Adicionar"}
             </Button>
           </div>
         </form>

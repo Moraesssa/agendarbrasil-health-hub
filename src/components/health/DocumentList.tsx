@@ -126,21 +126,19 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
           documents.map((document) => (
             <div
               key={document.id}
-              className="p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-3"
+              className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors space-y-3"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
-                  <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <FileText className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground text-sm leading-snug truncate mb-1">
+                  <p className="font-medium text-foreground text-sm truncate mb-1">
                     {document.document_name}
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                    <Calendar className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">
-                      {format(new Date(document.uploaded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </span>
+                    <Calendar className="h-3 w-3" />
+                    {format(new Date(document.uploaded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </div>
                   <Badge className={`text-xs w-fit ${getDocumentTypeColor(document.document_type)}`}>
                     {getDocumentTypeLabel(document.document_type)}
@@ -148,17 +146,16 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                 </div>
               </div>
               
-              {/* Mobile-first button layout */}
-              <div className="flex flex-col xs:flex-row gap-1.5 xs:gap-2 pt-2 border-t">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleView(document)}
                   disabled={loadingUrl === document.id}
-                  className="h-8 px-2 xs:px-3 text-xs gap-1.5 min-w-0"
+                  className="flex-1 sm:flex-none gap-2 text-xs"
                 >
-                  <Eye className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden xs:inline">Ver</span>
+                  <Eye className="h-3 w-3" />
+                  Ver
                 </Button>
                 
                 <Button
@@ -166,12 +163,10 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                   size="sm"
                   onClick={() => handleDownload(document)}
                   disabled={loadingUrl === document.id}
-                  className="h-8 px-2 xs:px-3 text-xs gap-1.5 min-w-0"
+                  className="flex-1 sm:flex-none gap-2 text-xs"
                 >
-                  <Download className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden xs:inline">
-                    {loadingUrl === document.id ? '...' : 'Baixar'}
-                  </span>
+                  <Download className="h-3 w-3" />
+                  {loadingUrl === document.id ? '...' : 'Baixar'}
                 </Button>
 
                 <AlertDialog>
@@ -179,25 +174,25 @@ export const DocumentList = ({ documents, loading, onDelete, onGetUrl }: Documen
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="h-8 px-2 xs:px-3 text-xs gap-1.5 min-w-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 flex-1 sm:flex-none gap-2 text-xs"
                     >
-                      <Trash2 className="h-3 w-3 flex-shrink-0" />
-                      <span className="hidden xs:inline">Excluir</span>
+                      <Trash2 className="h-3 w-3" />
+                      Excluir
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="mx-4 max-w-sm sm:max-w-md">
+                  <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                      <AlertDialogDescription className="text-sm">
+                      <AlertDialogDescription>
                         Tem certeza de que deseja excluir o documento "{document.document_name}"? 
                         Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col xs:flex-row gap-2">
-                      <AlertDialogCancel className="w-full xs:w-auto">Cancelar</AlertDialogCancel>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => onDelete(document.id)}
-                        className="w-full xs:w-auto bg-red-600 hover:bg-red-700"
+                        className="bg-red-600 hover:bg-red-700"
                       >
                         Excluir
                       </AlertDialogAction>
