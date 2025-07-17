@@ -42,6 +42,7 @@ export default defineConfig(({ mode }) => ({
           'query-vendor': ['@tanstack/react-query'],
           'supabase-vendor': ['@supabase/supabase-js'],
           'leaflet-vendor': ['leaflet', 'react-leaflet'], // Added Leaflet chunk
+          'animation-vendor': ['animejs'], // Added anime.js chunk
         },
       },
     },
@@ -59,6 +60,7 @@ export default defineConfig(({ mode }) => ({
       'lucide-react',
       'leaflet', // Added Leaflet to pre-bundling
       'react-leaflet',
+      'animejs', // Added anime.js to pre-bundling
     ],
   },
   // CSS handling for Leaflet
