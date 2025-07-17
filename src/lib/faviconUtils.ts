@@ -1,4 +1,4 @@
-import { animate, remove, AnimeInstance } from 'animejs';
+import { animate, AnimeInstance } from 'animejs';
 
 // Interface para definir a forma do objeto de animação
 interface AnimationState {
@@ -25,28 +25,22 @@ export class FaviconAnimator {
   }
 
   private drawECGHeart(progress: number = 1) {
-    // Cores do tema
-    const primaryColor = '#2563eb'; // blue-600
-    const heartColor = '#ef4444'; // red-500
-
-    // Criar gradiente
+    const primaryColor = '#2563eb';
+    const heartColor = '#ef4444';
     const gradient = this.ctx.createLinearGradient(0, 0, this.size, this.size);
     gradient.addColorStop(0, primaryColor);
     gradient.addColorStop(1, heartColor);
 
-    // Configurações do traço
     this.ctx.strokeStyle = gradient;
     this.ctx.lineWidth = 2;
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
 
-    // Pontos da linha ECG que formam um coração
     const points = [
       [4, 16], [6, 16], [8, 12], [10, 20], [12, 8], [14, 18], [16, 16],
       [18, 12], [20, 20], [22, 8], [24, 18], [26, 16], [28, 16]
     ];
 
-    // Desenha a linha de ECG com base no progresso
     this.ctx.beginPath();
     const totalPoints = points.length;
     const currentPoints = Math.floor(totalPoints * progress);
@@ -59,7 +53,6 @@ export class FaviconAnimator {
       this.ctx.stroke();
     }
 
-    // Se a animação da linha estiver completa, desenha o coração de fundo
     if (progress >= 1) {
       this.ctx.fillStyle = gradient;
       this.ctx.globalAlpha = 0.3;
@@ -107,32 +100,26 @@ export class FaviconAnimator {
     }
 
     this.isAnimating = true;
-
     const animationState: AnimationState = { progress: 0, scale: 1 };
 
-    this.animation = animate({ // CORREÇÃO: Chamada direta da função 'animate'
+    this.animation = animate({
       targets: animationState,
       loop: true,
       easing: 'easeInOutQuad',
-      
       keyframes: [
-        { progress: 1, scale: 1, duration: 2000, },
-        { scale: 1.1, duration: 300, },
-        { scale: 1, duration: 300, },
-        { progress: 1, scale: 1, duration: 1500, },
-        { progress: 0, duration: 0, }
+        { progress: 1, scale: 1, duration: 2000 },
+        { scale: 1.1, duration: 300 },
+        { scale: 1, duration: 300 },
+        { progress: 1, scale: 1, duration: 1500 },
+        { progress: 0, duration: 0 }
       ],
-      
       update: () => {
         this.ctx.clearRect(0, 0, this.size, this.size);
         this.ctx.save();
-        
         this.ctx.translate(this.size / 2, this.size / 2);
         this.ctx.scale(animationState.scale, animationState.scale);
         this.ctx.translate(-this.size / 2, -this.size / 2);
-
         this.drawECGHeart(animationState.progress);
-        
         this.ctx.restore();
         this.updateFavicon();
       },
@@ -142,8 +129,8 @@ export class FaviconAnimator {
   public stopAnimation() {
     this.isAnimating = false;
     if (this.animation) {
-      remove(this.animation.targets); // CORREÇÃO: Chamada direta da função 'remove'
-      this.animation = null;
+      // **A CORREÇÃO FINAL:** Usar .pause() em vez de 'remove'
+      this.animation.pause();
     }
     this.setStaticFavicon();
   }
@@ -161,13 +148,10 @@ let faviconAnimator: FaviconAnimator | null = null;
 
 export const initializeFavicon = () => {
   if (typeof window === 'undefined') return;
-
   if (!faviconAnimator) {
     faviconAnimator = new FaviconAnimator();
   }
-
   const shouldAnimate = localStorage.getItem('favicon-animation') !== 'false';
-
   if (shouldAnimate) {
     faviconAnimator.startAnimation();
   } else {
@@ -179,17 +163,13 @@ export const toggleFaviconAnimation = (): boolean => {
   if (!faviconAnimator) {
     faviconAnimator = new FaviconAnimator();
   }
-
   const currentSetting = localStorage.getItem('favicon-animation') !== 'false';
   const newSetting = !currentSetting;
-
   localStorage.setItem('favicon-animation', newSetting.toString());
-
   if (newSetting) {
     faviconAnimator.startAnimation();
   } else {
     faviconAnimator.stopAnimation();
   }
-
   return newSetting;
 };
