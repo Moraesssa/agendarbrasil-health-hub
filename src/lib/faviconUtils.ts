@@ -1,6 +1,7 @@
 
 
-import anime from 'animejs';
+
+import * as anime from 'animejs';
 
 export class FaviconAnimator {
   private canvas: HTMLCanvasElement;
@@ -207,4 +208,3 @@ export const toggleFaviconAnimation = () => {
   
   return newSetting;
 };
-
