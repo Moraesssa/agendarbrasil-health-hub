@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { EditProfileDialog } from "./EditProfileDialog";
 import { NotificationBadge } from "./NotificationBadge";
 import { FaviconController } from "./FaviconController";
 import {
@@ -20,7 +19,6 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -41,7 +39,11 @@ const Header = () => {
 
   const handleProfileClick = () => {
     if (user) {
-      setIsProfileOpen(true);
+      if (user.user_type === 'medico') {
+        navigate("/perfil-medico");
+      } else {
+        navigate("/perfil");
+      }
     } else {
       navigate("/login");
     }
@@ -115,12 +117,6 @@ const Header = () => {
           </div>
         </div>
       </div>
-
-      {/* Edit Profile Dialog */}
-      <EditProfileDialog 
-        isOpen={isProfileOpen} 
-        onClose={() => setIsProfileOpen(false)} 
-      />
     </header>
   );
 };
