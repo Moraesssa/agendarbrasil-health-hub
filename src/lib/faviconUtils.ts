@@ -1,10 +1,11 @@
 
-import anime from 'animejs';
+
+import { anime } from 'animejs';
 
 export class FaviconAnimator {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private animation: anime.AnimeInstance | null = null;
+  private animation: any | null = null;
   private isAnimating = false;
   private size = 32;
 
@@ -117,7 +118,7 @@ export class FaviconAnimator {
         progress: 1,
         duration: 2000,
         easing: 'easeInOutQuad',
-        update: (anim) => {
+        update: (anim: any) => {
           const progress = (anim.animatables[0].target as any).progress;
           this.drawECGHeart(progress);
           this.updateFavicon();
@@ -129,7 +130,7 @@ export class FaviconAnimator {
             scale: [1, 1.1, 1],
             duration: 600,
             easing: 'easeInOutQuad',
-            update: (anim) => {
+            update: (anim: any) => {
               const scale = (anim.animatables[0].target as any).scale;
               this.ctx.save();
               this.ctx.scale(scale, scale);
@@ -206,3 +207,4 @@ export const toggleFaviconAnimation = () => {
   
   return newSetting;
 };
+
