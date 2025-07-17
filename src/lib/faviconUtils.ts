@@ -118,7 +118,7 @@ export class FaviconAnimator {
         duration: 2000,
         easing: 'easeInOutQuad',
         update: (anim) => {
-          const progress = anim.animatables[0].target.progress;
+          const progress = (anim.animatables[0].target as any).progress;
           this.drawECGHeart(progress);
           this.updateFavicon();
         },
@@ -130,7 +130,7 @@ export class FaviconAnimator {
             duration: 600,
             easing: 'easeInOutQuad',
             update: (anim) => {
-              const scale = anim.animatables[0].target.scale;
+              const scale = (anim.animatables[0].target as any).scale;
               this.ctx.save();
               this.ctx.scale(scale, scale);
               this.drawECGHeart(1);

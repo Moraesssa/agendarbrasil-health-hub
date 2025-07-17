@@ -17,7 +17,7 @@ import {
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
   const { toast } = useToast();
 
   const handleLogout = async () => {
@@ -38,8 +38,8 @@ const Header = () => {
   };
 
   const handleProfileClick = () => {
-    if (user) {
-      if (user.user_type === 'medico') {
+    if (user && userData) {
+      if (userData.userType === 'medico') {
         navigate("/perfil-medico");
       } else {
         navigate("/perfil");
