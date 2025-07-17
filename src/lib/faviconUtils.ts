@@ -1,4 +1,4 @@
-import anime from 'animejs';
+import * as anime from 'animejs';
 
 // Interface para definir a forma do objeto de animação
 interface AnimationState {
@@ -123,7 +123,8 @@ export class FaviconAnimator {
     // Objeto que guardará os valores da animação
     const animationState: AnimationState = { progress: 0, scale: 1 };
 
-    this.animation = anime({
+    // CORREÇÃO: Usar anime.animate() para criar a animação
+    this.animation = anime.animate({
       targets: animationState,
       loop: true,
       easing: 'easeInOutQuad',
@@ -183,6 +184,7 @@ export class FaviconAnimator {
   public stopAnimation() {
     this.isAnimating = false;
     if (this.animation) {
+      // CORREÇÃO: Usar anime.remove() para parar e remover a animação
       anime.remove(this.animation.targets);
       this.animation = null;
     }
