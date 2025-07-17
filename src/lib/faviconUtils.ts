@@ -1,4 +1,4 @@
-import * as anime from 'animejs';
+import { animate, remove, AnimeInstance } from 'animejs';
 
 // Interface para definir a forma do objeto de animação
 interface AnimationState {
@@ -9,7 +9,7 @@ interface AnimationState {
 export class FaviconAnimator {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private animation: anime.AnimeInstance | null = null;
+  private animation: AnimeInstance | null = null;
   private isAnimating = false;
   private size = 32;
 
@@ -24,10 +24,6 @@ export class FaviconAnimator {
     this.ctx = context;
   }
 
-  /**
-   * Desenha o coração e a linha de ECG no canvas.
-   * @param progress - O progresso do desenho da linha de ECG (0 a 1).
-   */
   private drawECGHeart(progress: number = 1) {
     // Cores do tema
     const primaryColor = '#2563eb'; // blue-600
@@ -68,7 +64,6 @@ export class FaviconAnimator {
       this.ctx.fillStyle = gradient;
       this.ctx.globalAlpha = 0.3;
 
-      // Desenha o formato do coração
       this.ctx.beginPath();
       const centerX = this.size / 2;
       const centerY = this.size / 2;
@@ -90,9 +85,6 @@ export class FaviconAnimator {
     }
   }
 
-  /**
-   * Atualiza o href do link do favicon no DOM.
-   */
   private updateFavicon() {
     const dataUrl = this.canvas.toDataURL('image/png');
     let link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
@@ -105,13 +97,9 @@ export class FaviconAnimator {
     link.href = dataUrl;
   }
 
-  /**
-   * Inicia o loop de animação.
-   */
   public startAnimation() {
     if (this.isAnimating) return;
 
-    // Respeita a preferência do usuário por movimento reduzido
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       this.setStaticFavicon();
@@ -120,56 +108,29 @@ export class FaviconAnimator {
 
     this.isAnimating = true;
 
-    // Objeto que guardará os valores da animação
     const animationState: AnimationState = { progress: 0, scale: 1 };
 
-    // CORREÇÃO: Usar anime.animate() para criar a animação
-    this.animation = anime.animate({
+    this.animation = animate({ // CORREÇÃO: Chamada direta da função 'animate'
       targets: animationState,
       loop: true,
       easing: 'easeInOutQuad',
       
-      // Define a sequência de animação usando keyframes
       keyframes: [
-        // 1. Animação de desenho da linha
-        {
-          progress: 1,
-          scale: 1,
-          duration: 2000,
-        },
-        // 2. Animação de pulso (escala)
-        {
-          scale: 1.1,
-          duration: 300,
-        },
-        {
-          scale: 1,
-          duration: 300,
-        },
-        // 3. Pausa antes de repetir
-        {
-          progress: 1, // Mantém o progresso
-          scale: 1,      // Mantém a escala
-          duration: 1500,
-        },
-        // 4. Reseta para o próximo loop
-        {
-            progress: 0,
-            duration: 0,
-        }
+        { progress: 1, scale: 1, duration: 2000, },
+        { scale: 1.1, duration: 300, },
+        { scale: 1, duration: 300, },
+        { progress: 1, scale: 1, duration: 1500, },
+        { progress: 0, duration: 0, }
       ],
       
-      // A função update é chamada a cada frame da animação
       update: () => {
         this.ctx.clearRect(0, 0, this.size, this.size);
         this.ctx.save();
         
-        // Aplica a escala a partir do centro do canvas
         this.ctx.translate(this.size / 2, this.size / 2);
         this.ctx.scale(animationState.scale, animationState.scale);
         this.ctx.translate(-this.size / 2, -this.size / 2);
 
-        // Desenha o estado atual
         this.drawECGHeart(animationState.progress);
         
         this.ctx.restore();
@@ -178,25 +139,18 @@ export class FaviconAnimator {
     });
   }
 
-  /**
-   * Para a animação e restaura o favicon estático.
-   */
   public stopAnimation() {
     this.isAnimating = false;
     if (this.animation) {
-      // CORREÇÃO: Usar anime.remove() para parar e remover a animação
-      anime.remove(this.animation.targets);
+      remove(this.animation.targets); // CORREÇÃO: Chamada direta da função 'remove'
       this.animation = null;
     }
     this.setStaticFavicon();
   }
 
-  /**
-   * Define o favicon para seu estado final estático.
-   */
   public setStaticFavicon() {
     this.ctx.clearRect(0, 0, this.size, this.size);
-    this.drawECGHeart(1); // Garante que o coração completo seja desenhado
+    this.drawECGHeart(1);
     this.updateFavicon();
   }
 }
@@ -205,9 +159,6 @@ export class FaviconAnimator {
 
 let faviconAnimator: FaviconAnimator | null = null;
 
-/**
- * Inicializa o controlador do favicon.
- */
 export const initializeFavicon = () => {
   if (typeof window === 'undefined') return;
 
@@ -224,12 +175,8 @@ export const initializeFavicon = () => {
   }
 };
 
-/**
- * Alterna entre a animação ligada e desligada.
- */
 export const toggleFaviconAnimation = (): boolean => {
   if (!faviconAnimator) {
-     // Inicializa se ainda não foi
     faviconAnimator = new FaviconAnimator();
   }
 
