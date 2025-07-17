@@ -1,6 +1,6 @@
 
 
-import { anime } from 'animejs';
+import anime from 'animejs';
 
 export class FaviconAnimator {
   private canvas: HTMLCanvasElement;
