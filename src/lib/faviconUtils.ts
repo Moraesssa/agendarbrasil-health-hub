@@ -1,8 +1,5 @@
 
-import * as animeModule from 'animejs';
-
-// Access the default export from the module
-const anime = (animeModule as any).default || animeModule;
+import anime from 'animejs/lib/anime.es.js';
 
 export class FaviconAnimator {
   private canvas: HTMLCanvasElement;
