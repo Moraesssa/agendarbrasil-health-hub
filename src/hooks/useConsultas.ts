@@ -1,8 +1,7 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext'; // Importar useAuth
 
 // Type for appointment status
 type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
@@ -28,7 +27,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchConsultas = async () => {
+  // Usar useCallback para memorizar a função fetchConsultas
+  const fetchConsultas = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -77,14 +77,25 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       if (error) throw error;
 
-      setConsultas(data || []);
+      // Importante: Garante que um novo array só seja definido se os dados realmente mudarem
+      // ou se o array for vazio, para evitar re-renderizações desnecessárias.
+      setConsultas(prevConsultas => {
+        if (
+          !data || data.length === 0 && prevConsultas.length === 0 ||
+          JSON.stringify(data) === JSON.stringify(prevConsultas) // Comparação profunda simples para evitar re-render
+        ) {
+          return prevConsultas;
+        }
+        return data as AppointmentWithDoctor[];
+      });
+
     } catch (err) {
       console.error('Erro ao buscar consultas:', err);
       setError('Erro ao carregar consultas');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, filters?.status, filters?.futureOnly, filters?.month, filters?.year, filters?.limit]); // Dependências do useCallback
 
   const updateConsultaStatus = async (consultaId: string, newStatus: AppointmentStatus) => {
     try {
@@ -95,10 +106,10 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       if (error) throw error;
 
-      // Update local state
-      setConsultas(prev => prev.map(consulta => 
-        consulta.id === consultaId 
-          ? { ...consulta, status: newStatus as any }
+      // Update local state de forma imutável para garantir a detecção de mudança pelo React
+      setConsultas(prev => prev.map(consulta =>
+        consulta.id === consultaId
+          ? { ...consulta, status: newStatus } // Não usar 'as any' aqui
           : consulta
       ));
 
@@ -110,14 +121,15 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   };
 
   useEffect(() => {
+    // Chamar fetchConsultas quando as dependências mudarem
     fetchConsultas();
-  }, [user, filters?.status, filters?.futureOnly, filters?.month, filters?.year, filters?.limit]);
+  }, [fetchConsultas]); // Apenas fetchConsultas como dependência, pois ela já tem suas próprias dependências
 
   return {
     consultas,
     loading,
     error,
-    refetch: fetchConsultas,
+    refetch: fetchConsultas, // Retorna a função memorizada
     updateConsultaStatus
   };
 };
