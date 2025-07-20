@@ -1,4 +1,4 @@
-
+// src/components/appointments/AppointmentCard.tsx
 import { Calendar, Clock, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +18,11 @@ interface AppointmentCardProps {
   onGetDirections: (appointment: AppointmentWithDoctor) => void;
 }
 
-const AppointmentCard = ({ 
-  appointment, 
-  onConfirm, 
-  onViewDetails, 
-  onGetDirections 
+const AppointmentCard = ({
+  appointment,
+  onConfirm,
+  onViewDetails,
+  onGetDirections
 }: AppointmentCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -44,15 +44,19 @@ const AppointmentCard = ({
     return statusMap[status] || status;
   };
 
+  // Correção: Garante que doctorDisplayName seja sempre uma string
+  const doctorDisplayName = appointment.doctor_profile?.display_name || "Médico";
+
   return (
     <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-white to-blue-50 border border-blue-100 hover:shadow-md transition-all">
       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base flex-shrink-0">
-        {appointment.doctor_profile?.display_name?.split(' ').map(n => n[0]).join('') || 'Dr'}
+        {/* Usa a primeira letra do nome do médico ou 'Dr' como fallback */}
+        {doctorDisplayName.charAt(0)?.toUpperCase() || 'Dr'}
       </div>
 
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-          {appointment.doctor_profile?.display_name || "Médico"}
+          {doctorDisplayName}
         </h3>
         <p className="text-xs sm:text-sm text-gray-600">
           {appointment.tipo_consulta}
@@ -75,19 +79,19 @@ const AppointmentCard = ({
           </Badge>
           <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
             {appointment.status === 'agendada' && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="h-7 px-2 text-xs flex-1 sm:flex-none border-green-200 hover:bg-green-50"
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs flex-1 sm:flex-none border-green-200 hover:bg-green-50 font-semibold"
                 onClick={() => onConfirm(appointment.id)}
               >
                 Confirmar
               </Button>
             )}
             {appointment.tipo_consulta !== 'Online' && (
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 className="h-7 px-2 text-xs flex-1 sm:flex-none"
                 onClick={() => onGetDirections(appointment)}
               >
@@ -95,8 +99,8 @@ const AppointmentCard = ({
                 Mapa
               </Button>
             )}
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="h-7 px-2 text-xs bg-blue-500 hover:bg-blue-600 flex-1 sm:flex-none"
               onClick={() => onViewDetails(appointment)}
             >
