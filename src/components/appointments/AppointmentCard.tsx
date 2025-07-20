@@ -45,13 +45,14 @@ const AppointmentCard = ({
   };
 
   // Correção: Garante que doctorDisplayName seja sempre uma string
+  // antes de qualquer operação em suas propriedades (ex: split, charAt)
   const doctorDisplayName = appointment.doctor_profile?.display_name || "Médico";
 
   return (
     <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-white to-blue-50 border border-blue-100 hover:shadow-md transition-all">
       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base flex-shrink-0">
-        {/* Usa a primeira letra do nome do médico ou 'Dr' como fallback */}
-        {doctorDisplayName.charAt(0)?.toUpperCase() || 'Dr'}
+        {/* Usar doctorDisplayName que já é garantido ser uma string */}
+        {doctorDisplayName.split(' ').map(n => n[0]).join('') || 'Dr'}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -82,7 +83,7 @@ const AppointmentCard = ({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 px-2 text-xs flex-1 sm:flex-none border-green-200 hover:bg-green-50 font-semibold"
+                className="h-7 px-2 text-xs flex-1 sm:flex-none border-green-200 hover:bg-green-50"
                 onClick={() => onConfirm(appointment.id)}
               >
                 Confirmar
