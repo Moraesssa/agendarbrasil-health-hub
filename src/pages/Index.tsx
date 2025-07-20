@@ -13,6 +13,7 @@ import { DocumentUpload } from "@/components/health/DocumentUpload";
 import { useDocuments } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConsultas } from "@/hooks/useConsultas";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -20,6 +21,13 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { documents, loading: docsLoading, uploading, uploadDocument, deleteDocument, getDocumentUrl } = useDocuments();
+
+  // Buscar consultas do mês atual para o calendário
+  const currentDate = new Date();
+  const { consultas: consultasDoMes } = useConsultas({
+    month: currentDate.getMonth() + 1,
+    year: currentDate.getFullYear()
+  });
 
   const requireAuth = (callback: () => void, actionName: string) => {
     if (!user) {
@@ -32,6 +40,51 @@ const Index = () => {
       return;
     }
     callback();
+  };
+
+  const handleDayClick = (day: number, hasAppointment: boolean, hasMedication: boolean, appointmentStatus?: string) => {
+    if (hasAppointment) {
+      requireAuth(() => {
+        const statusText = appointmentStatus === 'cancelada' ? 'cancelada' : 'agendada';
+        toast({
+          title: `Consulta ${statusText}`,
+          description: `Você tem uma consulta ${statusText} para o dia ${day}. Clique para ver detalhes.`,
+        });
+        navigate("/agenda-paciente");
+      }, "ver detalhes da consulta");
+    } else if (hasMedication) {
+      toast({
+        title: "Lembrete de medicamento",
+        description: `Você tem medicamentos programados para o dia ${day}`,
+      });
+    } else if (day > 0 && day <= 31) {
+      requireAuth(() => {
+        toast({
+          title: "Agendar consulta",
+          description: `Gostaria de agendar uma consulta para o dia ${day}?`,
+        });
+        navigate("/agendamento");
+      }, "agendar consulta");
+    }
+  };
+
+  // Função para verificar se um dia tem consulta
+  const getDayAppointmentInfo = (day: number) => {
+    const dayAppointments = consultasDoMes.filter(consulta => {
+      const consultaDate = new Date(consulta.data_consulta);
+      return consultaDate.getDate() === day;
+    });
+
+    if (dayAppointments.length > 0) {
+      const appointment = dayAppointments[0];
+      return {
+        hasAppointment: true,
+        status: appointment.status,
+        count: dayAppointments.length
+      };
+    }
+
+    return { hasAppointment: false, status: null, count: 0 };
   };
 
   const handleQuickAction = (action: string) => {
@@ -111,7 +164,6 @@ const Index = () => {
   };
 
   const handleNavigation = (route: string, title?: string) => {
-    // Rotas que requerem autenticação
     const protectedRoutes = ["/agendamento", "/agenda-paciente", "/historico", "/perfil", "/gestao-medicamentos"];
     
     if (protectedRoutes.includes(route)) {
@@ -141,31 +193,6 @@ const Index = () => {
       description: "SAMU: 192 | Bombeiros: 193 | Polícia: 190",
       variant: "destructive"
     });
-  };
-
-  const handleDayClick = (day: number, hasAppointment: boolean, hasMedication: boolean) => {
-    if (hasAppointment) {
-      requireAuth(() => {
-        toast({
-          title: "Consulta agendada",
-          description: `Você tem uma consulta marcada para o dia ${day}. Clique para ver detalhes.`,
-        });
-        navigate("/agenda-paciente");
-      }, "ver detalhes da consulta");
-    } else if (hasMedication) {
-      toast({
-        title: "Lembrete de medicamento",
-        description: `Você tem medicamentos programados para o dia ${day}`,
-      });
-    } else if (day > 0 && day <= 31) {
-      requireAuth(() => {
-        toast({
-          title: "Agendar consulta",
-          description: `Gostaria de agendar uma consulta para o dia ${day}?`,
-        });
-        navigate("/agendamento");
-      }, "agendar consulta");
-    }
   };
 
   return (
@@ -295,33 +322,61 @@ const Index = () => {
                       ))}
                       {Array.from({ length: 35 }, (_, i) => {
                         const day = i - 6;
-                        const hasAppointment = [5, 12, 18, 25].includes(day);
+                        const appointmentInfo = getDayAppointmentInfo(day);
                         const hasMedication = [3, 8, 15, 22, 29].includes(day);
+                        
+                        let dayClasses = "p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ";
+                        let titleText = '';
+                        
+                        if (day < 1 || day > 31) {
+                          dayClasses += 'text-gray-300';
+                        } else if (appointmentInfo.hasAppointment) {
+                          switch (appointmentInfo.status) {
+                            case 'confirmada':
+                              dayClasses += 'bg-blue-600 text-white font-medium shadow-md hover:bg-blue-700';
+                              titleText = `Consulta confirmada para o dia ${day} - Clique para ver detalhes`;
+                              break;
+                            case 'agendada':
+                              dayClasses += 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600';
+                              titleText = `Consulta agendada para o dia ${day} - Clique para ver detalhes`;
+                              break;
+                            case 'cancelada':
+                              dayClasses += 'bg-gray-300 text-gray-600 font-medium shadow-sm hover:bg-gray-400';
+                              titleText = `Consulta cancelada para o dia ${day}`;
+                              break;
+                            case 'pendente':
+                              dayClasses += 'bg-yellow-400 text-yellow-900 font-medium shadow-md hover:bg-yellow-500';
+                              titleText = `Consulta pendente para o dia ${day} - Clique para ver detalhes`;
+                              break;
+                            default:
+                              dayClasses += 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600';
+                              titleText = `Consulta para o dia ${day} - Clique para ver detalhes`;
+                          }
+                        } else if (hasMedication) {
+                          dayClasses += 'bg-green-100 text-green-700 hover:bg-green-200';
+                          titleText = `Lembrete de medicamento para o dia ${day}`;
+                        } else {
+                          dayClasses += 'hover:bg-gray-100';
+                          titleText = day > 0 && day <= 31 ? 'Clique para agendar uma consulta' : '';
+                        }
                         
                         return (
                           <div
                             key={i}
-                            className={`p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ${
-                              day < 1 || day > 31 
-                                ? 'text-gray-300' 
-                                : hasAppointment 
-                                  ? 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600' 
-                                  : hasMedication
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    : 'hover:bg-gray-100'
-                            }`}
-                            onClick={() => handleDayClick(day, hasAppointment, hasMedication)}
-                            title={
-                              hasAppointment 
-                                ? `Consulta agendada para o dia ${day} - Clique para ver detalhes` 
-                                : hasMedication 
-                                  ? `Lembrete de medicamento para o dia ${day}`
-                                  : day > 0 && day <= 31 
-                                    ? 'Clique para agendar uma consulta'
-                                    : ''
-                            }
+                            className={dayClasses}
+                            onClick={() => handleDayClick(day, appointmentInfo.hasAppointment, hasMedication, appointmentInfo.status)}
+                            title={titleText}
                           >
-                            {day > 0 && day <= 31 ? day : ''}
+                            {day > 0 && day <= 31 ? (
+                              <div className="relative">
+                                {day}
+                                {appointmentInfo.count > 1 && (
+                                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                                    <span className="text-xs text-white font-bold">{appointmentInfo.count}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : ''}
                           </div>
                         );
                       })}
@@ -329,7 +384,19 @@ const Index = () => {
                     <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                        <span>Consultas</span>
+                        <span>Agendada</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                        <span>Confirmada</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-yellow-400 rounded"></div>
+                        <span>Pendente</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gray-300 rounded"></div>
+                        <span>Cancelada</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-green-400 rounded"></div>

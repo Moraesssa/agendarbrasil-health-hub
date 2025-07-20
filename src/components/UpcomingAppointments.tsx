@@ -1,73 +1,29 @@
-import { useEffect, useState } from "react";
+
 import { Calendar, Clock, User, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { useConsultas } from "@/hooks/useConsultas";
 
-// Importe o AppointmentSkeleton
 import AppointmentSkeleton from "./appointments/AppointmentSkeleton";
 import ErrorCard from "./appointments/ErrorCard";
 import EmptyStateCard from "./appointments/EmptyStateCard";
 import AppointmentCard from "./appointments/AppointmentCard";
 
-// Type for appointments with doctor info from profiles table
-type AppointmentWithDoctor = Tables<'consultas'> & {
-  doctor_profile: {
-    display_name: string | null;
-  } | null;
-};
-
 const UpcomingAppointments = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   
-  const [appointments, setAppointments] = useState<AppointmentWithDoctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAppointments = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from("consultas")
-        .select(`
-          *,
-          doctor_profile:profiles!consultas_medico_id_fkey (display_name)
-        `)
-        .gte("data_consulta", new Date().toISOString()) // Apenas consultas futuras
-        .order("data_consulta", { ascending: true })
-        .limit(3); // Pegar apenas as 3 próximas
-
-      if (error) throw error;
-      
-      setAppointments(data || []);
-
-    } catch (error) {
-      console.error("Erro ao buscar consultas:", error);
-      setError("Erro ao carregar consultas");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-  }, [user]);
+  // Buscar apenas consultas futuras com status válidos (excluir canceladas)
+  const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas({
+    status: ['agendada', 'confirmada', 'pendente'],
+    futureOnly: true,
+    limit: 3
+  });
 
   const handleRetry = () => {
-    fetchAppointments();
+    refetch();
   };
 
   const handleScheduleAppointment = () => {
@@ -79,30 +35,23 @@ const UpcomingAppointments = () => {
   };
 
   const handleConfirmAppointment = async (appointmentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('consultas')
-        .update({ status: 'confirmada' })
-        .eq('id', appointmentId);
-
-      if (error) throw error;
-
-      // Atualiza o estado local para refletir a confirmação
-      setAppointments(prev => prev.map(apt => 
-        apt.id === appointmentId ? {...apt, status: 'confirmada'} : apt
-      ));
-
+    const result = await updateConsultaStatus(appointmentId, 'confirmada');
+    
+    if (result.success) {
       toast({
         title: "Consulta confirmada!",
         description: "Você receberá um lembrete antes da consulta",
       });
-    } catch (error) {
-      console.error("Erro ao confirmar consulta:", error);
-      toast({ title: "Erro", description: "Não foi possível confirmar a consulta.", variant: "destructive" });
+    } else {
+      toast({ 
+        title: "Erro", 
+        description: "Não foi possível confirmar a consulta.", 
+        variant: "destructive" 
+      });
     }
   };
 
-  const handleViewDetails = (appointment: AppointmentWithDoctor) => {
+  const handleViewDetails = (appointment: any) => {
     if (appointment.tipo_consulta === 'Online') {
       toast({
         title: "Link da consulta",
@@ -116,7 +65,7 @@ const UpcomingAppointments = () => {
     }
   };
 
-  const handleGetDirections = (appointment: AppointmentWithDoctor) => {
+  const handleGetDirections = (appointment: any) => {
     if (appointment.tipo_consulta !== 'Online') {
       toast({
         title: "Abrindo mapa",
@@ -145,21 +94,17 @@ const UpcomingAppointments = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          // Renderiza skeletons enquanto carrega
           <>
             <AppointmentSkeleton />
             <AppointmentSkeleton />
             <AppointmentSkeleton />
           </>
         ) : error ? (
-          // Renderiza um card de erro se houver falha
           <ErrorCard onRetry={handleRetry} />
-        ) : appointments.length === 0 ? (
-          // Renderiza um card de "empty state" se não houver consultas
+        ) : consultas.length === 0 ? (
           <EmptyStateCard onSchedule={handleScheduleAppointment} />
         ) : (
-          // Renderiza as consultas encontradas
-          appointments.map((appointment) => (
+          consultas.map((appointment) => (
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
