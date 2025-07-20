@@ -94,7 +94,7 @@ const AppointmentCard = ({
                 size="sm"
                 variant="outline"
                 className="h-7 px-2 text-xs flex-1 sm:flex-none"
-                onClick={() => onGetDirections(appointment)}
+                onClick={() => onViewDetails(appointment)} // Alterado para exibir detalhes
               >
                 <Navigation className="h-3 w-3 mr-1" />
                 Mapa
