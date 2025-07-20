@@ -48,7 +48,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       // Apply status filter
       if (filters?.status && filters.status.length > 0) {
-        query = query.in('status', filters.status as string[]);
+        query = query.in('status', filters.status);
       }
 
       // Apply future only filter
