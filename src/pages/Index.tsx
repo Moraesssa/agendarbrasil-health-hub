@@ -337,7 +337,7 @@ const Index = () => {
                               titleText = `Consulta confirmada para o dia ${day} - Clique para ver detalhes`;
                               break;
                             case 'agendada':
-                              dayClasses += 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600';
+                              dayClasses += 'bg-purple-500 text-white font-medium shadow-md hover:bg-purple-600';
                               titleText = `Consulta agendada para o dia ${day} - Clique para ver detalhes`;
                               break;
                             case 'cancelada':
@@ -349,7 +349,7 @@ const Index = () => {
                               titleText = `Consulta pendente para o dia ${day} - Clique para ver detalhes`;
                               break;
                             default:
-                              dayClasses += 'bg-blue-500 text-white font-medium shadow-md hover:bg-blue-600';
+                              dayClasses += 'bg-purple-500 text-white font-medium shadow-md hover:bg-purple-600';
                               titleText = `Consulta para o dia ${day} - Clique para ver detalhes`;
                           }
                         } else if (hasMedication) {
@@ -383,7 +383,7 @@ const Index = () => {
                     </div>
                     <div className="flex justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                        <div className="w-3 h-3 bg-purple-500 rounded"></div>
                         <span>Agendada</span>
                       </div>
                       <div className="flex items-center gap-2">

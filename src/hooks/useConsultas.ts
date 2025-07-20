@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
 
+// Type for appointment status
+type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
+
 // Type for appointments with doctor info from profiles table
 type AppointmentWithDoctor = Tables<'consultas'> & {
   doctor_profile: {
@@ -12,7 +15,7 @@ type AppointmentWithDoctor = Tables<'consultas'> & {
 };
 
 export interface ConsultasFilters {
-  status?: string[];
+  status?: AppointmentStatus[];
   futureOnly?: boolean;
   month?: number;
   year?: number;
@@ -45,7 +48,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       // Apply status filter
       if (filters?.status && filters.status.length > 0) {
-        query = query.in('status', filters.status);
+        query = query.in('status', filters.status as string[]);
       }
 
       // Apply future only filter
@@ -83,7 +86,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     }
   };
 
-  const updateConsultaStatus = async (consultaId: string, newStatus: string) => {
+  const updateConsultaStatus = async (consultaId: string, newStatus: AppointmentStatus) => {
     try {
       const { error } = await supabase
         .from('consultas')
