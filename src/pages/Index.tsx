@@ -14,6 +14,7 @@ import { useDocuments } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCalendarData } from "@/hooks/useCalendarData";
+import { CalendarLoader } from "@/components/PageLoader";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -290,9 +291,7 @@ const Index = () => {
                   </CardHeader>
                   <CardContent className="px-4 sm:px-6">
                     {calendarLoading ? (
-                      <div className="text-center py-8">
-                        <div className="animate-pulse text-gray-500">Carregando calendário...</div>
-                      </div>
+                      <CalendarLoader />
                     ) : (
                       <>
                         <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm">

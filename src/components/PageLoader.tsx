@@ -3,9 +3,10 @@ import { Loader2 } from "lucide-react";
 
 interface PageLoaderProps {
   message?: string;
+  timeout?: number;
 }
 
-export const PageLoader = ({ message = "Carregando..." }: PageLoaderProps) => {
+export const PageLoader = ({ message = "Carregando...", timeout = 10000 }: PageLoaderProps) => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
       <div className="flex flex-col items-center space-y-4">
@@ -55,6 +56,18 @@ export const PageLoadError = ({
             Tentar Novamente
           </button>
         )}
+      </div>
+    </div>
+  );
+};
+
+// Componente para carregamento específico do calendário
+export const CalendarLoader = () => {
+  return (
+    <div className="text-center py-8">
+      <div className="flex items-center justify-center space-x-2">
+        <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+        <span className="text-gray-500">Carregando calendário...</span>
       </div>
     </div>
   );
