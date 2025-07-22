@@ -35,16 +35,28 @@ const UpcomingAppointments = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('UpcomingAppointments Debug:', {
+      futureLoading,
+      recentLoading,
+      futureConsultas: futureConsultas.length,
+      recentConsultas: recentConsultas.length,
+      futureError,
+      recentError
+    });
+
     if (!futureLoading && !recentLoading) {
       if (futureConsultas.length > 0) {
+        console.log('Usando consultas futuras:', futureConsultas);
         setConsultas(futureConsultas);
         setShowingFallback(false);
         setError(futureError);
       } else if (recentConsultas.length > 0) {
+        console.log('Usando consultas recentes:', recentConsultas);
         setConsultas(recentConsultas);
         setShowingFallback(true);
         setError(recentError);
       } else {
+        console.log('Nenhuma consulta encontrada');
         setConsultas([]);
         setShowingFallback(false);
         setError(futureError || recentError);
