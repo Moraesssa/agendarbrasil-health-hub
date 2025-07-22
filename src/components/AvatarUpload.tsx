@@ -54,9 +54,9 @@ export const AvatarUpload = ({
     setIsUploading(true);
 
     try {
-      // Nome do arquivo usando o ID do usuário
+      // Nome do arquivo usando o ID do usuário como pasta
       const fileExtension = file.name.split('.').pop();
-      const fileName = `${userId}.${fileExtension}`;
+      const fileName = `${userId}/avatar.${fileExtension}`;
 
       // Upload para o bucket avatars
       const { error: uploadError } = await supabase.storage
