@@ -15,61 +15,14 @@ import AppointmentCard from "./appointments/AppointmentCard";
 const UpcomingAppointments = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showingFallback, setShowingFallback] = useState(false);
   
-  // Primeiro tenta buscar consultas futuras com status válidos
-  const { consultas: futureConsultas, loading: futureLoading, error: futureError, refetch: refetchFuture, updateConsultaStatus } = useConsultas({
-    status: ['agendada', 'confirmada', 'pendente'],
-    futureOnly: true,
+  // Busca consultas recentes como principal
+  const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas({
     limit: 3
   });
-
-  // Busca consultas recentes (incluindo canceladas) como fallback
-  const { consultas: recentConsultas, loading: recentLoading, error: recentError, refetch: refetchRecent } = useConsultas({
-    limit: 3
-  });
-
-  // Determina quais consultas mostrar
-  const [consultas, setConsultas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    console.log('UpcomingAppointments Debug:', {
-      futureLoading,
-      recentLoading,
-      futureConsultas: futureConsultas.length,
-      recentConsultas: recentConsultas.length,
-      futureError,
-      recentError
-    });
-
-    if (!futureLoading && !recentLoading) {
-      if (futureConsultas.length > 0) {
-        console.log('Usando consultas futuras:', futureConsultas);
-        setConsultas(futureConsultas);
-        setShowingFallback(false);
-        setError(futureError);
-      } else if (recentConsultas.length > 0) {
-        console.log('Usando consultas recentes:', recentConsultas);
-        setConsultas(recentConsultas);
-        setShowingFallback(true);
-        setError(recentError);
-      } else {
-        console.log('Nenhuma consulta encontrada');
-        setConsultas([]);
-        setShowingFallback(false);
-        setError(futureError || recentError);
-      }
-      setLoading(false);
-    } else {
-      setLoading(futureLoading || recentLoading);
-    }
-  }, [futureConsultas, recentConsultas, futureLoading, recentLoading, futureError, recentError]);
 
   const handleRetry = () => {
-    refetchFuture();
-    refetchRecent();
+    refetch();
   };
 
   const handleScheduleAppointment = () => {
@@ -120,18 +73,20 @@ const UpcomingAppointments = () => {
     }
   };
 
-  // Determina o título baseado no que está sendo exibido
   const getCardTitle = () => {
-    if (showingFallback) {
-      return "Consultas Recentes";
-    }
-    return "Próximas Consultas";
+    const futureAppointments = consultas.filter(c => 
+      new Date(c.data_consulta) > new Date() && 
+      ['agendada', 'confirmada', 'pendente'].includes(c.status)
+    );
+    
+    return futureAppointments.length > 0 ? "Próximas Consultas" : "Consultas Recentes";
   };
 
-  // Determina se deve mostrar o botão "Ver todas"
-  const getViewAllRoute = () => {
-    return "/agenda-paciente";
-  };
+  const showingFallback = consultas.length > 0 && 
+    !consultas.some(c => 
+      new Date(c.data_consulta) > new Date() && 
+      ['agendada', 'confirmada', 'pendente'].includes(c.status)
+    );
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
@@ -150,7 +105,7 @@ const UpcomingAppointments = () => {
             variant="ghost" 
             size="sm" 
             className="text-blue-600 hover:text-blue-700"
-            onClick={() => navigate(getViewAllRoute())}
+            onClick={() => navigate("/agenda-paciente")}
           >
             Ver todas
           </Button>

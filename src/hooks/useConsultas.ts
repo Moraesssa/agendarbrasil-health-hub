@@ -77,17 +77,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       if (error) throw error;
 
-      // Importante: Garante que um novo array só seja definido se os dados realmente mudarem
-      // ou se o array for vazio, para evitar re-renderizações desnecessárias.
-      setConsultas(prevConsultas => {
-        if (
-          !data || data.length === 0 && prevConsultas.length === 0 ||
-          JSON.stringify(data) === JSON.stringify(prevConsultas) // Comparação profunda simples para evitar re-render
-        ) {
-          return prevConsultas;
-        }
-        return data as AppointmentWithDoctor[];
-      });
+      // Simplifica o estado para evitar loops infinitos
+      setConsultas(data as AppointmentWithDoctor[] || []);
 
     } catch (err) {
       console.error('Erro ao buscar consultas:', err);
