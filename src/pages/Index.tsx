@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Clock, Bell, User, Plus, Heart, Pill, CalendarCheck, MapPin, Phone, LogIn, UserPlus, FileText, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,7 +21,15 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userData, loading } = useAuth();
+
+  // Redirect authenticated patients to their profile
+  useEffect(() => {
+    if (!loading && user && userData && userData.userType === 'paciente' && userData.onboardingCompleted) {
+      navigate("/perfil");
+      return;
+    }
+  }, [user, userData, loading, navigate]);
   const { documents, loading: docsLoading, uploading, uploadDocument, deleteDocument, getDocumentUrl } = useDocuments();
   const { calendarData, loading: calendarLoading } = useCalendarData();
 
