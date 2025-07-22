@@ -3,7 +3,6 @@ import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
-import { logger } from "@/utils/logger";
 
 interface Props {
   children: ReactNode;
@@ -28,18 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ error, errorInfo });
-    
-    // Log the error with context
-    logger.error(
-      `Uncaught error in ${this.props.context || 'application'}`,
-      'ErrorBoundary',
-      {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        context: this.props.context
-      }
-    );
+    console.error(`Error in ${this.props.context || 'component'}:`, error, errorInfo);
   }
 
   private handleReload = () => {
@@ -75,31 +63,10 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-gray-600">
-                Encontramos um erro inesperado. Nossa equipe foi notificada automaticamente.
+                Encontramos um erro inesperado. Tente recarregar a página.
               </p>
-              
-              {import.meta.env.DEV && this.state.error && (
-                <details className="text-left bg-red-50 p-3 rounded border text-sm">
-                  <summary className="cursor-pointer font-medium text-red-800 mb-2">
-                    Detalhes do erro (modo desenvolvimento)
-                  </summary>
-                  <div className="space-y-2">
-                    <div>
-                      <strong>Erro:</strong> {this.state.error.message}
-                    </div>
-                    {this.state.error.stack && (
-                      <div>
-                        <strong>Stack:</strong>
-                        <pre className="whitespace-pre-wrap text-xs mt-1 bg-white p-2 rounded border overflow-auto max-h-32">
-                          {this.state.error.stack}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              )}
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col gap-3">
                 <Button onClick={this.handleRetry} variant="outline" className="flex items-center gap-2">
                   <RefreshCw className="w-4 h-4" />
                   Tentar Novamente
@@ -123,14 +90,23 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// Hook version for functional components
-export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
-  context?: string
-) => {
-  return (props: P) => (
-    <ErrorBoundary context={context}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
-};
+// Simple fallback component for calendar specifically
+export const CalendarErrorFallback = ({ onRetry }: { onRetry?: () => void }) => (
+  <div className="text-center py-8">
+    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <AlertTriangle className="h-8 w-8 text-red-500" />
+    </div>
+    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+      Erro ao carregar calendário
+    </h3>
+    <p className="text-gray-600 mb-4">
+      Não foi possível carregar o calendário. Tente novamente.
+    </p>
+    {onRetry && (
+      <Button onClick={onRetry} variant="outline">
+        <RefreshCw className="h-4 w-4 mr-2" />
+        Tentar Novamente
+      </Button>
+    )}
+  </div>
+);
