@@ -72,6 +72,8 @@ const Perfil = () => {
   };
 
   const handleGoHome = () => {
+    // Set navigation intent to allow access to home page
+    sessionStorage.setItem('navigation-intent', 'true');
     navigate("/");
   };
 

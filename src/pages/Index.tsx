@@ -23,11 +23,16 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, userData, loading } = useAuth();
 
-  // Redirect authenticated patients to their profile
+  // Optional redirect to profile only on first load, not on intentional navigation
   useEffect(() => {
     if (!loading && user && userData && userData.userType === 'paciente' && userData.onboardingCompleted) {
-      navigate("/perfil");
-      return;
+      // Only redirect if user came directly to home without navigation intent
+      const hasNavigationIntent = sessionStorage.getItem('navigation-intent');
+      if (!hasNavigationIntent) {
+        sessionStorage.setItem('navigation-intent', 'true');
+        navigate("/perfil");
+        return;
+      }
     }
   }, [user, userData, loading, navigate]);
   const { documents, loading: docsLoading, uploading, uploadDocument, deleteDocument, getDocumentUrl } = useDocuments();
@@ -54,6 +59,7 @@ const Index = () => {
           title: `Consulta ${statusText}`,
           description: `Você tem uma consulta ${statusText} para o dia ${day}. Clique para ver detalhes.`,
         });
+        sessionStorage.setItem('navigation-intent', 'true');
         navigate("/agenda-paciente");
       }, "ver detalhes da consulta");
     } else if (hasMedication) {
@@ -150,6 +156,9 @@ const Index = () => {
 
   const handleNavigation = (route: string, title?: string) => {
     const protectedRoutes = ["/agendamento", "/agenda-paciente", "/historico", "/perfil", "/gestao-medicamentos"];
+    
+    // Set navigation intent for all navigations
+    sessionStorage.setItem('navigation-intent', 'true');
     
     if (protectedRoutes.includes(route)) {
       requireAuth(() => {
