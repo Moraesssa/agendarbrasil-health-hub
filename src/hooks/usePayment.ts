@@ -204,6 +204,30 @@ export const usePayment = () => {
     }
   };
 
+  const verifyPayment = async (consultaId: string) => {
+    try {
+      console.log("Verificando pagamento para consulta:", consultaId);
+      
+      const { data, error } = await supabase.functions.invoke('verify-payment', {
+        body: { consulta_id: consultaId }
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.payment_status === 'paid') {
+        toast({
+          title: "Pagamento confirmado!",
+          description: "Sua consulta foi agendada com sucesso.",
+        });
+        
+        // Recarregar consultas
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Erro ao verificar pagamento:', error);
+    }
+  };
+
   return {
     processing,
     processPayment,

@@ -15,7 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Webhook do Stripe recebido");
+    console.log("=== STRIPE WEBHOOK INICIADO ===");
+    console.log("Método:", req.method);
+    console.log("Headers:", Object.fromEntries(req.headers.entries()));
     
     // Verificar se a chave do Stripe está configurada
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -23,6 +25,7 @@ serve(async (req) => {
       console.error("STRIPE_SECRET_KEY não configurada");
       throw new Error("Stripe não configurado");
     }
+    console.log("Stripe key configurada ✓");
 
     // Inicializar Stripe
     const stripe = new Stripe(stripeKey, {
@@ -37,52 +40,80 @@ serve(async (req) => {
 
     // Obter dados do webhook
     const body = await req.text();
+    console.log("Body recebido:", body.substring(0, 200) + "...");
+    
     const signature = req.headers.get("stripe-signature");
+    console.log("Signature presente:", !!signature);
 
     if (!signature) {
+      console.error("Nenhuma signature fornecida pelo Stripe");
       throw new Error("Signature do webhook não fornecida");
     }
 
     // Verificar webhook (em produção, use o webhook secret)
     const event = JSON.parse(body);
-    console.log("Evento recebido:", event.type);
+    console.log("=== EVENTO STRIPE ===");
+    console.log("Tipo:", event.type);
+    console.log("ID:", event.id);
+    console.log("Created:", new Date(event.created * 1000).toISOString());
 
     // Processar diferentes tipos de eventos
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object;
-        console.log("Checkout concluído:", session.id);
+        console.log("=== CHECKOUT CONCLUÍDO ===");
+        console.log("Session ID:", session.id);
+        console.log("Customer:", session.customer);
+        console.log("Amount Total:", session.amount_total);
+        console.log("Metadata:", session.metadata);
+
+        if (!session.metadata?.consulta_id) {
+          console.error("Metadata consulta_id não encontrado:", session.metadata);
+          throw new Error("Consulta ID não encontrado no metadata");
+        }
 
         // Registrar pagamento no banco
-        const { error: paymentError } = await supabaseClient
+        console.log("Registrando pagamento...");
+        const { data: paymentData, error: paymentError } = await supabaseClient
           .from('pagamentos')
           .insert({
             consulta_id: session.metadata.consulta_id,
             paciente_id: session.metadata.paciente_id,
             medico_id: session.metadata.medico_id,
-            valor: session.amount_total,
+            valor: session.amount_total / 100, // Converter de centavos
             metodo_pagamento: 'credit_card',
             gateway_id: session.id,
             status: 'succeeded',
             dados_gateway: session
-          });
+          })
+          .select()
+          .single();
 
         if (paymentError) {
           console.error("Erro ao registrar pagamento:", paymentError);
+          throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
         }
+        console.log("Pagamento registrado:", paymentData);
 
         // Atualizar status da consulta
-        const { error: consultaError } = await supabaseClient
+        console.log("Atualizando status da consulta...");
+        const { data: consultaData, error: consultaError } = await supabaseClient
           .from('consultas')
           .update({ 
             status_pagamento: 'pago',
+            status: 'agendada',
             valor: session.amount_total / 100 // Converter de centavos para reais
           })
-          .eq('id', session.metadata.consulta_id);
+          .eq('id', session.metadata.consulta_id)
+          .select()
+          .single();
 
         if (consultaError) {
           console.error("Erro ao atualizar consulta:", consultaError);
+          throw new Error(`Erro ao atualizar consulta: ${consultaError.message}`);
         }
+        console.log("Consulta atualizada:", consultaData);
+        console.log("=== PAGAMENTO PROCESSADO COM SUCESSO ===");
 
         break;
 

@@ -53,7 +53,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       // Apply future only filter
       if (filters?.futureOnly) {
-        query = query.gte('data_consulta', new Date().toISOString());
+        // Mostrar consultas futuras E consultas pagas (independente da data)
+        query = query.or(`data_consulta.gte.${new Date().toISOString()},status_pagamento.eq.pago`);
       }
 
       // Apply month/year filter

@@ -1,8 +1,9 @@
 
-import { Calendar, Clock, Navigation, AlertCircle, Video } from "lucide-react";
+import { Calendar, Clock, Navigation, AlertCircle, Video, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tables } from "@/integrations/supabase/types";
+import { PaymentVerificationButton } from "@/components/PaymentVerificationButton";
 
 // Type for appointments with doctor info from profiles table
 type AppointmentWithDoctor = Tables<'consultas'> & {
@@ -87,8 +88,19 @@ const AppointmentCard = ({
       </Button>
     );
 
-    // Só mostrar ações específicas para consultas não canceladas e futuras
-    if (!isCanceled && !isPastAppointment && !isCompleted) {
+    // Verificar pagamento pendente
+    if (appointment.status_pagamento === 'pendente') {
+      actions.unshift(
+        <PaymentVerificationButton 
+          key="verify-payment"
+          consultaId={appointment.id}
+          onSuccess={() => window.location.reload()}
+        />
+      );
+    }
+
+    // Só mostrar ações específicas para consultas pagas, não canceladas e futuras
+    if (!isCanceled && !isPastAppointment && !isCompleted && appointment.status_pagamento === 'pago') {
       if (appointment.status === 'agendada') {
         actions.unshift(
           <Button
@@ -179,9 +191,22 @@ const AppointmentCard = ({
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-          <Badge className={`${getStatusColor(appointment.status)} border text-xs`}>
-            {getStatusText(appointment.status)}
-          </Badge>
+          <div className="flex gap-2 items-center">
+            <Badge className={`${getStatusColor(appointment.status)} border text-xs`}>
+              {getStatusText(appointment.status)}
+            </Badge>
+            {appointment.status_pagamento === 'pendente' && (
+              <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
+                <CreditCard className="h-3 w-3 mr-1" />
+                Pagamento Pendente
+              </Badge>
+            )}
+            {appointment.status_pagamento === 'pago' && (
+              <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
+                Pago
+              </Badge>
+            )}
+          </div>
           <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
             {getAvailableActions()}
           </div>

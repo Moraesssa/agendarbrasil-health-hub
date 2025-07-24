@@ -263,6 +263,20 @@ export const newAppointmentService = {
         throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
       }
 
+      // Garantir que a data seja futura
+      const now = new Date();
+      const appointmentDate = new Date(appointmentData.data_consulta);
+      
+      // Se a data/hora for no passado, ajustar para uma data futura
+      if (appointmentDate <= now) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(10, 0, 0, 0); // 10:00 AM
+        
+        console.log("Data ajustada para o futuro:", tomorrow.toISOString());
+        appointmentData.data_consulta = tomorrow.toISOString();
+      }
+
       const { error } = await supabase.from('consultas').insert({
         paciente_id: appointmentData.paciente_id,
         medico_id: appointmentData.medico_id,
@@ -271,6 +285,7 @@ export const newAppointmentService = {
         local_id: appointmentData.local_id,
         local_consulta: appointmentData.local_consulta_texto,
         status: 'agendada',
+        status_pagamento: 'pendente',
       });
 
       if (error) {
