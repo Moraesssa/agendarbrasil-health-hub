@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CreditCard } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, MapPin, AlertCircle, CreditCard, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -24,6 +24,10 @@ const Agendamento = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { models, setters, state, actions } = useFamilyAppointmentScheduling();
+  
+  // Detectar se é uma consulta de telemedicina pela URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const isTelemedicine = urlParams.get('tipo') === 'telemedicina';
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [consultaId, setConsultaId] = useState<string | null>(null);
   const [temporaryReservationId, setTemporaryReservationId] = useState<string | null>(null);
@@ -49,6 +53,22 @@ const Agendamento = () => {
     }
     return () => clearInterval(interval);
   }, [reservationTimer]);
+
+  // Configurar telemedicina se especificado na URL
+  useEffect(() => {
+    if (isTelemedicine && models.specialties.length > 0 && !models.selectedSpecialty) {
+      // Se for telemedicina, selecionar "Telemedicina" como especialidade se disponível
+      const telemedicineSpecialty = models.specialties.find(spec => 
+        spec.toLowerCase().includes('telemedicina') || spec.toLowerCase().includes('online')
+      );
+      if (telemedicineSpecialty) {
+        setters.setSelectedSpecialty(telemedicineSpecialty);
+      } else {
+        // Se não encontrar "Telemedicina" específica, usar a primeira especialidade disponível
+        setters.setSelectedSpecialty(models.specialties[0]);
+      }
+    }
+  }, [isTelemedicine, models.specialties, models.selectedSpecialty, setters]);
 
   // Limpeza ao sair da página
   useEffect(() => {
@@ -100,8 +120,8 @@ const Agendamento = () => {
       const result = await enhancedAppointmentService.confirmTemporaryReservation(
         temporaryReservationId,
         {
-          tipo_consulta: models.selectedSpecialty,
-          motivo: "Consulta agendada via plataforma",
+          tipo_consulta: isTelemedicine ? 'Online' : models.selectedSpecialty,
+          motivo: isTelemedicine ? "Consulta de telemedicina agendada via plataforma" : "Consulta agendada via plataforma",
           valor: 150
         }
       );
@@ -126,11 +146,20 @@ const Agendamento = () => {
             </Button>
             <div className="text-center space-y-4">
               <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Agendar Consulta
+                {isTelemedicine ? 'Agendar Telemedicina' : 'Agendar Consulta'}
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Encontre o profissional ideal para você em poucos passos
+                {isTelemedicine 
+                  ? 'Consulta online com especialistas - atendimento remoto e seguro'
+                  : 'Encontre o profissional ideal para você em poucos passos'
+                }
               </p>
+              {isTelemedicine && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                  <Video className="h-4 w-4" />
+                  Consulta Online
+                </div>
+              )}
             </div>
         </div>
 

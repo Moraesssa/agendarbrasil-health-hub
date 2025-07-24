@@ -126,10 +126,13 @@ const Index = () => {
         }, "agendar check-up");
         break;
       case "Consulta por telemedicina":
-        toast({
-          title: "Telemedicina em breve!",
-          description: "Esta funcionalidade estará disponível em breve. Você será notificado quando estiver pronta",
-        });
+        requireAuth(() => {
+          toast({
+            title: "Redirecionando para Telemedicina",
+            description: "Vamos ajudá-lo a agendar uma consulta online",
+          });
+          navigate("/agendamento?tipo=telemedicina");
+        }, "agendar consulta por telemedicina");
         break;
       case "Agendamento urgente":
         toast({
