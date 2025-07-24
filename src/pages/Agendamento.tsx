@@ -15,8 +15,10 @@ import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
 import { PaymentModal } from "@/components/financial/PaymentModal";
 import { FamilyMemberSelect } from "@/components/scheduling/FamilyMemberSelect";
+import { WaitingListDialog } from "@/components/scheduling/WaitingListDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { enhancedAppointmentService } from "@/services/enhancedAppointmentService";
 
 const Agendamento = () => {
   const navigate = useNavigate();
@@ -24,18 +26,65 @@ const Agendamento = () => {
   const { models, setters, state, actions } = useFamilyAppointmentScheduling();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [consultaId, setConsultaId] = useState<string | null>(null);
+  const [temporaryReservationId, setTemporaryReservationId] = useState<string | null>(null);
+  const [reservationTimer, setReservationTimer] = useState<number>(0);
 
   const selectedDoctorInfo = models.doctors.find(d => d.id === models.selectedDoctor);
-
+  
   const isFormComplete = models.selectedSpecialty && models.selectedState && models.selectedCity && models.selectedDoctor && models.selectedTime && models.selectedLocal && models.selectedPatientId;
+
+  // Timer para reserva temporária
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (reservationTimer > 0) {
+      interval = setInterval(() => {
+        setReservationTimer(prev => {
+          if (prev <= 1) {
+            setTemporaryReservationId(null);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [reservationTimer]);
+
+  // Limpeza ao sair da página
+  useEffect(() => {
+    return () => {
+      enhancedAppointmentService.cleanupSessionReservations();
+    };
+  }, []);
 
   // Gerar ID único para a consulta antes do pagamento
   const generateConsultaId = () => {
     return 'consulta_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   };
 
+  const handleTimeSelection = async (time: string, local: any) => {
+    if (!models.selectedDoctor || !models.selectedDate) return;
+
+    // Criar reserva temporária
+    const reservationResult = await enhancedAppointmentService.createTemporaryReservation(
+      models.selectedDoctor,
+      `${models.selectedDate}T${time}:00`,
+      local.id
+    );
+
+    if (reservationResult.success && reservationResult.reservationId) {
+      setTemporaryReservationId(reservationResult.reservationId);
+      setReservationTimer(15 * 60); // 15 minutos em segundos
+      setters.setSelectedTime(time);
+      setters.setSelectedLocal(local);
+    } else {
+      // Mostrar erro e opção de lista de espera
+      alert(reservationResult.error || "Horário não disponível");
+    }
+  };
+
   const handleConfirmAppointment = () => {
-    if (isFormComplete) {
+    if (isFormComplete && temporaryReservationId) {
       // Gerar ID real para a consulta
       const newConsultaId = generateConsultaId();
       setConsultaId(newConsultaId);
@@ -45,10 +94,25 @@ const Agendamento = () => {
     }
   };
 
-  const handlePaymentSuccess = () => {
-    // Após pagamento bem-sucedido, agendar a consulta
-    actions.handleAgendamento();
-    setShowPaymentModal(false);
+  const handlePaymentSuccess = async () => {
+    if (temporaryReservationId && models.selectedSpecialty) {
+      // Confirmar reserva temporária
+      const result = await enhancedAppointmentService.confirmTemporaryReservation(
+        temporaryReservationId,
+        {
+          tipo_consulta: models.selectedSpecialty,
+          motivo: "Consulta agendada via plataforma",
+          valor: 150
+        }
+      );
+
+      if (result.success) {
+        setShowPaymentModal(false);
+        setTemporaryReservationId(null);
+        setReservationTimer(0);
+        navigate("/agenda-paciente?payment=success");
+      }
+    }
   };
 
   return (
@@ -181,38 +245,30 @@ const Agendamento = () => {
                                     {local.nome_local}
                                   </h3>
                                   <p className="text-sm text-muted-foreground mb-4 ml-8">{local.endereco.logradouro}, {local.endereco.numero}</p>
-                                  <TimeSlotGrid
-                                      timeSlots={local.horarios_disponiveis}
-                                      selectedTime={models.selectedLocal?.id === local.id ? models.selectedTime : ""}
-                                      isLoading={state.isLoading}
-                                      onChange={(time) => {
-                                          setters.setSelectedTime(time);
-                                          setters.setSelectedLocal(local);
-                                      }}
-                                  />
+                                   <TimeSlotGrid
+                                       timeSlots={local.horarios_disponiveis}
+                                       selectedTime={models.selectedLocal?.id === local.id ? models.selectedTime : ""}
+                                       isLoading={state.isLoading}
+                                       onChange={(time) => handleTimeSelection(time, local)}
+                                   />
                               </div>
                           ))}
                         </div>
                       </div>
                   )}
                   
-                  {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && (
-                    <div className="text-center p-8 space-y-4">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                        <Calendar className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-muted-foreground text-lg">Nenhum horário disponível para este médico na data selecionada.</p>
-                      <p className="text-sm text-muted-foreground">Tente selecionar uma data diferente.</p>
-                    </div>
-                  )}
                   
-                   {/* --- BOTÃO DE CONFIRMAÇÃO --- */}
-                  {isFormComplete && (
-                    <div className="space-y-6 p-6 bg-primary/5 rounded-lg border border-primary/20">
-                      <div className="flex items-center gap-2 text-lg font-medium text-foreground">
-                        <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">5</div>
-                        Finalizar Agendamento
+                   {/* --- RESERVA TEMPORÁRIA E CONFIRMAÇÃO --- */}
+                  {temporaryReservationId && (
+                    <div className="space-y-4 p-6 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center gap-2 text-lg font-medium text-yellow-800">
+                        <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold">⏰</div>
+                        Horário Reservado Temporariamente
                       </div>
+                      <p className="text-yellow-700">
+                        Seu horário está reservado por mais <strong>{Math.floor(reservationTimer / 60)}:{(reservationTimer % 60).toString().padStart(2, '0')}</strong> minutos.
+                        Complete o pagamento para confirmar a consulta.
+                      </p>
                       <Button 
                         onClick={handleConfirmAppointment} 
                         size="lg"
@@ -231,6 +287,43 @@ const Agendamento = () => {
                           </>
                         )}
                       </Button>
+                    </div>
+                  )}
+
+                  {/* --- LISTA DE ESPERA --- */}
+                  {models.selectedDate && !state.isLoading && models.locaisComHorarios.length === 0 && models.selectedDoctor && selectedDoctorInfo && (
+                    <div className="space-y-6 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="text-center space-y-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                          <Calendar className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-medium text-blue-900 mb-2">Nenhum horário disponível</h3>
+                          <p className="text-blue-700 mb-4">
+                            Não há horários disponíveis para {selectedDoctorInfo.display_name} na data selecionada.
+                          </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setters.setSelectedDate("")}
+                            className="border-blue-300 hover:bg-blue-50"
+                          >
+                            Escolher Outra Data
+                          </Button>
+                          <WaitingListDialog
+                            medicoId={models.selectedDoctor}
+                            medicoNome={selectedDoctorInfo.display_name || "Médico"}
+                            especialidade={models.selectedSpecialty}
+                            localId={models.locaisComHorarios[0]?.id}
+                            trigger={
+                              <Button className="bg-blue-600 hover:bg-blue-700">
+                                Entrar na Lista de Espera
+                              </Button>
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
               </CardContent>

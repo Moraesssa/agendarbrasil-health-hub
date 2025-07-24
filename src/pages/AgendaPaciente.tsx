@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { RescheduleDialog } from "@/components/scheduling/RescheduleDialog";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,8 @@ const AgendaPaciente = () => {
   
   const [appointments, setAppointments] = useState<AppointmentWithDoctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDoctor | null>(null);
 
   // Handle payment URL parameters
   useEffect(() => {
@@ -123,8 +126,31 @@ const AgendaPaciente = () => {
     return statusMap[status] || status;
   };
 
-  const handleReschedule = (appointmentId: string) => {
-    navigate("/agendamento");
+  const handleReschedule = (appointment: AppointmentWithDoctor) => {
+    setSelectedAppointment(appointment);
+    setRescheduleDialogOpen(true);
+  };
+
+  const handleRescheduleSuccess = () => {
+    // Recarregar appointments
+    const fetchAppointments = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from("consultas")
+          .select(`
+            *,
+            doctor_profile:profiles!consultas_medico_id_fkey (display_name)
+          `)
+          .order("data_consulta", { ascending: false });
+
+        if (error) throw error;
+        setAppointments(data || []);
+      } catch (error) {
+        console.error("Erro ao buscar agenda:", error);
+      }
+    };
+    fetchAppointments();
   };
 
   const handleCancel = async (appointmentId: string) => {
@@ -263,7 +289,7 @@ const AgendaPaciente = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleReschedule(appointment.id)}
+                            onClick={() => handleReschedule(appointment)}
                             className="border-yellow-200 hover:bg-yellow-50"
                           >
                             Reagendar
@@ -315,6 +341,23 @@ const AgendaPaciente = () => {
       </main>
 
       <div className="h-20 sm:hidden"></div>
+
+      {/* Dialog de Reagendamento */}
+      {selectedAppointment && (
+        <RescheduleDialog
+          open={rescheduleDialogOpen}
+          onOpenChange={setRescheduleDialogOpen}
+          appointmentId={selectedAppointment.id}
+          appointmentData={{
+            medicoId: selectedAppointment.medico_id,
+            medicoNome: selectedAppointment.doctor_profile?.display_name || "Médico",
+            dataAtual: selectedAppointment.data_consulta,
+            horaAtual: new Date(selectedAppointment.data_consulta).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}),
+            especialidade: selectedAppointment.tipo_consulta || "Consulta"
+          }}
+          onSuccess={handleRescheduleSuccess}
+        />
+      )}
     </div>
   );
 };
