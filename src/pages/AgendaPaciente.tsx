@@ -11,6 +11,8 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { PaymentStatusChecker } from "@/components/PaymentStatusChecker";
+import { PaymentVerificationButton } from "@/components/PaymentVerificationButton";
 
 // Type for appointments with doctor info from profiles table
 type AppointmentWithDoctor = Tables<'consultas'> & {
@@ -196,6 +198,7 @@ const AgendaPaciente = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <PaymentStatusChecker onSuccess={() => window.location.reload()} />
       <Header />
       
       <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
@@ -261,47 +264,60 @@ const AgendaPaciente = () => {
                               </div>
                               <p className="text-sm text-gray-600 mb-1">{appointment.tipo_consulta}</p>
                               <div className="flex items-center gap-4 text-xs text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(appointment.data_consulta).toLocaleDateString('pt-BR')}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(appointment.data_consulta).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
-                                </div>
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">{appointment.local_consulta || 'Consulta Online'}</p>
+                                 <div className="flex items-center gap-1">
+                                   <Calendar className="h-3 w-3" />
+                                   {new Date(appointment.data_consulta).toLocaleDateString('pt-BR')}
+                                 </div>
+                                 <div className="flex items-center gap-1">
+                                   <Clock className="h-3 w-3" />
+                                   {new Date(appointment.data_consulta).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                                 </div>
+                                 {appointment.status_pagamento && (
+                                   <Badge variant={appointment.status_pagamento === 'pago' ? 'default' : 'secondary'}>
+                                     {appointment.status_pagamento === 'pago' ? 'Pago' : 'Pendente'}
+                                   </Badge>
+                                 )}
+                               </div>
+                               <p className="text-xs text-gray-400 mt-1">{appointment.local_consulta || 'Consulta Online'}</p>
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {appointment.status === 'agendada' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="border-green-300 text-green-700 hover:bg-green-50 font-semibold"
-                              onClick={() => handleConfirmAppointment(appointment.id)}
-                            >
-                              <Check className="w-4 h-4 mr-2" />
-                              Confirmar
-                            </Button>
-                          )}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleReschedule(appointment)}
-                            className="border-yellow-200 hover:bg-yellow-50"
-                          >
-                            Reagendar
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleCancel(appointment.id)}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
+                         <div className="flex flex-wrap gap-2">
+                           {appointment.status === 'agendada' && appointment.status_pagamento === 'pago' && (
+                             <Button 
+                               variant="outline" 
+                               size="sm"
+                               className="border-green-300 text-green-700 hover:bg-green-50 font-semibold"
+                               onClick={() => handleConfirmAppointment(appointment.id)}
+                             >
+                               <Check className="w-4 h-4 mr-2" />
+                               Confirmar
+                             </Button>
+                           )}
+                           {appointment.status_pagamento === 'pendente' && (
+                             <PaymentVerificationButton 
+                               consultaId={appointment.id}
+                               onSuccess={() => window.location.reload()}
+                             />
+                           )}
+                           {appointment.status_pagamento === 'pago' && (
+                             <Button 
+                               variant="outline" 
+                               size="sm"
+                               onClick={() => handleReschedule(appointment)}
+                               className="border-yellow-200 hover:bg-yellow-50"
+                             >
+                               Reagendar
+                             </Button>
+                           )}
+                           <Button 
+                             variant="destructive" 
+                             size="sm"
+                             onClick={() => handleCancel(appointment.id)}
+                           >
+                             Cancelar
+                           </Button>
+                         </div>
                       </div>
                     </div>
                   ))

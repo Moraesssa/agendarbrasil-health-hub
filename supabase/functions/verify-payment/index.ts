@@ -39,13 +39,39 @@ serve(async (req) => {
     console.log("Session ID:", session_id);
     console.log("Consulta ID:", consulta_id);
 
-    if (!session_id) {
-      throw new Error("Session ID é obrigatório");
+    let finalSessionId = session_id;
+
+    // Se session_id não foi fornecido, tentar buscar pela consulta_id
+    if (!finalSessionId && consulta_id) {
+      console.log("Buscando session_id pela consulta...");
+      const { data: consultaData } = await supabaseClient
+        .from('consultas')
+        .select('*')
+        .eq('id', consulta_id)
+        .single();
+      
+      if (consultaData) {
+        // Buscar session_id nos pagamentos
+        const { data: pagamentoData } = await supabaseClient
+          .from('pagamentos')
+          .select('gateway_id')
+          .eq('consulta_id', consulta_id)
+          .single();
+        
+        if (pagamentoData?.gateway_id) {
+          finalSessionId = pagamentoData.gateway_id;
+          console.log("Session ID encontrado nos pagamentos:", finalSessionId);
+        }
+      }
+    }
+
+    if (!finalSessionId) {
+      throw new Error("Session ID não encontrado");
     }
 
     // Verificar status da sessão no Stripe
     console.log("Consultando Stripe...");
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const session = await stripe.checkout.sessions.retrieve(finalSessionId);
     console.log("Status da sessão:", session.status);
     console.log("Payment status:", session.payment_status);
 
@@ -69,7 +95,7 @@ serve(async (req) => {
             medico_id: session.metadata?.medico_id,
             valor: session.amount_total / 100,
             metodo_pagamento: 'credit_card',
-            gateway_id: session_id,
+            gateway_id: finalSessionId,
             status: 'succeeded',
             dados_gateway: session
           });

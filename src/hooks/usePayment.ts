@@ -231,6 +231,7 @@ export const usePayment = () => {
   return {
     processing,
     processPayment,
-    createCustomerPortalSession
+    createCustomerPortalSession,
+    verifyPayment
   };
 };

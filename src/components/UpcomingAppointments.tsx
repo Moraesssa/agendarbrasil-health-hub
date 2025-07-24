@@ -20,9 +20,10 @@ const UpcomingAppointments = () => {
   const { toast } = useToast();
   const { user, userData } = useAuth();
   
-  // Busca consultas recentes como principal
+  // Busca consultas recentes e futuras
   const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas({
-    limit: 3
+    futureOnly: true,
+    limit: 10
   });
 
   const [videoCallModal, setVideoCallModal] = useState<{
@@ -127,7 +128,7 @@ const UpcomingAppointments = () => {
   const getCardTitle = () => {
     const futureAppointments = consultas.filter(c => 
       new Date(c.data_consulta) > new Date() && 
-      ['agendada', 'confirmada', 'pendente'].includes(c.status)
+      c.status_pagamento === 'pago'
     );
     
     return futureAppointments.length > 0 ? "Próximas Consultas" : "Consultas Recentes";
@@ -136,7 +137,7 @@ const UpcomingAppointments = () => {
   const showingFallback = consultas.length > 0 && 
     !consultas.some(c => 
       new Date(c.data_consulta) > new Date() && 
-      ['agendada', 'confirmada', 'pendente'].includes(c.status)
+      c.status_pagamento === 'pago'
     );
 
   return (

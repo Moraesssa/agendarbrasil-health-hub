@@ -263,18 +263,30 @@ export const newAppointmentService = {
         throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
       }
 
-      // Garantir que a data seja futura
+      // Garantir que a data seja futura e em horário comercial
       const now = new Date();
       const appointmentDate = new Date(appointmentData.data_consulta);
       
       // Se a data/hora for no passado, ajustar para uma data futura
       if (appointmentDate <= now) {
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(10, 0, 0, 0); // 10:00 AM
+        const futureDate = new Date(now);
+        futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 7) + 1); // 1-7 dias
         
-        console.log("Data ajustada para o futuro:", tomorrow.toISOString());
-        appointmentData.data_consulta = tomorrow.toISOString();
+        // Definir horário comercial (8h às 18h)
+        const hour = 8 + Math.floor(Math.random() * 10); // 8h às 17h
+        const minutes = Math.random() < 0.5 ? 0 : 30; // :00 ou :30
+        futureDate.setHours(hour, minutes, 0, 0);
+        
+        // Evitar fins de semana
+        const dayOfWeek = futureDate.getDay();
+        if (dayOfWeek === 0) { // Domingo
+          futureDate.setDate(futureDate.getDate() + 1);
+        } else if (dayOfWeek === 6) { // Sábado
+          futureDate.setDate(futureDate.getDate() + 2);
+        }
+        
+        console.log("Data ajustada para o futuro:", futureDate.toISOString());
+        appointmentData.data_consulta = futureDate.toISOString();
       }
 
       const { error } = await supabase.from('consultas').insert({
