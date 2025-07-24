@@ -61,6 +61,10 @@ const AppointmentCard = ({
     if (isPastAppointment || isCompleted) {
       return "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 opacity-90";
     }
+    // Estilo especial para consultas online
+    if (appointment.tipo_consulta === 'Online') {
+      return "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 hover:shadow-md transition-all";
+    }
     return "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-white to-blue-50 border border-blue-100 hover:shadow-md transition-all";
   };
 
@@ -149,9 +153,14 @@ const AppointmentCard = ({
           )}
         </div>
         
-        <p className="text-xs sm:text-sm text-gray-600">
-          {appointment.tipo_consulta}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs sm:text-sm text-gray-600">
+            {appointment.tipo_consulta}
+          </p>
+          {appointment.tipo_consulta === 'Online' && (
+            <Video className="h-3 w-3 text-purple-600" />
+          )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 my-2">
           <div className="flex items-center gap-1">
