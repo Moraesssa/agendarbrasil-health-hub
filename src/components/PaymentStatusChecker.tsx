@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePayment } from "@/hooks/usePayment";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,8 +10,12 @@ interface PaymentStatusCheckerProps {
 export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusCheckerProps) => {
   const { verifyPayment } = usePayment();
   const { toast } = useToast();
+  const hasChecked = useRef(false);
 
   useEffect(() => {
+    // Evitar múltiplas execuções
+    if (hasChecked.current) return;
+    
     // Verificar se há parâmetros de retorno do Stripe na URL
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
@@ -19,6 +23,7 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
     const payment = urlParams.get('payment');
     
     if ((sessionId && success === 'true') || payment === 'success') {
+      hasChecked.current = true;
       console.log('Detectado retorno do Stripe, verificando pagamentos...');
       
       const checkPayments = async () => {
@@ -35,11 +40,15 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
             });
           }
           
-          onSuccess?.();
-          
-          // Limpar parâmetros da URL
+          // Limpar parâmetros da URL ANTES de chamar onSuccess
           const newUrl = window.location.pathname;
           window.history.replaceState({}, document.title, newUrl);
+          
+          // Aguardar um pouco antes de chamar onSuccess
+          setTimeout(() => {
+            onSuccess?.();
+          }, 500);
+          
         } catch (error) {
           console.error('Erro ao verificar pagamento:', error);
           toast({

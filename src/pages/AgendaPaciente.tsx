@@ -32,24 +32,17 @@ const AgendaPaciente = () => {
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDoctor | null>(null);
 
-  // Handle payment URL parameters
+  // Handle payment URL parameters - apenas para notificação, limpeza é feita pelo PaymentStatusChecker
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     
-    if (paymentStatus === 'success') {
-      toast({
-        title: "Pagamento realizado com sucesso!",
-        description: "Sua consulta foi confirmada e você receberá um lembrete antes do horário.",
-      });
-      // Clean the URL
-      navigate("/agenda-paciente", { replace: true });
-    } else if (paymentStatus === 'cancelled') {
+    if (paymentStatus === 'cancelled') {
       toast({
         title: "Pagamento cancelado",
         description: "O pagamento foi cancelado. Você pode tentar novamente a qualquer momento.",
         variant: "destructive"
       });
-      // Clean the URL
+      // Clean the URL only for cancelled payments
       navigate("/agenda-paciente", { replace: true });
     }
   }, [searchParams, navigate, toast]);
@@ -198,7 +191,32 @@ const AgendaPaciente = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <PaymentStatusChecker onSuccess={() => window.location.reload()} />
+      <PaymentStatusChecker onSuccess={() => {
+        // Recarregar dados sem recarregar página completa
+        const fetchAppointments = async () => {
+          if (!user) return;
+          try {
+            const { data, error } = await supabase
+              .from("consultas")
+              .select(`
+                *,
+                doctor_profile:profiles!consultas_medico_id_fkey (display_name)
+              `)
+              .order("data_consulta", { ascending: false });
+
+            if (error) throw error;
+            setAppointments(data || []);
+            
+            toast({
+              title: "Pagamento confirmado!",
+              description: "Sua consulta foi agendada com sucesso.",
+            });
+          } catch (error) {
+            console.error("Erro ao buscar agenda:", error);
+          }
+        };
+        fetchAppointments();
+      }} />
       <Header />
       
       <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
@@ -294,12 +312,32 @@ const AgendaPaciente = () => {
                                Confirmar
                              </Button>
                            )}
-                           {appointment.status_pagamento === 'pendente' && (
-                             <PaymentVerificationButton 
-                               consultaId={appointment.id}
-                               onSuccess={() => window.location.reload()}
-                             />
-                           )}
+                            {appointment.status_pagamento === 'pendente' && (
+                              <PaymentVerificationButton 
+                                consultaId={appointment.id}
+                                onSuccess={() => {
+                                  // Atualizar dados sem recarregar página
+                                  const fetchAppointments = async () => {
+                                    if (!user) return;
+                                    try {
+                                      const { data, error } = await supabase
+                                        .from("consultas")
+                                        .select(`
+                                          *,
+                                          doctor_profile:profiles!consultas_medico_id_fkey (display_name)
+                                        `)
+                                        .order("data_consulta", { ascending: false });
+
+                                      if (error) throw error;
+                                      setAppointments(data || []);
+                                    } catch (error) {
+                                      console.error("Erro ao buscar agenda:", error);
+                                    }
+                                  };
+                                  fetchAppointments();
+                                }}
+                              />
+                            )}
                            {appointment.status_pagamento === 'pago' && (
                              <Button 
                                variant="outline" 

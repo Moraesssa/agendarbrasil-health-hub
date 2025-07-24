@@ -220,11 +220,14 @@ export const usePayment = () => {
           description: "Sua consulta foi agendada com sucesso.",
         });
         
-        // Recarregar consultas
-        window.location.reload();
+        // Retornar sucesso sem recarregar página - deixar para o componente que chama decidir
+        return { success: true, paid: true };
       }
+      
+      return { success: true, paid: false };
     } catch (error) {
       console.error('Erro ao verificar pagamento:', error);
+      throw error;
     }
   };
 
