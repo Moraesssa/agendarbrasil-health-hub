@@ -6,20 +6,29 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useConsultas } from "@/hooks/useConsultas";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 import AppointmentSkeleton from "./appointments/AppointmentSkeleton";
 import ErrorCard from "./appointments/ErrorCard";
 import EmptyStateCard from "./appointments/EmptyStateCard";
 import AppointmentCard from "./appointments/AppointmentCard";
+import { VideoCallModal } from "./video/VideoCallModal";
+import { videoCallService } from "@/services/videoCallService";
 
 const UpcomingAppointments = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, userData } = useAuth();
   
   // Busca consultas recentes como principal
   const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas({
     limit: 3
   });
+
+  const [videoCallModal, setVideoCallModal] = useState<{
+    isOpen: boolean;
+    appointment: any;
+  }>({ isOpen: false, appointment: null });
 
   const handleRetry = () => {
     refetch();
@@ -71,6 +80,48 @@ const UpcomingAppointments = () => {
         description: `Direções para ${appointment.local_consulta}`,
       });
     }
+  };
+
+  const handleStartVideoCall = async (appointment: any) => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para acessar a videochamada.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verifica se pode acessar a sala
+    const accessCheck = await videoCallService.canAccessVideoRoom(appointment.id, user.id);
+    if (!accessCheck.success || !accessCheck.canAccess) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para acessar esta videochamada.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Cria ou obtém o room ID
+    const roomResult = await videoCallService.createOrUpdateVideoRoom(appointment.id);
+    if (!roomResult.success) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível acessar a sala de videochamada.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Abre o modal da videochamada
+    setVideoCallModal({
+      isOpen: true,
+      appointment: {
+        ...appointment,
+        video_room_id: roomResult.roomId
+      }
+    });
   };
 
   const getCardTitle = () => {
@@ -142,11 +193,24 @@ const UpcomingAppointments = () => {
                 onConfirm={handleConfirmAppointment}
                 onViewDetails={handleViewDetails}
                 onGetDirections={handleGetDirections}
+                onStartVideoCall={handleStartVideoCall}
               />
             ))}
           </>
         )}
       </CardContent>
+
+      {/* Video Call Modal */}
+      {videoCallModal.isOpen && videoCallModal.appointment && user && userData && (
+        <VideoCallModal
+          isOpen={videoCallModal.isOpen}
+          onClose={() => setVideoCallModal({ isOpen: false, appointment: null })}
+          appointment={videoCallModal.appointment}
+          userName={userData.displayName || user.email || "Usuário"}
+          userEmail={user.email || ""}
+          isDoctor={userData.userType === "medico"}
+        />
+      )}
     </Card>
   );
 };

@@ -1,5 +1,5 @@
 
-import { Calendar, Clock, Navigation, AlertCircle } from "lucide-react";
+import { Calendar, Clock, Navigation, AlertCircle, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tables } from "@/integrations/supabase/types";
@@ -16,13 +16,15 @@ interface AppointmentCardProps {
   onConfirm: (appointmentId: string) => void;
   onViewDetails: (appointment: AppointmentWithDoctor) => void;
   onGetDirections: (appointment: AppointmentWithDoctor) => void;
+  onStartVideoCall?: (appointment: AppointmentWithDoctor) => void;
 }
 
 const AppointmentCard = ({
   appointment,
   onConfirm,
   onViewDetails,
-  onGetDirections
+  onGetDirections,
+  onStartVideoCall
 }: AppointmentCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,7 +99,22 @@ const AppointmentCard = ({
         );
       }
 
-      if (appointment.tipo_consulta !== 'Online') {
+      if (appointment.tipo_consulta === 'Online') {
+        // Botão para videochamada
+        actions.unshift(
+          <Button
+            key="video"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-xs flex-1 sm:flex-none border-green-200 hover:bg-green-50"
+            onClick={() => onStartVideoCall?.(appointment)}
+          >
+            <Video className="h-3 w-3 mr-1" />
+            Videochamada
+          </Button>
+        );
+      } else {
+        // Botão para direções (consultas presenciais)
         actions.unshift(
           <Button
             key="directions"
