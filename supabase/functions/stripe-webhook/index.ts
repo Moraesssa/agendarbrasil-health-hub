@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
 serve(async (req) => {
@@ -23,8 +23,22 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       console.error("STRIPE_SECRET_KEY não configurada");
-      throw new Error("Stripe não configurado");
+      return new Response(JSON.stringify({ error: "Configuração inválida" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
+
+    // Verificar se o webhook secret está configurado
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      console.error("STRIPE_WEBHOOK_SECRET não configurada");
+      return new Response(JSON.stringify({ error: "Configuração inválida" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
     console.log("Stripe key configurada ✓");
 
     // Inicializar Stripe
@@ -40,18 +54,30 @@ serve(async (req) => {
 
     // Obter dados do webhook
     const body = await req.text();
-    console.log("Body recebido:", body.substring(0, 200) + "...");
+    console.log("Body recebido - tamanho:", body.length);
     
     const signature = req.headers.get("stripe-signature");
     console.log("Signature presente:", !!signature);
 
     if (!signature) {
       console.error("Nenhuma signature fornecida pelo Stripe");
-      throw new Error("Signature do webhook não fornecida");
+      return new Response(JSON.stringify({ error: "Signature inválida" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
-    // Verificar webhook (em produção, use o webhook secret)
-    const event = JSON.parse(body);
+    // Verificar webhook com signature do Stripe
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err) {
+      console.error(`Erro ao verificar assinatura do webhook: ${err.message}`);
+      return new Response(JSON.stringify({ error: "Signature inválida" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
     console.log("=== EVENTO STRIPE ===");
     console.log("Tipo:", event.type);
     console.log("ID:", event.id);
@@ -152,8 +178,7 @@ serve(async (req) => {
     console.error("Erro no webhook:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Erro interno do servidor",
-        details: error.toString()
+        error: "Erro interno do servidor"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

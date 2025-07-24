@@ -118,15 +118,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Erro na criação do checkout:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || "Erro interno do servidor",
-        details: error.toString()
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 });
