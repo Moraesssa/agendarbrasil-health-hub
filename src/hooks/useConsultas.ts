@@ -115,9 +115,16 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   };
 
   useEffect(() => {
-    // Chamar fetchConsultas quando as dependências mudarem
     fetchConsultas();
-  }, [fetchConsultas]); // Apenas fetchConsultas como dependência, pois ela já tem suas próprias dependências
+
+    // Listen for consultation updates
+    const handleConsultaUpdate = () => {
+      fetchConsultas();
+    };
+
+    window.addEventListener('consultaUpdated', handleConsultaUpdate);
+    return () => window.removeEventListener('consultaUpdated', handleConsultaUpdate);
+  }, [fetchConsultas]);
 
   return {
     consultas,

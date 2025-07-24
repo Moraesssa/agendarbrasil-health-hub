@@ -186,6 +186,14 @@ export const appointmentService = {
         throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
       }
 
+      // Create appointment with future date validation
+      const appointmentDate = new Date(appointmentData.data_consulta);
+      const now = new Date();
+      
+      if (appointmentDate <= now) {
+        throw new Error("Não é possível agendar consultas para horários passados.");
+      }
+
       const { error } = await supabase.from('consultas').insert({
         paciente_id: appointmentData.paciente_id,
         medico_id: appointmentData.medico_id,
@@ -194,6 +202,7 @@ export const appointmentService = {
         local_id: appointmentData.local_id,
         local_consulta: appointmentData.local_consulta_texto,
         status: 'agendada',
+        status_pagamento: 'pendente',
       });
 
       if (error) {

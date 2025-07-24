@@ -93,6 +93,16 @@ export const useCalendarData = () => {
     if (!consultasLoading) {
       loadCalendarData();
     }
+
+    // Listen for consultation updates
+    const handleConsultaUpdate = () => {
+      if (!consultasLoading) {
+        loadCalendarData();
+      }
+    };
+
+    window.addEventListener('consultaUpdated', handleConsultaUpdate);
+    return () => window.removeEventListener('consultaUpdated', handleConsultaUpdate);
   }, [user, consultasDoMes, consultasLoading, currentDate]);
 
   return {

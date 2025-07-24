@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { PaymentStatusChecker } from "@/components/PaymentStatusChecker";
 import { PaymentVerificationButton } from "@/components/PaymentVerificationButton";
+import { PendingAppointmentsAlert } from "@/components/dashboard/PendingAppointmentsAlert";
 
 // Type for appointments with doctor info from profiles table
 type AppointmentWithDoctor = Tables<'consultas'> & {
@@ -211,6 +212,9 @@ const AgendaPaciente = () => {
               title: "Pagamento confirmado!",
               description: "Sua consulta foi agendada com sucesso.",
             });
+            
+            // Dispatch update event
+            window.dispatchEvent(new CustomEvent('consultaUpdated'));
           } catch (error) {
             console.error("Erro ao buscar agenda:", error);
           }
@@ -220,6 +224,8 @@ const AgendaPaciente = () => {
       <Header />
       
       <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        <PendingAppointmentsAlert />
+      
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button 

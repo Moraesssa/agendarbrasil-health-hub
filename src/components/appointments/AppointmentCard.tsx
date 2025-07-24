@@ -94,7 +94,10 @@ const AppointmentCard = ({
         <PaymentVerificationButton 
           key="verify-payment"
           consultaId={appointment.id}
-          onSuccess={() => window.location.reload()}
+          onSuccess={() => {
+            // Refresh local state instead of full page reload
+            window.dispatchEvent(new CustomEvent('consultaUpdated'));
+          }}
         />
       );
     }
