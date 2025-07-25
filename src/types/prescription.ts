@@ -1,3 +1,4 @@
+
 export interface MedicalPrescription {
   id: string;
   patient_id: string;
@@ -9,6 +10,8 @@ export interface MedicalPrescription {
   instructions?: string;
   prescribed_date: string;
   valid_until?: string;
+  prescription_number?: string;
+  validation_hash?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
