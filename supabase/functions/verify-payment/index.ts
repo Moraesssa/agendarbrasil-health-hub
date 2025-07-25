@@ -7,6 +7,42 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting and security utilities
+const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
+
+const checkRateLimit = (identifier: string, maxRequests: number = 10, windowMs: number = 60000): boolean => {
+  const now = Date.now();
+  const userRequests = rateLimitMap.get(identifier);
+  
+  if (!userRequests) {
+    rateLimitMap.set(identifier, { count: 1, lastRequest: now });
+    return true;
+  }
+  
+  if (now - userRequests.lastRequest > windowMs) {
+    rateLimitMap.set(identifier, { count: 1, lastRequest: now });
+    return true;
+  }
+  
+  if (userRequests.count >= maxRequests) {
+    return false;
+  }
+  
+  userRequests.count++;
+  userRequests.lastRequest = now;
+  return true;
+};
+
+const createSecureErrorResponse = (error: any): string => {
+  const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development';
+  
+  if (isDevelopment) {
+    return error?.message || 'An error occurred';
+  }
+  
+  return 'Service temporarily unavailable';
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -15,6 +51,16 @@ serve(async (req) => {
 
   try {
     console.log("=== VERIFICAÇÃO DE PAGAMENTO INICIADA ===");
+    
+    // Rate limiting check
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(clientIP, 10, 60000)) {
+      console.warn('Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        { status: 429, headers: corsHeaders }
+      );
+    }
     
     // Verificar se a chave do Stripe está configurada
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -36,8 +82,14 @@ serve(async (req) => {
 
     // Obter dados da requisição
     const { session_id, consulta_id } = await req.json();
-    console.log("Session ID:", session_id);
-    console.log("Consulta ID:", consulta_id);
+    
+    // Input validation
+    if (!session_id && !consulta_id) {
+      throw new Error("Session ID ou Consulta ID é obrigatório");
+    }
+    
+    console.log("Session ID:", session_id ? '[PROTECTED]' : 'Not provided');
+    console.log("Consulta ID:", consulta_id || 'Not provided');
 
     let finalSessionId = session_id;
 
@@ -145,10 +197,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Erro na verificação:", error);
+    
+    const secureErrorMessage = createSecureErrorResponse(error);
+    
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: "Erro interno do servidor"
+        error: secureErrorMessage
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
