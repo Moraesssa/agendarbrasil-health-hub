@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 import { AuthContextType, AuthProviderProps } from '@/types/auth';
 import { useAuthState } from '@/hooks/useAuthState';
 import { useAuthActions } from '@/hooks/useAuthActions';
+import { useSecurityConfig } from '@/hooks/useSecurityConfig';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -32,6 +33,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUserData,
     setOnboardingStatus
   );
+
+  // Initialize security configuration
+  useSecurityConfig();
 
   const value: AuthContextType = {
     user,

@@ -14,17 +14,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { SpecialtyMultiSelect } from "@/components/specialty/SpecialtyMultiSelect";
+import { validateCRM, validatePhone, sanitizeInput } from "@/utils/validation";
 
 const dadosProfissionaisSchema = z.object({
   crm: z.string()
-    .min(5, "CRM deve ter no mínimo 5 caracteres")
-    .nonempty("CRM é obrigatório"),
+    .min(1, "CRM é obrigatório")
+    .refine(validateCRM, "CRM deve ter formato válido (ex: 123456/SP)"),
   especialidades: z.array(z.string())
     .min(1, "Pelo menos uma especialidade é obrigatória"),
   telefone: z.string()
-    .min(10, "Telefone deve ter no mínimo 10 caracteres")
-    .nonempty("Telefone é obrigatório"),
+    .min(1, "Telefone é obrigatório")
+    .refine(validatePhone, "Telefone deve ter formato válido"),
   whatsapp: z.string().optional()
+    .refine((val) => !val || validatePhone(val), "WhatsApp deve ter formato válido")
 });
 
 type DadosProfissionaisFormData = z.infer<typeof dadosProfissionaisSchema>;
@@ -47,10 +49,10 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
 
   const onSubmit = (data: DadosProfissionaisFormData) => {
     onNext({
-      crm: data.crm,
-      especialidades: data.especialidades,
-      telefone: data.telefone,
-      whatsapp: data.whatsapp || null
+      crm: sanitizeInput(data.crm),
+      especialidades: data.especialidades.map(spec => sanitizeInput(spec)),
+      telefone: sanitizeInput(data.telefone),
+      whatsapp: data.whatsapp ? sanitizeInput(data.whatsapp) : null
     });
   };
 

@@ -63,6 +63,8 @@ const QuickActions = ({ onAction }: QuickActionsProps) => {
       navigate("/gerenciar-familia");
     } else if (action === "gestao-medicamentos") {
       navigate("/gestao-medicamentos");
+    } else if (action === "Consulta por telemedicina") {
+      navigate("/agendamento?tipo=telemedicina");
     } else {
       onAction(action);
     }

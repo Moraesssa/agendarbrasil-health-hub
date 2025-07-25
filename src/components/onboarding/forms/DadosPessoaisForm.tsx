@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { validateCPF, validatePhone, validateCRM, sanitizeInput, validateDate } from "@/utils/validation";
+import { useToast } from "@/hooks/use-toast";
 
 interface DadosPessoaisFormProps {
   onNext: (data: any) => void;
@@ -12,6 +14,7 @@ interface DadosPessoaisFormProps {
 }
 
 export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: DadosPessoaisFormProps) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     nomeCompleto: initialData?.nomeCompleto || '',
     cpf: initialData?.cpf || '',
@@ -22,30 +25,95 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
       especialidades: initialData?.especialidades || ['']
     })
   });
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validate nome
+    if (!formData.nomeCompleto.trim()) {
+      newErrors.nomeCompleto = "Nome completo é obrigatório";
+    } else if (formData.nomeCompleto.length < 2) {
+      newErrors.nomeCompleto = "Nome deve ter pelo menos 2 caracteres";
+    }
+    
+    // Validate CPF
+    if (!validateCPF(formData.cpf)) {
+      newErrors.cpf = "CPF inválido";
+    }
+    
+    // Validate date
+    if (!validateDate(formData.dataNascimento)) {
+      newErrors.dataNascimento = "Data de nascimento inválida";
+    }
+    
+    // Validate phone
+    if (!validatePhone(formData.telefone)) {
+      newErrors.telefone = "Telefone inválido";
+    }
+    
+    // Validate CRM for doctors
+    if (isMedico && !validateCRM(formData.crm)) {
+      newErrors.crm = "CRM inválido";
+    }
+    
+    // Validate specialties for doctors
+    if (isMedico) {
+      const validEspecialidades = formData.especialidades.filter(e => e.trim());
+      if (validEspecialidades.length === 0) {
+        newErrors.especialidades = "Pelo menos uma especialidade é obrigatória";
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!validateForm()) {
+      toast({
+        title: "Erro na validação",
+        description: "Por favor, corrija os erros no formulário.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Sanitize inputs
+    const sanitizedData = {
+      nomeCompleto: sanitizeInput(formData.nomeCompleto),
+      cpf: formData.cpf.replace(/[^\d]/g, ''),
+      dataNascimento: formData.dataNascimento,
+      telefone: formData.telefone.replace(/[^\d]/g, ''),
+      ...(isMedico && {
+        crm: sanitizeInput(formData.crm),
+        especialidades: formData.especialidades.map(e => sanitizeInput(e)).filter(e => e.trim())
+      })
+    };
+    
     if (isMedico) {
       onNext({
-        crm: formData.crm,
-        especialidades: formData.especialidades.filter(e => e.trim()),
-        telefone: formData.telefone,
+        crm: sanitizedData.crm,
+        especialidades: sanitizedData.especialidades,
+        telefone: sanitizedData.telefone,
         dadosProfissionais: {
-          nomeCompleto: formData.nomeCompleto,
-          cpf: formData.cpf,
-          dataNascimento: new Date(formData.dataNascimento)
+          nomeCompleto: sanitizedData.nomeCompleto,
+          cpf: sanitizedData.cpf,
+          dataNascimento: new Date(sanitizedData.dataNascimento)
         }
       });
     } else {
       onNext({
         dadosPessoais: {
-          nomeCompleto: formData.nomeCompleto,
-          cpf: formData.cpf,
-          dataNascimento: new Date(formData.dataNascimento)
+          nomeCompleto: sanitizedData.nomeCompleto,
+          cpf: sanitizedData.cpf,
+          dataNascimento: new Date(sanitizedData.dataNascimento)
         },
         contato: {
-          telefone: formData.telefone
+          telefone: sanitizedData.telefone
         }
       });
     }
@@ -78,9 +146,16 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
             <Input
               id="nomeCompleto"
               value={formData.nomeCompleto}
-              onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, nomeCompleto: e.target.value });
+                if (errors.nomeCompleto) setErrors({ ...errors, nomeCompleto: '' });
+              }}
+              className={errors.nomeCompleto ? "border-destructive" : ""}
               required
             />
+            {errors.nomeCompleto && (
+              <p className="text-sm text-destructive">{errors.nomeCompleto}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -88,9 +163,17 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
             <Input
               id="cpf"
               value={formData.cpf}
-              onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, cpf: e.target.value });
+                if (errors.cpf) setErrors({ ...errors, cpf: '' });
+              }}
+              className={errors.cpf ? "border-destructive" : ""}
+              placeholder="000.000.000-00"
               required
             />
+            {errors.cpf && (
+              <p className="text-sm text-destructive">{errors.cpf}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -109,9 +192,17 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
             <Input
               id="telefone"
               value={formData.telefone}
-              onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, telefone: e.target.value });
+                if (errors.telefone) setErrors({ ...errors, telefone: '' });
+              }}
+              className={errors.telefone ? "border-destructive" : ""}
+              placeholder="(11) 99999-9999"
               required
             />
+            {errors.telefone && (
+              <p className="text-sm text-destructive">{errors.telefone}</p>
+            )}
           </div>
 
           {isMedico && (

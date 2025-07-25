@@ -204,9 +204,58 @@ export const usePayment = () => {
     }
   };
 
+  const verifyPayment = async (consultaId: string) => {
+    try {
+      console.log("usePayment: Verificando pagamento para consulta:", consultaId);
+      
+      const { data, error } = await supabase.functions.invoke('verify-payment', {
+        body: { consulta_id: consultaId }
+      });
+
+      console.log("usePayment: Resposta do verify-payment:", data);
+
+      if (error) {
+        console.error("usePayment: Erro na função verify-payment:", error);
+        throw error;
+      }
+
+      if (data.success && data.payment_status === 'paid') {
+        console.log("usePayment: Pagamento confirmado!");
+        toast({
+          title: "Pagamento confirmado!",
+          description: "Sua consulta foi agendada com sucesso.",
+        });
+        
+        // Disparar evento para atualizar interfaces
+        window.dispatchEvent(new CustomEvent('consultaUpdated'));
+        
+        return { success: true, paid: true, data: data.consulta };
+      } else if (data.success) {
+        console.log("usePayment: Pagamento ainda não processado");
+        toast({
+          title: "Pagamento em processamento",
+          description: "O pagamento ainda está sendo processado. Tente novamente em alguns minutos.",
+          variant: "default"
+        });
+        return { success: true, paid: false };
+      }
+      
+      return { success: false, paid: false };
+    } catch (error) {
+      console.error('usePayment: Erro ao verificar pagamento:', error);
+      toast({
+        title: "Erro na verificação",
+        description: "Não foi possível verificar o pagamento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   return {
     processing,
     processPayment,
-    createCustomerPortalSession
+    createCustomerPortalSession,
+    verifyPayment
   };
 };
