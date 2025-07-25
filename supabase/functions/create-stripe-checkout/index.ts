@@ -108,7 +108,6 @@ serve(async (req) => {
     console.log("Dados recebidos:", { consultaId, medicoId, amount: '[PROTECTED]', currency, paymentMethod });
 
     // Verificar se o usuário está autenticado
-    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("Token de autorização não fornecido");
     }
