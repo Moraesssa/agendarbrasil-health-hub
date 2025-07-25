@@ -1,13 +1,10 @@
-
-import { Calendar, Clock, User, FileText, RotateCcw, Download, QrCode } from "lucide-react";
+import { Calendar, Clock, User, FileText, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PrescriptionWithRenewals } from "@/types/prescription";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { pdfService } from "@/services/pdfService";
-import { useToast } from "@/hooks/use-toast";
 
 interface PrescriptionCardProps {
   prescription: PrescriptionWithRenewals;
@@ -22,8 +19,6 @@ const PrescriptionCard = ({
   onViewHistory,
   isSubmitting = false 
 }: PrescriptionCardProps) => {
-  const { toast } = useToast();
-  
   const isExpired = prescription.valid_until && new Date(prescription.valid_until) < new Date();
   const isExpiringSoon = prescription.valid_until && 
     new Date(prescription.valid_until) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -46,33 +41,6 @@ const PrescriptionCard = ({
     return 'Ativa';
   };
 
-  const handleDownloadPDF = async () => {
-    try {
-      const blob = await pdfService.generatePrescriptionPDF(prescription);
-      pdfService.downloadPDF(blob, `receita-${prescription.prescription_number || prescription.id}.pdf`);
-      toast({
-        title: "PDF gerado",
-        description: "O PDF da receita foi baixado com sucesso",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao gerar PDF",
-        description: "Não foi possível gerar o PDF da receita",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCopyValidationCode = () => {
-    if (prescription.validation_hash) {
-      navigator.clipboard.writeText(prescription.validation_hash);
-      toast({
-        title: "Código copiado",
-        description: "Código de validação copiado para a área de transferência",
-      });
-    }
-  };
-
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-3">
@@ -85,11 +53,6 @@ const PrescriptionCard = ({
               <User className="h-4 w-4" />
               <span>Dr. {prescription.doctor_name}</span>
             </div>
-            {prescription.prescription_number && (
-              <div className="text-xs text-gray-500 mt-1">
-                Receita Nº: {prescription.prescription_number}
-              </div>
-            )}
           </div>
           <Badge className={`${getStatusColor()} border-0`}>
             {getStatusText()}
@@ -177,30 +140,6 @@ const PrescriptionCard = ({
             <FileText className="h-4 w-4 mr-1" />
             Histórico
           </Button>
-          
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={handleDownloadPDF}
-            className="flex-1"
-          >
-            <Download className="h-4 w-4 mr-1" />
-            PDF
-          </Button>
-        </div>
-
-        <div className="flex gap-2">
-          {prescription.validation_hash && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={handleCopyValidationCode}
-              className="flex-1"
-            >
-              <QrCode className="h-4 w-4 mr-1" />
-              Código de Validação
-            </Button>
-          )}
           
           {prescription.is_active && !hasActivePendingRenewal && (
             <Button 

@@ -10,23 +10,20 @@ import { Separator } from "@/components/ui/separator";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { validateNumericRange, validateTimeFormat, sanitizeNumericInput } from "@/utils/validation";
 
 // --- Zod Schema com a nova estrutura de horários ---
 const horarioSchema = z.object({
   ativo: z.boolean(),
-  inicio: z.string().refine(validateTimeFormat, "Formato de hora inválido (HH:MM)"),
-  fim: z.string().refine(validateTimeFormat, "Formato de hora inválido (HH:MM)"),
+  inicio: z.string(),
+  fim: z.string(),
 }).refine(data => !data.ativo || (data.inicio && data.fim && data.inicio < data.fim), {
   message: "Início deve ser antes do fim.",
   path: ["inicio"],
 });
 
 const configuracoesSchema = z.object({
-  duracaoConsulta: z.coerce.number()
-    .refine(val => validateNumericRange(val, 15, 120), "Duração deve estar entre 15 e 120 minutos"),
-  valorConsulta: z.coerce.number()
-    .refine(val => validateNumericRange(val, 0.01, 10000), "Valor deve estar entre R$ 0,01 e R$ 10.000"),
+  duracaoConsulta: z.coerce.number().min(15, "Mínimo 15 min").max(120, "Máximo 120 min"),
+  valorConsulta: z.coerce.number().positive("O valor deve ser positivo"),
   aceitaConvenio: z.boolean().default(false),
   horarios: z.record(horarioSchema)
 });
@@ -98,31 +95,14 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                 <FormField control={form.control} name="duracaoConsulta" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Duração da Consulta (minutos)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="15" 
-                        max="120"
-                        {...field} 
-                        onChange={(e) => field.onChange(sanitizeNumericInput(e.target.value))}
-                      />
-                    </FormControl>
+                    <FormControl><Input type="number" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="valorConsulta" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Valor da Consulta (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        min="0.01"
-                        max="10000"
-                        {...field} 
-                        onChange={(e) => field.onChange(sanitizeNumericInput(e.target.value))}
-                      />
-                    </FormControl>
+                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

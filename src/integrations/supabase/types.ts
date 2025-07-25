@@ -17,9 +17,6 @@ export type Database = {
       consultas: {
         Row: {
           agendado_por: string | null
-          auto_confirmed: boolean | null
-          cancellation_reason: string | null
-          confirmation_sent_at: string | null
           created_at: string
           data_consulta: string
           diagnostico: string | null
@@ -35,8 +32,6 @@ export type Database = {
           paciente_familiar_id: string | null
           paciente_id: string
           preparation_completed: boolean | null
-          reminder_sent_at: string | null
-          rescheduled_from: string | null
           service_type: string | null
           status: Database["public"]["Enums"]["appointment_status"]
           status_pagamento: string | null
@@ -44,14 +39,9 @@ export type Database = {
           triage_id: string | null
           updated_at: string
           valor: number | null
-          video_room_id: string | null
-          waiting_list_position: number | null
         }
         Insert: {
           agendado_por?: string | null
-          auto_confirmed?: boolean | null
-          cancellation_reason?: string | null
-          confirmation_sent_at?: string | null
           created_at?: string
           data_consulta: string
           diagnostico?: string | null
@@ -67,8 +57,6 @@ export type Database = {
           paciente_familiar_id?: string | null
           paciente_id: string
           preparation_completed?: boolean | null
-          reminder_sent_at?: string | null
-          rescheduled_from?: string | null
           service_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           status_pagamento?: string | null
@@ -76,14 +64,9 @@ export type Database = {
           triage_id?: string | null
           updated_at?: string
           valor?: number | null
-          video_room_id?: string | null
-          waiting_list_position?: number | null
         }
         Update: {
           agendado_por?: string | null
-          auto_confirmed?: boolean | null
-          cancellation_reason?: string | null
-          confirmation_sent_at?: string | null
           created_at?: string
           data_consulta?: string
           diagnostico?: string | null
@@ -99,8 +82,6 @@ export type Database = {
           paciente_familiar_id?: string | null
           paciente_id?: string
           preparation_completed?: boolean | null
-          reminder_sent_at?: string | null
-          rescheduled_from?: string | null
           service_type?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           status_pagamento?: string | null
@@ -108,8 +89,6 @@ export type Database = {
           triage_id?: string | null
           updated_at?: string
           valor?: number | null
-          video_room_id?: string | null
-          waiting_list_position?: number | null
         }
         Relationships: [
           {
@@ -145,13 +124,6 @@ export type Database = {
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_rescheduled_from_fkey"
-            columns: ["rescheduled_from"]
-            isOneToOne: false
-            referencedRelation: "consultas"
             referencedColumns: ["id"]
           },
           {
@@ -1241,39 +1213,6 @@ export type Database = {
         }
         Relationships: []
       }
-      temporary_reservations: {
-        Row: {
-          created_at: string
-          data_consulta: string
-          expires_at: string
-          id: string
-          local_id: string | null
-          medico_id: string
-          paciente_id: string
-          session_id: string
-        }
-        Insert: {
-          created_at?: string
-          data_consulta: string
-          expires_at?: string
-          id?: string
-          local_id?: string | null
-          medico_id: string
-          paciente_id: string
-          session_id: string
-        }
-        Update: {
-          created_at?: string
-          data_consulta?: string
-          expires_at?: string
-          id?: string
-          local_id?: string | null
-          medico_id?: string
-          paciente_id?: string
-          session_id?: string
-        }
-        Relationships: []
-      }
       user_consents: {
         Row: {
           consent_version: string
@@ -1399,45 +1338,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      waiting_list: {
-        Row: {
-          created_at: string
-          data_preferencia: string
-          especialidade: string
-          id: string
-          local_id: string | null
-          medico_id: string
-          paciente_id: string
-          periodo_preferencia: string | null
-          status: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          data_preferencia: string
-          especialidade: string
-          id?: string
-          local_id?: string | null
-          medico_id: string
-          paciente_id: string
-          periodo_preferencia?: string | null
-          status?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          data_preferencia?: string
-          especialidade?: string
-          id?: string
-          local_id?: string | null
-          medico_id?: string
-          paciente_id?: string
-          periodo_preferencia?: string | null
-          status?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
     }
     Views: {

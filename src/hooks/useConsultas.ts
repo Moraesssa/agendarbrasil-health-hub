@@ -56,9 +56,6 @@ export const useConsultas = (filters?: ConsultasFilters) => {
         query = query.gte('data_consulta', new Date().toISOString());
       }
 
-      // Filtrar consultas pagas, pendentes ou aguardando pagamento
-      query = query.in('status_pagamento', ['pago', 'pendente', 'pending_payment']);
-
       // Apply month/year filter
       if (filters?.month !== undefined && filters?.year !== undefined) {
         const startOfMonth = new Date(filters.year, filters.month - 1, 1);
@@ -80,8 +77,17 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       if (error) throw error;
 
-      // Simplifica o estado para evitar loops infinitos
-      setConsultas(data as AppointmentWithDoctor[] || []);
+      // Importante: Garante que um novo array só seja definido se os dados realmente mudarem
+      // ou se o array for vazio, para evitar re-renderizações desnecessárias.
+      setConsultas(prevConsultas => {
+        if (
+          !data || data.length === 0 && prevConsultas.length === 0 ||
+          JSON.stringify(data) === JSON.stringify(prevConsultas) // Comparação profunda simples para evitar re-render
+        ) {
+          return prevConsultas;
+        }
+        return data as AppointmentWithDoctor[];
+      });
 
     } catch (err) {
       console.error('Erro ao buscar consultas:', err);
@@ -115,16 +121,9 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   };
 
   useEffect(() => {
+    // Chamar fetchConsultas quando as dependências mudarem
     fetchConsultas();
-
-    // Listen for consultation updates
-    const handleConsultaUpdate = () => {
-      fetchConsultas();
-    };
-
-    window.addEventListener('consultaUpdated', handleConsultaUpdate);
-    return () => window.removeEventListener('consultaUpdated', handleConsultaUpdate);
-  }, [fetchConsultas]);
+  }, [fetchConsultas]); // Apenas fetchConsultas como dependência, pois ela já tem suas próprias dependências
 
   return {
     consultas,
