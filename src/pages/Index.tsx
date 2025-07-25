@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield } from "lucide-react";
 
 const Index = () => {
   const { user } = useAuth();
@@ -111,27 +111,6 @@ const Index = () => {
             </div>
           </div>
         )}
-
-        {/* Seção de Validação de Documentos - Acesso Público */}
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-yellow-200">
-            <div className="text-center">
-              <Shield className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Validação de Documentos
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Valide a autenticidade de receitas e atestados médicos
-              </p>
-              <Link 
-                to="/validar-documento" 
-                className="inline-block bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 transition-colors"
-              >
-                Validar Documento
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
