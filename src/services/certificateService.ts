@@ -211,7 +211,8 @@ export const certificateService = {
 
       return (data || []).map(item => ({
         ...item,
-        document_type: item.document_type as 'prescription' | 'certificate'
+        document_type: item.document_type as 'prescription' | 'certificate',
+        ip_address: item.ip_address as string | undefined
       }));
     } catch (error) {
       logger.error("Failed to fetch validation history", "CertificateService", error);
