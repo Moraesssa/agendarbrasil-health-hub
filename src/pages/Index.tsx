@@ -211,7 +211,7 @@ const Index = () => {
               <div className="relative z-10">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
                   <span className="bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
-                    Bem-vindo, Residencial Moraes!
+                    {user ? "Bem-vindo, Residencial Moraes!" : "AgendarBrasil"}
                   </span>
                 </h1>
                 <div className="text-lg sm:text-xl text-gray-600 mb-6 capitalize font-medium">
