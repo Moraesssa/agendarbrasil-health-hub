@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, Heart, Shield, FileText, CheckCircle } from "lucide-react";
+import { Calendar, Clock, Users, Heart } from "lucide-react";
 import QuickActions from "@/components/QuickActions";
 import UpcomingAppointments from "@/components/UpcomingAppointments";
 import HealthSummary from "@/components/HealthSummary";
@@ -89,27 +89,6 @@ const Index = () => {
                   <span className="text-sm text-gray-600">Próximos exames</span>
                   <Badge variant="secondary">1</Badge>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Validation Link */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-green-600" />
-                  Validação de Documentos
-                </CardTitle>
-                <CardDescription>
-                  Verifique a autenticidade de receitas e atestados médicos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link to="/validar-documento">
-                  <Button variant="outline" className="w-full">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Validar Documento
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
           </div>
