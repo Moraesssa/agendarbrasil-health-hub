@@ -163,39 +163,6 @@ export type Database = {
           },
         ]
       }
-      document_validations: {
-        Row: {
-          accessed_at: string
-          created_at: string
-          document_id: string
-          document_type: string
-          id: string
-          ip_address: unknown | null
-          user_agent: string | null
-          validation_code: string
-        }
-        Insert: {
-          accessed_at?: string
-          created_at?: string
-          document_id: string
-          document_type: string
-          id?: string
-          ip_address?: unknown | null
-          user_agent?: string | null
-          validation_code: string
-        }
-        Update: {
-          accessed_at?: string
-          created_at?: string
-          document_id?: string
-          document_type?: string
-          id?: string
-          ip_address?: unknown | null
-          user_agent?: string | null
-          validation_code?: string
-        }
-        Relationships: []
-      }
       encaminhamentos: {
         Row: {
           created_at: string
@@ -624,60 +591,6 @@ export type Database = {
           },
         ]
       }
-      medical_certificates: {
-        Row: {
-          certificate_number: string
-          certificate_type: string
-          content: string
-          created_at: string
-          diagnosis: string | null
-          doctor_id: string
-          end_date: string | null
-          id: string
-          is_active: boolean
-          patient_id: string
-          recommendations: string | null
-          start_date: string | null
-          title: string
-          updated_at: string
-          validation_hash: string
-        }
-        Insert: {
-          certificate_number?: string
-          certificate_type: string
-          content: string
-          created_at?: string
-          diagnosis?: string | null
-          doctor_id: string
-          end_date?: string | null
-          id?: string
-          is_active?: boolean
-          patient_id: string
-          recommendations?: string | null
-          start_date?: string | null
-          title: string
-          updated_at?: string
-          validation_hash?: string
-        }
-        Update: {
-          certificate_number?: string
-          certificate_type?: string
-          content?: string
-          created_at?: string
-          diagnosis?: string | null
-          doctor_id?: string
-          end_date?: string | null
-          id?: string
-          is_active?: boolean
-          patient_id?: string
-          recommendations?: string | null
-          start_date?: string | null
-          title?: string
-          updated_at?: string
-          validation_hash?: string
-        }
-        Relationships: []
-      }
       medical_exams: {
         Row: {
           completed_date: string | null
@@ -763,10 +676,8 @@ export type Database = {
           medication_name: string
           patient_id: string
           prescribed_date: string
-          prescription_number: string | null
           updated_at: string
           valid_until: string | null
-          validation_hash: string | null
         }
         Insert: {
           created_at?: string
@@ -780,10 +691,8 @@ export type Database = {
           medication_name: string
           patient_id: string
           prescribed_date?: string
-          prescription_number?: string | null
           updated_at?: string
           valid_until?: string | null
-          validation_hash?: string | null
         }
         Update: {
           created_at?: string
@@ -797,10 +706,8 @@ export type Database = {
           medication_name?: string
           patient_id?: string
           prescribed_date?: string
-          prescription_number?: string | null
           updated_at?: string
           valid_until?: string | null
-          validation_hash?: string | null
         }
         Relationships: []
       }
