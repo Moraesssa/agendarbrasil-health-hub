@@ -12,6 +12,11 @@ export interface MedicalPrescription {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Novos campos adicionados
+  prescription_number?: string;
+  validation_hash?: string;
+  pdf_generated?: boolean;
+  pdf_path?: string;
   // Related data
   doctor_name?: string;
   patient_name?: string;

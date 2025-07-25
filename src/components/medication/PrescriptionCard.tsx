@@ -49,7 +49,8 @@ const PrescriptionCard = ({
   const handleDownloadPDF = async () => {
     try {
       const blob = await pdfService.generatePrescriptionPDF(prescription);
-      pdfService.downloadPDF(blob, `receita-${prescription.prescription_number || prescription.id}.pdf`);
+      const prescriptionNumber = prescription.prescription_number || prescription.id;
+      pdfService.downloadPDF(blob, `receita-${prescriptionNumber}.pdf`);
       toast({
         title: "PDF gerado",
         description: "O PDF da receita foi baixado com sucesso",
@@ -69,6 +70,12 @@ const PrescriptionCard = ({
       toast({
         title: "Código copiado",
         description: "Código de validação copiado para a área de transferência",
+      });
+    } else {
+      toast({
+        title: "Código não disponível",
+        description: "Esta receita ainda não possui código de validação",
+        variant: "destructive",
       });
     }
   };
@@ -190,17 +197,16 @@ const PrescriptionCard = ({
         </div>
 
         <div className="flex gap-2">
-          {prescription.validation_hash && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={handleCopyValidationCode}
-              className="flex-1"
-            >
-              <QrCode className="h-4 w-4 mr-1" />
-              Código de Validação
-            </Button>
-          )}
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleCopyValidationCode}
+            className="flex-1"
+            disabled={!prescription.validation_hash}
+          >
+            <QrCode className="h-4 w-4 mr-1" />
+            Código de Validação
+          </Button>
           
           {prescription.is_active && !hasActivePendingRenewal && (
             <Button 

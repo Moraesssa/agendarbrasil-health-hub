@@ -1,158 +1,204 @@
 
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
-import { MedicalCertificate } from '@/types/certificates';
-import { MedicalPrescription } from '@/types/prescription';
-import { PDFGenerationOptions } from '@/types/certificates';
+import { MedicalCertificate, PDFGenerationOptions } from '@/types/certificates';
+import { PrescriptionWithRenewals } from '@/types/prescription';
+import { logger } from '@/utils/logger';
 
 export const pdfService = {
   // Generate PDF for prescription
-  async generatePrescriptionPDF(prescription: MedicalPrescription, options: PDFGenerationOptions = {}): Promise<Blob> {
-    const doc = new jsPDF();
-    const { includeQRCode = true, fontSize = 12, margin = 20 } = options;
-
-    // Header
-    doc.setFontSize(16);
-    doc.text('RECEITA MÉDICA', margin, margin);
+  async generatePrescriptionPDF(prescription: PrescriptionWithRenewals, options?: PDFGenerationOptions): Promise<Blob> {
+    logger.info("Generating prescription PDF", "PDFService", { id: prescription.id });
     
-    // Prescription number
-    doc.setFontSize(10);
-    doc.text(`Receita Nº: ${prescription.prescription_number || 'N/A'}`, margin, margin + 10);
-    
-    // Doctor info
-    doc.setFontSize(12);
-    doc.text(`Médico: ${prescription.doctor_name || 'N/A'}`, margin, margin + 25);
-    
-    // Patient info
-    doc.text(`Paciente: ${prescription.patient_name || 'N/A'}`, margin, margin + 35);
-    
-    // Date
-    doc.text(`Data: ${new Date(prescription.prescribed_date).toLocaleDateString('pt-BR')}`, margin, margin + 45);
-    
-    // Prescription content
-    doc.setFontSize(14);
-    doc.text('PRESCRIÇÃO:', margin, margin + 60);
-    
-    doc.setFontSize(12);
-    doc.text(`Medicamento: ${prescription.medication_name}`, margin, margin + 75);
-    doc.text(`Dosagem: ${prescription.dosage}`, margin, margin + 85);
-    doc.text(`Frequência: ${prescription.frequency}`, margin, margin + 95);
-    
-    if (prescription.instructions) {
-      doc.text('Instruções:', margin, margin + 110);
-      const instructionLines = doc.splitTextToSize(prescription.instructions, 170);
-      doc.text(instructionLines, margin, margin + 120);
-    }
-    
-    // Validity
-    if (prescription.valid_until) {
-      doc.text(`Válida até: ${new Date(prescription.valid_until).toLocaleDateString('pt-BR')}`, margin, margin + 150);
-    }
-    
-    // QR Code for validation
-    if (includeQRCode && prescription.validation_hash) {
-      const qrCodeDataUrl = await QRCode.toDataURL(
-        `${window.location.origin}/validar/${prescription.validation_hash}`,
-        { width: 100, margin: 1 }
-      );
-      doc.addImage(qrCodeDataUrl, 'PNG', margin + 120, margin + 160, 30, 30);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RECEITA MÉDICA', pageWidth / 2, 30, { align: 'center' });
+      
+      // Prescription number
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const prescriptionNumber = prescription.prescription_number || `RX-${prescription.id.slice(-8)}`;
+      doc.text(`Receita Nº: ${prescriptionNumber}`, pageWidth - 20, 20, { align: 'right' });
+      
+      // Doctor info
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Dr. ${prescription.doctor_name || 'Médico'}`, 20, 50);
+      
+      // Patient info
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Paciente: ${prescription.patient_name || 'Paciente'}`, 20, 65);
+      
+      // Prescription date
+      doc.text(`Data da Prescrição: ${new Date(prescription.prescribed_date).toLocaleDateString('pt-BR')}`, 20, 75);
+      
+      // Valid until
+      if (prescription.valid_until) {
+        doc.text(`Válida até: ${new Date(prescription.valid_until).toLocaleDateString('pt-BR')}`, 20, 85);
+      }
+      
+      // Line separator
+      doc.setLineWidth(0.5);
+      doc.line(20, 95, pageWidth - 20, 95);
+      
+      // Medication details
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Medicamento:', 20, 110);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(prescription.medication_name, 20, 125);
+      
+      doc.text(`Dosagem: ${prescription.dosage}`, 20, 140);
+      doc.text(`Frequência: ${prescription.frequency}`, 20, 155);
+      
+      if (prescription.duration_days) {
+        doc.text(`Duração: ${prescription.duration_days} dias`, 20, 170);
+      }
+      
+      // Instructions
+      if (prescription.instructions) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Instruções:', 20, 190);
+        doc.setFont('helvetica', 'normal');
+        
+        const instructionsLines = doc.splitTextToSize(prescription.instructions, pageWidth - 40);
+        doc.text(instructionsLines, 20, 205);
+      }
+      
+      // QR Code for validation
+      if (prescription.validation_hash && options?.includeQRCode !== false) {
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(prescription.validation_hash, {
+            width: 100,
+            margin: 1
+          });
+          
+          doc.addImage(qrCodeDataUrl, 'PNG', pageWidth - 80, pageHeight - 80, 60, 60);
+          doc.setFontSize(8);
+          doc.text('Código de Validação', pageWidth - 80, pageHeight - 15, { align: 'left' });
+        } catch (error) {
+          logger.error("Error generating QR code", "PDFService", error);
+        }
+      }
+      
+      // Footer
       doc.setFontSize(8);
-      doc.text('Código de validação', margin + 120, margin + 195);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, pageHeight - 10);
+      
+      return new Blob([doc.output('blob')], { type: 'application/pdf' });
+    } catch (error) {
+      logger.error("Error generating prescription PDF", "PDFService", error);
+      throw new Error("Erro ao gerar PDF da receita");
     }
-    
-    // Footer
-    doc.setFontSize(8);
-    doc.text('Este documento foi gerado eletronicamente e possui validade legal.', margin, 280);
-    
-    return doc.output('blob');
   },
 
   // Generate PDF for certificate
-  async generateCertificatePDF(certificate: MedicalCertificate, options: PDFGenerationOptions = {}): Promise<Blob> {
-    const doc = new jsPDF();
-    const { includeQRCode = true, fontSize = 12, margin = 20 } = options;
-
-    // Header
-    doc.setFontSize(16);
-    doc.text('ATESTADO MÉDICO', margin, margin);
+  async generateCertificatePDF(certificate: MedicalCertificate, options?: PDFGenerationOptions): Promise<Blob> {
+    logger.info("Generating certificate PDF", "PDFService", { id: certificate.id });
     
-    // Certificate number
-    doc.setFontSize(10);
-    doc.text(`Atestado Nº: ${certificate.certificate_number}`, margin, margin + 10);
-    
-    // Doctor info
-    doc.setFontSize(12);
-    doc.text(`Médico: ${certificate.doctor_name || 'N/A'}`, margin, margin + 25);
-    
-    // Patient info
-    doc.text(`Paciente: ${certificate.patient_name || 'N/A'}`, margin, margin + 35);
-    
-    // Date
-    doc.text(`Data: ${new Date(certificate.created_at).toLocaleDateString('pt-BR')}`, margin, margin + 45);
-    
-    // Certificate type
-    const typeMap = {
-      'medical_leave': 'Atestado de Afastamento',
-      'fitness_certificate': 'Atestado de Aptidão',
-      'vaccination_certificate': 'Atestado de Vacinação',
-      'medical_report': 'Relatório Médico'
-    };
-    
-    doc.setFontSize(14);
-    doc.text(`Tipo: ${typeMap[certificate.certificate_type]}`, margin, margin + 60);
-    
-    // Title
-    doc.setFontSize(16);
-    doc.text(certificate.title, margin, margin + 80);
-    
-    // Content
-    doc.setFontSize(12);
-    const contentLines = doc.splitTextToSize(certificate.content, 170);
-    doc.text(contentLines, margin, margin + 100);
-    
-    // Dates
-    let currentY = margin + 100 + (contentLines.length * 5) + 20;
-    
-    if (certificate.start_date && certificate.end_date) {
-      doc.text(`Período: ${new Date(certificate.start_date).toLocaleDateString('pt-BR')} a ${new Date(certificate.end_date).toLocaleDateString('pt-BR')}`, margin, currentY);
-      currentY += 15;
-    }
-    
-    // Diagnosis
-    if (certificate.diagnosis) {
-      doc.text('Diagnóstico:', margin, currentY);
-      const diagnosisLines = doc.splitTextToSize(certificate.diagnosis, 170);
-      doc.text(diagnosisLines, margin, currentY + 10);
-      currentY += 10 + (diagnosisLines.length * 5) + 10;
-    }
-    
-    // Recommendations
-    if (certificate.recommendations) {
-      doc.text('Recomendações:', margin, currentY);
-      const recommendationLines = doc.splitTextToSize(certificate.recommendations, 170);
-      doc.text(recommendationLines, margin, currentY + 10);
-      currentY += 10 + (recommendationLines.length * 5) + 10;
-    }
-    
-    // QR Code for validation
-    if (includeQRCode && certificate.validation_hash) {
-      const qrCodeDataUrl = await QRCode.toDataURL(
-        `${window.location.origin}/validar/${certificate.validation_hash}`,
-        { width: 100, margin: 1 }
-      );
-      doc.addImage(qrCodeDataUrl, 'PNG', margin + 120, currentY, 30, 30);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ATESTADO MÉDICO', pageWidth / 2, 30, { align: 'center' });
+      
+      // Certificate number
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Certificado Nº: ${certificate.certificate_number}`, pageWidth - 20, 20, { align: 'right' });
+      
+      // Doctor info
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Dr. ${certificate.doctor_name || 'Médico'}`, 20, 50);
+      
+      // Patient info
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Paciente: ${certificate.patient_name || 'Paciente'}`, 20, 65);
+      
+      // Certificate date
+      doc.text(`Data de Emissão: ${new Date(certificate.created_at).toLocaleDateString('pt-BR')}`, 20, 75);
+      
+      // Period if applicable
+      if (certificate.start_date && certificate.end_date) {
+        doc.text(`Período: ${new Date(certificate.start_date).toLocaleDateString('pt-BR')} a ${new Date(certificate.end_date).toLocaleDateString('pt-BR')}`, 20, 85);
+      }
+      
+      // Line separator
+      doc.setLineWidth(0.5);
+      doc.line(20, 95, pageWidth - 20, 95);
+      
+      // Title
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(certificate.title, 20, 110);
+      
+      // Content
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      const contentLines = doc.splitTextToSize(certificate.content, pageWidth - 40);
+      doc.text(contentLines, 20, 130);
+      
+      // Diagnosis
+      if (certificate.diagnosis) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Diagnóstico:', 20, 180);
+        doc.setFont('helvetica', 'normal');
+        const diagnosisLines = doc.splitTextToSize(certificate.diagnosis, pageWidth - 40);
+        doc.text(diagnosisLines, 20, 195);
+      }
+      
+      // Recommendations
+      if (certificate.recommendations) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Recomendações:', 20, 220);
+        doc.setFont('helvetica', 'normal');
+        const recommendationsLines = doc.splitTextToSize(certificate.recommendations, pageWidth - 40);
+        doc.text(recommendationsLines, 20, 235);
+      }
+      
+      // QR Code for validation
+      if (options?.includeQRCode !== false) {
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(certificate.validation_hash, {
+            width: 100,
+            margin: 1
+          });
+          
+          doc.addImage(qrCodeDataUrl, 'PNG', pageWidth - 80, pageHeight - 80, 60, 60);
+          doc.setFontSize(8);
+          doc.text('Código de Validação', pageWidth - 80, pageHeight - 15, { align: 'left' });
+        } catch (error) {
+          logger.error("Error generating QR code", "PDFService", error);
+        }
+      }
+      
+      // Footer
       doc.setFontSize(8);
-      doc.text('Código de validação', margin + 120, currentY + 35);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, pageHeight - 10);
+      
+      return new Blob([doc.output('blob')], { type: 'application/pdf' });
+    } catch (error) {
+      logger.error("Error generating certificate PDF", "PDFService", error);
+      throw new Error("Erro ao gerar PDF do atestado");
     }
-    
-    // Footer
-    doc.setFontSize(8);
-    doc.text('Este documento foi gerado eletronicamente e possui validade legal.', margin, 280);
-    
-    return doc.output('blob');
   },
 
-  // Download PDF
+  // Download PDF blob
   downloadPDF(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
