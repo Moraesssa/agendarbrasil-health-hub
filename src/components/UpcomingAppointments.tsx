@@ -14,6 +14,7 @@ import EmptyStateCard from "./appointments/EmptyStateCard";
 import AppointmentCard from "./appointments/AppointmentCard";
 import { VideoCallModal } from "./video/VideoCallModal";
 import { videoCallService } from "@/services/videoCallService";
+import { PaymentStatusChecker } from "./PaymentStatusChecker";
 
 const UpcomingAppointments = () => {
   const navigate = useNavigate();
@@ -200,6 +201,9 @@ const UpcomingAppointments = () => {
           </>
         )}
       </CardContent>
+
+      {/* Payment Status Checker */}
+      <PaymentStatusChecker onSuccess={refetch} />
 
       {/* Video Call Modal */}
       {videoCallModal.isOpen && videoCallModal.appointment && user && userData && (

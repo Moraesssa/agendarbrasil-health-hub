@@ -134,36 +134,54 @@ serve(async (req) => {
       const { data: existingPayment } = await supabaseClient
         .from('pagamentos')
         .select('*')
-        .eq('gateway_id', session_id)
+        .eq('gateway_id', finalSessionId)
         .single();
 
       if (!existingPayment) {
+        console.log("Registrando novo pagamento no banco...");
+        
+        // Buscar dados da consulta para obter IDs necessários
+        const { data: consultaData } = await supabaseClient
+          .from('consultas')
+          .select('paciente_id, medico_id')
+          .eq('id', session.metadata?.consulta_id || consulta_id)
+          .single();
+        
         // Registrar pagamento
-        const { error: paymentError } = await supabaseClient
+        const { data: newPayment, error: paymentError } = await supabaseClient
           .from('pagamentos')
           .insert({
             consulta_id: session.metadata?.consulta_id || consulta_id,
-            paciente_id: session.metadata?.paciente_id,
-            medico_id: session.metadata?.medico_id,
+            paciente_id: session.metadata?.paciente_id || consultaData?.paciente_id,
+            medico_id: session.metadata?.medico_id || consultaData?.medico_id,
             valor: session.amount_total / 100,
             metodo_pagamento: 'credit_card',
             gateway_id: finalSessionId,
             status: 'succeeded',
             dados_gateway: session
-          });
+          })
+          .select()
+          .single();
 
         if (paymentError) {
           console.error("Erro ao registrar pagamento:", paymentError);
+          throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
+        } else {
+          console.log("Pagamento registrado com sucesso:", newPayment);
         }
+      } else {
+        console.log("Pagamento já existe no banco:", existingPayment);
       }
 
       // Atualizar consulta
+      console.log("Atualizando status da consulta...");
       const { data: consultaData, error: consultaError } = await supabaseClient
         .from('consultas')
         .update({ 
           status_pagamento: 'pago',
           status: 'agendada',
-          valor: session.amount_total / 100
+          valor: session.amount_total / 100,
+          expires_at: null // Limpar expiração já que foi pago
         })
         .eq('id', session.metadata?.consulta_id || consulta_id)
         .select()
@@ -172,6 +190,8 @@ serve(async (req) => {
       if (consultaError) {
         console.error("Erro ao atualizar consulta:", consultaError);
         throw new Error(`Erro ao atualizar consulta: ${consultaError.message}`);
+      } else {
+        console.log("Consulta atualizada com sucesso:", consultaData);
       }
 
       console.log("=== VERIFICAÇÃO CONCLUÍDA COM SUCESSO ===");

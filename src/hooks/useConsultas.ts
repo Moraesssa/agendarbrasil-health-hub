@@ -56,8 +56,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
         query = query.gte('data_consulta', new Date().toISOString());
       }
 
-      // Filtrar consultas pagas ou pendentes
-      query = query.in('status_pagamento', ['pago', 'pendente']);
+      // Filtrar consultas pagas, pendentes ou aguardando pagamento
+      query = query.in('status_pagamento', ['pago', 'pendente', 'pending_payment']);
 
       // Apply month/year filter
       if (filters?.month !== undefined && filters?.year !== undefined) {
