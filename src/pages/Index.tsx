@@ -16,6 +16,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCalendarData } from "@/hooks/useCalendarData";
 import { CalendarLoader } from "@/components/PageLoader";
 import { ErrorBoundary, CalendarErrorFallback } from "@/components/ErrorBoundary";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -35,8 +37,12 @@ const Index = () => {
       }
     }
   }, [user, userData, loading, navigate]);
+
   const { documents, loading: docsLoading, uploading, uploadDocument, deleteDocument, getDocumentUrl } = useDocuments();
   const { calendarData, loading: calendarLoading } = useCalendarData();
+
+  // Get current date formatted
+  const currentDate = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   const requireAuth = (callback: () => void, actionName: string) => {
     if (!user) {
@@ -194,24 +200,40 @@ const Index = () => {
 
   return (
     <ErrorBoundary context="Index Page">
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-100">
         <Header />
         
         <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24 sm:pb-6">
-          {/* Welcome Section */}
-          <div className="text-center mb-6 sm:mb-8 px-2">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-900 mb-2 leading-tight">
-              Bem-vindo ao AgendarBrasil
-            </h1>
-            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-              Sua saúde na palma da mão - rápido, seguro e sempre disponível
-            </p>
+          {/* Enhanced Welcome Section */}
+          <div className="text-center mb-8 sm:mb-12 px-2 relative">
+            <div className="relative z-10 bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-12 border border-blue-100/50">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-green-500/5 to-blue-500/5 rounded-3xl"></div>
+              <div className="relative z-10">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                  <span className="bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
+                    Bem-vindo, Residencial Moraes!
+                  </span>
+                </h1>
+                <div className="text-lg sm:text-xl text-gray-600 mb-6 capitalize font-medium">
+                  {currentDate}
+                </div>
+                <div className="flex flex-col items-center gap-4 mb-6">
+                  <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-green-500 rounded-full"></div>
+                  <p className="text-xl sm:text-2xl bg-gradient-to-r from-blue-700 to-green-700 bg-clip-text text-transparent font-semibold">
+                    🏥 Sua saúde em primeiro lugar
+                  </p>
+                  <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                    Cuidado integrado, tecnologia avançada e atendimento humanizado para você e sua família
+                  </p>
+                </div>
+              </div>
+            </div>
             
             {/* Quick Access Buttons */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6">
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-8">
               <Button 
                 onClick={() => handleNavigation("/agendamento", "Agendamento")}
-                className="bg-blue-500 hover:bg-blue-600 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm sm:text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
                 size="sm"
                 title="Agende uma nova consulta médica"
               >
@@ -221,7 +243,7 @@ const Index = () => {
               <Button 
                 onClick={() => handleNavigation("/agenda-paciente", "Minha Agenda")}
                 variant="outline"
-                className="text-sm sm:text-base border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                className="text-sm sm:text-base border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all"
                 size="sm"
                 title="Visualize suas consultas agendadas"
               >
@@ -231,7 +253,7 @@ const Index = () => {
               <Button 
                 onClick={() => handleNavigation("/gestao-medicamentos", "Medicamentos")}
                 variant="outline"
-                className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300"
+                className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300 text-green-700 hover:text-green-800 transition-all"
                 size="sm"
                 title="Gerencie suas prescrições e medicamentos"
               >
@@ -241,7 +263,7 @@ const Index = () => {
               <Button 
                 onClick={() => handleNavigation("/historico", "Histórico Médico")}
                 variant="outline"
-                className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300"
+                className="text-sm sm:text-base border-green-200 hover:bg-green-50 hover:border-green-300 text-green-700 hover:text-green-800 transition-all"
                 size="sm"
                 title="Veja seu histórico médico completo"
               >
@@ -251,7 +273,7 @@ const Index = () => {
               <Button 
                 onClick={() => handleNavigation("/perfil", "Meu Perfil")}
                 variant="outline"
-                className="text-sm sm:text-base border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+                className="text-sm sm:text-base border-purple-200 hover:bg-purple-50 hover:border-purple-300 text-purple-700 hover:text-purple-800 transition-all"
                 size="sm"
                 title="Acesse e edite seu perfil"
               >
@@ -261,7 +283,7 @@ const Index = () => {
               <Button 
                 onClick={() => handleNavigation("/gerenciar-conexoes", "Conexões")}
                 variant="outline"
-                className="text-sm sm:text-base border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300"
+                className="text-sm sm:text-base border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 text-indigo-700 hover:text-indigo-800 transition-all"
                 size="sm"
                 title="Gerenciar integrações com laboratórios e clínicas"
               >
@@ -271,7 +293,7 @@ const Index = () => {
               <Button 
                 onClick={handleEmergencyContact}
                 variant="outline"
-                className="text-sm sm:text-base border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+                className="text-sm sm:text-base border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700 transition-all"
                 size="sm"
                 title="Contatos de emergência"
               >
@@ -297,18 +319,22 @@ const Index = () => {
                   </ErrorBoundary>
                   
                   {/* Calendar Overview */}
-                  <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
                     <CardHeader className="pb-3 px-4 sm:px-6">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-blue-900 text-lg sm:text-xl">
-                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                          Agenda do Mês
+                        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                          <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                            <Calendar className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="bg-gradient-to-r from-blue-800 to-green-700 bg-clip-text text-transparent font-bold">
+                            Agenda do Mês
+                          </span>
                         </CardTitle>
                         <Button 
                           variant="ghost" 
                           size="sm" 
                           onClick={() => handleNavigation("/agenda-paciente", "Agenda Detalhada")}
-                          className="text-blue-600 hover:text-blue-700"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           title="Ver agenda completa"
                         >
                           Ver detalhes
@@ -425,7 +451,9 @@ const Index = () => {
                   <ErrorBoundary context="Documents Section">
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-semibold text-foreground">Documentos de Saúde</h2>
+                        <h2 className="text-lg font-semibold bg-gradient-to-r from-blue-700 to-green-700 bg-clip-text text-transparent">
+                          Documentos de Saúde
+                        </h2>
                         <DocumentUpload onUpload={uploadDocument} isUploading={uploading} />
                       </div>
                       <DocumentList 
@@ -440,10 +468,12 @@ const Index = () => {
               </div>
             </>
           ) : (
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
+            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm mt-6">
               <CardHeader>
-                <CardTitle className="text-xl sm:text-2xl text-center text-blue-900">
-                  Gerenciamento completo da sua saúde
+                <CardTitle className="text-xl sm:text-2xl text-center">
+                  <span className="bg-gradient-to-r from-blue-800 to-green-700 bg-clip-text text-transparent">
+                    Gerenciamento completo da sua saúde
+                  </span>
                 </CardTitle>
                 <CardDescription className="text-center text-gray-600 max-w-xl mx-auto">
                   Crie sua conta ou faça login para acessar todas as funcionalidades e cuidar da sua saúde de forma integrada e digital.
@@ -452,21 +482,21 @@ const Index = () => {
               <CardContent className="flex flex-col items-center gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
                       <CalendarCheck className="w-6 h-6 text-blue-600" />
                     </div>
                     <h3 className="font-semibold text-gray-800">Agende Consultas</h3>
                     <p className="text-sm text-gray-500">Encontre especialistas e marque consultas online com facilidade.</p>
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-100 to-green-200 rounded-full flex items-center justify-center">
                       <Pill className="w-6 h-6 text-green-600" />
                     </div>
                     <h3 className="font-semibold text-gray-800">Controle Medicamentos</h3>
                     <p className="text-sm text-gray-500">Receba lembretes e nunca mais se esqueça de um horário.</p>
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
                       <FileText className="w-6 h-6 text-purple-600" />
                     </div>
                     <h3 className="font-semibold text-gray-800">Acesse seu Histórico</h3>
@@ -474,11 +504,11 @@ const Index = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button onClick={() => navigate('/login')} size="lg" className="bg-blue-500 hover:bg-blue-600">
+                  <Button onClick={() => navigate('/login')} size="lg" className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
                     <LogIn className="w-5 h-5 mr-2" />
                     Entrar
                   </Button>
-                  <Button onClick={() => navigate('/login')} variant="outline" size="lg">
+                  <Button onClick={() => navigate('/login')} variant="outline" size="lg" className="border-blue-200 hover:bg-blue-50">
                     <UserPlus className="w-5 h-5 mr-2" />
                     Criar Conta Grátis
                   </Button>
@@ -507,7 +537,7 @@ const Index = () => {
                   }}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                     item.isMain
-                      ? 'bg-blue-500 text-white shadow-lg scale-110 hover:bg-blue-600'
+                      ? 'bg-gradient-to-r from-blue-500 to-green-500 text-white shadow-lg scale-110 hover:from-blue-600 hover:to-green-600'
                       : activeTab === item.id
                         ? 'text-blue-600 bg-blue-50'
                         : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
