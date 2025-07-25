@@ -32,8 +32,6 @@ import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
 import GerenciarConexoes from '@/pages/GerenciarConexoes';
 import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
-import GerenciarAtestados from '@/pages/GerenciarAtestados';
-import ValidarDocumento from '@/pages/ValidarDocumento';
 
 const queryClient = new QueryClient();
 
@@ -116,9 +114,6 @@ function App() {
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                     <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
-                    <Route path="/gerenciar-atestados" element={<GerenciarAtestados />} />
-                    <Route path="/validar-documento" element={<ValidarDocumento />} />
-                    <Route path="/validar-documento/:hash" element={<ValidarDocumento />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AuthRedirectController>
