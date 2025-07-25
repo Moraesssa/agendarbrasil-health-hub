@@ -98,7 +98,7 @@ const settingsItems = [
 ]
 
 export function AppSidebar() {
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -111,13 +111,13 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.photo_url} />
+            <AvatarImage src={userData?.photoURL} />
             <AvatarFallback>
-              {user?.display_name?.charAt(0) || user?.email?.charAt(0)}
+              {userData?.displayName?.charAt(0) || user?.email?.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">{user?.display_name || user?.email}</span>
+            <span className="text-sm font-medium">{userData?.displayName || user?.email}</span>
             <span className="text-xs text-muted-foreground">Médico</span>
           </div>
         </div>

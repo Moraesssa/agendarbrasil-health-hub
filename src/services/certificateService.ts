@@ -18,11 +18,7 @@ export const certificateService = {
 
       const { data, error } = await supabase
         .from('medical_certificates')
-        .select(`
-          *,
-          doctor:profiles!medical_certificates_doctor_id_fkey(display_name),
-          patient:profiles!medical_certificates_patient_id_fkey(display_name)
-        `)
+        .select('*')
         .or(`patient_id.eq.${user.id},doctor_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
@@ -31,11 +27,23 @@ export const certificateService = {
         throw new Error(`Erro ao buscar certificados: ${error.message}`);
       }
 
-      return (data || []).map((cert: any) => ({
-        ...cert,
-        doctor_name: cert.doctor?.display_name,
-        patient_name: cert.patient?.display_name
-      }));
+      // Get profile names separately
+      const certificatesWithNames = await Promise.all(
+        (data || []).map(async (cert: any) => {
+          const [doctorProfile, patientProfile] = await Promise.all([
+            supabase.from('profiles').select('display_name').eq('id', cert.doctor_id).single(),
+            supabase.from('profiles').select('display_name').eq('id', cert.patient_id).single()
+          ]);
+
+          return {
+            ...cert,
+            doctor_name: doctorProfile.data?.display_name || 'Médico',
+            patient_name: patientProfile.data?.display_name || 'Paciente'
+          } as MedicalCertificate;
+        })
+      );
+
+      return certificatesWithNames;
     } catch (error) {
       logger.error("Failed to fetch certificates", "CertificateService", error);
       throw error;
@@ -55,11 +63,7 @@ export const certificateService = {
           ...certificateData,
           doctor_id: user.id
         })
-        .select(`
-          *,
-          doctor:profiles!medical_certificates_doctor_id_fkey(display_name),
-          patient:profiles!medical_certificates_patient_id_fkey(display_name)
-        `)
+        .select()
         .single();
 
       if (error) {
@@ -67,11 +71,17 @@ export const certificateService = {
         throw new Error(`Erro ao criar certificado: ${error.message}`);
       }
 
+      // Get profile names separately
+      const [doctorProfile, patientProfile] = await Promise.all([
+        supabase.from('profiles').select('display_name').eq('id', data.doctor_id).single(),
+        supabase.from('profiles').select('display_name').eq('id', data.patient_id).single()
+      ]);
+
       return {
         ...data,
-        doctor_name: data.doctor?.display_name,
-        patient_name: data.patient?.display_name
-      };
+        doctor_name: doctorProfile.data?.display_name || 'Médico',
+        patient_name: patientProfile.data?.display_name || 'Paciente'
+      } as MedicalCertificate;
     } catch (error) {
       logger.error("Failed to create certificate", "CertificateService", error);
       throw error;
@@ -108,21 +118,23 @@ export const certificateService = {
     logger.info("Validating document", "CertificateService", { hash: validationHash.substring(0, 10) + "..." });
     try {
       // Try to find in prescriptions first
-      const { data: prescription } = await supabase
+      const { data: prescription, error: prescriptionError } = await supabase
         .from('medical_prescriptions')
-        .select(`
-          *,
-          doctor:profiles!medical_prescriptions_doctor_id_fkey(display_name),
-          patient:profiles!medical_prescriptions_patient_id_fkey(display_name)
-        `)
+        .select('*')
         .eq('validation_hash', validationHash)
         .single();
 
-      if (prescription) {
+      if (prescription && !prescriptionError) {
+        // Get profile names separately
+        const [doctorProfile, patientProfile] = await Promise.all([
+          supabase.from('profiles').select('display_name').eq('id', prescription.doctor_id).single(),
+          supabase.from('profiles').select('display_name').eq('id', prescription.patient_id).single()
+        ]);
+
         // Log validation attempt
         await supabase.from('document_validations').insert({
           document_id: prescription.id,
-          document_type: 'prescription',
+          document_type: 'prescription' as const,
           validation_code: validationHash
         });
 
@@ -131,28 +143,30 @@ export const certificateService = {
           document: {
             ...prescription,
             type: 'prescription',
-            doctor_name: prescription.doctor?.display_name,
-            patient_name: prescription.patient?.display_name
+            doctor_name: doctorProfile.data?.display_name || 'Médico',
+            patient_name: patientProfile.data?.display_name || 'Paciente'
           }
         };
       }
 
       // Try to find in certificates
-      const { data: certificate } = await supabase
+      const { data: certificate, error: certificateError } = await supabase
         .from('medical_certificates')
-        .select(`
-          *,
-          doctor:profiles!medical_certificates_doctor_id_fkey(display_name),
-          patient:profiles!medical_certificates_patient_id_fkey(display_name)
-        `)
+        .select('*')
         .eq('validation_hash', validationHash)
         .single();
 
-      if (certificate) {
+      if (certificate && !certificateError) {
+        // Get profile names separately
+        const [doctorProfile, patientProfile] = await Promise.all([
+          supabase.from('profiles').select('display_name').eq('id', certificate.doctor_id).single(),
+          supabase.from('profiles').select('display_name').eq('id', certificate.patient_id).single()
+        ]);
+
         // Log validation attempt
         await supabase.from('document_validations').insert({
           document_id: certificate.id,
-          document_type: 'certificate',
+          document_type: 'certificate' as const,
           validation_code: validationHash
         });
 
@@ -161,8 +175,8 @@ export const certificateService = {
           document: {
             ...certificate,
             type: 'certificate',
-            doctor_name: certificate.doctor?.display_name,
-            patient_name: certificate.patient?.display_name
+            doctor_name: doctorProfile.data?.display_name || 'Médico',
+            patient_name: patientProfile.data?.display_name || 'Paciente'
           }
         };
       }
@@ -195,7 +209,10 @@ export const certificateService = {
         throw new Error(`Erro ao buscar histórico de validações: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(item => ({
+        ...item,
+        document_type: item.document_type as 'prescription' | 'certificate'
+      }));
     } catch (error) {
       logger.error("Failed to fetch validation history", "CertificateService", error);
       throw error;

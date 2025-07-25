@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { PageLoader } from "@/components/PageLoader";
 import { useCertificateManagement } from "@/hooks/useCertificateManagement";
@@ -7,11 +7,12 @@ import DocumentValidator from "@/components/certificates/DocumentValidator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, FileText, Shield } from "lucide-react";
+import { ValidationResult } from "@/types/certificates";
 
 const ValidarDocumento = () => {
   const { hash } = useParams<{ hash: string }>();
   const { validateDocument } = useCertificateManagement();
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
   // Se há um hash na URL, valida automaticamente
   React.useEffect(() => {
@@ -20,9 +21,10 @@ const ValidarDocumento = () => {
     }
   }, [hash]);
 
-  const handleValidation = async (validationHash: string) => {
+  const handleValidation = async (validationHash: string): Promise<ValidationResult> => {
     const result = await validateDocument(validationHash);
     setValidationResult(result);
+    return result;
   };
 
   return (
