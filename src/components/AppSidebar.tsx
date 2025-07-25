@@ -1,4 +1,5 @@
-import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin, DollarSign } from "lucide-react";
+
+import { Calendar, Users, Clock, FileText, Settings, User, BarChart3, LogOut, ArrowRightLeft, MapPin, DollarSign, Shield, Pill } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -36,6 +37,18 @@ const mainMenuItems = [
     url: "/pacientes-medico",
     icon: Users,
     description: "Lista de pacientes do médico"
+  },
+  {
+    title: "Atestados",
+    url: "/gerenciar-atestados",
+    icon: Shield,
+    description: "Gerenciar atestados médicos"
+  },
+  {
+    title: "Medicamentos",
+    url: "/gestao-medicamentos",
+    icon: Pill,
+    description: "Gerenciar prescrições e medicamentos"
   },
   {
     title: "Financeiro",

@@ -1,4 +1,5 @@
-import { Calendar, Users, FileText, User, LogOut, Home, Clock, Activity, Pill } from "lucide-react";
+
+import { Calendar, Users, FileText, User, LogOut, Home, Clock, Activity, Pill, Shield } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -42,6 +43,12 @@ const patientMenuItems = [
     url: "/agenda-paciente",
     icon: Clock,
     description: "Ver minhas consultas agendadas"
+  },
+  {
+    title: "Atestados",
+    url: "/gerenciar-atestados",
+    icon: Shield,
+    description: "Visualizar meus atestados médicos"
   },
   {
     title: "Medicamentos",
