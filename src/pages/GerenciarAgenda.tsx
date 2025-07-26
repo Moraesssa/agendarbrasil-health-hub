@@ -8,6 +8,7 @@ import { useAgendaManagement } from "@/hooks/useAgendaManagement";
 import { AgendaPageHeader } from "@/components/agenda/AgendaPageHeader";
 import { DayScheduleControl } from "@/components/agenda/DayScheduleControl";
 import { AgendaFormActions } from "@/components/agenda/AgendaFormActions";
+import { AgendaErrorState } from "@/components/agenda/AgendaErrorState";
 import { diasDaSemana } from "@/types/agenda";
 
 const GerenciarAgenda = () => {
@@ -22,6 +23,7 @@ const GerenciarAgenda = () => {
         isDirty,
         canSave,
         hasCompleteBlocks,
+        error,
         fetchInitialData
     } = useAgendaManagement();
 
@@ -30,6 +32,20 @@ const GerenciarAgenda = () => {
     }, [fetchInitialData]);
 
     if (loading) return <PageLoader message="Carregando sua agenda..." />;
+
+    // Exibir estado de erro se houver algum problema
+    if (error) {
+        return (
+            <SidebarProvider>
+                <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-green-50">
+                    <AppSidebar />
+                    <SidebarInset className="flex-1">
+                        <AgendaErrorState error={error} onRetry={fetchInitialData} />
+                    </SidebarInset>
+                </div>
+            </SidebarProvider>
+        );
+    }
 
     return (
         <SidebarProvider>

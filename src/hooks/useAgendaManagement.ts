@@ -18,13 +18,20 @@ export const useAgendaManagement = () => {
     const { reset, handleSubmit, control, formState: { isDirty } } = form;
     
     const { hasAnyFilledBlocks, hasValidCompleteBlocks } = useAgendaValidation(control);
-    const { loading, locais, fetchInitialData } = useAgendaData(reset);
+    const { loading, locais, error, fetchInitialData } = useAgendaData(reset);
     const { onSubmit, isSubmitting } = useAgendaSubmit(reset);
 
     const canSave = hasAnyFilledBlocks();
     const hasCompleteBlocks = hasValidCompleteBlocks();
     
-    console.log("🚀 Estado atual:", { canSave, hasCompleteBlocks, isDirty });
+    console.log("🚀 Estado atual da agenda:", { 
+        canSave, 
+        hasCompleteBlocks, 
+        isDirty, 
+        loading,
+        hasError: !!error,
+        errorType: error?.type
+    });
 
     return {
         form,
@@ -37,6 +44,7 @@ export const useAgendaManagement = () => {
         isDirty,
         canSave,
         hasCompleteBlocks,
+        error,
         fetchInitialData
     };
 };

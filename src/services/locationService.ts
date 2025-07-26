@@ -24,7 +24,12 @@ export interface LocalAtendimento {
 const locationService = {
   async getLocations(): Promise<LocalAtendimento[]> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado.");
+    if (!user) {
+      logger.error("Usuário não autenticado", "locationService");
+      throw new Error("Usuário não autenticado.");
+    }
+
+    logger.info("Buscando locais para médico", "locationService", { userId: user.id });
 
     const { data, error } = await supabase
       .from('locais_atendimento')
@@ -34,7 +39,16 @@ const locationService = {
 
     if (error) {
       logger.error("Falha ao buscar locais", "locationService", error);
-      throw error;
+      
+      // Fornecer mensagens de erro mais específicas
+      if (error.code === 'PGRST301') {
+        throw new Error("Você não tem permissão para acessar os locais de atendimento.");
+      } else if (error.code === 'PGRST116') {
+        logger.info("Nenhum local encontrado para o médico", "locationService", { userId: user.id });
+        return []; // Retorna array vazio ao invés de erro
+      } else {
+        throw new Error(`Erro ao buscar locais: ${error.message}`);
+      }
     }
     
     // Converter Json para Endereco e validar estrutura
@@ -58,12 +72,16 @@ const locationService = {
       } as LocalAtendimento;
     });
     
+    logger.info("Locais carregados com sucesso", "locationService", { count: locais.length });
     return locais;
   },
 
   async addLocation(locationData: Omit<LocalAtendimento, 'id' | 'ativo' | 'medico_id'>): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado.");
+    if (!user) {
+      logger.error("Usuário não autenticado para adicionar local", "locationService");
+      throw new Error("Usuário não autenticado.");
+    }
 
     const { error } = await supabase
       .from('locais_atendimento')
@@ -75,8 +93,10 @@ const locationService = {
 
     if (error) {
       logger.error("Falha ao adicionar local", "locationService", error);
-      throw error;
+      throw new Error(`Erro ao adicionar local: ${error.message}`);
     }
+
+    logger.info("Local adicionado com sucesso", "locationService");
   },
 };
 
