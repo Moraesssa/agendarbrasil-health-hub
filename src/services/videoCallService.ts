@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,7 +9,7 @@ export const videoCallService = {
       // Primeiro, verifica se a consulta já tem um room ID
       const { data: consulta, error: fetchError } = await supabase
         .from('consultas')
-        .select('video_room_id, tipo_consulta')
+        .select('video_room_id, consultation_type')
         .eq('id', consultaId)
         .single();
 
@@ -29,7 +30,7 @@ export const videoCallService = {
         .from('consultas')
         .update({ 
           video_room_id: roomId,
-          tipo_consulta: consulta.tipo_consulta || 'Online' // Garante que seja marcada como online
+          consultation_type: consulta.consultation_type || 'Online' // Garante que seja marcada como online
         })
         .eq('id', consultaId);
 
@@ -80,7 +81,7 @@ export const videoCallService = {
       const { error } = await supabase
         .from('consultas')
         .update({ 
-          tipo_consulta: 'Online',
+          consultation_type: 'Online',
           video_room_id: `room_${uuidv4().replace(/-/g, '_')}`
         })
         .eq('id', consultaId);
@@ -104,7 +105,7 @@ export const videoCallService = {
     try {
       const { data: consulta, error } = await supabase
         .from('consultas')
-        .select('paciente_id, medico_id, agendado_por, paciente_familiar_id')
+        .select('paciente_id, medico_id')
         .eq('id', consultaId)
         .single();
 
@@ -112,12 +113,10 @@ export const videoCallService = {
         throw error;
       }
 
-      // Verifica se o usuário é o paciente, médico, ou quem agendou
+      // Verifica se o usuário é o paciente ou médico
       const canAccess = 
         consulta.paciente_id === userId ||
-        consulta.medico_id === userId ||
-        consulta.agendado_por === userId ||
-        consulta.paciente_familiar_id === userId;
+        consulta.medico_id === userId;
 
       return { success: true, canAccess };
     } catch (error) {
@@ -136,18 +135,18 @@ export const videoCallService = {
         .from('consultas')
         .select(`
           id,
-          data_consulta,
-          tipo_consulta,
+          consultation_date,
+          consultation_type,
           video_room_id,
           status,
           medico_id,
           paciente_id,
-          profiles!consultas_medico_id_fkey(display_name),
-          profiles!consultas_paciente_id_fkey(display_name)
+          medico_profiles:profiles!consultas_medico_id_fkey(display_name),
+          paciente_profiles:profiles!consultas_paciente_id_fkey(display_name)
         `)
-        .or(`paciente_id.eq.${userId},medico_id.eq.${userId},agendado_por.eq.${userId}`)
-        .eq('tipo_consulta', 'Online')
-        .order('data_consulta', { ascending: true });
+        .or(`paciente_id.eq.${userId},medico_id.eq.${userId}`)
+        .eq('consultation_type', 'Online')
+        .order('consultation_date', { ascending: true });
 
       if (error) {
         throw error;

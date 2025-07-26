@@ -1,12 +1,9 @@
-
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
   TimeSlot,
   ExistingAppointment,
   WorkingHours,
-  DayWorkingHours,
   getDayName
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
@@ -176,14 +173,14 @@ export const newAppointmentService = {
       const endOfDay = new Date(`${date}T23:59:59.999Z`);
       const { data: appointments } = await supabase
         .from('consultas')
-        .select('consultation_date, duracao_minutos, local_id')
+        .select('consultation_date')
         .eq('medico_id', doctorId)
         .gte('consultation_date', startOfDay.toISOString())
         .lte('consultation_date', endOfDay.toISOString());
       
       const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
         data_consulta: apt.consultation_date,
-        duracao_minutos: apt.duracao_minutos || 30
+        duracao_minutos: 30
       }));
 
       const locaisComHorarios: LocalComHorarios[] = [];
@@ -245,9 +242,8 @@ export const newAppointmentService = {
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
-    data_consulta: string;
-    tipo_consulta: string;
-    local_id: string;
+    consultation_date: string;
+    consultation_type: string;
     local_consulta_texto: string;
   }) {
     logger.info("Scheduling appointment", "NewAppointmentService");
@@ -257,48 +253,31 @@ export const newAppointmentService = {
       // Verificação final de disponibilidade antes do agendamento
       const isAvailable = await checkAvailabilityBeforeScheduling(
         appointmentData.medico_id, 
-        appointmentData.data_consulta
+        appointmentData.consultation_date
       );
 
       if (!isAvailable) {
         throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
       }
 
-      // Garantir que a data seja futura e em horário comercial
+      // Create appointment with future date validation
+      const appointmentDate = new Date(appointmentData.consultation_date);
       const now = new Date();
-      const appointmentDate = new Date(appointmentData.data_consulta);
       
-      // Se a data/hora for no passado, ajustar para uma data futura
       if (appointmentDate <= now) {
-        const futureDate = new Date(now);
-        futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 7) + 1); // 1-7 dias
-        
-        // Definir horário comercial (8h às 18h)
-        const hour = 8 + Math.floor(Math.random() * 10); // 8h às 17h
-        const minutes = Math.random() < 0.5 ? 0 : 30; // :00 ou :30
-        futureDate.setHours(hour, minutes, 0, 0);
-        
-        // Evitar fins de semana
-        const dayOfWeek = futureDate.getDay();
-        if (dayOfWeek === 0) { // Domingo
-          futureDate.setDate(futureDate.getDate() + 1);
-        } else if (dayOfWeek === 6) { // Sábado
-          futureDate.setDate(futureDate.getDate() + 2);
-        }
-        
-        console.log("Data ajustada para o futuro:", futureDate.toISOString());
-        appointmentData.data_consulta = futureDate.toISOString();
+        throw new Error("Não é possível agendar consultas para horários passados.");
       }
 
       const { error } = await supabase.from('consultas').insert({
         paciente_id: appointmentData.paciente_id,
         medico_id: appointmentData.medico_id,
-        consultation_date: appointmentData.data_consulta,
-        consultation_type: appointmentData.tipo_consulta,
-        local_id: appointmentData.local_id,
+        consultation_date: appointmentData.consultation_date,
+        consultation_type: appointmentData.consultation_type,
         local_consulta: appointmentData.local_consulta_texto,
         status: 'agendada',
         status_pagamento: 'pendente',
+        patient_name: 'Paciente',
+        patient_email: 'paciente@email.com'
       });
 
       if (error) {
@@ -306,7 +285,7 @@ export const newAppointmentService = {
         if (error.code === '23505' && error.message?.includes('idx_consultas_unique_slot')) {
           logger.warn("Attempt to schedule duplicate appointment", "NewAppointmentService", { 
             doctorId: appointmentData.medico_id, 
-            dateTime: appointmentData.data_consulta 
+            dateTime: appointmentData.consultation_date 
           });
           throw new Error("Este horário já foi ocupado por outro paciente. Por favor, escolha outro horário disponível.");
         }
@@ -323,4 +302,3 @@ export const newAppointmentService = {
     }
   }
 };
-
