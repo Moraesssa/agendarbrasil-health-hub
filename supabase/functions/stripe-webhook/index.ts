@@ -79,6 +79,7 @@ serve(async (req) => {
         status: 400,
       });
     }
+
     console.log("=== EVENTO STRIPE ===");
     console.log("Tipo:", event.type);
     console.log("ID:", event.id);
