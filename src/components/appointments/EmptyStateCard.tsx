@@ -3,10 +3,16 @@ import { CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface EmptyStateCardProps {
+  message?: string;
+  description?: string;
   onSchedule: () => void;
 }
 
-const EmptyStateCard = ({ onSchedule }: EmptyStateCardProps) => (
+const EmptyStateCard = ({ 
+  message = "Sua agenda está livre! 📅",
+  description = "Que tal agendar sua primeira consulta? É rápido, fácil e você pode escolher o melhor horário para você.",
+  onSchedule 
+}: EmptyStateCardProps) => (
   <div className="text-center py-8 sm:py-12 px-4 sm:px-6">
     {/* Large Calendar Icon with Gradient Background */}
     <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-lg">
@@ -15,12 +21,12 @@ const EmptyStateCard = ({ onSchedule }: EmptyStateCardProps) => (
     
     {/* Friendly Title */}
     <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">
-      Sua agenda está livre! 📅
+      {message}
     </h3>
     
     {/* Subtitle */}
     <p className="text-gray-600 text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 max-w-md mx-auto leading-relaxed">
-      Que tal agendar sua primeira consulta? É rápido, fácil e você pode escolher o melhor horário para você.
+      {description}
     </p>
     
     {/* Prominent CTA Button */}

@@ -1,236 +1,315 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MetricsCards } from "@/components/dashboard/MetricsCards";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MapPin, User, Users, TrendingUp, AlertCircle } from "lucide-react";
+import { useConsultas } from "@/hooks/useConsultas";
 import { ConsultasChart } from "@/components/dashboard/ConsultasChart";
 import { TiposConsultaChart } from "@/components/dashboard/TiposConsultaChart";
-import { PacientesRecentes } from "@/components/dashboard/PacientesRecentes";
-import { AlertsSection } from "@/components/dashboard/AlertsSection";
+import { MetricsCards } from "@/components/dashboard/MetricsCards";
 import { PendingAppointmentsAlert } from "@/components/dashboard/PendingAppointmentsAlert";
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Clock, Users, TrendingUp } from 'lucide-react';
+import AppointmentSkeleton from "@/components/appointments/AppointmentSkeleton";
+import EmptyStateCard from "@/components/appointments/EmptyStateCard";
+import ErrorCard from "@/components/appointments/ErrorCard";
 
 const DashboardMedico = () => {
-  const { user } = useAuth();
-  const [stats, setStats] = useState({
-    totalConsultas: 0,
-    consultasHoje: 0,
-    consultasProximaSemana: 0,
-    pacientesAtivos: 0
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  
+  const { consultas, loading, error, refetch } = useConsultas({
+    status: statusFilter.length > 0 ? statusFilter as any[] : undefined,
+    futureOnly: false
   });
 
-  const [proximasConsultas, setProximasConsultas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
-
-  const fetchDashboardData = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    
-    try {
-      // Buscar estatísticas gerais
-      const { data: totalConsultas } = await supabase
-        .from('consultas')
-        .select('id', { count: 'exact' })
-        .eq('medico_id', user.id);
-
-      // Consultas de hoje
-      const hoje = new Date();
-      const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0));
-      const fimHoje = new Date(hoje.setHours(23, 59, 59, 999));
-      
-      const { data: consultasHoje } = await supabase
-        .from('consultas')
-        .select('id', { count: 'exact' })
-        .eq('medico_id', user.id)
-        .gte('consultation_date', inicioHoje.toISOString())
-        .lte('consultation_date', fimHoje.toISOString());
-
-      // Consultas próxima semana
-      const proximaSemana = new Date();
-      proximaSemana.setDate(proximaSemana.getDate() + 7);
-      
-      const { data: consultasProximaSemana } = await supabase
-        .from('consultas')
-        .select('id', { count: 'exact' })
-        .eq('medico_id', user.id)
-        .gte('consultation_date', new Date().toISOString())
-        .lte('consultation_date', proximaSemana.toISOString());
-
-      // Pacientes únicos
-      const { data: pacientesUnicos } = await supabase
-        .from('consultas')
-        .select('paciente_id')
-        .eq('medico_id', user.id);
-
-      const pacientesAtivos = new Set(pacientesUnicos?.map(p => p.paciente_id) || []).size;
-
-      // Próximas consultas com dados do paciente
-      const { data: proximasConsultasData } = await supabase
-        .from('consultas')
-        .select(`
-          *,
-          patient_profile:profiles!consultas_paciente_id_fkey (
-            display_name
-          )
-        `)
-        .eq('medico_id', user.id)
-        .gte('consultation_date', new Date().toISOString())
-        .order('consultation_date', { ascending: true })
-        .limit(5);
-
-      setStats({
-        totalConsultas: totalConsultas?.length || 0,
-        consultasHoje: consultasHoje?.length || 0,
-        consultasProximaSemana: consultasProximaSemana?.length || 0,
-        pacientesAtivos
-      });
-
-      setProximasConsultas(proximasConsultasData || []);
-    } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-    } finally {
-      setLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'agendada':
+        return 'bg-blue-500 text-white';
+      case 'confirmada':
+        return 'bg-green-500 text-white';
+      case 'realizada':
+        return 'bg-gray-500 text-white';
+      case 'cancelada':
+        return 'bg-red-500 text-white';
+      case 'pendente':
+        return 'bg-yellow-500 text-white';
+      default:
+        return 'bg-gray-300 text-gray-800';
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('pt-BR'),
-      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    };
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'agendada':
+        return 'Agendada';
+      case 'confirmada':
+        return 'Confirmada';
+      case 'realizada':
+        return 'Realizada';
+      case 'cancelada':
+        return 'Cancelada';
+      case 'pendente':
+        return 'Pendente';
+      default:
+        return status;
+    }
   };
+
+  // Calculando métricas do dashboard
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+  const consultasHoje = consultas.filter(consulta => {
+    const consultationDate = new Date(consulta.consultation_date);
+    return consultationDate >= startOfToday && consultationDate <= endOfToday;
+  });
+
+  const consultasConfirmadas = consultas.filter(consulta => consulta.status === 'confirmada');
+  const consultasPendentes = consultas.filter(consulta => consulta.status === 'agendada');
+
+  const proximasConsultas = consultas.filter(consulta => {
+    const consultationDate = new Date(consulta.consultation_date);
+    return consultationDate > new Date() && 
+           (consulta.status === 'agendada' || consulta.status === 'confirmada');
+  }).slice(0, 5);
+
+  const consultasRecentes = consultas.filter(consulta => 
+    consulta.status === 'realizada' || consulta.status === 'cancelada'
+  ).slice(0, 5);
+
+  // Preparar dados para os gráficos
+  const chartData = consultas.reduce((acc, consulta) => {
+    const date = new Date(consulta.consultation_date).toLocaleDateString('pt-BR');
+    const existing = acc.find(item => item.date === date);
+    if (existing) {
+      existing.consultas++;
+    } else {
+      acc.push({ date, consultas: 1 });
+    }
+    return acc;
+  }, [] as { date: string; consultas: number }[]);
+
+  const tiposConsultaData = consultas.reduce((acc, consulta) => {
+    const tipo = consulta.consultation_type || 'Não especificado';
+    const existing = acc.find(item => item.tipo === tipo);
+    if (existing) {
+      existing.quantidade++;
+    } else {
+      acc.push({ tipo, quantidade: 1 });
+    }
+    return acc;
+  }, [] as { tipo: string; quantidade: number }[]);
+
+  if (error) {
+    return <ErrorCard message={error} onRetry={refetch} />;
+  }
 
   return (
-    <div className="space-y-8 p-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto p-6 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Médico</h1>
-          <p className="text-gray-600 mt-2">Visão geral da sua prática médica</p>
+          <p className="text-gray-600 mt-2">Visão geral das suas consultas e atividades</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={refetch}
+            className="flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4" />
+            Atualizar
+          </Button>
         </div>
       </div>
 
-      {/* Alertas de Consultas Pendentes */}
+      {/* Alerta de consultas pendentes */}
       <PendingAppointmentsAlert />
 
-      {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Métricas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Consultas</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalConsultas}</p>
-              </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Consultas Hoje</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{consultasHoje.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {consultasHoje.filter(c => c.status === 'confirmada').length} confirmadas
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Consultas Hoje</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.consultasHoje}</p>
-              </div>
-              <Clock className="h-8 w-8 text-green-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Confirmadas</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{consultasConfirmadas.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de consultas confirmadas
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Próxima Semana</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.consultasProximaSemana}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-orange-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{consultasPendentes.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Aguardando confirmação
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pacientes Ativos</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pacientesAtivos}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Consultas</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{consultas.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Todas as consultas
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Próximas Consultas */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Próximas Consultas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : proximasConsultas.length > 0 ? (
-                <div className="space-y-4">
-                  {proximasConsultas.map((consulta) => {
-                    const { date, time } = formatDateTime(consulta.consultation_date);
-                    return (
-                      <div key={consulta.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {consulta.patient_profile?.display_name || 'Paciente não identificado'}
-                          </p>
-                          <p className="text-sm text-gray-600">{consulta.consultation_type || 'Consulta'}</p>
-                        </div>
-                        <div className="text-right text-sm text-gray-600">
-                          <p>{date}</p>
-                          <p>{time}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Nenhuma consulta agendada</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Alertas */}
-        <AlertsSection />
-      </div>
-
+      {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Gráficos */}
-        <ConsultasChart />
-        <TiposConsultaChart />
+        <ConsultasChart data={chartData} loading={loading} />
+        <TiposConsultaChart data={tiposConsultaData} loading={loading} />
       </div>
 
-      {/* Pacientes Recentes */}
-      <PacientesRecentes />
+      {/* Próximas consultas e histórico */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              Próximas Consultas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <AppointmentSkeleton key={i} />
+                ))}
+              </div>
+            ) : proximasConsultas.length > 0 ? (
+              <div className="space-y-4">
+                {proximasConsultas.map((consulta) => (
+                  <div key={consulta.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          Paciente ID: {consulta.paciente_id?.substring(0, 8)}
+                        </h3>
+                        <Badge className={`${getStatusColor(consulta.status || '')} text-xs mt-1`}>
+                          {getStatusText(consulta.status || '')}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      {consulta.consultation_type && (
+                        <div className="flex items-center gap-1 col-span-2">
+                          <User className="h-4 w-4" />
+                          {consulta.consultation_type}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyStateCard 
+                onSchedule={() => window.location.href = '/agenda-medico'}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-gray-600" />
+              Histórico Recente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <AppointmentSkeleton key={i} />
+                ))}
+              </div>
+            ) : consultasRecentes.length > 0 ? (
+              <div className="space-y-4">
+                {consultasRecentes.map((consulta) => (
+                  <div key={consulta.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          Paciente ID: {consulta.paciente_id?.substring(0, 8)}
+                        </h3>
+                        <Badge className={`${getStatusColor(consulta.status || '')} text-xs mt-1`}>
+                          {getStatusText(consulta.status || '')}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      {consulta.consultation_type && (
+                        <div className="flex items-center gap-1 col-span-2">
+                          <User className="h-4 w-4" />
+                          {consulta.consultation_type}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhuma consulta no histórico</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

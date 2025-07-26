@@ -132,6 +132,8 @@ class EnhancedAppointmentService {
           notes: appointmentData.motivo,
           valor: appointmentData.valor,
           status: 'agendada',
+          patient_name: 'Paciente', // Placeholder
+          patient_email: 'paciente@email.com' // Placeholder
         })
         .select()
         .single();
@@ -225,6 +227,8 @@ class EnhancedAppointmentService {
           consultation_type: originalAppointment.consultation_type,
           status: 'agendada',
           notes: `Reagendada de: ${originalAppointment.consultation_date}. ${reason || ''}`,
+          patient_name: originalAppointment.patient_name || 'Paciente',
+          patient_email: originalAppointment.patient_email || 'paciente@email.com',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -269,7 +273,8 @@ class EnhancedAppointmentService {
     medicoId: string,
     dataPreferencia: string,
     periodoPreferencia: 'manha' | 'tarde' | 'noite' | 'qualquer',
-    especialidade: string
+    especialidade: string,
+    localId?: string
   ): Promise<{ success: boolean; waitingListId?: string; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();

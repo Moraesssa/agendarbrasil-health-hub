@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,8 +62,7 @@ export const WaitingListDialog = ({
         medicoId,
         format(date, 'yyyy-MM-dd'),
         periodo as 'manha' | 'tarde' | 'noite' | 'qualquer',
-        especialidade,
-        localId
+        especialidade
       );
 
       if (result.success) {

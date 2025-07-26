@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, User, Phone, FileText, AlertCircle } from "lucide-react";
 import { useConsultas } from "@/hooks/useConsultas";
-import { AppointmentCard } from "@/components/appointments/AppointmentCard";
-import { AppointmentSkeleton } from "@/components/appointments/AppointmentSkeleton";
-import { EmptyStateCard } from "@/components/appointments/EmptyStateCard";
-import { ErrorCard } from "@/components/appointments/ErrorCard";
+import AppointmentCard from "@/components/appointments/AppointmentCard";
+import AppointmentSkeleton from "@/components/appointments/AppointmentSkeleton";
+import EmptyStateCard from "@/components/appointments/EmptyStateCard";
+import ErrorCard from "@/components/appointments/ErrorCard";
 import { ConsultasStatusFilter } from "@/components/dashboard/ConsultasStatusFilter";
 
 const AgendaPaciente = () => {
@@ -110,7 +110,7 @@ const AgendaPaciente = () => {
         </CardHeader>
         <CardContent>
           <ConsultasStatusFilter 
-            selectedStatuses={statusFilter}
+            statuses={statusFilter}
             onStatusChange={setStatusFilter}
           />
         </CardContent>
@@ -159,10 +159,10 @@ const AgendaPaciente = () => {
                   </div>
                 )}
                 
-                {consulta.local_consulta && (
+                {consulta.notes && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="h-4 w-4" />
-                    {consulta.local_consulta}
+                    {consulta.notes}
                   </div>
                 )}
               </div>
@@ -226,8 +226,7 @@ const AgendaPaciente = () => {
               </div>
             ) : (
               <EmptyStateCard 
-                message="Nenhuma consulta agendada"
-                description="Suas próximas consultas aparecerão aqui"
+                onSchedule={() => window.location.href = '/agendamento'}
               />
             )}
           </CardContent>
@@ -287,8 +286,7 @@ const AgendaPaciente = () => {
               </div>
             ) : (
               <EmptyStateCard 
-                message="Nenhuma consulta no histórico"
-                description="Suas consultas realizadas aparecerão aqui"
+                onSchedule={() => window.location.href = '/agendamento'}
               />
             )}
           </CardContent>
@@ -312,20 +310,16 @@ const AgendaPaciente = () => {
               {consultas.map((consulta) => (
                 <AppointmentCard
                   key={consulta.id}
-                  appointment={{
-                    id: consulta.id,
-                    consultation_date: consulta.consultation_date,
-                    consultation_type: consulta.consultation_type || '',
-                    status: consulta.status || '',
-                    doctor_name: consulta.doctor_profile?.display_name || 'Médico não identificado'
-                  }}
+                  appointment={consulta}
+                  onConfirm={() => {}}
+                  onViewDetails={() => {}}
+                  onGetDirections={() => {}}
                 />
               ))}
             </div>
           ) : (
             <EmptyStateCard 
-              message="Nenhuma consulta encontrada"
-              description="Você ainda não possui consultas agendadas"
+              onSchedule={() => window.location.href = '/agendamento'}
             />
           )}
         </CardContent>
