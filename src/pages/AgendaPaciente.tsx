@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +8,9 @@ import { Calendar, Clock, MapPin, User, Filter } from 'lucide-react';
 import { useConsultas } from '@/hooks/useConsultas';
 import { useAuth } from '@/contexts/AuthContext';
 import AppointmentCard from '@/components/appointments/AppointmentCard';
-import { AppointmentSkeleton } from '@/components/appointments/AppointmentSkeleton';
-import { EmptyStateCard } from '@/components/appointments/EmptyStateCard';
-import { ErrorCard } from '@/components/appointments/ErrorCard';
+import AppointmentSkeleton from '@/components/appointments/AppointmentSkeleton';
+import EmptyStateCard from '@/components/appointments/EmptyStateCard';
+import ErrorCard from '@/components/appointments/ErrorCard';
 import { RescheduleDialog } from '@/components/scheduling/RescheduleDialog';
 import { WaitingListDialog } from '@/components/scheduling/WaitingListDialog';
 import { ConsultasStatusFilter } from '@/components/dashboard/ConsultasStatusFilter';
@@ -89,10 +90,9 @@ const AgendaPaciente = () => {
 
       {consultas.length === 0 ? (
         <EmptyStateCard 
-          title="Nenhuma consulta encontrada"
+          message="Nenhuma consulta encontrada"
           description="Você ainda não tem consultas agendadas ou não há consultas que correspondam aos filtros selecionados."
-          actionText="Agendar Nova Consulta"
-          actionHref="/agendamento"
+          onSchedule={() => window.location.href = '/agendamento'}
         />
       ) : (
         <div className="grid gap-6">
@@ -139,8 +139,8 @@ const AgendaPaciente = () => {
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>{consulta.consultation_type || 'Consulta Médica'}</span>
-                    {consulta.local_consulta && (
-                      <span className="text-muted-foreground">• {consulta.local_consulta}</span>
+                    {consulta.notes && (
+                      <span className="text-muted-foreground">• {consulta.notes}</span>
                     )}
                   </div>
 
@@ -165,14 +165,15 @@ const AgendaPaciente = () => {
 
                     {isPast && consulta.status === 'cancelada' && (
                       <WaitingListDialog
-                        doctorId={consulta.medico_id || ''}
-                        preferredDate={consulta.consultation_date || ''}
-                        specialty={consulta.consultation_type || ''}
-                      >
-                        <Button variant="outline" size="sm">
-                          Entrar na Lista de Espera
-                        </Button>
-                      </WaitingListDialog>
+                        medicoId={consulta.medico_id || ''}
+                        medicoNome={consulta.doctor_profile?.display_name || 'Médico'}
+                        especialidade={consulta.consultation_type || ''}
+                        trigger={
+                          <Button variant="outline" size="sm">
+                            Entrar na Lista de Espera
+                          </Button>
+                        }
+                      />
                     )}
                   </div>
                 </CardContent>

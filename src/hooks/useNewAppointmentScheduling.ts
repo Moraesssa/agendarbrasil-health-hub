@@ -199,8 +199,8 @@ export const useNewAppointmentScheduling = () => {
       await newAppointmentService.scheduleAppointment({
         paciente_id: user.id,
         medico_id: selectedDoctor,
-        data_consulta: appointmentDateTime,
-        tipo_consulta: selectedSpecialty,
+        consultation_date: appointmentDateTime,
+        consultation_type: selectedSpecialty,
         local_id: selectedLocal.id,
         local_consulta_texto: localTexto,
       });

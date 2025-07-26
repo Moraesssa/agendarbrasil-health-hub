@@ -11,32 +11,38 @@ import { DateSelect } from '@/components/scheduling/DateSelect';
 import { TimeSlotGrid } from '@/components/scheduling/TimeSlotGrid';
 import { FamilyMemberSelect } from '@/components/scheduling/FamilyMemberSelect';
 import { AppointmentSummary } from '@/components/scheduling/AppointmentSummary';
-import { useAppointmentScheduling } from '@/hooks/useAppointmentScheduling';
+import { useNewAppointmentScheduling } from '@/hooks/useNewAppointmentScheduling';
 
 const Agendamento = () => {
-  const {
-    step,
-    specialty,
-    state,
-    city,
-    selectedDoctor,
-    selectedDate,
-    selectedTimeSlot,
-    selectedFamilyMember,
-    appointmentType,
-    loading,
-    setStep,
-    setSpecialty,
-    setState,
-    setCity,
-    setSelectedDoctor,
-    setSelectedDate,
-    setSelectedTimeSlot,
-    setSelectedFamilyMember,
-    setAppointmentType,
-    scheduleAppointment,
-    reset
-  } = useAppointmentScheduling();
+  const { models, setters, state, actions } = useNewAppointmentScheduling();
+  const [step, setStep] = useState(1);
+  const [selectedFamilyMember, setSelectedFamilyMember] = useState('');
+
+  const { 
+    selectedSpecialty, 
+    selectedState, 
+    selectedCity, 
+    selectedDoctor, 
+    selectedDate, 
+    selectedTime,
+    specialties,
+    states,
+    cities,
+    doctors,
+    locaisComHorarios
+  } = models;
+
+  const { 
+    setSelectedSpecialty, 
+    setSelectedState, 
+    setSelectedCity, 
+    setSelectedDoctor, 
+    setSelectedDate, 
+    setSelectedTime 
+  } = setters;
+
+  const { isLoading, isSubmitting } = state;
+  const { handleAgendamento } = actions;
 
   const handleNext = () => {
     setStep(step + 1);
@@ -47,10 +53,19 @@ const Agendamento = () => {
   };
 
   const handleSchedule = async () => {
-    const success = await scheduleAppointment();
-    if (success) {
-      setStep(7); // Confirmation step
-    }
+    await handleAgendamento();
+    setStep(7); // Confirmation step
+  };
+
+  const reset = () => {
+    setStep(1);
+    setSelectedSpecialty('');
+    setSelectedState('');
+    setSelectedCity('');
+    setSelectedDoctor('');
+    setSelectedDate('');
+    setSelectedTime('');
+    setSelectedFamilyMember('');
   };
 
   const renderStep = () => {
@@ -58,18 +73,18 @@ const Agendamento = () => {
       case 1:
         return (
           <SpecialtySelect
-            value={specialty}
-            onChange={setSpecialty}
+            value={selectedSpecialty}
+            onChange={setSelectedSpecialty}
             onNext={handleNext}
           />
         );
       case 2:
         return (
           <StateSelect
-            value={state}
+            value={selectedState}
             onChange={(value) => {
-              setState(value);
-              setCity('');
+              setSelectedState(value);
+              setSelectedCity('');
             }}
             onNext={handleNext}
             onPrevious={handlePrevious}
@@ -78,9 +93,9 @@ const Agendamento = () => {
       case 3:
         return (
           <CitySelect
-            state={state}
-            value={city}
-            onChange={setCity}
+            state={selectedState}
+            value={selectedCity}
+            onChange={setSelectedCity}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -88,11 +103,11 @@ const Agendamento = () => {
       case 4:
         return (
           <DoctorSelect
-            specialty={specialty}
-            city={city}
-            state={state}
-            selectedDoctor={selectedDoctor}
-            onDoctorSelect={setSelectedDoctor}
+            specialty={selectedSpecialty}
+            city={selectedCity}
+            state={selectedState}
+            selectedDoctor={doctors.find(d => d.id === selectedDoctor)}
+            onDoctorSelect={(doctor) => setSelectedDoctor(doctor.id)}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -100,7 +115,7 @@ const Agendamento = () => {
       case 5:
         return (
           <DateSelect
-            doctorId={selectedDoctor?.id || ''}
+            doctorId={selectedDoctor || ''}
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
             onNext={handleNext}
@@ -110,10 +125,10 @@ const Agendamento = () => {
       case 6:
         return (
           <TimeSlotGrid
-            doctorId={selectedDoctor?.id || ''}
+            doctorId={selectedDoctor || ''}
             date={selectedDate}
-            selectedSlot={selectedTimeSlot}
-            onSlotSelect={setSelectedTimeSlot}
+            selectedSlot={selectedTime}
+            onSlotSelect={setSelectedTime}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -121,14 +136,14 @@ const Agendamento = () => {
       case 7:
         return (
           <AppointmentSummary
-            doctor={selectedDoctor}
+            doctor={doctors.find(d => d.id === selectedDoctor)}
             date={selectedDate}
-            timeSlot={selectedTimeSlot}
-            appointmentType={appointmentType}
+            timeSlot={selectedTime}
+            appointmentType={selectedSpecialty}
             familyMember={selectedFamilyMember}
             onConfirm={handleSchedule}
             onPrevious={handlePrevious}
-            loading={loading}
+            loading={isSubmitting}
           />
         );
       case 8:
