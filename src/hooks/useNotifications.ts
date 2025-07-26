@@ -1,177 +1,201 @@
 
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 
 export interface Notification {
   id: string;
-  type: 'encaminhamento' | 'consulta' | 'pagamento' | 'sistema';
   title: string;
   message: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  type: string;
   read: boolean;
   created_at: string;
-  data?: any;
 }
 
 export const useNotifications = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [channelRef, setChannelRef] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!user?.id) return;
+  const fetchNotifications = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      setLoading(true);
-      
-      // Buscar encaminhamentos recebidos como notificações
-      const { data: encaminhamentos, error: encError } = await supabase
-        .from('encaminhamentos')
-        .select(`
-          id,
-          especialidade,
-          motivo,
-          data_encaminhamento,
-          status,
-          paciente:profiles!encaminhamentos_paciente_id_fkey(display_name),
-          medico_origem:profiles!encaminhamentos_medico_origem_id_fkey(display_name)
-        `)
-        .eq('medico_destino_id', user.id)
-        .eq('status', 'aguardando')
-        .order('data_encaminhamento', { ascending: false });
+      // Fetch family notifications
+      const { data: familyNotifications, error: familyError } = await supabase
+        .from('family_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-      if (encError) throw encError;
+      if (familyError) throw familyError;
 
-      // Buscar consultas próximas como notificações
-      const { data: consultas, error: consultasError } = await supabase
+      // Fetch consultation-based notifications
+      const { data: consultations, error: consultationError } = await supabase
         .from('consultas')
         .select(`
           id,
           consultation_date,
-          consultation_type,
           status,
-          paciente:profiles!consultas_paciente_id_fkey(display_name)
+          consultation_type,
+          doctor_profile:profiles (display_name)
         `)
-        .eq('medico_id', user.id)
+        .eq('paciente_id', user.id)
         .gte('consultation_date', new Date().toISOString())
-        .lte('consultation_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
-        .order('consultation_date', { ascending: true });
+        .order('consultation_date', { ascending: true })
+        .limit(10);
 
-      if (consultasError) throw consultasError;
+      if (consultationError) throw consultationError;
 
-      // Transformar em notificações
-      const encaminhamentoNotifications: Notification[] = (encaminhamentos || []).map(enc => ({
-        id: `enc_${enc.id}`,
-        type: 'encaminhamento' as const,
-        title: 'Novo Encaminhamento',
-        message: `Encaminhamento de ${enc.especialidade} para ${enc.paciente?.display_name} de Dr. ${enc.medico_origem?.display_name}`,
-        priority: 'high' as const,
-        read: false,
-        created_at: enc.data_encaminhamento,
-        data: enc
-      }));
+      // Process consultation notifications with safe profile access
+      const consultationNotifications: Notification[] = (consultations || []).map(consultation => {
+        const doctorName = Array.isArray(consultation.doctor_profile) 
+          ? consultation.doctor_profile[0]?.display_name || 'Médico'
+          : consultation.doctor_profile?.display_name || 'Médico';
+          
+        const consultationDate = new Date(consultation.consultation_date);
+        const now = new Date();
+        const timeDiff = consultationDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-      const consultaNotifications: Notification[] = (consultas || []).map(consulta => ({
-        id: `consulta_${consulta.id}`,
-        type: 'consulta' as const,
-        title: 'Consulta Próxima',
-        message: `Consulta com ${consulta.paciente?.display_name} hoje às ${new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
-        priority: 'normal' as const,
-        read: false,
-        created_at: consulta.consultation_date,
-        data: consulta
-      }));
+        let message = '';
+        let type = 'info';
 
-      const allNotifications = [...encaminhamentoNotifications, ...consultaNotifications]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        if (daysDiff <= 1) {
+          message = `Consulta com ${doctorName} em ${consultationDate.toLocaleDateString('pt-BR')} às ${consultationDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+          type = 'urgent';
+        } else if (daysDiff <= 3) {
+          message = `Lembrete: Consulta com ${doctorName} em ${daysDiff} dias`;
+          type = 'reminder';
+        } else if (daysDiff <= 7) {
+          message = `Consulta agendada com ${doctorName} para ${consultationDate.toLocaleDateString('pt-BR')}`;
+          type = 'upcoming';
+        }
+
+        return {
+          id: `consultation-${consultation.id}`,
+          title: 'Consulta Agendada',
+          message,
+          type,
+          read: false,
+          created_at: consultation.consultation_date
+        };
+      }).filter(notification => notification.message !== '');
+
+      // Combine all notifications
+      const allNotifications = [
+        ...(familyNotifications || []).map(fn => ({
+          id: fn.id,
+          title: fn.title,
+          message: fn.message,
+          type: fn.notification_type,
+          read: fn.read,
+          created_at: fn.created_at
+        })),
+        ...consultationNotifications
+      ];
+
+      // Sort by creation date
+      allNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setNotifications(allNotifications);
       setUnreadCount(allNotifications.filter(n => !n.read).length);
-
     } catch (error) {
-      logger.error('Erro ao buscar notificações', 'useNotifications', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as notificações",
-        variant: "destructive"
-      });
+      console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]);
+  };
 
-  const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  }, []);
+  const markAsRead = async (notificationId: string) => {
+    try {
+      // Only mark family notifications as read in the database
+      if (!notificationId.startsWith('consultation-')) {
+        const { error } = await supabase
+          .from('family_notifications')
+          .update({ read: true })
+          .eq('id', notificationId);
 
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
-  }, []);
+        if (error) throw error;
+      }
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      // Mark all family notifications as read
+      const familyNotificationIds = notifications
+        .filter(n => !n.id.startsWith('consultation-') && !n.read)
+        .map(n => n.id);
+
+      if (familyNotificationIds.length > 0) {
+        const { error } = await supabase
+          .from('family_notifications')
+          .update({ read: true })
+          .in('id', familyNotificationIds);
+
+        if (error) throw error;
+      }
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   useEffect(() => {
     fetchNotifications();
-  }, [fetchNotifications]);
 
-  // Setup realtime subscription - APENAS UMA SUBSCRIÇÃO
-  useEffect(() => {
-    if (!user?.id) return;
-
-    // Limpar canal anterior se existir
-    if (channelRef) {
-      supabase.removeChannel(channelRef);
-    }
-
-    const channelName = `user_notifications_${user.id}_${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
+    // Set up real-time subscription for family notifications
+    const subscription = supabase
+      .channel('family_notifications')
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'encaminhamentos',
-          filter: `medico_destino_id=eq.${user.id}`
+        {
+          event: '*',
+          schema: 'public',
+          table: 'family_notifications',
+          filter: `user_id=eq.${user?.id}`
         },
-        (payload) => {
-          logger.info('Novo encaminhamento recebido', 'useNotifications', payload);
-          toast({
-            title: "Novo Encaminhamento",
-            description: "Você recebeu um novo encaminhamento",
-          });
+        () => {
           fetchNotifications();
         }
       )
-      .subscribe((status) => {
-        logger.info(`Canal de notificações: ${status}`, 'useNotifications');
-      });
-
-    setChannelRef(channel);
+      .subscribe();
 
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      subscription.unsubscribe();
     };
-  }, [user?.id, fetchNotifications, toast]);
+  }, [user]);
 
   return {
     notifications,
-    loading,
     unreadCount,
+    loading,
     markAsRead,
     markAllAsRead,
     refetch: fetchNotifications
   };
 };
-

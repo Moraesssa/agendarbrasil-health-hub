@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, Phone, Plus, Filter, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-// Simplified type for appointments with patient info
+// Type for appointments with patient info from profiles table - made optional
 type AppointmentWithPatient = Tables<'consultas'> & {
   pacientes: {
     display_name: string | null;
@@ -45,21 +44,28 @@ const AgendaMedico = () => {
       endDate.setUTCHours(23, 59, 59, 999);
 
       try {
-        // Com RLS habilitado, não precisamos mais filtrar por medico_id
-        // O Supabase automaticamente retornará apenas as consultas do médico logado
         const { data, error } = await supabase
           .from('consultas')
           .select(`
             *,
-            pacientes:profiles!consultas_paciente_id_fkey (display_name)
+            pacientes:profiles (display_name)
           `)
+          .eq('medico_id', user.id)
           .gte('consultation_date', startDate.toISOString())
           .lte('consultation_date', endDate.toISOString())
           .order('consultation_date', { ascending: true });
 
         if (error) throw error;
         
-        setAppointments(data || []);
+        // Process data and handle cases where profile might be missing
+        const processedData: AppointmentWithPatient[] = (data || []).map(item => ({
+          ...item,
+          pacientes: Array.isArray(item.pacientes) 
+            ? item.pacientes[0] || { display_name: null }
+            : item.pacientes || { display_name: null }
+        }));
+        
+        setAppointments(processedData);
       } catch (error) {
         console.error("Erro ao buscar agenda do médico:", error);
         toast({ title: "Erro", description: "Não foi possível carregar a agenda.", variant: "destructive" });
@@ -91,12 +97,6 @@ const AgendaMedico = () => {
     };
     return statusMap[status] || status;
   };
-
-  const getPatientAge = (birthDate: string | null) => {
-    if (!birthDate) return 'N/A';
-    const age = new Date().getFullYear() - new Date(birthDate).getFullYear();
-    return `${age} anos`;
-  }
 
   const handleContactPatient = (patient: any) => {
     toast({
@@ -231,4 +231,3 @@ const AgendaMedico = () => {
 };
 
 export default AgendaMedico;
-

@@ -1,13 +1,13 @@
 
-import { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
-import { useAuth } from '@/contexts/AuthContext'; // Importar useAuth
+import { useAuth } from '@/contexts/AuthContext';
 
 // Type for appointment status
 type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
 
-// Type for appointments with doctor info from profiles table
+// Type for appointments with doctor info from profiles table - made optional to handle missing data
 type AppointmentWithDoctor = Tables<'consultas'> & {
   doctor_profile: {
     display_name: string | null;
@@ -28,7 +28,6 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Usar useCallback para memorizar a função fetchConsultas
   const fetchConsultas = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -39,13 +38,15 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     setError(null);
 
     try {
+      // Use explicit JOIN to avoid foreign key reference issues
       let query = supabase
         .from('consultas')
         .select(`
           *,
-          doctor_profile:profiles!consultas_medico_id_fkey (display_name)
+          doctor_profile:profiles!inner (display_name)
         `)
-        .eq('paciente_id', user.id);
+        .eq('paciente_id', user.id)
+        .eq('profiles.id', supabase.from('consultas').select('medico_id'));
 
       // Apply status filter
       if (filters?.status && filters.status.length > 0) {
@@ -81,8 +82,13 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       if (error) throw error;
 
-      // Simplifica o estado para evitar loops infinitos
-      setConsultas(data as AppointmentWithDoctor[] || []);
+      // Safely process the data and handle missing profile information
+      const processedData: AppointmentWithDoctor[] = (data || []).map(item => ({
+        ...item,
+        doctor_profile: item.doctor_profile || { display_name: null }
+      }));
+
+      setConsultas(processedData);
 
     } catch (err) {
       console.error('Erro ao buscar consultas:', err);
@@ -90,7 +96,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [user, filters?.status, filters?.futureOnly, filters?.month, filters?.year, filters?.limit]); // Dependências do useCallback
+  }, [user, filters?.status, filters?.futureOnly, filters?.month, filters?.year, filters?.limit]);
 
   const updateConsultaStatus = async (consultaId: string, newStatus: AppointmentStatus) => {
     try {
@@ -101,10 +107,10 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       if (error) throw error;
 
-      // Update local state de forma imutável para garantir a detecção de mudança pelo React
+      // Update local state
       setConsultas(prev => prev.map(consulta =>
         consulta.id === consultaId
-          ? { ...consulta, status: newStatus } // Não usar 'as any' aqui
+          ? { ...consulta, status: newStatus }
           : consulta
       ));
 
@@ -131,7 +137,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     consultas,
     loading,
     error,
-    refetch: fetchConsultas, // Retorna a função memorizada
+    refetch: fetchConsultas,
     updateConsultaStatus
   };
 };

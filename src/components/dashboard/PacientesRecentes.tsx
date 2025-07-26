@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
-// Type for recent appointments with patient info from profiles table
+// Type for recent appointments with patient info from profiles table - made optional
 type RecentAppointment = {
   id: string;
   status: string;
@@ -33,16 +33,16 @@ export function PacientesRecentes() {
       logger.info("Fetching recent appointments", "PacientesRecentes", { userId: user.id });
       
       try {
-        // Com RLS habilitado, não precisamos mais filtrar por medico_id
-        // O Supabase automaticamente retornará apenas as consultas do médico logado
+        // Use explicit JOIN with left join to handle missing profiles gracefully
         const { data, error } = await supabase
           .from('consultas')
           .select(`
             id,
             status,
             consultation_date,
-            patient_profile:profiles!consultas_paciente_id_fkey (display_name)
+            patient_profile:profiles (display_name)
           `)
+          .eq('medico_id', user.id)
           .order('consultation_date', { ascending: false })
           .limit(4);
 
@@ -51,10 +51,20 @@ export function PacientesRecentes() {
           throw error;
         }
         
+        // Process data and handle cases where profile might be missing
+        const processedData: RecentAppointment[] = (data || []).map(item => ({
+          id: item.id,
+          status: item.status,
+          consultation_date: item.consultation_date,
+          patient_profile: Array.isArray(item.patient_profile) 
+            ? item.patient_profile[0] || { display_name: null }
+            : item.patient_profile || { display_name: null }
+        }));
+        
         logger.info("Recent appointments fetched successfully", "PacientesRecentes", { 
-          count: data?.length || 0 
+          count: processedData.length 
         });
-        setRecentAppointments(data || []);
+        setRecentAppointments(processedData);
       } catch (error) {
         logger.error("Error fetching recent appointments", "PacientesRecentes", error);
       } finally {
@@ -103,7 +113,9 @@ export function PacientesRecentes() {
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{consulta.patient_profile?.display_name || "Paciente"}</h4>
+                    <h4 className="font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">
+                      {consulta.patient_profile?.display_name || "Paciente"}
+                    </h4>
                     <p className="text-sm text-gray-600">
                       Paciente
                     </p>
@@ -136,4 +148,3 @@ export function PacientesRecentes() {
     </Card>
   );
 }
-

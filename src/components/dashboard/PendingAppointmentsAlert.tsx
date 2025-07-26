@@ -14,8 +14,8 @@ interface PendingAppointment {
   status: string;
   status_pagamento: string;
   doctor_profile?: {
-    display_name: string;
-  };
+    display_name: string | null;
+  } | null;
 }
 
 export function PendingAppointmentsAlert() {
@@ -35,7 +35,7 @@ export function PendingAppointmentsAlert() {
           consultation_type,
           status,
           status_pagamento,
-          doctor_profile:profiles!consultas_medico_id_fkey(display_name)
+          doctor_profile:profiles (display_name)
         `)
         .eq('paciente_id', user.id)
         .eq('status_pagamento', 'pendente')
@@ -43,7 +43,20 @@ export function PendingAppointmentsAlert() {
         .order('consultation_date', { ascending: true });
 
       if (error) throw error;
-      setPendingAppointments(data || []);
+      
+      // Process data and handle cases where profile might be missing
+      const processedData: PendingAppointment[] = (data || []).map(item => ({
+        id: item.id,
+        consultation_date: item.consultation_date,
+        consultation_type: item.consultation_type,
+        status: item.status,
+        status_pagamento: item.status_pagamento,
+        doctor_profile: Array.isArray(item.doctor_profile) 
+          ? item.doctor_profile[0] || { display_name: null }
+          : item.doctor_profile || { display_name: null }
+      }));
+      
+      setPendingAppointments(processedData);
     } catch (error) {
       console.error('Error fetching pending appointments:', error);
     } finally {
