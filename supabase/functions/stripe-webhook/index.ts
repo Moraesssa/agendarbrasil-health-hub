@@ -67,10 +67,11 @@ serve(async (req) => {
       });
     }
 
-    // Verificar webhook com signature do Stripe
+    // CORREÇÃO: Usar constructEventAsync em vez de constructEvent
     let event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      console.log("✅ Webhook signature verificada com sucesso");
     } catch (err) {
       console.error(`Erro ao verificar assinatura do webhook: ${err.message}`);
       return new Response(JSON.stringify({ error: "Signature inválida" }), {
@@ -78,6 +79,7 @@ serve(async (req) => {
         status: 400,
       });
     }
+
     console.log("=== EVENTO STRIPE ===");
     console.log("Tipo:", event.type);
     console.log("ID:", event.id);
@@ -91,11 +93,21 @@ serve(async (req) => {
         console.log("Session ID:", session.id);
         console.log("Customer:", session.customer);
         console.log("Amount Total:", session.amount_total);
+        console.log("Payment Status:", session.payment_status);
         console.log("Metadata:", session.metadata);
 
         if (!session.metadata?.consulta_id) {
           console.error("Metadata consulta_id não encontrado:", session.metadata);
           throw new Error("Consulta ID não encontrado no metadata");
+        }
+
+        // Verificar se o pagamento foi realmente processado
+        if (session.payment_status !== 'paid') {
+          console.log("Pagamento ainda não foi processado, status:", session.payment_status);
+          return new Response(JSON.stringify({ received: true, status: 'pending' }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
         }
 
         // Registrar pagamento no banco
@@ -117,9 +129,15 @@ serve(async (req) => {
 
         if (paymentError) {
           console.error("Erro ao registrar pagamento:", paymentError);
-          throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
+          // Se for erro de duplicação, não é um problema crítico
+          if (paymentError.code !== '23505') {
+            throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
+          } else {
+            console.log("Pagamento já existe no banco - OK");
+          }
+        } else {
+          console.log("Pagamento registrado:", paymentData);
         }
-        console.log("Pagamento registrado:", paymentData);
 
         // Atualizar status da consulta
         console.log("Atualizando status da consulta...");
@@ -128,7 +146,8 @@ serve(async (req) => {
           .update({ 
             status_pagamento: 'pago',
             status: 'agendada',
-            valor: session.amount_total / 100 // Converter de centavos para reais
+            valor: session.amount_total / 100, // Converter de centavos para reais
+            expires_at: null // Limpar expiração já que foi pago
           })
           .eq('id', session.metadata.consulta_id)
           .select()
@@ -176,9 +195,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Erro no webhook:", error);
+    console.error("Stack trace:", error.stack);
     return new Response(
       JSON.stringify({ 
-        error: "Erro interno do servidor"
+        error: "Erro interno do servidor",
+        details: error.message
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

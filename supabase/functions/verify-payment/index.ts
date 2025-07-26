@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -112,7 +113,7 @@ serve(async (req) => {
         
         if (pagamentoData?.gateway_id) {
           finalSessionId = pagamentoData.gateway_id;
-          console.log("Session ID encontrado nos pagamentos:", finalSessionId);
+          console.log("Session ID encontrado nos pagamentos");
         }
       }
     }
@@ -123,7 +124,14 @@ serve(async (req) => {
 
     // Verificar status da sessão no Stripe
     console.log("Consultando Stripe...");
-    const session = await stripe.checkout.sessions.retrieve(finalSessionId);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(finalSessionId);
+    } catch (stripeError) {
+      console.error("Erro ao consultar Stripe:", stripeError);
+      throw new Error("Sessão não encontrada no Stripe");
+    }
+
     console.log("Status da sessão:", session.status);
     console.log("Payment status:", session.payment_status);
 
@@ -165,7 +173,12 @@ serve(async (req) => {
 
         if (paymentError) {
           console.error("Erro ao registrar pagamento:", paymentError);
-          throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
+          // Se for erro de duplicação, não é crítico
+          if (paymentError.code !== '23505') {
+            throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
+          } else {
+            console.log("Pagamento já existe - OK");
+          }
         } else {
           console.log("Pagamento registrado com sucesso:", newPayment);
         }
@@ -204,9 +217,9 @@ serve(async (req) => {
         status: 200,
       });
     } else {
-      console.log("Pagamento ainda não processado");
+      console.log("Pagamento ainda não processado, status:", session.payment_status);
       return new Response(JSON.stringify({ 
-        success: false, 
+        success: true, 
         payment_status: session.payment_status,
         message: "Pagamento ainda não foi processado"
       }), {
@@ -217,13 +230,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Erro na verificação:", error);
+    console.error("Stack trace:", error.stack);
     
     const secureErrorMessage = createSecureErrorResponse(error);
     
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: secureErrorMessage
+        error: secureErrorMessage,
+        details: error.message
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

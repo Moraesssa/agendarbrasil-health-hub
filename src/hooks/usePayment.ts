@@ -252,10 +252,48 @@ export const usePayment = () => {
     }
   };
 
+  // Nova função para verificação automática de consultas pendentes
+  const checkPendingPayments = async () => {
+    if (!user) return;
+
+    try {
+      console.log("Verificando consultas com pagamento pendente...");
+      
+      // Buscar consultas com pagamento pendente
+      const { data: consultas, error } = await supabase
+        .from('consultas')
+        .select('id, status_pagamento, created_at')
+        .eq('paciente_id', user.id)
+        .eq('status_pagamento', 'pendente')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Últimas 24h
+
+      if (error) {
+        console.error("Erro ao buscar consultas pendentes:", error);
+        return;
+      }
+
+      if (consultas && consultas.length > 0) {
+        console.log(`Encontradas ${consultas.length} consultas com pagamento pendente`);
+        
+        // Verificar cada consulta
+        for (const consulta of consultas) {
+          try {
+            await verifyPayment(consulta.id);
+          } catch (e) {
+            console.error(`Erro ao verificar consulta ${consulta.id}:`, e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao verificar pagamentos pendentes:", error);
+    }
+  };
+
   return {
     processing,
     processPayment,
     createCustomerPortalSession,
-    verifyPayment
+    verifyPayment,
+    checkPendingPayments
   };
 };

@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { usePayment } from "@/hooks/usePayment";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +9,7 @@ interface PaymentStatusCheckerProps {
 }
 
 export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusCheckerProps) => {
-  const { verifyPayment } = usePayment();
+  const { verifyPayment, checkPendingPayments } = usePayment();
   const { toast } = useToast();
   const hasChecked = useRef(false);
 
@@ -46,7 +47,7 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
             const result = await verifyPayment(consultaId);
             console.log('PaymentStatusChecker: Resultado da verificação:', result);
             
-            if (result) {
+            if (result && result.paid) {
               toast({
                 title: "Pagamento confirmado!",
                 description: "Sua consulta foi atualizada com sucesso.",
@@ -56,29 +57,9 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
               window.dispatchEvent(new CustomEvent('consultaUpdated'));
             }
           } else {
-            // Sem consultaId específica, tentar verificar pela sessionId
-            console.log('PaymentStatusChecker: Verificando por sessionId...');
-            if (sessionId) {
-              const response = await fetch('/api/verify-payment', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
-                },
-                body: JSON.stringify({ session_id: sessionId })
-              });
-              
-              if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                  toast({
-                    title: "Pagamento confirmado!",
-                    description: "Sua consulta foi atualizada com sucesso.",
-                  });
-                  window.dispatchEvent(new CustomEvent('consultaUpdated'));
-                }
-              }
-            }
+            // Verificar todas as consultas pendentes
+            console.log('PaymentStatusChecker: Verificando todas as consultas pendentes...');
+            await checkPendingPayments();
           }
           
           // Limpar parâmetros da URL ANTES de chamar onSuccess
@@ -88,7 +69,7 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
           // Aguardar um pouco antes de chamar onSuccess
           setTimeout(() => {
             onSuccess?.();
-          }, 1000); // Aumentar o tempo para garantir que a atualização seja processada
+          }, 2000); // Aumentar o tempo para garantir que a atualização seja processada
           
         } catch (error) {
           console.error('PaymentStatusChecker: Erro ao verificar pagamento:', error);
@@ -102,7 +83,16 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
 
       checkPayments();
     }
-  }, [consultaId, verifyPayment, onSuccess, toast]);
+  }, [consultaId, verifyPayment, checkPendingPayments, onSuccess, toast]);
+
+  // Verificação automática periódica para consultas pendentes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkPendingPayments();
+    }, 30000); // Verificar a cada 30 segundos
+
+    return () => clearInterval(interval);
+  }, [checkPendingPayments]);
 
   return null; // Componente invisível
 };
