@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConsultas } from '@/hooks/useConsultas';
@@ -51,7 +52,7 @@ export const useCalendarData = () => {
 
           // Check appointments for this day
           const dayAppointments = consultasDoMes.filter(consulta => {
-            const consultaDate = new Date(consulta.data_consulta);
+            const consultaDate = new Date(consulta.consultation_date);
             return consultaDate.getDate() === day;
           });
           
@@ -110,3 +111,4 @@ export const useCalendarData = () => {
     loading: loading || consultasLoading
   };
 };
+

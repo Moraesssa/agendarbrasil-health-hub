@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateTimeSlots, 
@@ -63,7 +64,7 @@ const checkAvailabilityBeforeScheduling = async (
     .from('consultas')
     .select('id')
     .eq('medico_id', doctorId)
-    .eq('data_consulta', appointmentDateTime)
+    .eq('consultation_date', appointmentDateTime)
     .in('status', ['agendada', 'confirmada'])
     .limit(1);
 
@@ -175,13 +176,13 @@ export const newAppointmentService = {
       const endOfDay = new Date(`${date}T23:59:59.999Z`);
       const { data: appointments } = await supabase
         .from('consultas')
-        .select('data_consulta, duracao_minutos, local_id')
+        .select('consultation_date, duracao_minutos, local_id')
         .eq('medico_id', doctorId)
-        .gte('data_consulta', startOfDay.toISOString())
-        .lte('data_consulta', endOfDay.toISOString());
+        .gte('consultation_date', startOfDay.toISOString())
+        .lte('consultation_date', endOfDay.toISOString());
       
       const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
-        data_consulta: apt.data_consulta,
+        data_consulta: apt.consultation_date,
         duracao_minutos: apt.duracao_minutos || 30
       }));
 
@@ -292,8 +293,8 @@ export const newAppointmentService = {
       const { error } = await supabase.from('consultas').insert({
         paciente_id: appointmentData.paciente_id,
         medico_id: appointmentData.medico_id,
-        data_consulta: appointmentData.data_consulta,
-        tipo_consulta: appointmentData.tipo_consulta,
+        consultation_date: appointmentData.data_consulta,
+        consultation_type: appointmentData.tipo_consulta,
         local_id: appointmentData.local_id,
         local_consulta: appointmentData.local_consulta_texto,
         status: 'agendada',
@@ -322,3 +323,4 @@ export const newAppointmentService = {
     }
   }
 };
+

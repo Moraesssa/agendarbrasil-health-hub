@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,15 +54,15 @@ export const useNotifications = () => {
         .from('consultas')
         .select(`
           id,
-          data_consulta,
-          tipo_consulta,
+          consultation_date,
+          consultation_type,
           status,
           paciente:profiles!consultas_paciente_id_fkey(display_name)
         `)
         .eq('medico_id', user.id)
-        .gte('data_consulta', new Date().toISOString())
-        .lte('data_consulta', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
-        .order('data_consulta', { ascending: true });
+        .gte('consultation_date', new Date().toISOString())
+        .lte('consultation_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+        .order('consultation_date', { ascending: true });
 
       if (consultasError) throw consultasError;
 
@@ -81,10 +82,10 @@ export const useNotifications = () => {
         id: `consulta_${consulta.id}`,
         type: 'consulta' as const,
         title: 'Consulta Próxima',
-        message: `Consulta com ${consulta.paciente?.display_name} hoje às ${new Date(consulta.data_consulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+        message: `Consulta com ${consulta.paciente?.display_name} hoje às ${new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
         priority: 'normal' as const,
         read: false,
-        created_at: consulta.data_consulta,
+        created_at: consulta.consultation_date,
         data: consulta
       }));
 
@@ -173,3 +174,4 @@ export const useNotifications = () => {
     refetch: fetchNotifications
   };
 };
+

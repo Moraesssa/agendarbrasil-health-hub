@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -53,7 +54,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       // Apply future only filter
       if (filters?.futureOnly) {
-        query = query.gte('data_consulta', new Date().toISOString());
+        query = query.gte('consultation_date', new Date().toISOString());
       }
 
       // Filtrar consultas pagas, pendentes ou aguardando pagamento
@@ -64,8 +65,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
         const startOfMonth = new Date(filters.year, filters.month - 1, 1);
         const endOfMonth = new Date(filters.year, filters.month, 0, 23, 59, 59);
         query = query
-          .gte('data_consulta', startOfMonth.toISOString())
-          .lte('data_consulta', endOfMonth.toISOString());
+          .gte('consultation_date', startOfMonth.toISOString())
+          .lte('consultation_date', endOfMonth.toISOString());
       }
 
       // Apply limit
@@ -74,7 +75,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
       }
 
       // Order by date
-      query = query.order('data_consulta', { ascending: true });
+      query = query.order('consultation_date', { ascending: true });
 
       const { data, error } = await query;
 

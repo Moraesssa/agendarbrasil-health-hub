@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -148,8 +149,8 @@ export const PaymentStatusDashboard = () => {
                       {consulta.doctor_profile?.display_name || 'Médico não especificado'}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {new Date(consulta.data_consulta).toLocaleDateString('pt-BR')} às{' '}
-                      {new Date(consulta.data_consulta).toLocaleTimeString('pt-BR', { 
+                      {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')} às{' '}
+                      {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
                       })}

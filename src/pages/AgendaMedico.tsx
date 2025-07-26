@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, Phone, Plus, Filter, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,9 +53,9 @@ const AgendaMedico = () => {
             *,
             pacientes:profiles!consultas_paciente_id_fkey (display_name)
           `)
-          .gte('data_consulta', startDate.toISOString())
-          .lte('data_consulta', endDate.toISOString())
-          .order('data_consulta', { ascending: true });
+          .gte('consultation_date', startDate.toISOString())
+          .lte('consultation_date', endDate.toISOString())
+          .order('consultation_date', { ascending: true });
 
         if (error) throw error;
         
@@ -187,18 +188,18 @@ const AgendaMedico = () => {
                                     {getStatusText(appointment.status)}
                                   </Badge>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-1">{appointment.tipo_consulta}</p>
+                                <p className="text-sm text-gray-600 mb-1">{appointment.consultation_type}</p>
                                 <div className="flex items-center gap-4 text-xs text-gray-500">
                                   <div className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
-                                    {new Date(appointment.data_consulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(appointment.consultation_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <Phone className="h-3 w-3" />
                                     Contato disponível
                                   </div>
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1">{appointment.motivo}</p>
+                                <p className="text-xs text-gray-400 mt-1">{appointment.notes}</p>
                               </div>
                             </div>
                           </div>
@@ -230,3 +231,4 @@ const AgendaMedico = () => {
 };
 
 export default AgendaMedico;
+

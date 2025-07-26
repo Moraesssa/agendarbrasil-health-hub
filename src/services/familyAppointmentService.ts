@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { FamilyAppointmentData } from '@/types/family';
@@ -32,8 +33,8 @@ export const familyAppointmentService = {
       const { error } = await supabase.from('consultas').insert({
         paciente_id: appointmentData.paciente_id,
         medico_id: appointmentData.medico_id,
-        data_consulta: appointmentData.data_consulta,
-        tipo_consulta: appointmentData.tipo_consulta,
+        consultation_date: appointmentData.data_consulta,
+        consultation_type: appointmentData.tipo_consulta,
         agendado_por: user.id,
         paciente_familiar_id: appointmentData.paciente_id !== user.id ? appointmentData.paciente_id : null,
         status: 'agendada',
@@ -71,7 +72,7 @@ export const familyAppointmentService = {
           profiles!consultas_paciente_id_fkey(display_name, email),
           agendado_por_profile:profiles!consultas_agendado_por_fkey(display_name)
         `)
-        .order('data_consulta', { ascending: true });
+        .order('consultation_date', { ascending: true });
 
       if (error) {
         logger.error("Error fetching family appointments", "FamilyAppointmentService", error);
@@ -85,3 +86,4 @@ export const familyAppointmentService = {
     }
   }
 };
+

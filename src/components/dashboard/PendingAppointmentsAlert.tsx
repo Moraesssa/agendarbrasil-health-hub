@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AlertTriangle, Clock, CreditCard } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -8,8 +9,8 @@ import { PaymentVerificationButton } from "@/components/PaymentVerificationButto
 
 interface PendingAppointment {
   id: string;
-  data_consulta: string;
-  tipo_consulta: string;
+  consultation_date: string;
+  consultation_type: string;
   status: string;
   status_pagamento: string;
   doctor_profile?: {
@@ -30,16 +31,16 @@ export function PendingAppointmentsAlert() {
         .from('consultas')
         .select(`
           id,
-          data_consulta,
-          tipo_consulta,
+          consultation_date,
+          consultation_type,
           status,
           status_pagamento,
           doctor_profile:profiles!consultas_medico_id_fkey(display_name)
         `)
         .eq('paciente_id', user.id)
         .eq('status_pagamento', 'pendente')
-        .gte('data_consulta', new Date().toISOString())
-        .order('data_consulta', { ascending: true });
+        .gte('consultation_date', new Date().toISOString())
+        .order('consultation_date', { ascending: true });
 
       if (error) throw error;
       setPendingAppointments(data || []);
@@ -82,14 +83,14 @@ export function PendingAppointmentsAlert() {
                     {appointment.doctor_profile?.display_name || 'Médico'}
                   </span>
                   <Badge variant="outline" className="text-xs">
-                    {appointment.tipo_consulta}
+                    {appointment.consultation_type}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {new Date(appointment.data_consulta).toLocaleDateString('pt-BR')} às{' '}
-                    {new Date(appointment.data_consulta).toLocaleTimeString('pt-BR', { 
+                    {new Date(appointment.consultation_date).toLocaleDateString('pt-BR')} às{' '}
+                    {new Date(appointment.consultation_date).toLocaleTimeString('pt-BR', { 
                       hour: '2-digit', 
                       minute: '2-digit' 
                     })}

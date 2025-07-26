@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Stethoscope, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { logger } from "@/utils/logger";
 type RecentAppointment = {
   id: string;
   status: string;
-  data_consulta: string;
+  consultation_date: string;
   patient_profile: {
     display_name: string | null;
   } | null;
@@ -39,10 +40,10 @@ export function PacientesRecentes() {
           .select(`
             id,
             status,
-            data_consulta,
+            consultation_date,
             patient_profile:profiles!consultas_paciente_id_fkey (display_name)
           `)
-          .order('data_consulta', { ascending: false })
+          .order('consultation_date', { ascending: false })
           .limit(4);
 
         if (error) {
@@ -112,7 +113,7 @@ export function PacientesRecentes() {
                   <div className="flex items-center gap-1 text-gray-600">
                     <Clock className="h-4 w-4" />
                     <span className="text-sm font-medium">
-                      {new Date(consulta.data_consulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <Badge 
@@ -135,3 +136,4 @@ export function PacientesRecentes() {
     </Card>
   );
 }
+

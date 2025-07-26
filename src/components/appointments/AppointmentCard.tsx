@@ -1,4 +1,5 @@
 
+
 import { Calendar, Clock, Navigation, AlertCircle, Video, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,7 @@ const AppointmentCard = ({
   };
 
   // Verifica se a consulta é passada
-  const isPastAppointment = new Date(appointment.data_consulta) < new Date();
+  const isPastAppointment = new Date(appointment.consultation_date) < new Date();
   const isCanceled = appointment.status === 'cancelada';
   const isCompleted = appointment.status === 'realizada';
 
@@ -64,7 +65,7 @@ const AppointmentCard = ({
       return "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 opacity-90";
     }
     // Estilo especial para consultas online
-    if (appointment.tipo_consulta === 'Online') {
+    if (appointment.consultation_type === 'Online') {
       return "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 hover:shadow-md transition-all";
     }
     return "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-white to-blue-50 border border-blue-100 hover:shadow-md transition-all";
@@ -119,7 +120,7 @@ const AppointmentCard = ({
         );
       }
 
-      if (appointment.tipo_consulta === 'Online') {
+      if (appointment.consultation_type === 'Online') {
         // Botão para videochamada
         actions.unshift(
           <Button
@@ -171,9 +172,9 @@ const AppointmentCard = ({
         
         <div className="flex items-center gap-2">
           <p className="text-xs sm:text-sm text-gray-600">
-            {appointment.tipo_consulta}
+            {appointment.consultation_type}
           </p>
-          {appointment.tipo_consulta === 'Online' && (
+          {appointment.consultation_type === 'Online' && (
             <Video className="h-3 w-3 text-purple-600" />
           )}
         </div>
@@ -181,11 +182,11 @@ const AppointmentCard = ({
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 my-2">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span>{new Date(appointment.data_consulta).toLocaleDateString('pt-BR')}</span>
+            <span>{new Date(appointment.consultation_date).toLocaleDateString('pt-BR')}</span>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span>{new Date(appointment.data_consulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span>{new Date(appointment.consultation_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
           {isPastAppointment && !isCompleted && !isCanceled && (
             <span className="text-xs text-orange-600 font-medium">
@@ -218,3 +219,4 @@ const AppointmentCard = ({
 };
 
 export default AppointmentCard;
+

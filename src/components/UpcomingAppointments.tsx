@@ -1,4 +1,5 @@
 
+
 import { Calendar, Clock, User, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +63,7 @@ const UpcomingAppointments = () => {
   };
 
   const handleViewDetails = (appointment: any) => {
-    if (appointment.tipo_consulta === 'Online') {
+    if (appointment.consultation_type === 'Online') {
       toast({
         title: "Link da consulta",
         description: "O link será enviado por SMS e email 30 minutos antes da consulta",
@@ -76,7 +77,7 @@ const UpcomingAppointments = () => {
   };
 
   const handleGetDirections = (appointment: any) => {
-    if (appointment.tipo_consulta !== 'Online') {
+    if (appointment.consultation_type !== 'Online') {
       toast({
         title: "Abrindo mapa",
         description: `Direções para ${appointment.local_consulta}`,
@@ -128,7 +129,7 @@ const UpcomingAppointments = () => {
 
   const getCardTitle = () => {
     const futureAppointments = consultas.filter(c => 
-      new Date(c.data_consulta) > new Date() && 
+      new Date(c.consultation_date) > new Date() && 
       c.status_pagamento === 'pago'
     );
     
@@ -137,7 +138,7 @@ const UpcomingAppointments = () => {
 
   const showingFallback = consultas.length > 0 && 
     !consultas.some(c => 
-      new Date(c.data_consulta) > new Date() && 
+      new Date(c.consultation_date) > new Date() && 
       c.status_pagamento === 'pago'
     );
 
@@ -221,3 +222,4 @@ const UpcomingAppointments = () => {
 };
 
 export default UpcomingAppointments;
+
