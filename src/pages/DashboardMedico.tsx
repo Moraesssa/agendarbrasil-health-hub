@@ -1,197 +1,237 @@
-import { useEffect, useState } from "react";
-import { Activity } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsCards } from "@/components/dashboard/MetricsCards";
 import { ConsultasChart } from "@/components/dashboard/ConsultasChart";
 import { TiposConsultaChart } from "@/components/dashboard/TiposConsultaChart";
 import { PacientesRecentes } from "@/components/dashboard/PacientesRecentes";
 import { AlertsSection } from "@/components/dashboard/AlertsSection";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { financeService } from "@/services/financeService";
-import { PageLoader } from "@/components/PageLoader";
-import { NotificationProvider } from "@/contexts/NotificationContext";
-
-// Tipagem para os dados do dashboard
-interface DashboardData {
-  metrics: {
-    pacientesHoje: number;
-    receitaSemanal: number;
-    proximasConsultas: number;
-    tempoMedio: number;
-  };
-  consultasChart: { dia: string; consultas: number }[];
-  tiposConsultaChart: { tipo: string; valor: number; cor: string }[];
-}
+import { PendingAppointmentsAlert } from "@/components/dashboard/PendingAppointmentsAlert";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Calendar, Clock, Users, TrendingUp } from 'lucide-react';
 
 const DashboardMedico = () => {
-  const { toast } = useToast();
-  const { user, userData } = useAuth();
-  
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalConsultas: 0,
+    consultasHoje: 0,
+    consultasProximaSemana: 0,
+    pacientesAtivos: 0
+  });
+
+  const [proximasConsultas, setProximasConsultas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    toast({
-      title: "Bem-vindo ao Dashboard Médico!",
-      description: "Aqui você pode gerenciar suas consultas e acompanhar métricas importantes.",
-    });
-  }, [toast]);
-  
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user || !userData) {
-        setLoading(true);
-        return;
-      }
-      setLoading(true);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
-      const today = new Date();
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-      startOfWeek.setUTCHours(0, 0, 0, 0);
-
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endOfWeek.setUTCHours(23, 59, 59, 999);
-
-      try {
-        const { data: weeklyAppointments, error } = await supabase
-          .from('consultas')
-          .select('data_consulta, tipo_consulta, status')
-          .gte('data_consulta', startOfWeek.toISOString())
-          .lte('data_consulta', endOfWeek.toISOString());
-        
-        if (error) throw error;
-
-        // Processar dados para as métricas
-        const todayString = new Date().toISOString().split('T')[0];
-        const todayAppointments = weeklyAppointments.filter(c => c.data_consulta.startsWith(todayString));
-        
-        // Buscar receita semanal real dos pagamentos
-        try {
-          const resumoFinanceiro = await financeService.getResumoFinanceiro(user.id);
-          const receitaSemanal = resumoFinanceiro.receitaSemanal;
-          
-          const proximasConsultas = todayAppointments.filter(c => new Date(c.data_consulta) > new Date()).length;
-
-          const metrics = {
-            pacientesHoje: todayAppointments.length,
-            receitaSemanal,
-            proximasConsultas,
-            tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 30,
-          };
-
-          // Processar dados para o gráfico de consultas
-          const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-          const consultasSemanais = weekDays.map(dia => ({ dia, consultas: 0 }));
-          weeklyAppointments.forEach(c => {
-            const dayIndex = new Date(c.data_consulta).getDay();
-            consultasSemanais[dayIndex].consultas++;
-          });
-
-          // Processar dados para o gráfico de tipos de consulta
-          const tiposMap: { [key: string]: number } = {};
-          weeklyAppointments.forEach(c => {
-            const tipo = c.tipo_consulta || 'Outro';
-            tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
-          });
-
-          const totalConsultas = weeklyAppointments.length;
-          const colors = ["#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#f97316"];
-          const tiposConsultaChart = Object.entries(tiposMap).map(([tipo, valor], index) => ({
-            tipo,
-            valor: totalConsultas > 0 ? parseFloat(((valor / totalConsultas) * 100).toFixed(2)) : 0,
-            cor: colors[index % colors.length]
-          }));
-          
-          setDashboardData({
-            metrics,
-            consultasChart: consultasSemanais.slice(1).concat(consultasSemanais.slice(0, 1)),
-            tiposConsultaChart
-          });
-        } catch (financeError) {
-          console.error("Erro ao buscar dados financeiros:", financeError);
-          // Fallback para dados básicos sem receita
-          const metrics = {
-            pacientesHoje: todayAppointments.length,
-            receitaSemanal: 0,
-            proximasConsultas: todayAppointments.filter(c => new Date(c.data_consulta) > new Date()).length,
-            tempoMedio: (userData as any).configuracoes?.duracaoConsulta || 30,
-          };
-          
-          setDashboardData({
-            metrics,
-            consultasChart: [],
-            tiposConsultaChart: []
-          });
-        }
-        
-      } catch (error) {
-        console.error("Erro ao buscar dados do dashboard:", error);
-        toast({ title: "Erro", description: "Não foi possível carregar os dados do dashboard.", variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchDashboardData = async () => {
+    if (!user) return;
     
-    fetchDashboardData();
-  }, [user, userData, toast]);
+    setLoading(true);
+    
+    try {
+      // Buscar estatísticas gerais
+      const { data: totalConsultas } = await supabase
+        .from('consultas')
+        .select('id', { count: 'exact' })
+        .eq('medico_id', user.id);
 
-  if (loading) {
-    return <PageLoader message="Carregando seu dashboard..." />;
-  }
+      // Consultas de hoje
+      const hoje = new Date();
+      const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0));
+      const fimHoje = new Date(hoje.setHours(23, 59, 59, 999));
+      
+      const { data: consultasHoje } = await supabase
+        .from('consultas')
+        .select('id', { count: 'exact' })
+        .eq('medico_id', user.id)
+        .gte('consultation_date', inicioHoje.toISOString())
+        .lte('consultation_date', fimHoje.toISOString());
+
+      // Consultas próxima semana
+      const proximaSemana = new Date();
+      proximaSemana.setDate(proximaSemana.getDate() + 7);
+      
+      const { data: consultasProximaSemana } = await supabase
+        .from('consultas')
+        .select('id', { count: 'exact' })
+        .eq('medico_id', user.id)
+        .gte('consultation_date', new Date().toISOString())
+        .lte('consultation_date', proximaSemana.toISOString());
+
+      // Pacientes únicos
+      const { data: pacientesUnicos } = await supabase
+        .from('consultas')
+        .select('paciente_id')
+        .eq('medico_id', user.id);
+
+      const pacientesAtivos = new Set(pacientesUnicos?.map(p => p.paciente_id) || []).size;
+
+      // Próximas consultas com dados do paciente
+      const { data: proximasConsultasData } = await supabase
+        .from('consultas')
+        .select(`
+          *,
+          patient_profile:profiles!consultas_paciente_id_fkey (
+            display_name
+          )
+        `)
+        .eq('medico_id', user.id)
+        .gte('consultation_date', new Date().toISOString())
+        .order('consultation_date', { ascending: true })
+        .limit(5);
+
+      setStats({
+        totalConsultas: totalConsultas?.length || 0,
+        consultasHoje: consultasHoje?.length || 0,
+        consultasProximaSemana: consultasProximaSemana?.length || 0,
+        pacientesAtivos
+      });
+
+      setProximasConsultas(proximasConsultasData || []);
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString('pt-BR'),
+      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    };
+  };
 
   return (
-    <NotificationProvider>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
-          <AppSidebar />
-          <SidebarInset className="flex-1">
-            <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-blue-100/50 bg-white/95 backdrop-blur-md shadow-sm px-6">
-              <SidebarTrigger className="text-blue-600 hover:bg-blue-50 transition-colors" />
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
-                  Dashboard Médico
-                </h1>
-                <p className="text-sm text-gray-600">Visão geral da sua prática médica</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 shadow-sm">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Online
-                </Badge>
-              </div>
-            </header>
-
-            <main className="flex-1 overflow-auto">
-              <div className="container max-w-7xl mx-auto p-6 space-y-6">
-                <MetricsCards data={dashboardData?.metrics} loading={loading} />
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  <div className="w-full">
-                    <ConsultasChart data={dashboardData?.consultasChart} loading={loading} />
-                  </div>
-                  <div className="w-full">
-                    <TiposConsultaChart data={dashboardData?.tiposConsultaChart} loading={loading} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                  <div className="xl:col-span-2">
-                    <PacientesRecentes />
-                  </div>
-                  <div className="xl:col-span-1">
-                    <AlertsSection />
-                  </div>
-                </div>
-              </div>
-            </main>
-          </SidebarInset>
+    <div className="space-y-8 p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard Médico</h1>
+          <p className="text-gray-600 mt-2">Visão geral da sua prática médica</p>
         </div>
-      </SidebarProvider>
-    </NotificationProvider>
+      </div>
+
+      {/* Alertas de Consultas Pendentes */}
+      <PendingAppointmentsAlert />
+
+      {/* Cards de Métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Consultas</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalConsultas}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Consultas Hoje</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.consultasHoje}</p>
+              </div>
+              <Clock className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Próxima Semana</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.consultasProximaSemana}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pacientes Ativos</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pacientesAtivos}</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Próximas Consultas */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Próximas Consultas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : proximasConsultas.length > 0 ? (
+                <div className="space-y-4">
+                  {proximasConsultas.map((consulta) => {
+                    const { date, time } = formatDateTime(consulta.consultation_date);
+                    return (
+                      <div key={consulta.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {consulta.patient_profile?.display_name || 'Paciente não identificado'}
+                          </p>
+                          <p className="text-sm text-gray-600">{consulta.consultation_type || 'Consulta'}</p>
+                        </div>
+                        <div className="text-right text-sm text-gray-600">
+                          <p>{date}</p>
+                          <p>{time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>Nenhuma consulta agendada</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Alertas */}
+        <AlertsSection />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Gráficos */}
+        <ConsultasChart />
+        <TiposConsultaChart />
+      </div>
+
+      {/* Pacientes Recentes */}
+      <PacientesRecentes />
+    </div>
   );
 };
 

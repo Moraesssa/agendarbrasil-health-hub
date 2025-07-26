@@ -113,14 +113,14 @@ export const appointmentService = {
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
     const { data: appointments } = await supabase
       .from('consultas')
-      .select('consultation_date, duracao_minutos, local_id')
+      .select('consultation_date')
       .eq('medico_id', doctorId)
       .gte('consultation_date', startOfDay.toISOString())
       .lte('consultation_date', endOfDay.toISOString());
     
     const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
       data_consulta: apt.consultation_date,
-      duracao_minutos: apt.duracao_minutos || 30
+      duracao_minutos: 30
     }));
 
     const locaisComHorarios: LocalComHorarios[] = [];
@@ -171,8 +171,8 @@ export const appointmentService = {
     medico_id: string;
     data_consulta: string;
     tipo_consulta: string;
-    local_id: string;
-    local_consulta_texto: string;
+    local_id?: string;
+    local_consulta_texto?: string;
   }) {
     try {
       await checkAuthentication();
@@ -200,7 +200,6 @@ export const appointmentService = {
         medico_id: appointmentData.medico_id,
         consultation_date: appointmentData.data_consulta,
         consultation_type: appointmentData.tipo_consulta,
-        local_id: appointmentData.local_id,
         local_consulta: appointmentData.local_consulta_texto,
         status: 'agendada',
         status_pagamento: 'pendente',
@@ -227,4 +226,3 @@ export const appointmentService = {
     }
   }
 };
-

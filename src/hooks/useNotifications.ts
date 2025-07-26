@@ -8,6 +8,7 @@ export interface Notification {
   title: string;
   message: string;
   type: string;
+  priority?: string;
   read: boolean;
   created_at: string;
 }
@@ -35,7 +36,7 @@ export const useNotifications = () => {
 
       if (familyError) throw familyError;
 
-      // Fetch consultation-based notifications
+      // Fetch consultation-based notifications using explicit JOIN
       const { data: consultations, error: consultationError } = await supabase
         .from('consultas')
         .select(`
@@ -43,7 +44,9 @@ export const useNotifications = () => {
           consultation_date,
           status,
           consultation_type,
-          doctor_profile:profiles (display_name)
+          medico_profiles:profiles!consultas_medico_id_fkey (
+            display_name
+          )
         `)
         .eq('paciente_id', user.id)
         .gte('consultation_date', new Date().toISOString())
@@ -54,9 +57,7 @@ export const useNotifications = () => {
 
       // Process consultation notifications with safe profile access
       const consultationNotifications: Notification[] = (consultations || []).map(consultation => {
-        const doctorName = Array.isArray(consultation.doctor_profile) 
-          ? consultation.doctor_profile[0]?.display_name || 'Médico'
-          : consultation.doctor_profile?.display_name || 'Médico';
+        const doctorName = consultation.medico_profiles?.display_name || 'Médico';
           
         const consultationDate = new Date(consultation.consultation_date);
         const now = new Date();
@@ -65,16 +66,20 @@ export const useNotifications = () => {
 
         let message = '';
         let type = 'info';
+        let priority = 'normal';
 
         if (daysDiff <= 1) {
           message = `Consulta com ${doctorName} em ${consultationDate.toLocaleDateString('pt-BR')} às ${consultationDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
           type = 'urgent';
+          priority = 'urgent';
         } else if (daysDiff <= 3) {
           message = `Lembrete: Consulta com ${doctorName} em ${daysDiff} dias`;
           type = 'reminder';
+          priority = 'high';
         } else if (daysDiff <= 7) {
           message = `Consulta agendada com ${doctorName} para ${consultationDate.toLocaleDateString('pt-BR')}`;
           type = 'upcoming';
+          priority = 'normal';
         }
 
         return {
@@ -82,6 +87,7 @@ export const useNotifications = () => {
           title: 'Consulta Agendada',
           message,
           type,
+          priority,
           read: false,
           created_at: consultation.consultation_date
         };
@@ -94,6 +100,7 @@ export const useNotifications = () => {
           title: fn.title,
           message: fn.message,
           type: fn.notification_type,
+          priority: fn.priority || 'normal',
           read: fn.read,
           created_at: fn.created_at
         })),

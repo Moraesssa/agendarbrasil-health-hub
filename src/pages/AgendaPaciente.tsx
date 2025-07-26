@@ -1,423 +1,335 @@
 
-import { useState, useEffect } from "react";
-import { Calendar, Clock, User, Check, Loader2, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { RescheduleDialog } from "@/components/scheduling/RescheduleDialog";
-import Header from "@/components/Header";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import { PaymentStatusChecker } from "@/components/PaymentStatusChecker";
-import { PaymentVerificationButton } from "@/components/PaymentVerificationButton";
-import { PendingAppointmentsAlert } from "@/components/dashboard/PendingAppointmentsAlert";
-
-// Type for appointments with doctor info from profiles table
-type AppointmentWithDoctor = Tables<'consultas'> & {
-  doctor_profile: {
-    display_name: string | null;
-  } | null;
-};
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MapPin, User, Phone, FileText, AlertCircle } from "lucide-react";
+import { useConsultas } from "@/hooks/useConsultas";
+import { AppointmentCard } from "@/components/appointments/AppointmentCard";
+import { AppointmentSkeleton } from "@/components/appointments/AppointmentSkeleton";
+import { EmptyStateCard } from "@/components/appointments/EmptyStateCard";
+import { ErrorCard } from "@/components/appointments/ErrorCard";
+import { ConsultasStatusFilter } from "@/components/dashboard/ConsultasStatusFilter";
 
 const AgendaPaciente = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   
-  const [appointments, setAppointments] = useState<AppointmentWithDoctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDoctor | null>(null);
-
-  // Handle payment URL parameters - apenas para notificação, limpeza é feita pelo PaymentStatusChecker
-  useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    
-    if (paymentStatus === 'cancelled') {
-      toast({
-        title: "Pagamento cancelado",
-        description: "O pagamento foi cancelado. Você pode tentar novamente a qualquer momento.",
-        variant: "destructive"
-      });
-      // Clean the URL only for cancelled payments
-      navigate("/agenda-paciente", { replace: true });
-    }
-  }, [searchParams, navigate, toast]);
-
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("consultas")
-          .select(`
-            *,
-            doctor_profile:profiles!consultas_medico_id_fkey (display_name)
-          `)
-          .order("data_consulta", { ascending: false });
-
-        if (error) throw error;
-        
-        setAppointments(data || []);
-      } catch (error) {
-        console.error("Erro ao buscar agenda:", error);
-        toast({ title: "Erro", description: "Não foi possível carregar sua agenda.", variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
-  }, [user, toast]);
-  
-  const handleConfirmAppointment = async (appointmentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('consultas')
-        .update({ status: 'confirmada' })
-        .eq('id', appointmentId);
-
-      if (error) throw error;
-      
-      setAppointments(prev => prev.map(apt => 
-        apt.id === appointmentId ? {...apt, status: 'confirmada'} : apt
-      ));
-      
-      toast({
-        title: "Consulta confirmada!",
-        description: "Obrigado por confirmar sua presença. O médico foi notificado.",
-      });
-    } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível confirmar a consulta.", variant: "destructive"});
-    }
-  };
+  const { consultas, loading, error, refetch } = useConsultas({
+    status: statusFilter.length > 0 ? statusFilter as any[] : undefined,
+    futureOnly: false
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmada':
-      case 'realizada': return 'bg-green-100 text-green-800 border-green-200';
       case 'agendada':
-      case 'pendente': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'cancelada': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-blue-500 text-white';
+      case 'confirmada':
+        return 'bg-green-500 text-white';
+      case 'realizada':
+        return 'bg-gray-500 text-white';
+      case 'cancelada':
+        return 'bg-red-500 text-white';
+      default:
+        return 'bg-gray-300 text-gray-800';
     }
   };
-  
+
   const getStatusText = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      'confirmada': 'Confirmada',
-      'agendada': 'Agendada',
-      'pendente': 'Pendente',
-      'cancelada': 'Cancelada',
-      'realizada': 'Realizada'
-    };
-    return statusMap[status] || status;
-  };
-
-  const handleReschedule = (appointment: AppointmentWithDoctor) => {
-    setSelectedAppointment(appointment);
-    setRescheduleDialogOpen(true);
-  };
-
-  const handleRescheduleSuccess = () => {
-    // Recarregar appointments
-    const fetchAppointments = async () => {
-      if (!user) return;
-      try {
-        const { data, error } = await supabase
-          .from("consultas")
-          .select(`
-            *,
-            doctor_profile:profiles!consultas_medico_id_fkey (display_name)
-          `)
-          .order("data_consulta", { ascending: false });
-
-        if (error) throw error;
-        setAppointments(data || []);
-      } catch (error) {
-        console.error("Erro ao buscar agenda:", error);
-      }
-    };
-    fetchAppointments();
-  };
-
-  const handleCancel = async (appointmentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('consultas')
-        .update({ status: 'cancelada' })
-        .eq('id', appointmentId);
-
-      if (error) throw error;
-      
-      setAppointments(prev => prev.map(apt => apt.id === appointmentId ? {...apt, status: 'cancelada'} : apt));
-
-      toast({
-        title: "Consulta cancelada",
-        description: "Sua consulta foi cancelada com sucesso",
-      });
-    } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível cancelar a consulta.", variant: "destructive"});
+    switch (status) {
+      case 'agendada':
+        return 'Agendada';
+      case 'confirmada':
+        return 'Confirmada';
+      case 'realizada':
+        return 'Realizada';
+      case 'cancelada':
+        return 'Cancelada';
+      default:
+        return status;
     }
   };
 
-  const handleGoBack = () => {
-    // Check if there are payment parameters in the current URL
-    const currentParams = new URLSearchParams(window.location.search);
-    const hasPaymentParams = currentParams.has('payment');
+  const getPriorityAppointments = () => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    if (hasPaymentParams) {
-      // If coming from payment flow, go to home instead of browser back
-      navigate("/");
-    } else {
-      // Normal back navigation
-      navigate(-1);
-    }
+    return consultas.filter(consulta => {
+      const consultationDate = new Date(consulta.consultation_date);
+      return consultationDate <= tomorrow && 
+             (consulta.status === 'agendada' || consulta.status === 'confirmada');
+    });
   };
-  
-  const upcomingAppointments = appointments.filter(
-    (apt) => new Date(apt.data_consulta) >= new Date() && apt.status !== 'cancelada' && apt.status !== 'realizada'
-  );
-  const pastAppointments = appointments.filter(
-    (apt) => new Date(apt.data_consulta) < new Date() || apt.status === 'cancelada' || apt.status === 'realizada'
-  );
+
+  const getUpcomingAppointments = () => {
+    const now = new Date();
+    return consultas.filter(consulta => {
+      const consultationDate = new Date(consulta.consultation_date);
+      return consultationDate > now && 
+             (consulta.status === 'agendada' || consulta.status === 'confirmada');
+    }).slice(0, 5);
+  };
+
+  const getRecentAppointments = () => {
+    return consultas.filter(consulta => 
+      consulta.status === 'realizada' || consulta.status === 'cancelada'
+    ).slice(0, 5);
+  };
+
+  if (error) {
+    return <ErrorCard message={error} onRetry={refetch} />;
+  }
+
+  const priorityAppointments = getPriorityAppointments();
+  const upcomingAppointments = getUpcomingAppointments();
+  const recentAppointments = getRecentAppointments();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <PaymentStatusChecker onSuccess={() => {
-        // Recarregar dados sem recarregar página completa
-        const fetchAppointments = async () => {
-          if (!user) return;
-          try {
-            const { data, error } = await supabase
-              .from("consultas")
-              .select(`
-                *,
-                doctor_profile:profiles!consultas_medico_id_fkey (display_name)
-              `)
-              .order("data_consulta", { ascending: false });
-
-            if (error) throw error;
-            setAppointments(data || []);
-            
-            toast({
-              title: "Pagamento confirmado!",
-              description: "Sua consulta foi agendada com sucesso.",
-            });
-            
-            // Dispatch update event
-            window.dispatchEvent(new CustomEvent('consultaUpdated'));
-          } catch (error) {
-            console.error("Erro ao buscar agenda:", error);
-          }
-        };
-        fetchAppointments();
-      }} />
-      <Header />
-      
-      <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        <PendingAppointmentsAlert />
-      
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handleGoBack}
-              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Voltar</span>
-            </Button>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-blue-900 mb-2">
-                Minha Agenda
-              </h1>
-              <p className="text-gray-600">
-                Visualize e gerencie suas consultas agendadas
-              </p>
-            </div>
-          </div>
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Minha Agenda</h1>
+          <p className="text-gray-600 mt-2">Visualize e gerencie suas consultas médicas</p>
+        </div>
+        <div className="flex gap-2">
           <Button 
-            onClick={() => navigate("/agendamento")}
-            className="bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all"
+            variant="outline" 
+            onClick={refetch}
+            className="flex items-center gap-2"
           >
-            Nova Consulta
+            <Clock className="h-4 w-4" />
+            Atualizar
           </Button>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-900">
-                  <Clock className="h-5 w-5" />
-                  Próximas Consultas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {upcomingAppointments.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">Nenhuma consulta futura agendada.</p>
-                ) : (
-                  upcomingAppointments.map((appointment) => (
-                    <div key={appointment.id} className="p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-shadow">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <User className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-gray-900">{appointment.doctor_profile?.display_name || "Médico"}</h3>
-                                <Badge className={`${getStatusColor(appointment.status)} border`}>
-                                  {getStatusText(appointment.status)}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-gray-600 mb-1">{appointment.tipo_consulta}</p>
-                              <div className="flex items-center gap-4 text-xs text-gray-500">
-                                 <div className="flex items-center gap-1">
-                                   <Calendar className="h-3 w-3" />
-                                   {new Date(appointment.data_consulta).toLocaleDateString('pt-BR')}
-                                 </div>
-                                 <div className="flex items-center gap-1">
-                                   <Clock className="h-3 w-3" />
-                                   {new Date(appointment.data_consulta).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
-                                 </div>
-                                 {appointment.status_pagamento && (
-                                   <Badge variant={appointment.status_pagamento === 'pago' ? 'default' : 'secondary'}>
-                                     {appointment.status_pagamento === 'pago' ? 'Pago' : 'Pendente'}
-                                   </Badge>
-                                 )}
-                               </div>
-                               <p className="text-xs text-gray-400 mt-1">{appointment.local_consulta || 'Consulta Online'}</p>
-                            </div>
-                          </div>
-                        </div>
-                         <div className="flex flex-wrap gap-2">
-                           {appointment.status === 'agendada' && appointment.status_pagamento === 'pago' && (
-                             <Button 
-                               variant="outline" 
-                               size="sm"
-                               className="border-green-300 text-green-700 hover:bg-green-50 font-semibold"
-                               onClick={() => handleConfirmAppointment(appointment.id)}
-                             >
-                               <Check className="w-4 h-4 mr-2" />
-                               Confirmar
-                             </Button>
-                           )}
-                            {appointment.status_pagamento === 'pendente' && (
-                              <PaymentVerificationButton 
-                                consultaId={appointment.id}
-                                onSuccess={() => {
-                                  // Atualizar dados sem recarregar página
-                                  const fetchAppointments = async () => {
-                                    if (!user) return;
-                                    try {
-                                      const { data, error } = await supabase
-                                        .from("consultas")
-                                        .select(`
-                                          *,
-                                          doctor_profile:profiles!consultas_medico_id_fkey (display_name)
-                                        `)
-                                        .order("data_consulta", { ascending: false });
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ConsultasStatusFilter 
+            selectedStatuses={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+        </CardContent>
+      </Card>
 
-                                      if (error) throw error;
-                                      setAppointments(data || []);
-                                    } catch (error) {
-                                      console.error("Erro ao buscar agenda:", error);
-                                    }
-                                  };
-                                  fetchAppointments();
-                                }}
-                              />
-                            )}
-                           {appointment.status_pagamento === 'pago' && (
-                             <Button 
-                               variant="outline" 
-                               size="sm"
-                               onClick={() => handleReschedule(appointment)}
-                               className="border-yellow-200 hover:bg-yellow-50"
-                             >
-                               Reagendar
-                             </Button>
-                           )}
-                           <Button 
-                             variant="destructive" 
-                             size="sm"
-                             onClick={() => handleCancel(appointment.id)}
-                           >
-                             Cancelar
-                           </Button>
-                         </div>
-                      </div>
+      {/* Consultas Prioritárias */}
+      {priorityAppointments.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertCircle className="h-5 w-5" />
+              Consultas Prioritárias
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {priorityAppointments.map((consulta) => (
+              <div key={consulta.id} className="bg-white p-4 rounded-lg border border-orange-200">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {consulta.doctor_profile?.display_name || 'Médico não identificado'}
+                    </h3>
+                    <Badge className={`${getStatusColor(consulta.status || '')} text-xs`}>
+                      {getStatusText(consulta.status || '')}
+                    </Badge>
+                  </div>
+                  <div className="text-right text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')}
                     </div>
-                  ))
+                    <div className="flex items-center gap-1 mt-1">
+                      <Clock className="h-4 w-4" />
+                      {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                {consulta.consultation_type && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <FileText className="h-4 w-4" />
+                    {consulta.consultation_type}
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-900">
-                  <Calendar className="h-5 w-5" />
-                  Histórico de Consultas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {pastAppointments.length === 0 ? (
-                   <p className="text-center text-gray-500 py-4">Nenhuma consulta anterior encontrada.</p>
-                ) : (
-                  pastAppointments.map((appointment) => (
-                    <div key={appointment.id} className="p-4 rounded-lg border border-gray-200 bg-white/50 opacity-80">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-gray-800">{appointment.doctor_profile?.display_name || "Médico"}</h3>
-                          <p className="text-sm text-gray-500">{new Date(appointment.data_consulta).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <Badge className={`${getStatusColor(appointment.status)} border`}>
-                          {getStatusText(appointment.status)}
+                
+                {consulta.local_consulta && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4" />
+                    {consulta.local_consulta}
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Próximas Consultas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              Próximas Consultas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <AppointmentSkeleton key={i} />
+                ))}
+              </div>
+            ) : upcomingAppointments.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingAppointments.map((consulta) => (
+                  <div key={consulta.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          {consulta.doctor_profile?.display_name || 'Médico não identificado'}
+                        </h3>
+                        <Badge className={`${getStatusColor(consulta.status || '')} text-xs mt-1`}>
+                          {getStatusText(consulta.status || '')}
                         </Badge>
                       </div>
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </main>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      {consulta.consultation_type && (
+                        <div className="flex items-center gap-1 col-span-2">
+                          <FileText className="h-4 w-4" />
+                          {consulta.consultation_type}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyStateCard 
+                message="Nenhuma consulta agendada"
+                description="Suas próximas consultas aparecerão aqui"
+              />
+            )}
+          </CardContent>
+        </Card>
 
-      <div className="h-20 sm:hidden"></div>
+        {/* Histórico Recente */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-gray-600" />
+              Histórico Recente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <AppointmentSkeleton key={i} />
+                ))}
+              </div>
+            ) : recentAppointments.length > 0 ? (
+              <div className="space-y-4">
+                {recentAppointments.map((consulta) => (
+                  <div key={consulta.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          {consulta.doctor_profile?.display_name || 'Médico não identificado'}
+                        </h3>
+                        <Badge className={`${getStatusColor(consulta.status || '')} text-xs mt-1`}>
+                          {getStatusText(consulta.status || '')}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      {consulta.consultation_type && (
+                        <div className="flex items-center gap-1 col-span-2">
+                          <FileText className="h-4 w-4" />
+                          {consulta.consultation_type}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyStateCard 
+                message="Nenhuma consulta no histórico"
+                description="Suas consultas realizadas aparecerão aqui"
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Dialog de Reagendamento */}
-      {selectedAppointment && (
-        <RescheduleDialog
-          open={rescheduleDialogOpen}
-          onOpenChange={setRescheduleDialogOpen}
-          appointmentId={selectedAppointment.id}
-          appointmentData={{
-            medicoId: selectedAppointment.medico_id,
-            medicoNome: selectedAppointment.doctor_profile?.display_name || "Médico",
-            dataAtual: selectedAppointment.data_consulta,
-            horaAtual: new Date(selectedAppointment.data_consulta).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}),
-            especialidade: selectedAppointment.tipo_consulta || "Consulta"
-          }}
-          onSuccess={handleRescheduleSuccess}
-        />
-      )}
+      {/* Todas as Consultas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Todas as Consultas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <AppointmentSkeleton key={i} />
+              ))}
+            </div>
+          ) : consultas.length > 0 ? (
+            <div className="space-y-4">
+              {consultas.map((consulta) => (
+                <AppointmentCard
+                  key={consulta.id}
+                  appointment={{
+                    id: consulta.id,
+                    consultation_date: consulta.consultation_date,
+                    consultation_type: consulta.consultation_type || '',
+                    status: consulta.status || '',
+                    doctor_name: consulta.doctor_profile?.display_name || 'Médico não identificado'
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyStateCard 
+              message="Nenhuma consulta encontrada"
+              description="Você ainda não possui consultas agendadas"
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

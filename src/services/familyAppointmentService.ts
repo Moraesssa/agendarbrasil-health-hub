@@ -1,5 +1,4 @@
 
-
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { FamilyAppointmentData } from '@/types/family';
@@ -35,10 +34,8 @@ export const familyAppointmentService = {
         medico_id: appointmentData.medico_id,
         consultation_date: appointmentData.data_consulta,
         consultation_type: appointmentData.tipo_consulta,
-        agendado_por: user.id,
-        paciente_familiar_id: appointmentData.paciente_id !== user.id ? appointmentData.paciente_id : null,
         status: 'agendada',
-        motivo: 'Consulta agendada via plataforma familiar.'
+        notes: 'Consulta agendada via plataforma familiar.'
       });
 
       if (error) {
@@ -65,12 +62,13 @@ export const familyAppointmentService = {
         .from('consultas')
         .select(`
           *,
-          medicos!medicos_user_id_fkey(
-            user_id,
-            profiles!medicos_user_id_fkey(display_name)
+          medico_profiles:profiles!consultas_medico_id_fkey(
+            display_name
           ),
-          profiles!consultas_paciente_id_fkey(display_name, email),
-          agendado_por_profile:profiles!consultas_agendado_por_fkey(display_name)
+          paciente_profiles:profiles!consultas_paciente_id_fkey(
+            display_name, 
+            email
+          )
         `)
         .order('consultation_date', { ascending: true });
 
@@ -86,4 +84,3 @@ export const familyAppointmentService = {
     }
   }
 };
-

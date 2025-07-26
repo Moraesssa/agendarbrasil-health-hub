@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
@@ -6,7 +7,6 @@ export interface TemporaryReservation {
   medico_id: string;
   paciente_id: string;
   data_consulta: string;
-  local_id?: string;
   expires_at: string;
   session_id: string;
 }
@@ -18,7 +18,6 @@ export interface WaitingListEntry {
   data_preferencia: string;
   periodo_preferencia: 'manha' | 'tarde' | 'noite' | 'qualquer';
   especialidade: string;
-  local_id?: string;
   status: 'active' | 'notified' | 'cancelled';
 }
 
@@ -33,8 +32,7 @@ class EnhancedAppointmentService {
   // Sistema de reserva temporária (15 minutos)
   async createTemporaryReservation(
     medicoId: string,
-    dataConsulta: string,
-    localId?: string
+    dataConsulta: string
   ): Promise<{ success: boolean; reservationId?: string; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -47,7 +45,7 @@ class EnhancedAppointmentService {
         .from('consultas')
         .select('id')
         .eq('medico_id', medicoId)
-        .eq('data_consulta', dataConsulta)
+        .eq('consultation_date', dataConsulta)
         .in('status', ['agendada', 'confirmada', 'pendente'])
         .limit(1);
 
@@ -76,7 +74,6 @@ class EnhancedAppointmentService {
           medico_id: medicoId,
           paciente_id: user.id,
           data_consulta: dataConsulta,
-          local_id: localId,
           session_id: this.sessionId,
         })
         .select()
@@ -130,13 +127,11 @@ class EnhancedAppointmentService {
         .insert({
           medico_id: reservation.medico_id,
           paciente_id: reservation.paciente_id,
-          data_consulta: reservation.data_consulta,
-          local_id: reservation.local_id,
-          tipo_consulta: appointmentData.tipo_consulta,
-          motivo: appointmentData.motivo,
+          consultation_date: reservation.data_consulta,
+          consultation_type: appointmentData.tipo_consulta,
+          notes: appointmentData.motivo,
           valor: appointmentData.valor,
           status: 'agendada',
-          agendado_por: user.id,
         })
         .select()
         .single();
@@ -183,7 +178,6 @@ class EnhancedAppointmentService {
   async rescheduleAppointment(
     appointmentId: string,
     newDateTime: string,
-    newLocalId?: string,
     reason?: string
   ): Promise<{ success: boolean; newAppointmentId?: string; error?: string }> {
     try {
@@ -205,8 +199,7 @@ class EnhancedAppointmentService {
 
       // Verificar se usuário tem permissão
       const hasPermission = originalAppointment.paciente_id === user.id || 
-                           originalAppointment.medico_id === user.id ||
-                           originalAppointment.agendado_por === user.id;
+                           originalAppointment.medico_id === user.id;
 
       if (!hasPermission) {
         return { success: false, error: "Sem permissão para reagendar esta consulta" };
@@ -215,8 +208,7 @@ class EnhancedAppointmentService {
       // Verificar disponibilidade do novo horário
       const reservationResult = await this.createTemporaryReservation(
         originalAppointment.medico_id,
-        newDateTime,
-        newLocalId
+        newDateTime
       );
 
       if (!reservationResult.success) {
@@ -227,12 +219,12 @@ class EnhancedAppointmentService {
       const { data: newAppointment, error: createError } = await supabase
         .from('consultas')
         .insert({
-          ...originalAppointment,
-          id: undefined, // Remove o ID para criar novo
-          data_consulta: newDateTime,
-          local_id: newLocalId || originalAppointment.local_id,
+          paciente_id: originalAppointment.paciente_id,
+          medico_id: originalAppointment.medico_id,
+          consultation_date: newDateTime,
+          consultation_type: originalAppointment.consultation_type,
           status: 'agendada',
-          rescheduled_from: appointmentId,
+          notes: `Reagendada de: ${originalAppointment.consultation_date}. ${reason || ''}`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -246,7 +238,7 @@ class EnhancedAppointmentService {
         .from('consultas')
         .update({
           status: 'cancelada',
-          cancellation_reason: reason || 'Reagendada pelo usuário',
+          notes: `${originalAppointment.notes || ''} - Reagendada pelo usuário`,
           updated_at: new Date().toISOString(),
         })
         .eq('id', appointmentId);
@@ -277,8 +269,7 @@ class EnhancedAppointmentService {
     medicoId: string,
     dataPreferencia: string,
     periodoPreferencia: 'manha' | 'tarde' | 'noite' | 'qualquer',
-    especialidade: string,
-    localId?: string
+    especialidade: string
   ): Promise<{ success: boolean; waitingListId?: string; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -308,7 +299,6 @@ class EnhancedAppointmentService {
           data_preferencia: dataPreferencia,
           periodo_preferencia: periodoPreferencia,
           especialidade,
-          local_id: localId,
         })
         .select()
         .single();

@@ -38,15 +38,14 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     setError(null);
 
     try {
-      // Use explicit JOIN to avoid foreign key reference issues
+      // Use explicit JOIN with proper alias
       let query = supabase
         .from('consultas')
         .select(`
           *,
-          doctor_profile:profiles!inner (display_name)
+          doctor_profile:profiles!consultas_medico_id_fkey (display_name)
         `)
-        .eq('paciente_id', user.id)
-        .eq('profiles.id', supabase.from('consultas').select('medico_id'));
+        .eq('paciente_id', user.id);
 
       // Apply status filter
       if (filters?.status && filters.status.length > 0) {
