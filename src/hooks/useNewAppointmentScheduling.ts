@@ -201,7 +201,6 @@ export const useNewAppointmentScheduling = () => {
         medico_id: selectedDoctor,
         consultation_date: appointmentDateTime,
         consultation_type: selectedSpecialty,
-        local_id: selectedLocal.id,
         local_consulta_texto: localTexto,
       });
 

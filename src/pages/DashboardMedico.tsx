@@ -163,19 +163,32 @@ const DashboardMedico = () => {
 
       <PendingAppointmentsAlert />
 
-      <MetricsCards
-        totalConsultas={metrics.totalConsultas}
-        consultasHoje={metrics.consultasHoje}
-        consultasPendentes={metrics.consultasPendentes}
-        pacientesUnicos={metrics.pacientesUnicos}
-      />
+          <MetricsCards 
+            data={{
+              pacientesHoje: metrics.consultasHoje,
+              receitaSemanal: metrics.totalConsultas * 150,
+              proximasConsultas: metrics.consultasPendentes,
+              tempoMedio: 30
+            }}
+            loading={loading}
+          />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <ConsultasChart data={chartData} />
-        <TiposConsultaChart data={tiposConsultaData} />
+        <ConsultasChart 
+          data={chartData.map(item => ({ dia: item.dia, consultas: item.valor }))}
+          loading={loading}
+        />
+        <TiposConsultaChart 
+          data={tiposConsultaData.map(item => ({ 
+            tipo: item.dia, 
+            valor: item.valor, 
+            cor: item.cor || '#3b82f6' 
+          }))}
+          loading={loading}
+        />
       </div>
 
-      <PacientesRecentes consultas={consultas.slice(0, 5)} />
+      <PacientesRecentes />
     </div>
   );
 };
