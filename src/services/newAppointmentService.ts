@@ -273,7 +273,6 @@ export const newAppointmentService = {
         medico_id: appointmentData.medico_id,
         consultation_date: appointmentData.consultation_date,
         consultation_type: appointmentData.consultation_type,
-        local_consulta: appointmentData.local_consulta_texto,
         status: 'agendada',
         status_pagamento: 'pendente',
         patient_name: 'Paciente',
