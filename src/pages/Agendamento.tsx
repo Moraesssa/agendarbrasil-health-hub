@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
-import { useNewAppointmentScheduling } from "@/hooks/useNewAppointmentScheduling";
+import { useAppointmentScheduling } from "@/hooks/useAppointmentScheduling";
 import { SpecialtySelect } from "@/components/scheduling/SpecialtySelect";
 import { StateSelect } from "@/components/scheduling/StateSelect";
 import { CitySelect } from "@/components/scheduling/CitySelect";
@@ -12,12 +12,16 @@ import { DateSelect } from "@/components/scheduling/DateSelect";
 import { TimeSlotGrid } from "@/components/scheduling/TimeSlotGrid";
 import { AppointmentSummary } from "@/components/scheduling/AppointmentSummary";
 import { FamilyMemberSelect } from "@/components/scheduling/FamilyMemberSelect";
+import { useFamilyData } from "@/hooks/useFamilyData";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TOTAL_STEPS = 7;
 
 const Agendamento = () => {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [selectedFamilyMember, setSelectedFamilyMember] = useState("");
+  const { familyMembers } = useFamilyData();
 
   const {
     models: {
@@ -44,7 +48,7 @@ const Agendamento = () => {
     },
     state: { isLoading, isSubmitting },
     actions: { handleAgendamento, resetSelection }
-  } = useNewAppointmentScheduling();
+  } = useAppointmentScheduling();
 
   const handleNext = () => {
     if (step < TOTAL_STEPS) {
@@ -131,10 +135,10 @@ const Agendamento = () => {
         return (
           <div className="space-y-4">
             <FamilyMemberSelect
-              familyMembers={[]}
+              familyMembers={familyMembers}
               selectedMemberId={selectedFamilyMember}
-              currentUserId="current-user"
-              currentUserName="Você"
+              currentUserId={user?.id || ""}
+              currentUserName={user?.email?.split('@')[0] || "Você"}
               onChange={setSelectedFamilyMember}
             />
             <AppointmentSummary
@@ -145,7 +149,11 @@ const Agendamento = () => {
               selectedDate={selectedDate}
               selectedTime={selectedTime}
               selectedLocal={(locaisComHorarios || []).length > 0 ? locaisComHorarios[0] : null}
-              selectedPatientName={selectedFamilyMember}
+              selectedPatientName={
+                selectedFamilyMember === user?.id 
+                  ? "Eu mesmo" 
+                  : familyMembers.find(m => m.family_member_id === selectedFamilyMember)?.display_name || ""
+              }
             />
           </div>
         );
