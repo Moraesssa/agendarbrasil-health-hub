@@ -161,7 +161,9 @@ export const appointmentService = {
 
       logger.info("Available dates fetched successfully", "AppointmentService", { 
         doctorId, 
-        datesCount: availableDates.length 
+        datesCount: availableDates.length,
+        sampleDates: availableDates.slice(0, 3),
+        doctorConfig: config
       });
       
       return availableDates;

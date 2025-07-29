@@ -78,8 +78,8 @@ export function DateSelect({
       return true;
     }
     
-    // If we're loading or have an error, don't disable any future dates
-    if (isLoading || error) {
+    // If we're loading, error, or have no doctor selected, allow interaction with future dates
+    if (isLoading || error || !doctorId) {
       return false;
     }
     
@@ -88,8 +88,9 @@ export function DateSelect({
       return !isDateAvailable(date);
     }
     
-    // If no available dates loaded yet, don't disable any future dates
-    return false;
+    // If no available dates but data loaded successfully, disable all future dates 
+    // (this means doctor has no availability)
+    return true;
   };
 
   return (
