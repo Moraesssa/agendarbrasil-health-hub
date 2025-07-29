@@ -1,17 +1,21 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { SpecialtySelect } from '@/components/scheduling/SpecialtySelect';
 import { StateSelect } from '@/components/scheduling/StateSelect';
 import { CitySelect } from '@/components/scheduling/CitySelect';
 import { DoctorSelect } from '@/components/scheduling/DoctorSelect';
 import { DateSelect } from '@/components/scheduling/DateSelect';
 import { TimeSlotGrid } from '@/components/scheduling/TimeSlotGrid';
-import { FamilyMemberSelect } from '@/components/scheduling/FamilyMemberSelect';
 import { AppointmentSummary } from '@/components/scheduling/AppointmentSummary';
-import { useNewAppointmentScheduling } from '@/hooks/useNewAppointmentScheduling';
+import { FamilyMemberSelect } from '@/components/scheduling/FamilyMemberSelect';
+import { useAppointmentScheduling } from '@/hooks/useAppointmentScheduling';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamilyData } from '@/hooks/useFamilyData';
+import { toast } from '@/hooks/use-toast';
+
+const TOTAL_STEPS = 7;
 
 const Agendamento = () => {
   const { user } = useAuth();
@@ -19,31 +23,37 @@ const Agendamento = () => {
   const [selectedFamilyMember, setSelectedFamilyMember] = useState("");
   const { familyMembers } = useFamilyData();
 
-  const { 
-    selectedSpecialty, 
-    selectedState, 
-    selectedCity, 
-    selectedDoctor, 
-    selectedDate, 
-    selectedTime,
-    specialties,
-    states,
-    cities,
-    doctors,
-    locaisComHorarios
-  } = models;
+  const appointmentHook = useAppointmentScheduling();
+  
+  const {
+    models: {
+      selectedSpecialty,
+      selectedState,
+      selectedCity,
+      selectedDoctor,
+      selectedDate,
+      selectedTime,
+      specialties,
+      states,
+      cities,
+      doctors,
+      locaisComHorarios
+    },
+    setters: {
+      setSelectedSpecialty,
+      setSelectedState,
+      setSelectedCity,
+      setSelectedDoctor,
+      setSelectedDate,
+      setSelectedTime
+    },
+    state: { isLoading, isSubmitting },
+    actions: { handleAgendamento, resetSelection }
+  } = appointmentHook;
 
-  const { 
-    setSelectedSpecialty, 
-    setSelectedState, 
-    setSelectedCity, 
-    setSelectedDoctor, 
-    setSelectedDate, 
-    setSelectedTime 
-  } = setters;
-
-  const { isLoading, isSubmitting } = state;
-  const { handleAgendamento } = actions;
+  const selectedPatientName = selectedFamilyMember 
+    ? familyMembers?.find(member => member.id === selectedFamilyMember)?.name 
+    : user?.user_metadata?.full_name || user?.email || "Usuário";
 
   const handleNext = () => {
     if (step < TOTAL_STEPS) {
@@ -57,19 +67,42 @@ const Agendamento = () => {
     }
   };
 
-  const handleSchedule = async () => {
-    await handleAgendamento();
-  };
-
-  const reset = () => {
+  const handleRestart = () => {
     setStep(1);
-    setSelectedFamilyMember("");
     resetSelection('state');
   };
 
-  const handleStateChange = (value: string) => {
-    setSelectedState(value);
-    resetSelection('state');
+  const handleStepClick = (stepNumber: number) => {
+    if (stepNumber <= step) {
+      setStep(stepNumber);
+    }
+  };
+
+  const handleAppointmentConfirm = async () => {
+    try {
+      await handleAgendamento({
+        patientId: selectedFamilyMember || user?.id,
+        doctorId: selectedDoctor,
+        date: selectedDate,
+        timeSlot: selectedTime,
+        appointmentType: 'consulta',
+        notes: `Agendamento para ${selectedPatientName}`,
+        location: 'Online'
+      });
+      
+      toast({
+        title: "Consulta agendada com sucesso!",
+        description: `Sua consulta foi marcada para ${selectedDate} às ${selectedTime}`,
+      });
+      
+      handleRestart();
+    } catch (error) {
+      toast({
+        title: "Erro ao agendar consulta",
+        description: "Tente novamente ou entre em contato com o suporte",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderStep = () => {
@@ -77,18 +110,20 @@ const Agendamento = () => {
       case 1:
         return (
           <SpecialtySelect
-            value={selectedSpecialty}
+            selectedSpecialty={selectedSpecialty}
+            specialties={specialties}
+            isLoading={isLoading}
             onChange={setSelectedSpecialty}
+            disabled={isLoading}
           />
         );
       case 2:
         return (
           <StateSelect
-            value={selectedState}
-            onChange={(value) => {
-              setSelectedState(value);
-              setSelectedCity('');
-            }}
+            selectedState={selectedState}
+            states={states}
+            isLoading={isLoading}
+            onChange={setSelectedState}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -96,19 +131,23 @@ const Agendamento = () => {
       case 3:
         return (
           <CitySelect
-            state={selectedState}
-            value={selectedCity}
+            selectedState={selectedState}
+            selectedCity={selectedCity}
+            cities={cities}
+            isLoading={isLoading}
             onChange={setSelectedCity}
           />
         );
       case 4:
         return (
           <DoctorSelect
-            specialty={selectedSpecialty}
-            city={selectedCity}
-            state={selectedState}
-            selectedDoctor={doctors.find(d => d.id === selectedDoctor)}
-            onDoctorSelect={(doctor) => setSelectedDoctor(doctor.id)}
+            selectedSpecialty={selectedSpecialty}
+            selectedCity={selectedCity}
+            selectedState={selectedState}
+            selectedDoctor={selectedDoctor}
+            doctors={doctors}
+            isLoading={isLoading}
+            onDoctorSelect={setSelectedDoctor}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -116,16 +155,19 @@ const Agendamento = () => {
       case 5:
         return (
           <DateSelect
+            doctorId={selectedDoctor}
             selectedDate={selectedDate}
-            onChange={setSelectedDate}
+            onDateSelect={setSelectedDate}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
           />
         );
       case 6:
         return (
           <TimeSlotGrid
-            doctorId={selectedDoctor || ''}
-            date={selectedDate}
-            selectedSlot={selectedTime}
+            selectedTime={selectedTime}
+            selectedDate={selectedDate}
+            doctorId={selectedDoctor}
             onSlotSelect={setSelectedTime}
             onNext={handleNext}
             onPrevious={handlePrevious}
@@ -133,91 +175,90 @@ const Agendamento = () => {
         );
       case 7:
         return (
-          <AppointmentSummary
-            doctor={doctors.find(d => d.id === selectedDoctor)}
-            date={selectedDate}
-            timeSlot={selectedTime}
-            appointmentType={selectedSpecialty}
-            familyMember={selectedFamilyMember}
-            onConfirm={handleSchedule}
-            onPrevious={handlePrevious}
-            loading={isSubmitting}
-          />
-        );
-      case 8:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center text-green-600">
-                Consulta Agendada com Sucesso!
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p>Sua consulta foi agendada. Você receberá uma confirmação em breve.</p>
-              <div className="flex gap-2 justify-center">
-                <Button onClick={() => window.location.href = '/agenda-paciente'}>
-                  Ver Minhas Consultas
-                </Button>
-                <Button variant="outline" onClick={reset}>
-                  Agendar Outra Consulta
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <FamilyMemberSelect
+              value={selectedFamilyMember}
+              onChange={setSelectedFamilyMember}
+              familyMembers={familyMembers || []}
+              userDisplayName={user?.user_metadata?.full_name || user?.email || "Você"}
+            />
+            <AppointmentSummary
+              selectedDoctor={selectedDoctor}
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              appointmentType="consulta"
+              patientName={selectedPatientName}
+              onConfirm={handleAppointmentConfirm}
+              onPrevious={handlePrevious}
+              loading={isSubmitting}
+            />
+          </div>
         );
       default:
         return null;
     }
   };
 
-  const canProceed = () => {
-    switch (step) {
-      case 1: return selectedSpecialty !== "";
-      case 2: return selectedState !== "";
-      case 3: return selectedCity !== "";
-      case 4: return selectedDoctor !== "";
-      case 5: return selectedDate !== "";
-      case 6: return selectedTime !== "";
-      case 7: return true;
-      default: return false;
-    }
-  };
+  const stepTitles = [
+    "Especialidade",
+    "Estado",
+    "Cidade",
+    "Médico",
+    "Data",
+    "Horário",
+    "Confirmação"
+  ];
 
   const progress = (step / TOTAL_STEPS) * 100;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-center mb-2">Agendamento de Consulta</h1>
-        <div className="flex justify-center">
-          <div className="flex items-center space-x-2">
-            {Array.from({ length: 7 }, (_, i) => (
-              <div
-                key={i}
-                className={`w-3 h-3 rounded-full ${
-                  i + 1 <= step ? 'bg-primary' : 'bg-gray-300'
-                }`}
-              />
-            ))}
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            Agendar Consulta
+          </CardTitle>
+          <div className="text-center text-sm text-muted-foreground">
+            Passo {step} de {TOTAL_STEPS}: {stepTitles[step - 1]}
           </div>
-        </div>
-      </div>
+          <Progress value={progress} className="w-full" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {renderStep()}
+          
+          <div className="flex justify-between pt-6">
+            {step > 1 && (
+              <Button 
+                variant="outline" 
+                onClick={handlePrevious}
+                disabled={isLoading || isSubmitting}
+              >
+                Anterior
+              </Button>
+            )}
+            
+            {step < TOTAL_STEPS && (
+              <Button 
+                onClick={handleNext} 
+                className="ml-auto"
+                disabled={
+                  isLoading || 
+                  (step === 1 && !selectedSpecialty) ||
+                  (step === 2 && !selectedState) ||
+                  (step === 3 && !selectedCity) ||
+                  (step === 4 && !selectedDoctor) ||
+                  (step === 5 && !selectedDate) ||
+                  (step === 6 && !selectedTime)
+                }
+              >
+                Próximo
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-
-  function getStepDescription(currentStep: number): string {
-    const descriptions = [
-      "Selecione a especialidade",
-      "Escolha o estado",
-      "Selecione a cidade", 
-      "Escolha o médico",
-      "Selecione a data",
-      "Escolha o horário",
-      "Confirme os dados",
-      "Agendamento concluído"
-    ];
-    return descriptions[currentStep - 1] || "";
-  }
 };
 
 export default Agendamento;

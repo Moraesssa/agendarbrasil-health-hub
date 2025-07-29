@@ -1,6 +1,6 @@
-import { describe, it, expect, vi }} from '@/test/test-utils';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SpecialtySelect } from '../SpecialtySelect';
-import { vi } from 'vitest';
 
 describe('SpecialtySelect', () => {
   const mockOnChange = vi.fn();

@@ -103,7 +103,7 @@ class ErrorBoundary extends React.Component<
       this.state.errorType || 'generic',
       {
         componentStack: errorInfo.componentStack,
-        errorBoundary: errorInfo.errorBoundary,
+        stack: errorInfo.componentStack,
         location: window.location.pathname,
         retryAttempt: this.state.retryCount + 1
       },
