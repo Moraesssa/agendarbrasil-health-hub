@@ -81,7 +81,7 @@ const MedicationReminders = () => {
             <Pill className="h-4 w-4 sm:h-5 sm:w-5" />
             Medicamentos
           </div>
-          {medications.length > 0 && (
+          {Array.isArray(medications) && medications.length > 0 && (
             <EditMedicationDialog
               medication={medications[0]}
               onEdit={editMedication}
@@ -92,7 +92,7 @@ const MedicationReminders = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-        {pendingDoses.length === 0 ? (
+        {!Array.isArray(pendingDoses) || pendingDoses.length === 0 ? (
           <div className="text-center py-8">
             <Pill className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">Nenhum medicamento cadastrado</p>
@@ -100,8 +100,8 @@ const MedicationReminders = () => {
           </div>
         ) : (
           <>
-            {pendingDoses.map((medication) => {
-              const medicationData = medications.find(m => m.id === medication.reminderId);
+            {Array.isArray(pendingDoses) && pendingDoses.map((medication) => {
+              const medicationData = Array.isArray(medications) ? medications.find(m => m.id === medication.reminderId) : null;
               return (
                 <div
                   key={medication.id}

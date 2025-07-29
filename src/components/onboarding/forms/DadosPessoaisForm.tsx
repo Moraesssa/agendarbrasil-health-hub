@@ -22,7 +22,7 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
     telefone: initialData?.telefone || '',
     ...(isMedico && {
       crm: initialData?.crm || '',
-      especialidades: initialData?.especialidades || ['']
+      especialidades: Array.isArray(initialData?.especialidades) ? initialData.especialidades : ['']
     })
   });
   
@@ -60,7 +60,8 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
     
     // Validate specialties for doctors
     if (isMedico) {
-      const validEspecialidades = formData.especialidades.filter(e => e.trim());
+      const especialidades = Array.isArray(formData.especialidades) ? formData.especialidades : [];
+      const validEspecialidades = especialidades.filter(e => e && e.trim());
       if (validEspecialidades.length === 0) {
         newErrors.especialidades = "Pelo menos uma especialidade é obrigatória";
       }
@@ -90,7 +91,9 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
       telefone: formData.telefone.replace(/[^\d]/g, ''),
       ...(isMedico && {
         crm: sanitizeInput(formData.crm),
-        especialidades: formData.especialidades.map(e => sanitizeInput(e)).filter(e => e.trim())
+        especialidades: Array.isArray(formData.especialidades) 
+          ? formData.especialidades.map(e => sanitizeInput(e)).filter(e => e.trim())
+          : []
       })
     };
     
@@ -120,15 +123,17 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
   };
 
   const handleEspecialidadeChange = (index: number, value: string) => {
-    const newEspecialidades = [...formData.especialidades];
+    const especialidades = Array.isArray(formData.especialidades) ? formData.especialidades : [''];
+    const newEspecialidades = [...especialidades];
     newEspecialidades[index] = value;
     setFormData({ ...formData, especialidades: newEspecialidades });
   };
 
   const addEspecialidade = () => {
+    const especialidades = Array.isArray(formData.especialidades) ? formData.especialidades : [''];
     setFormData({ 
       ...formData, 
-      especialidades: [...formData.especialidades, ''] 
+      especialidades: [...especialidades, ''] 
     });
   };
 
@@ -219,7 +224,7 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
 
               <div className="space-y-2">
                 <Label>Especialidades</Label>
-                {formData.especialidades.map((esp, index) => (
+                {(Array.isArray(formData.especialidades) ? formData.especialidades : ['']).map((esp, index) => (
                   <Input
                     key={index}
                     value={esp}

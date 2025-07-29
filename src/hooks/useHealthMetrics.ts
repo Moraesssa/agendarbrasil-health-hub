@@ -92,10 +92,20 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
   const getDisplayMetrics = (): HealthMetricDisplay[] => {
     const latestMetrics = new Map<string, HealthMetric>();
     
+    if (!Array.isArray(metrics)) {
+      return [];
+    }
+    
     metrics.forEach(metric => {
+      if (!metric || !metric.metric_type || !metric.recorded_at) return;
+      
       const existing = latestMetrics.get(metric.metric_type);
-      if (!existing || new Date(metric.recorded_at) > new Date(existing.recorded_at)) {
-        latestMetrics.set(metric.metric_type, metric);
+      try {
+        if (!existing || new Date(metric.recorded_at) > new Date(existing.recorded_at)) {
+          latestMetrics.set(metric.metric_type, metric);
+        }
+      } catch (error) {
+        console.error('Error parsing metric date:', error);
       }
     });
 
@@ -200,7 +210,7 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
 
   const getHealthScore = (): HealthScore => {
     const displayMetrics = getDisplayMetrics();
-    if (displayMetrics.length === 0) {
+    if (!Array.isArray(displayMetrics) || displayMetrics.length === 0) {
       return {
         score: 0,
         category: 'poor',

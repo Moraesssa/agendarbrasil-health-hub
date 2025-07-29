@@ -353,7 +353,7 @@ const Index = () => {
                                   {day}
                                 </div>
                               ))}
-                              {calendarData.map((dayData, i) => {
+                              {Array.isArray(calendarData) && calendarData.map((dayData, i) => {
                                 const { day, hasAppointment, hasMedication, appointmentStatus, appointmentCount } = dayData;
                                 
                                 let dayClasses = "p-1 sm:p-2 rounded-lg cursor-pointer transition-all hover:bg-blue-100 text-xs sm:text-sm min-h-[32px] sm:min-h-[36px] flex items-center justify-center ";

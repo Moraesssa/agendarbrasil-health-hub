@@ -6,9 +6,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { newAppointmentService, LocalComHorarios, Medico } from "@/services/newAppointmentService";
 import { logger } from "@/utils/logger";
+import { safeArrayAccess, isValidArray } from "@/utils/arrayUtils";
 
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
+
+// Interface for granular loading states
+interface LoadingStates {
+  specialties: boolean;
+  states: boolean;
+  cities: boolean;
+  doctors: boolean;
+  timeSlots: boolean;
+}
+
+// Constants for retry logic
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
 export const useNewAppointmentScheduling = () => {
   const { user } = useAuth();
@@ -31,15 +45,88 @@ export const useNewAppointmentScheduling = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Granular loading states for each data type
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+    specialties: false,
+    states: false,
+    cities: false,
+    doctors: false,
+    timeSlots: false
+  });
+
+  // Helper functions to manage granular loading states
+  const setLoadingState = useCallback((key: keyof LoadingStates, loading: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [key]: loading }));
+  }, []);
+
+  const isAnyLoading = useCallback(() => {
+    return Object.values(loadingStates).some(loading => loading);
+  }, [loadingStates]);
+  
+  // Retry counters for each data type
+  const [retryCounters, setRetryCounters] = useState({
+    specialties: 0,
+    states: 0,
+    cities: 0,
+    doctors: 0,
+    timeSlots: 0
+  });
+
+  // Safe setter functions for each data type
+  const safeSetSpecialties = useCallback((data: string[] | undefined | null) => {
+    const safeData = safeArrayAccess(data);
+    console.log("🔒 Safe setting specialties:", safeData.length, "items");
+    setSpecialties(safeData);
+  }, []);
+
+  const safeSetStates = useCallback((data: StateInfo[] | undefined | null) => {
+    const safeData = safeArrayAccess(data);
+    console.log("🔒 Safe setting states:", safeData.length, "items");
+    setStates(safeData);
+  }, []);
+
+  const safeSetCities = useCallback((data: CityInfo[] | undefined | null) => {
+    const safeData = safeArrayAccess(data);
+    console.log("🔒 Safe setting cities:", safeData.length, "items");
+    setCities(safeData);
+  }, []);
+
+  const safeSetDoctors = useCallback((data: Medico[] | undefined | null) => {
+    const safeData = safeArrayAccess(data);
+    console.log("🔒 Safe setting doctors:", safeData.length, "items");
+    setDoctors(safeData);
+  }, []);
+
+  const safeSetLocaisComHorarios = useCallback((data: LocalComHorarios[] | undefined | null) => {
+    const safeData = safeArrayAccess(data);
+    console.log("🔒 Safe setting locais com horarios:", safeData.length, "items");
+    setLocaisComHorarios(safeData);
+  }, []);
+
+  // Retry logic helper
+  const handleRetry = useCallback((dataType: keyof typeof retryCounters, retryFunction: () => Promise<void>) => {
+    const currentCount = retryCounters[dataType];
+    if (currentCount < MAX_RETRIES) {
+      setRetryCounters(prev => ({ ...prev, [dataType]: prev[dataType] + 1 }));
+      setTimeout(() => {
+        console.log(`🔄 Retrying ${dataType} (attempt ${currentCount + 1}/${MAX_RETRIES})`);
+        retryFunction();
+      }, RETRY_DELAY * (currentCount + 1)); // Exponential backoff
+    } else {
+      console.error(`❌ Max retries reached for ${dataType}`);
+      logger.error(`Max retries reached for ${dataType}`, "useNewAppointmentScheduling");
+    }
+  }, [retryCounters]);
 
   const resetSelection = useCallback((level: 'state' | 'city' | 'doctor' | 'date') => {
     if (level === 'state') {
       setSelectedCity("");
-      setDoctors([]);
+      safeSetDoctors([]);
       setSelectedDoctor("");
     }
     if (level === 'city') {
-      setDoctors([]);
+      safeSetDoctors([]);
       setSelectedDoctor("");
     }
     if (level === 'doctor') {
@@ -48,27 +135,36 @@ export const useNewAppointmentScheduling = () => {
     if (level === 'date') {
       setSelectedTime("");
       setSelectedLocal(null);
-      setLocaisComHorarios([]);
+      safeSetLocaisComHorarios([]);
     }
-  }, []);
+  }, [safeSetDoctors, safeSetLocaisComHorarios]);
 
   useEffect(() => {
     if (!user) return;
     
     const loadInitialData = async () => {
       setIsLoading(true);
+      setLoadingState('specialties', true);
+      setLoadingState('states', true);
+      
       try {
+        // Load specialties with defensive checks
         const specialtiesData = await newAppointmentService.getSpecialties();
-        console.log("✅ Especialidades carregadas:", specialtiesData.length);
+        console.log("✅ Especialidades carregadas:", specialtiesData?.length || 0);
+        safeSetSpecialties(specialtiesData);
+        setLoadingState('specialties', false);
         
+        // Load states with defensive checks
         const statesResponse = await supabase.rpc('get_available_states');
-        const statesData = statesResponse.data || [];
-        console.log("✅ Estados carregados:", statesData.length);
+        const statesData = statesResponse.data;
+        console.log("✅ Estados carregados:", statesData?.length || 0);
+        safeSetStates(statesData as StateInfo[]);
+        setLoadingState('states', false);
         
-        setSpecialties(specialtiesData);
-        setStates(statesData as StateInfo[]);
+        // Reset retry counter on success
+        setRetryCounters(prev => ({ ...prev, specialties: 0, states: 0 }));
         
-        if (statesData.length === 0) {
+        if (!isValidArray(statesData)) {
           toast({
             title: "Atenção",
             description: "Nenhum estado com médicos disponíveis foi encontrado.",
@@ -78,6 +174,14 @@ export const useNewAppointmentScheduling = () => {
       } catch (e) {
         console.error("❌ Erro ao carregar dados iniciais:", e);
         logger.error("Erro ao carregar dados iniciais", "useNewAppointmentScheduling", e);
+        
+        // Reset loading states on error
+        setLoadingState('specialties', false);
+        setLoadingState('states', false);
+        
+        // Attempt retry for initial data
+        handleRetry('specialties', loadInitialData);
+        
         toast({ 
           title: "Erro ao carregar dados iniciais", 
           description: e instanceof Error ? e.message : "Erro desconhecido",
@@ -87,54 +191,76 @@ export const useNewAppointmentScheduling = () => {
         setIsLoading(false);
       }
     };
+    
+    // Reset retry counters when user changes
+    setRetryCounters(prev => ({ ...prev, specialties: 0, states: 0 }));
     loadInitialData();
-  }, [toast, user]);
+  }, [toast, user, safeSetSpecialties, safeSetStates, handleRetry, setLoadingState]);
 
   useEffect(() => {
     if (!selectedState) {
-      setCities([]);
+      safeSetCities([]);
       return;
     }
     
     const loadCities = async () => {
       setIsLoading(true);
+      setLoadingState('cities', true);
+      
       try {
         const { data, error } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
         if (error) throw error;
         console.log("✅ Cidades carregadas para", selectedState, ":", data?.length || 0);
-        setCities(data || []);
+        safeSetCities(data);
+        
+        // Reset retry counter on success
+        setRetryCounters(prev => ({ ...prev, cities: 0 }));
       } catch (e) {
         console.error("❌ Erro ao carregar cidades:", e);
+        logger.error("Erro ao carregar cidades", "useNewAppointmentScheduling", e);
+        
+        // Attempt retry for cities
+        handleRetry('cities', loadCities);
+        
         toast({
           title: "Erro ao carregar cidades",
           description: e instanceof Error ? e.message : "Erro desconhecido",
           variant: "destructive"
         });
       } finally {
+        setLoadingState('cities', false);
         setIsLoading(false);
       }
     };
+    
+    // Reset retry counter when state changes
+    setRetryCounters(prev => ({ ...prev, cities: 0 }));
     loadCities();
-  }, [selectedState, toast]);
+  }, [selectedState, toast, safeSetCities, handleRetry, setLoadingState]);
 
   useEffect(() => {
     if (!selectedSpecialty || !selectedCity || !selectedState) {
-      setDoctors([]);
+      safeSetDoctors([]);
       return;
     }
     
     const loadDoctors = async () => {
       setIsLoading(true);
+      setLoadingState('doctors', true);
+      
       try {
         const doctorsData = await newAppointmentService.getDoctorsByLocationAndSpecialty(
           selectedSpecialty, 
           selectedCity, 
           selectedState
         );
-        console.log("✅ Médicos encontrados:", doctorsData.length);
-        setDoctors(doctorsData);
+        console.log("✅ Médicos encontrados:", doctorsData?.length || 0);
+        safeSetDoctors(doctorsData);
         
-        if (doctorsData.length === 0) {
+        // Reset retry counter on success
+        setRetryCounters(prev => ({ ...prev, doctors: 0 }));
+        
+        if (!isValidArray(doctorsData)) {
           toast({
             title: "Nenhum médico encontrado",
             description: `Não há médicos de ${selectedSpecialty} em ${selectedCity}/${selectedState}`,
@@ -143,32 +269,46 @@ export const useNewAppointmentScheduling = () => {
         }
       } catch (e) {
         console.error("❌ Erro ao carregar médicos:", e);
+        logger.error("Erro ao carregar médicos", "useNewAppointmentScheduling", e);
+        
+        // Attempt retry for doctors
+        handleRetry('doctors', loadDoctors);
+        
         toast({
           title: "Erro ao carregar médicos",
           description: e instanceof Error ? e.message : "Erro desconhecido",
           variant: "destructive"
         });
       } finally {
+        setLoadingState('doctors', false);
         setIsLoading(false);
       }
     };
+    
+    // Reset retry counter when dependencies change
+    setRetryCounters(prev => ({ ...prev, doctors: 0 }));
     loadDoctors();
-  }, [selectedSpecialty, selectedCity, selectedState, toast]);
+  }, [selectedSpecialty, selectedCity, selectedState, toast, safeSetDoctors, handleRetry, setLoadingState]);
   
   useEffect(() => {
     if (!selectedDoctor || !selectedDate) {
-      setLocaisComHorarios([]);
+      safeSetLocaisComHorarios([]);
       return;
     }
     
     const loadSlots = async () => {
       setIsLoading(true);
+      setLoadingState('timeSlots', true);
+      
       try {
         const slots = await newAppointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
-        console.log("✅ Slots encontrados:", slots.length);
-        setLocaisComHorarios(slots);
+        console.log("✅ Slots encontrados:", slots?.length || 0);
+        safeSetLocaisComHorarios(slots);
         
-        if (slots.length === 0) {
+        // Reset retry counter on success
+        setRetryCounters(prev => ({ ...prev, timeSlots: 0 }));
+        
+        if (!isValidArray(slots)) {
           toast({
             title: "Nenhum horário disponível",
             description: `Não há horários disponíveis para a data ${selectedDate}`,
@@ -177,17 +317,26 @@ export const useNewAppointmentScheduling = () => {
         }
       } catch (e) {
         console.error("❌ Erro ao carregar horários:", e);
+        logger.error("Erro ao carregar horários", "useNewAppointmentScheduling", e);
+        
+        // Attempt retry for time slots
+        handleRetry('timeSlots', loadSlots);
+        
         toast({
           title: "Erro ao carregar horários",
           description: e instanceof Error ? e.message : "Erro desconhecido",
           variant: "destructive"
         });
       } finally {
+        setLoadingState('timeSlots', false);
         setIsLoading(false);
       }
     };
+    
+    // Reset retry counter when dependencies change
+    setRetryCounters(prev => ({ ...prev, timeSlots: 0 }));
     loadSlots();
-  }, [selectedDoctor, selectedDate, toast]);
+  }, [selectedDoctor, selectedDate, toast, safeSetLocaisComHorarios, handleRetry, setLoadingState]);
 
   const handleAgendamento = useCallback(async () => {
     if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedLocal) return;
@@ -217,7 +366,7 @@ export const useNewAppointmentScheduling = () => {
   return {
     models: { selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedLocal, specialties, states, cities, doctors, locaisComHorarios },
     setters: { setSelectedSpecialty, setSelectedState, setSelectedCity, setSelectedDoctor, setSelectedDate, setSelectedTime, setSelectedLocal },
-    state: { isLoading, isSubmitting },
+    state: { isLoading, isSubmitting, loadingStates, isAnyLoading: isAnyLoading() },
     actions: { handleAgendamento, resetSelection }
   };
 };

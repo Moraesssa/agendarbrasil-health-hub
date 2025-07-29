@@ -41,16 +41,17 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
     resolver: zodResolver(dadosProfissionaisSchema),
     defaultValues: {
       crm: initialData?.crm || '',
-      especialidades: initialData?.especialidades || [],
+      especialidades: Array.isArray(initialData?.especialidades) ? initialData.especialidades : [],
       telefone: initialData?.telefone || '',
       whatsapp: initialData?.whatsapp || ''
     }
   });
 
   const onSubmit = (data: DadosProfissionaisFormData) => {
+    const especialidades = Array.isArray(data.especialidades) ? data.especialidades : [];
     onNext({
       crm: sanitizeInput(data.crm),
-      especialidades: data.especialidades.map(spec => sanitizeInput(spec)),
+      especialidades: especialidades.map(spec => sanitizeInput(spec)),
       telefone: sanitizeInput(data.telefone),
       whatsapp: data.whatsapp ? sanitizeInput(data.whatsapp) : null
     });

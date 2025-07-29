@@ -88,6 +88,89 @@ export const appointmentService = {
     return (data || []) as Medico[];
   },
 
+  async getAvailableDates(doctorId: string, startDate?: string, endDate?: string): Promise<string[]> {
+    logger.info("Fetching available dates for doctor", "AppointmentService", { doctorId, startDate, endDate });
+    try {
+      await checkAuthentication();
+      if (!doctorId) return [];
+
+      // Default to next 30 days if no date range provided
+      const start = startDate ? new Date(startDate) : new Date();
+      const end = endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      const { data: medico, error: medicoError } = await supabase
+        .from('medicos')
+        .select('configuracoes')
+        .eq('user_id', doctorId)
+        .single();
+
+      if (medicoError) {
+        logger.error("Error fetching doctor configuration", "AppointmentService", medicoError);
+        throw new Error(`Erro ao buscar configurações do médico: ${medicoError.message}`);
+      }
+
+      const { configuracoes } = medico;
+      const config = isValidConfiguration(configuracoes) ? configuracoes : {};
+      const horarioAtendimento = config.horarioAtendimento || {};
+
+      const availableDates: string[] = [];
+      const currentDate = new Date(start);
+
+      // Check each day in the range
+      while (currentDate <= end) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const diaDaSemana = getDayName(currentDate);
+        const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
+
+        // If doctor has working hours for this day
+        if (Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
+          // Check if there are any available slots for this date
+          const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+          const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+          
+          const { data: appointments } = await supabase
+            .from('consultas')
+            .select('consultation_date')
+            .eq('medico_id', doctorId)
+            .gte('consultation_date', startOfDay.toISOString())
+            .lte('consultation_date', endOfDay.toISOString())
+            .in('status', ['agendada', 'confirmada']);
+
+          const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
+            data_consulta: apt.consultation_date,
+            duracao_minutos: config.duracaoConsulta || 30
+          }));
+
+          // Generate time slots for this date to check availability
+          const workingHours: WorkingHours = {};
+          workingHours[diaDaSemana] = blocosDoDia;
+
+          const availableSlots = generateTimeSlots({
+            duracaoConsulta: config.duracaoConsulta || 30,
+            horarioAtendimento: workingHours
+          }, currentDate, existingAppointments);
+
+          // If there are available slots, add this date
+          if (availableSlots.length > 0) {
+            availableDates.push(dateStr);
+          }
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      logger.info("Available dates fetched successfully", "AppointmentService", { 
+        doctorId, 
+        datesCount: availableDates.length 
+      });
+      
+      return availableDates;
+    } catch (error) {
+      logger.error("Failed to fetch available dates", "AppointmentService", error);
+      throw error;
+    }
+  },
+
   async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
     await checkAuthentication();
     if (!doctorId || !date) return [];

@@ -51,10 +51,18 @@ export const useCalendarData = () => {
           }
 
           // Check appointments for this day
-          const dayAppointments = consultasDoMes.filter(consulta => {
-            const consultaDate = new Date(consulta.consultation_date);
-            return consultaDate.getDate() === day;
-          });
+          const dayAppointments = Array.isArray(consultasDoMes) 
+            ? consultasDoMes.filter(consulta => {
+                if (!consulta || !consulta.consultation_date) return false;
+                try {
+                  const consultaDate = new Date(consulta.consultation_date);
+                  return consultaDate.getDate() === day;
+                } catch (error) {
+                  console.error('Error parsing consultation date:', error);
+                  return false;
+                }
+              })
+            : [];
           
           return {
             day,

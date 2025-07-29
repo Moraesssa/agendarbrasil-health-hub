@@ -140,7 +140,7 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
               onNext={(data) => handleFormNext("dados-profissionais", data)}
               initialData={{
                 crm: userData.crm,
-                especialidades: userData.especialidades,
+                especialidades: Array.isArray(userData.especialidades) ? userData.especialidades : [],
                 telefone: "", // Will be loaded from medicos table
                 whatsapp: ""   // Will be loaded from medicos table
               }}

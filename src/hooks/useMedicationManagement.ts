@@ -140,12 +140,20 @@ export const useMedicationManagement = () => {
 
   // Get pending doses with status information
   const getPendingDoses = (): PendingDoseDisplay[] => {
+    if (!Array.isArray(medications)) {
+      return [];
+    }
+    
     const now = new Date();
     const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
     const today = now.toISOString().split('T')[0];
     
     return medications.flatMap(medication => {
-      return (medication.todayDoses || []).map(dose => {
+      if (!medication || !medication.todayDoses) {
+        return [];
+      }
+      
+      return (Array.isArray(medication.todayDoses) ? medication.todayDoses : []).map(dose => {
         let status: PendingDoseDisplay['status'] = 'pendente';
         let nextDose = 'hoje';
         
@@ -184,7 +192,7 @@ export const useMedicationManagement = () => {
           reminderId: medication.id
         };
       }).filter(Boolean); // Remove null entries (skipped doses)
-    }).sort((a, b) => {
+    }).filter(Boolean).sort((a, b) => {
       // Sort by status priority first (taken last), then by time
       const statusOrder = { 'atrasado': 0, 'pendente': 1, 'tomado': 2 };
       const statusDiff = statusOrder[a.status] - statusOrder[b.status];

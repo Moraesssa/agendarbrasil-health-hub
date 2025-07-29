@@ -128,19 +128,31 @@ const UpcomingAppointments = () => {
   };
 
   const getCardTitle = () => {
-    const futureAppointments = consultas.filter(c => 
-      new Date(c.consultation_date) > new Date() && 
-      c.status_pagamento === 'pago'
-    );
+    if (!Array.isArray(consultas)) return "Consultas";
+    
+    const futureAppointments = consultas.filter(c => {
+      if (!c || !c.consultation_date) return false;
+      try {
+        return new Date(c.consultation_date) > new Date() && c.status_pagamento === 'pago';
+      } catch (error) {
+        console.error('Error parsing consultation date:', error);
+        return false;
+      }
+    });
     
     return futureAppointments.length > 0 ? "Próximas Consultas" : "Consultas Recentes";
   };
 
-  const showingFallback = consultas.length > 0 && 
-    !consultas.some(c => 
-      new Date(c.consultation_date) > new Date() && 
-      c.status_pagamento === 'pago'
-    );
+  const showingFallback = Array.isArray(consultas) && consultas.length > 0 && 
+    !consultas.some(c => {
+      if (!c || !c.consultation_date) return false;
+      try {
+        return new Date(c.consultation_date) > new Date() && c.status_pagamento === 'pago';
+      } catch (error) {
+        console.error('Error parsing consultation date:', error);
+        return false;
+      }
+    });
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
@@ -174,7 +186,7 @@ const UpcomingAppointments = () => {
           </>
         ) : error ? (
           <ErrorCard onRetry={handleRetry} />
-        ) : consultas.length === 0 ? (
+        ) : !Array.isArray(consultas) || consultas.length === 0 ? (
           <EmptyStateCard onSchedule={handleScheduleAppointment} />
         ) : (
           <>
@@ -189,7 +201,7 @@ const UpcomingAppointments = () => {
                 </button></p>
               </div>
             )}
-            {consultas.map((appointment) => (
+            {Array.isArray(consultas) && consultas.map((appointment) => (
               <AppointmentCard
                 key={appointment.id}
                 appointment={appointment}

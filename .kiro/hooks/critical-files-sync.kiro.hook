@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Critical Files Sync",
+  "description": "Watches GraphQL schema, OpenAPI spec, and environment files for changes, then validates connections, generates code, updates docs, and commits changes automatically",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/graphql/schema.graphql",
+      "openapi.yaml",
+      ".env",
+      ".env.example",
+      "C:\\Users\\Daniel Palma\\Desktop\\TESTE_SERVIDOR\\FULLSTACK-GITHUB\\AgendarBrasil\\.env"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Kiro, um arquivo crítico mudou: seja o nosso esquema GraphQL, a especificação OpenAPI ou o .env. Antes de qualquer coisa, carregue as variáveis do meu .env e conecte ao Supabase usando:\nURL: VITE_SUPABASE_URL\nChave de Serviço: SUPABASE_SERVICE_ROLE_KEY\nSe a conexão falhar, interrompa tudo e me alerte com o erro. Em seguida, valide minhas credenciais de pagamento e envio de e‑mail:\nTente inicializar o SDK Stripe com STRIPE_SECRET_KEY e confirme o webhook STRIPE_WEBHOOK_SECRET.\nConfirme que RESEND_API_KEY consegue enviar um e‑mail de teste.\nSe tudo estiver ok, prossiga com o pipeline:\nGraphQL → npm run graphql:codegen → gerar em src/generated/\nOpenAPI → openapi-generator-cli generate → gerar em src/api/client/\nDocs de .env → atualizar docs/getting‑started.md com a lista de variáveis atuais\nLint & Test → npm run lint e npm test -- --findRelatedTests\nTest Supabase live → execute uma query de exemplo (e.g. SELECT 1) ou crie um registro temporário.\nSe todos os passos passarem sem erros, faça stage e commit automático com mensagens padronizadas (chore: sync generated code, docs: update env vars). Se qualquer passo falhar, reverta o commit e inclua no log uma descrição detalhada do erro e em que etapa ele aconteceu."
+  }
+}

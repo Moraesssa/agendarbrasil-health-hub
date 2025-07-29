@@ -56,7 +56,10 @@ export const useAuthState = () => {
           .single();
         
         if (!medicoError && medicoData) {
-          roleData = medicoData;
+          roleData = {
+            ...medicoData,
+            especialidades: Array.isArray(medicoData.especialidades) ? medicoData.especialidades : []
+          };
         }
       }
 

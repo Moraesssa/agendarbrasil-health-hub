@@ -38,7 +38,7 @@ export const useMedicalManagement = () => {
     try {
       setLoading(true);
       
-      // Carregar todos os dados em paralelo
+      // Carregar todos os dados em paralelo com fallbacks seguros
       const [
         servicesData,
         triagesData,
@@ -46,7 +46,7 @@ export const useMedicalManagement = () => {
         examsData,
         activitiesData,
         notificationsData
-      ] = await Promise.all([
+      ] = await Promise.allSettled([
         medicalService.getMedicalServices(),
         medicalService.getFamilyTriages(),
         medicalService.getFamilyVaccines(),
@@ -55,14 +55,23 @@ export const useMedicalManagement = () => {
         medicalService.getFamilyNotifications()
       ]);
 
-      setMedicalServices(servicesData);
-      setTriages(triagesData);
-      setVaccines(vaccinesData);
-      setExams(examsData);
-      setUpcomingActivities(activitiesData);
-      setNotifications(notificationsData);
+      // Definir dados com fallbacks seguros para arrays
+      setMedicalServices(servicesData.status === 'fulfilled' && Array.isArray(servicesData.value) ? servicesData.value : []);
+      setTriages(triagesData.status === 'fulfilled' && Array.isArray(triagesData.value) ? triagesData.value : []);
+      setVaccines(vaccinesData.status === 'fulfilled' && Array.isArray(vaccinesData.value) ? vaccinesData.value : []);
+      setExams(examsData.status === 'fulfilled' && Array.isArray(examsData.value) ? examsData.value : []);
+      setUpcomingActivities(activitiesData.status === 'fulfilled' && Array.isArray(activitiesData.value) ? activitiesData.value : []);
+      setNotifications(notificationsData.status === 'fulfilled' && Array.isArray(notificationsData.value) ? notificationsData.value : []);
     } catch (error) {
       logger.error("Error loading medical data", "useMedicalManagement", error);
+      // Definir arrays vazios em caso de erro
+      setMedicalServices([]);
+      setTriages([]);
+      setVaccines([]);
+      setExams([]);
+      setUpcomingActivities([]);
+      setNotifications([]);
+      
       toast({
         title: "Erro ao carregar dados médicos",
         description: "Não foi possível carregar os dados médicos da família",
