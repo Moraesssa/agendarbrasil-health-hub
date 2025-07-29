@@ -117,7 +117,7 @@ export const appointmentService = {
       const { data: medico, error: medicoError } = await supabase
         .from('medicos')
         .select('configuracoes')
-        .eq('id', doctorId)
+        .eq('user_id', doctorId)
         .single();
 
       if (medicoError) {
@@ -198,7 +198,7 @@ export const appointmentService = {
     const { data: medico, error: medicoError } = await supabase
       .from('medicos')
       .select('configuracoes, locais:locais_atendimento(*)')
-      .eq('id', doctorId)
+      .eq('user_id', doctorId)
       .single();
 
     if (medicoError) {
