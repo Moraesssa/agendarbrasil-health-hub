@@ -160,8 +160,6 @@ const Agendamento = () => {
             states={states}
             isLoading={isLoading}
             onChange={setSelectedState}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
           />
         );
       case 3:
@@ -180,8 +178,6 @@ const Agendamento = () => {
             doctors={doctors}
             isLoading={isLoading}
             onChange={setSelectedDoctor}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
           />
         );
       case 5:
@@ -190,19 +186,17 @@ const Agendamento = () => {
             doctorId={selectedDoctor}
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
           />
         );
       case 6:
         return (
           <TimeSlotGrid
             selectedTime={selectedTime}
-            timeSlots={[{ time: "09:00", available: true }, { time: "10:00", available: true }]}
+            timeSlots={locaisComHorarios?.flatMap(local => 
+              local.horarios_disponiveis?.map(slot => ({ time: slot.time, available: slot.available })) || []
+            ) || []}
             isLoading={isLoading}
             onChange={setSelectedTime}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
           />
         );
       case 7:
@@ -222,7 +216,9 @@ const Agendamento = () => {
               selectedCity={selectedCity}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
-              selectedLocal={locaisComHorarios?.[0] || null}
+              selectedLocal={selectedTime ? locaisComHorarios?.find(local => 
+                local.horarios_disponiveis?.some(slot => slot.time === selectedTime)
+              ) || locaisComHorarios?.[0] : null}
               selectedPatientName={selectedPatientName}
             />
             

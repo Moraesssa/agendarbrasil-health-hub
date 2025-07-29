@@ -11,8 +11,6 @@ interface StateSelectProps {
   isLoading: boolean;
   onChange: (value: string) => void;
   disabled?: boolean;
-  onNext?: () => void;
-  onPrevious?: () => void;
 }
 
 export const StateSelect = ({ 
@@ -20,8 +18,7 @@ export const StateSelect = ({
   selectedState, 
   isLoading, 
   onChange, 
-  disabled = false,
-  onNext
+  disabled = false
 }: StateSelectProps) => {
   // Use defensive programming to safely access states array
   const safeStates = safeArrayAccess(states);
@@ -137,24 +134,6 @@ export const StateSelect = ({
           )}
         </div>
 
-        {/* Navigation Button */}
-        {onNext && (
-          <div className="flex justify-end pt-4 border-t border-gray-100">
-            <Button
-              onClick={onNext}
-              disabled={!selectedState}
-              className={cn(
-                "flex items-center gap-2 h-12 px-8 font-medium transition-all duration-200",
-                selectedState 
-                  ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl" 
-                  : "bg-gray-300 cursor-not-allowed"
-              )}
-            >
-              <span>Próximo</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

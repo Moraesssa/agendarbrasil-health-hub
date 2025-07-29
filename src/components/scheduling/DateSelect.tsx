@@ -19,8 +19,8 @@ interface DateSelectProps {
   doctorId: string;
   selectedDate: string;
   onDateSelect: (date: string) => void;
-  onNext: () => void;
-  onPrevious: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
   disabled?: boolean;
   // Backward compatibility - deprecated props
   onChange?: (date: string) => void;

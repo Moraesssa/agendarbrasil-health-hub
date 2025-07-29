@@ -17,8 +17,6 @@ interface DoctorSelectProps {
   isLoading: boolean;
   onChange: (value: string) => void;
   disabled?: boolean;
-  onNext?: () => void;
-  onPrevious?: () => void;
 }
 
 export const DoctorSelect = ({ 
@@ -26,9 +24,7 @@ export const DoctorSelect = ({
   selectedDoctor, 
   isLoading, 
   onChange, 
-  disabled = false,
-  onNext,
-  onPrevious 
+  disabled = false
 }: DoctorSelectProps) => {
   // Defensive checks using utility functions
   const safeDoctors = safeArrayAccess(doctors);
@@ -152,33 +148,6 @@ export const DoctorSelect = ({
             </div>
           )}
         </div>
-
-        {/* Navigation Buttons */}
-        {onNext && onPrevious && (
-          <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
-            <Button
-              variant="outline"
-              onClick={onPrevious}
-              className="flex items-center gap-2 h-12 px-6 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="font-medium">Anterior</span>
-            </Button>
-            <Button
-              onClick={onNext}
-              disabled={!selectedDoctor}
-              className={cn(
-                "flex items-center gap-2 h-12 px-8 font-medium transition-all duration-200",
-                selectedDoctor 
-                  ? "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 shadow-lg hover:shadow-xl" 
-                  : "bg-gray-300 cursor-not-allowed"
-              )}
-            >
-              <span>Próximo</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
