@@ -279,13 +279,14 @@ export const appointmentService = {
       }
 
       const { error } = await supabase.from('consultas').insert({
-        paciente_id: appointmentData.paciente_id,
-        medico_id: appointmentData.medico_id,
+        patient_name: 'Nome do Paciente',
+        patient_email: 'email@exemplo.com',
         consultation_date: appointmentData.data_consulta,
         consultation_type: appointmentData.tipo_consulta,
-        local_consulta: appointmentData.local_consulta_texto,
+        notes: appointmentData.local_consulta_texto,
         status: 'agendada',
-        status_pagamento: 'pendente',
+        paciente_id: appointmentData.paciente_id,
+        medico_id: appointmentData.medico_id
       });
 
       if (error) {

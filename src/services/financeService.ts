@@ -275,7 +275,7 @@ export const financeService = {
       const { data: existingRefund } = await supabase
         .from('pagamentos')
         .select('id')
-        .eq('original_payment_id', paymentId)
+        .eq('transaction_id', paymentId)
         .eq('status', 'refund')
         .single();
 

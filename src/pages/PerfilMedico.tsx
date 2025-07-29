@@ -10,6 +10,8 @@ import { ContactInfoCard } from "@/components/profile/ContactInfoCard";
 import { StatusCard } from "@/components/profile/StatusCard";
 import { StatsCards } from "@/components/profile/StatsCards";
 import { PageHeader } from "@/components/profile/PageHeader";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 const PerfilMedico = () => {
   const { userData, user, loading, logout } = useAuth();
@@ -89,40 +91,45 @@ const PerfilMedico = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <PageHeader
-        title="AgendarBrasil"
-        subtitle="Painel do Médico"
-        onLogout={handleLogout}
-      >
-        <EditProfileDialog 
-          userData={userData} 
-          onProfileUpdate={handleProfileUpdate}
-        />
-      </PageHeader>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 bg-gradient-to-br from-blue-50 to-green-50">
+          <PageHeader
+            title="AgendarBrasil"
+            subtitle="Painel do Médico"
+            onLogout={handleLogout}
+          >
+            <EditProfileDialog 
+              userData={userData} 
+              onProfileUpdate={handleProfileUpdate}
+            />
+          </PageHeader>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <ProfileHeader
-            displayName={userData.displayName}
-            userType="medico"
-            userId={userData.uid}
-          />
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-6xl mx-auto space-y-6">
+              <ProfileHeader
+                displayName={userData.displayName}
+                userType="medico"
+                userId={userData.uid}
+              />
 
-          <StatsCards />
+              <StatsCards />
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <ContactInfoCard userData={userData} />
-            <StatusCard userData={userData} />
+              <div className="grid md:grid-cols-2 gap-6">
+                <ContactInfoCard userData={userData} />
+                <StatusCard userData={userData} />
+              </div>
+
+              <ProfileActions 
+                actions={profileActions} 
+                title="Painel de Controle" 
+              />
+            </div>
           </div>
-
-          <ProfileActions 
-            actions={profileActions} 
-            title="Painel de Controle" 
-          />
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

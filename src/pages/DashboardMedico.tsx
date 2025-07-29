@@ -10,6 +10,8 @@ import { TiposConsultaChart } from '@/components/dashboard/TiposConsultaChart';
 import { MetricsCards } from '@/components/dashboard/MetricsCards';
 import { PacientesRecentes } from '@/components/dashboard/PacientesRecentes';
 import { PendingAppointmentsAlert } from '@/components/dashboard/PendingAppointmentsAlert';
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 interface ChartData {
   dia: string;
@@ -153,30 +155,54 @@ const DashboardMedico = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard Médico</h1>
-        <Badge variant="secondary">
-          {new Date().toLocaleDateString('pt-BR')}
-        </Badge>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <main className="flex-1">
+          <header className="h-12 flex items-center border-b">
+            <SidebarTrigger className="ml-2" />
+          </header>
+          
+          <div className="container mx-auto px-4 py-8 space-y-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold">Dashboard Médico</h1>
+              <Badge variant="secondary">
+                {new Date().toLocaleDateString('pt-BR')}
+              </Badge>
+            </div>
+
+            <PendingAppointmentsAlert />
+
+            <MetricsCards 
+              data={{
+                pacientesHoje: metrics.consultasHoje,
+                receitaSemanal: metrics.totalConsultas * 150,
+                proximasConsultas: metrics.consultasPendentes,
+                tempoMedio: 30
+              }}
+              loading={loading}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <ConsultasChart 
+                data={chartData.map(item => ({ dia: item.dia, consultas: item.valor }))}
+                loading={loading}
+              />
+              <TiposConsultaChart 
+                data={tiposConsultaData.map(item => ({ 
+                  tipo: item.dia, 
+                  valor: item.valor, 
+                  cor: item.cor || '#3b82f6' 
+                }))}
+                loading={loading}
+              />
+            </div>
+
+            <PacientesRecentes />
+          </div>
+        </main>
       </div>
-
-      <PendingAppointmentsAlert />
-
-      <MetricsCards
-        totalConsultas={metrics.totalConsultas}
-        consultasHoje={metrics.consultasHoje}
-        consultasPendentes={metrics.consultasPendentes}
-        pacientesUnicos={metrics.pacientesUnicos}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <ConsultasChart data={chartData} />
-        <TiposConsultaChart data={tiposConsultaData} />
-      </div>
-
-      <PacientesRecentes consultas={consultas.slice(0, 5)} />
-    </div>
+    </SidebarProvider>
   );
 };
 

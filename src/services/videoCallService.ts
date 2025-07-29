@@ -1,134 +1,129 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from 'uuid';
 
 export const videoCallService = {
-  // Cria ou atualiza o room ID para uma consulta
+  /**
+   * Cria ou retorna uma sala de vídeo existente para uma consulta
+   */
   async createOrUpdateVideoRoom(consultaId: string): Promise<{ success: boolean; roomId?: string; error?: string }> {
     try {
-      // Primeiro, verifica se a consulta já tem um room ID
-      const { data: consulta, error: fetchError } = await supabase
+      const { data: consultation, error } = await supabase
         .from('consultas')
-        .select('video_room_id, consultation_type')
+        .select('notes, consultation_type')
         .eq('id', consultaId)
         .single();
 
-      if (fetchError) {
-        throw fetchError;
+      if (error) {
+        console.error('Erro ao buscar consulta:', error);
+        return { success: false, error: error.message };
       }
 
-      // Se já tem room ID, retorna o existente
-      if (consulta.video_room_id) {
-        return { success: true, roomId: consulta.video_room_id };
+      // Check if room ID is already stored in notes
+      const existingRoomId = consultation.notes?.match(/room_[a-zA-Z0-9_]+/)?.[0];
+      if (existingRoomId) {
+        return { success: true, roomId: existingRoomId };
       }
 
-      // Gera um novo room ID único
-      const roomId = `room_${uuidv4().replace(/-/g, '_')}`;
-
-      // Atualiza a consulta com o novo room ID
+      // Cria uma nova sala de vídeo
+      const roomId = `room_${consultaId}_${Date.now()}`;
+      
       const { error: updateError } = await supabase
         .from('consultas')
         .update({ 
-          video_room_id: roomId,
-          consultation_type: consulta.consultation_type || 'Online' // Garante que seja marcada como online
+          notes: `${consultation.notes || ''} Video Room ID: ${roomId}`,
+          consultation_type: 'Online' 
         })
         .eq('id', consultaId);
 
       if (updateError) {
-        throw updateError;
+        console.error('Erro ao atualizar consulta:', updateError);
+        return { success: false, error: updateError.message };
       }
 
       return { success: true, roomId };
     } catch (error) {
-      console.error('Erro ao criar sala de vídeo:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
-      };
+      console.error('Erro inesperado:', error);
+      return { success: false, error: 'Erro inesperado ao criar sala de vídeo' };
     }
   },
 
-  // Busca o room ID de uma consulta
+  /**
+   * Busca uma sala de vídeo existente
+   */
   async getVideoRoom(consultaId: string): Promise<{ success: boolean; roomId?: string; error?: string }> {
     try {
-      const { data: consulta, error } = await supabase
+      const { data: consultation, error } = await supabase
         .from('consultas')
-        .select('video_room_id')
+        .select('notes')
         .eq('id', consultaId)
         .single();
 
       if (error) {
-        throw error;
+        console.error('Erro ao buscar consulta:', error);
+        return { success: false, error: error.message };
       }
 
-      if (!consulta.video_room_id) {
-        return { success: false, error: 'Sala de vídeo não encontrada' };
-      }
-
-      return { success: true, roomId: consulta.video_room_id };
+      const roomId = consultation.notes?.match(/room_[a-zA-Z0-9_]+/)?.[0];
+      return { success: true, roomId };
     } catch (error) {
-      console.error('Erro ao buscar sala de vídeo:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
-      };
+      console.error('Erro inesperado:', error);
+      return { success: false, error: 'Erro inesperado ao buscar sala de vídeo' };
     }
   },
 
-  // Marca uma consulta como sendo do tipo "Online" (videochamada)
+  /**
+   * Converte uma consulta para videochamada
+   */
   async convertToVideoConsultation(consultaId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const roomId = `room_${consultaId}_${Date.now()}`;
+
+      const { error: updateError } = await supabase
         .from('consultas')
         .update({ 
-          consultation_type: 'Online',
-          video_room_id: `room_${uuidv4().replace(/-/g, '_')}`
+          notes: `Video Room ID: ${roomId}`,
+          consultation_type: 'Online' 
         })
         .eq('id', consultaId);
 
-      if (error) {
-        throw error;
+      if (updateError) {
+        console.error('Erro ao converter consulta:', updateError);
+        return { success: false, error: updateError.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao converter para videoconsulta:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
-      };
+      console.error('Erro inesperado:', error);
+      return { success: false, error: 'Erro inesperado ao converter consulta' };
     }
   },
 
-  // Verifica se o usuário pode acessar a sala de vídeo (segurança)
+  /**
+   * Verifica se um usuário pode acessar uma sala de vídeo
+   */
   async canAccessVideoRoom(consultaId: string, userId: string): Promise<{ success: boolean; canAccess?: boolean; error?: string }> {
     try {
-      const { data: consulta, error } = await supabase
+      const { data: consultation, error } = await supabase
         .from('consultas')
         .select('paciente_id, medico_id')
         .eq('id', consultaId)
         .single();
 
       if (error) {
-        throw error;
+        console.error('Erro ao verificar acesso:', error);
+        return { success: false, error: error.message };
       }
 
-      // Verifica se o usuário é o paciente ou médico
-      const canAccess = 
-        consulta.paciente_id === userId ||
-        consulta.medico_id === userId;
-
+      const canAccess = consultation.paciente_id === userId || consultation.medico_id === userId;
       return { success: true, canAccess };
     } catch (error) {
-      console.error('Erro ao verificar acesso à sala:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
-      };
+      console.error('Erro inesperado:', error);
+      return { success: false, error: 'Erro inesperado ao verificar acesso' };
     }
   },
 
-  // Lista todas as consultas online (videochamadas) do usuário
+  /**
+   * Busca consultas de videochamada de um usuário
+   */
   async getUserVideoConsultations(userId: string): Promise<{ success: boolean; consultations?: any[]; error?: string }> {
     try {
       const { data: consultations, error } = await supabase
@@ -137,28 +132,24 @@ export const videoCallService = {
           id,
           consultation_date,
           consultation_type,
-          video_room_id,
           status,
-          medico_id,
-          paciente_id,
-          medico_profiles:profiles!consultas_medico_id_fkey(display_name),
-          paciente_profiles:profiles!consultas_paciente_id_fkey(display_name)
+          notes,
+          medico:medicos!inner(user_id, dados_profissionais),
+          paciente:profiles!consultas_paciente_id_fkey(id, display_name, email)
         `)
         .or(`paciente_id.eq.${userId},medico_id.eq.${userId}`)
         .eq('consultation_type', 'Online')
-        .order('consultation_date', { ascending: true });
+        .order('consultation_date', { ascending: false });
 
       if (error) {
-        throw error;
+        console.error('Erro ao buscar consultas:', error);
+        return { success: false, error: error.message };
       }
 
       return { success: true, consultations };
     } catch (error) {
-      console.error('Erro ao buscar videoconsultas:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
-      };
+      console.error('Erro inesperado:', error);
+      return { success: false, error: 'Erro inesperado ao buscar consultas' };
     }
   }
 };
