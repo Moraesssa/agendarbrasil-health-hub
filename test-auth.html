@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste AuthContext</title>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script>
+        // Simular o erro que estava acontecendo
+        console.log('🧪 Testando se useAuth está definido...');
+        
+        // Carregar os scripts da aplicação
+        const script = document.createElement('script');
+        script.src = './dist/assets/index-0PJExlal.js';
+        script.type = 'module';
+        
+        script.onload = () => {
+            console.log('✅ Script principal carregado');
+            
+            // Verificar se as funções globais estão disponíveis
+            if (window.__checkAuthContext) {
+                window.__checkAuthContext();
+            }
+            
+            if (window.__useAuth) {
+                console.log('✅ useAuth está disponível globalmente');
+            } else {
+                console.error('❌ useAuth não está disponível globalmente');
+            }
+        };
+        
+        script.onerror = (error) => {
+            console.error('❌ Erro ao carregar script:', error);
+        };
+        
+        document.head.appendChild(script);
+        
+        // Carregar CSS
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = './dist/assets/index-CMTIR2Fz.css';
+        document.head.appendChild(css);
+    </script>
+</body>
+</html>

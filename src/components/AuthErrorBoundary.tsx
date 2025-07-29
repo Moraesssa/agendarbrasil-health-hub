@@ -26,6 +26,23 @@ export class AuthErrorBoundary extends Component<Props, State> {
     // Check if it's the useAuth error specifically
     if (error.message.includes('useAuth') || error.message.includes('AuthProvider')) {
       console.error('🔥 Authentication context error detected');
+      
+      // If it's a module loading issue, try to reload after clearing cache
+      if (error.message.includes('useAuth is not defined')) {
+        console.error('🔄 Module loading issue detected, attempting recovery...');
+        
+        // Clear any cached modules
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+        
+        // Reload after a short delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
     }
   }
 

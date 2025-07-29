@@ -1,13 +1,22 @@
 
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
 
 export const AuthRedirectController = ({ children }: { children: ReactNode }) => {
-  const { user, userData, loading } = useAuth();
+  // Check if we're within an AuthProvider by checking the context directly
+  const context = useContext(AuthContext);
+  
+  // If no context is available, render children without auth logic
+  if (!context) {
+    console.warn('⚠️ AuthRedirectController: No AuthContext found. Rendering children without auth logic.');
+    return <>{children}</>;
+  }
+
+  const { user, userData, loading } = context;
   const navigate = useNavigate();
   const location = useLocation();
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
