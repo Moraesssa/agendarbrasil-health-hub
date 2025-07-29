@@ -32,7 +32,7 @@ export const useAppointmentScheduling = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const resetSelection = useCallback((level: 'state' | 'city' | 'doctor' | 'date') => {
+  const resetSelection = useCallback((level?: 'state' | 'city' | 'doctor' | 'date') => {
     if (level === 'state') {
       setSelectedCity("");
       setDoctors([]);

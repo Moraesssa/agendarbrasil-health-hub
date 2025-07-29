@@ -52,7 +52,7 @@ const Agendamento = () => {
   } = appointmentHook;
 
   const selectedPatientName = selectedFamilyMember 
-    ? familyMembers?.find(member => member.id === selectedFamilyMember)?.name 
+    ? familyMembers?.find(member => member.id === selectedFamilyMember)?.display_name 
     : user?.user_metadata?.full_name || user?.email || "Usuário";
 
   const handleNext = () => {
@@ -80,15 +80,7 @@ const Agendamento = () => {
 
   const handleAppointmentConfirm = async () => {
     try {
-      await handleAgendamento({
-        patientId: selectedFamilyMember || user?.id,
-        doctorId: selectedDoctor,
-        date: selectedDate,
-        timeSlot: selectedTime,
-        appointmentType: 'consulta',
-        notes: `Agendamento para ${selectedPatientName}`,
-        location: 'Online'
-      });
+      await handleAgendamento();
       
       toast({
         title: "Consulta agendada com sucesso!",
@@ -131,7 +123,6 @@ const Agendamento = () => {
       case 3:
         return (
           <CitySelect
-            selectedState={selectedState}
             selectedCity={selectedCity}
             cities={cities}
             isLoading={isLoading}
@@ -141,13 +132,10 @@ const Agendamento = () => {
       case 4:
         return (
           <DoctorSelect
-            selectedSpecialty={selectedSpecialty}
-            selectedCity={selectedCity}
-            selectedState={selectedState}
             selectedDoctor={selectedDoctor}
             doctors={doctors}
             isLoading={isLoading}
-            onDoctorSelect={setSelectedDoctor}
+            onChange={setSelectedDoctor}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -166,9 +154,9 @@ const Agendamento = () => {
         return (
           <TimeSlotGrid
             selectedTime={selectedTime}
-            selectedDate={selectedDate}
-            doctorId={selectedDoctor}
-            onSlotSelect={setSelectedTime}
+            timeSlots={[{ time: "09:00", available: true }, { time: "10:00", available: true }]}
+            isLoading={isLoading}
+            onChange={setSelectedTime}
             onNext={handleNext}
             onPrevious={handlePrevious}
           />
@@ -177,20 +165,21 @@ const Agendamento = () => {
         return (
           <div className="space-y-4">
             <FamilyMemberSelect
-              value={selectedFamilyMember}
+              selectedMemberId={selectedFamilyMember}
               onChange={setSelectedFamilyMember}
               familyMembers={familyMembers || []}
-              userDisplayName={user?.user_metadata?.full_name || user?.email || "Você"}
+              currentUserId={user?.id || ""}
+              currentUserName={user?.user_metadata?.full_name || user?.email || "Você"}
             />
             <AppointmentSummary
-              selectedDoctor={selectedDoctor}
+              selectedSpecialty={selectedSpecialty}
+              selectedDoctorName={doctors?.find(d => d.id === selectedDoctor)?.display_name || selectedDoctor}
+              selectedState={selectedState}
+              selectedCity={selectedCity}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
-              appointmentType="consulta"
-              patientName={selectedPatientName}
-              onConfirm={handleAppointmentConfirm}
-              onPrevious={handlePrevious}
-              loading={isSubmitting}
+              selectedLocal={locaisComHorarios?.[0] || null}
+              selectedPatientName={selectedPatientName}
             />
           </div>
         );

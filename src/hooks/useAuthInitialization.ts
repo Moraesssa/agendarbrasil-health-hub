@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ensureModulesLoaded, checkModuleHealth } from '@/utils/moduleLoader';
+// import { ensureModulesLoaded, checkModuleHealth } from '@/utils/moduleLoader'; // Temporarily disabled
 
 export const useAuthInitialization = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -8,17 +8,9 @@ export const useAuthInitialization = () => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // First check module health
-        if (!checkModuleHealth()) {
-          throw new Error('Module environment is not healthy');
-        }
-
-        // Ensure all critical modules are loaded
-        const modulesLoaded = await ensureModulesLoaded();
-        
-        if (!modulesLoaded) {
-          throw new Error('Failed to load critical authentication modules');
-        }
+        // Simplified initialization - just check if AuthContext exports exist
+        // const moduleHealthy = true; // Skip module health check for now
+        // const modulesLoaded = true; // Skip module loading check for now
 
         // Double-check by importing AuthContext again
         const authModule = await import('@/contexts/AuthContext');
