@@ -69,6 +69,7 @@ export const useAvailableDates = (
       const cachedData = getCachedData(cacheKey);
       if (cachedData) {
         logger.info("Using cached available dates", "useAvailableDates", { doctorId, cacheKey });
+        console.log("🟢 Usando dados em cache:", { doctorId, availableDates: cachedData });
         setAvailableDates(cachedData);
         setError(null);
         setRetryCount(0);
@@ -104,6 +105,13 @@ export const useAvailableDates = (
 
       // Cache the result
       setCachedData(cacheKey, dates);
+      
+      console.log("🟢 Datas disponíveis carregadas com sucesso:", { 
+        doctorId, 
+        datesCount: dates.length,
+        sampleDates: dates.slice(0, 5),
+        allDates: dates
+      });
       
       setAvailableDates(dates);
       setError(null);
