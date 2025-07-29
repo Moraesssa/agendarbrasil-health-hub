@@ -101,7 +101,7 @@ export const appointmentService = {
       const { data: medico, error: medicoError } = await supabase
         .from('medicos')
         .select('configuracoes')
-        .eq('user_id', doctorId)
+        .eq('id', doctorId)
         .single();
 
       if (medicoError) {
@@ -177,13 +177,24 @@ export const appointmentService = {
     await checkAuthentication();
     if (!doctorId || !date) return [];
 
+    console.log("🔍 Buscando horários para médico:", { doctorId, date });
+
     const { data: medico, error: medicoError } = await supabase
       .from('medicos')
       .select('configuracoes, locais:locais_atendimento(*)')
-      .eq('user_id', doctorId)
+      .eq('id', doctorId)
       .single();
 
-    if (medicoError) throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
+    if (medicoError) {
+      console.error("❌ Erro ao buscar médico:", medicoError);
+      throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
+    }
+
+    console.log("✅ Dados do médico encontrados:", { 
+      configuracoes: medico.configuracoes, 
+      locaisCount: medico.locais?.length || 0,
+      locais: medico.locais
+    });
 
     const { configuracoes, locais } = medico;
     const config = isValidConfiguration(configuracoes) ? configuracoes : {};
@@ -193,6 +204,13 @@ export const appointmentService = {
     const diaDaSemana = getDayName(new Date(date + 'T00:00:00'));
 
     const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
+    
+    console.log("📅 Informações do dia:", { 
+      diaDaSemana, 
+      blocosDoDia, 
+      horarioAtendimento,
+      hasBlocos: Array.isArray(blocosDoDia) && blocosDoDia.length > 0 
+    });
     
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
@@ -222,10 +240,24 @@ export const appointmentService = {
         ? blocosDoDia.filter((bloco: any) => 
             bloco && 
             typeof bloco === 'object' && 
-            bloco.local_id && 
-            bloco.local_id === local.id
+            (bloco.local_id === local.id || !bloco.local_id) // Accept blocks without local_id or matching local_id
           )
         : [];
+
+      // If no specific blocks for this location but there are general blocks, use them
+      if (blocosDoLocal.length === 0 && Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
+        const generalBlocks = blocosDoDia.filter((bloco: any) => 
+          bloco && typeof bloco === 'object' && !bloco.local_id
+        );
+        if (generalBlocks.length > 0) {
+          blocosDoLocal.push(...generalBlocks);
+        }
+      }
+
+      // If still no blocks, create default working hours for this location
+      if (blocosDoLocal.length === 0 && Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
+        blocosDoLocal.push(...blocosDoDia);
+      }
 
       if (blocosDoLocal.length > 0) {
         // Criar WorkingHours válido
