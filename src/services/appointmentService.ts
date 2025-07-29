@@ -27,7 +27,23 @@ export interface LocalAtendimento {
 }
 
 const isValidConfiguration = (config: any): config is { horarioAtendimento?: WorkingHours; duracaoConsulta?: number } => {
-  return config && typeof config === 'object';
+  if (!config || typeof config !== 'object') return false;
+  
+  // Check if horarioAtendimento exists and has valid structure
+  if (config.horarioAtendimento) {
+    const horarios = config.horarioAtendimento;
+    if (typeof horarios !== 'object') return false;
+    
+    // Validate that each day has an array of working hours
+    for (const [day, hours] of Object.entries(horarios)) {
+      if (!Array.isArray(hours)) {
+        logger.warn(`Invalid working hours format for ${day}`, "AppointmentService", { day, hours });
+        return false;
+      }
+    }
+  }
+  
+  return true;
 };
 
 const checkAuthentication = async () => {
@@ -197,7 +213,18 @@ export const appointmentService = {
     });
 
     const { configuracoes, locais } = medico;
-    const config = isValidConfiguration(configuracoes) ? configuracoes : {};
+    
+    if (!isValidConfiguration(configuracoes)) {
+      logger.error("Invalid doctor configuration", "AppointmentService", { 
+        doctorId, 
+        configuracoes,
+        configType: typeof configuracoes,
+        hasHorarioAtendimento: configuracoes && typeof configuracoes === 'object' && 'horarioAtendimento' in configuracoes
+      });
+      throw new Error("Erro nas configurações do médico. Contate o suporte.");
+    }
+    
+    const config = configuracoes as { horarioAtendimento?: WorkingHours; duracaoConsulta?: number };
     const horarioAtendimento = config.horarioAtendimento || {};
     
     // Usar a função getDayName para obter o dia da semana em português
