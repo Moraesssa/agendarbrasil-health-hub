@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "React Code Assistant",
+  "description": "Monitors React component files, TypeScript files, and configuration files to provide intelligent code assistance, debugging help, and best practice guidance when changes are made",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.ts",
+      "src/**/*.jsx",
+      "src/**/*.js",
+      "src/**/*.css",
+      "package.json",
+      "tsconfig.json",
+      "vite.config.ts",
+      "tailwind.config.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A user has made changes to their React codebase. Please review the modified files and provide helpful assistance. You can:\n\n1. Analyze the code changes for potential issues or improvements\n2. Suggest best practices and optimizations\n3. Help debug any problems you notice\n4. Provide guidance on React patterns and TypeScript usage\n5. Recommend component structure improvements\n6. Assist with styling and responsive design\n7. Help with state management and performance\n\nRemember to:\n- Be friendly and helpful in your explanations\n- Focus on code quality, maintainability, and best practices\n- Provide specific, actionable suggestions\n- Use console logs for debugging when appropriate\n- Follow the established project structure\n- Consider responsive design and accessibility\n- Only make code changes when explicitly requested\n\nReview the changes and provide relevant assistance based on what the user has modified."
+  }
+}

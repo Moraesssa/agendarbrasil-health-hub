@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Auto Code Maintenance",
+  "description": "Automatically updates dependencies, cleans up TODOs/FIXMEs, maintains DRY code, regenerates documentation, and runs validation when code or documentation files are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.{ts",
+      "tsx",
+      "js",
+      "jsx}",
+      "docs/**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Kiro, detectei alterações em código ou documentação. Por favor, execute estes passos sem pular nenhum detalhe:\n1. Atualização de dependências\nUse lov-search-files para procurar chamadas a pacotes obsoletos em src/ (por ex. import _ from 'lodash').\nSe encontrar algo, utilize lov-add-dependency para garantir a versão mais recente: lodash@latest.\n2. Otimização de código\nBusque trechos com // TODO ou // FIXME usando lov-search-files.\nPara cada ocorrência, abra o arquivo e — se possível — aplique lov-line-replace para substituir por uma implementação limpa ou remova o comentário.\nVerifique padrões de repetição de lógica (DRY): use lov-search-files com regex para funções duplicadas e refatore via lov-write, extraindo helpers.\n3. Atualização de documentação\nRode npm run docgen (ou script equivalente).\nSe isso gerar novos arquivos em docs/auto/, use lov-write para incluir seções faltantes de \"Como usar\" nos manuais em docs/.\nExecute lov-line-replace em README.md para atualizar a seção \"Dependências\" com a lista atualizada após o passo 1.\n4. Validação final\nRode npm run lint e npm test -- --findRelatedTests.\nSe tudo passar, faça stage e commit automático com mensagens:\nchore: bump dependencies to latest\nrefactor: clean up TODOs and DRY code\ndocs: regenerate and sync documentation\nCaso algo falhe, reverta o commit e inclua no log o erro e o passo em que aconteceu."
+  }
+}

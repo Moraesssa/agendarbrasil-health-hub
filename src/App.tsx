@@ -9,6 +9,7 @@ import { errorLogger } from '@/utils/errorLogger';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthRedirectController } from '@/components/AuthRedirectController';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { AuthErrorBoundary } from '@/components/AuthErrorBoundary';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Cadastrar from '@/pages/Cadastrar';
@@ -255,9 +256,10 @@ function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AuthProvider>
-              <NotificationProvider>
-                <AuthRedirectController>
+            <AuthErrorBoundary>
+              <AuthProvider>
+                <NotificationProvider>
+                  <AuthRedirectController>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
@@ -284,9 +286,10 @@ function App() {
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </AuthRedirectController>
-              </NotificationProvider>
-            </AuthProvider>
+                  </AuthRedirectController>
+                </NotificationProvider>
+              </AuthProvider>
+            </AuthErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
