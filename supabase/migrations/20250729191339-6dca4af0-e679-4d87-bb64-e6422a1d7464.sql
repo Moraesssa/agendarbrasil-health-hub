@@ -1,0 +1,28 @@
+-- Add more medical specialties to the database
+INSERT INTO public.especialidades_medicas (nome, codigo, descricao, ativa) VALUES
+('Dermatologia', 'DERM', 'Especialidade médica que cuida da saúde da pele, cabelos e unhas', true),
+('Ginecologia', 'GINE', 'Especialidade médica que cuida da saúde reprodutiva feminina', true),
+('Ortopedia', 'ORTO', 'Especialidade médica que trata de ossos, articulações e músculos', true),
+('Psiquiatria', 'PSIQ', 'Especialidade médica que trata de transtornos mentais e comportamentais', true),
+('Neurologia', 'NEUR', 'Especialidade médica que trata do sistema nervoso', true),
+('Endocrinologia', 'ENDO', 'Especialidade médica que trata de hormônios e glândulas', true),
+('Oftalmologia', 'OFTA', 'Especialidade médica que cuida da saúde dos olhos', true),
+('Otorrinolaringologia', 'OTORR', 'Especialidade médica que trata de ouvidos, nariz e garganta', true),
+('Urologia', 'UROL', 'Especialidade médica que trata do sistema urinário e reprodutor masculino', true),
+('Gastroenterologia', 'GAST', 'Especialidade médica que trata do sistema digestivo', true),
+('Pneumologia', 'PNEU', 'Especialidade médica que trata do sistema respiratório', true),
+('Reumatologia', 'REUM', 'Especialidade médica que trata de doenças reumáticas', true),
+('Infectologia', 'INFE', 'Especialidade médica que trata de doenças infecciosas', true),
+('Hematologia', 'HEMA', 'Especialidade médica que trata de doenças do sangue', true),
+('Oncologia', 'ONCO', 'Especialidade médica que trata de câncer', true),
+('Nefrologia', 'NEFR', 'Especialidade médica que trata dos rins', true),
+('Anestesiologia', 'ANES', 'Especialidade médica que cuida da anestesia e dor', true),
+('Radiologia', 'RADI', 'Especialidade médica que utiliza exames de imagem para diagnóstico', true),
+('Patologia', 'PATH', 'Especialidade médica que estuda doenças através de análises laboratoriais', true),
+('Medicina do Trabalho', 'TRAB', 'Especialidade médica que cuida da saúde do trabalhador', true),
+('Medicina do Esporte', 'ESPO', 'Especialidade médica que cuida da saúde de atletas e praticantes de esporte', true),
+('Geriatria', 'GERI', 'Especialidade médica que cuida da saúde do idoso', true),
+('Pediatria', 'PEDI', 'Especialidade médica que cuida da saúde das crianças', true),
+('Medicina de Família', 'FAMI', 'Especialidade médica que oferece cuidados primários à família', true),
+('Clínica Médica', 'CLIN', 'Especialidade médica de cuidados gerais e diagnóstico', true)
+ON CONFLICT (nome) DO NOTHING;

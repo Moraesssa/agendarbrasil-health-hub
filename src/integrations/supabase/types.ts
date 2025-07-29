@@ -1751,6 +1751,8 @@ export type Database = {
         Returns: {
           id: string
           display_name: string
+          especialidades: string[]
+          crm: string
         }[]
       }
       get_family_members: {
