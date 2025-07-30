@@ -49,7 +49,8 @@ const Agendamento = () => {
       setSelectedCity,
       setSelectedDoctor,
       setSelectedDate,
-      setSelectedTime
+      setSelectedTime,
+      setSelectedLocal
     },
     state: { isLoading, isSubmitting },
     actions: { handleAgendamento, resetSelection }
@@ -191,12 +192,15 @@ const Agendamento = () => {
       case 6:
         return (
           <TimeSlotGrid
+            locaisComHorarios={locaisComHorarios}
             selectedTime={selectedTime}
-            timeSlots={locaisComHorarios?.flatMap(local => 
-              local.horarios_disponiveis?.map(slot => ({ time: slot.time, available: slot.available })) || []
-            ) || []}
+            selectedLocal={selectedLocal?.id || ""}
             isLoading={isLoading}
-            onChange={setSelectedTime}
+            onChange={(time, localId) => {
+              setSelectedTime(time);
+              const local = locaisComHorarios?.find(l => l.id === localId);
+              setSelectedLocal(local || null);
+            }}
           />
         );
       case 7:
@@ -216,9 +220,7 @@ const Agendamento = () => {
               selectedCity={selectedCity}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
-              selectedLocal={selectedTime ? locaisComHorarios?.find(local => 
-                local.horarios_disponiveis?.some(slot => slot.time === selectedTime)
-              ) || locaisComHorarios?.[0] : null}
+              selectedLocal={selectedLocal}
               selectedPatientName={selectedPatientName}
             />
             
@@ -327,7 +329,7 @@ const Agendamento = () => {
                   (step === 3 && !selectedCity) ||
                   (step === 4 && !selectedDoctor) ||
                   (step === 5 && !selectedDate) ||
-                  (step === 6 && !selectedTime)
+                  (step === 6 && (!selectedTime || !selectedLocal))
                 }
               >
                 Próximo
