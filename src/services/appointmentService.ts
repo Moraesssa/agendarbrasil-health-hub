@@ -265,28 +265,37 @@ export const appointmentService = {
       // Verificar se local é um objeto válido
       if (!local || typeof local !== 'object' || !local.id) continue;
 
-      // Verificar se blocosDoDia é array e filtrar blocos para este local
-      const blocosDoLocal = Array.isArray(blocosDoDia) 
+      // Buscar blocos específicos para este local
+      const blocosEspecificosDoLocal = Array.isArray(blocosDoDia) 
         ? blocosDoDia.filter((bloco: any) => 
             bloco && 
             typeof bloco === 'object' && 
-            (bloco.local_id === local.id || !bloco.local_id) // Accept blocks without local_id or matching local_id
+            bloco.local_id === local.id
           )
         : [];
 
-      // If no specific blocks for this location but there are general blocks, use them
-      if (blocosDoLocal.length === 0 && Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
-        const generalBlocks = blocosDoDia.filter((bloco: any) => 
-          bloco && typeof bloco === 'object' && !bloco.local_id
-        );
-        if (generalBlocks.length > 0) {
-          blocosDoLocal.push(...generalBlocks);
-        }
-      }
+      // Buscar blocos gerais (sem local_id específico)
+      const blocosGerais = Array.isArray(blocosDoDia) 
+        ? blocosDoDia.filter((bloco: any) => 
+            bloco && 
+            typeof bloco === 'object' && 
+            !bloco.local_id
+          )
+        : [];
 
-      // If still no blocks, create default working hours for this location
-      if (blocosDoLocal.length === 0 && Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
-        blocosDoLocal.push(...blocosDoDia);
+      // Determinar quais blocos usar para este local:
+      // 1. Se há blocos específicos para este local, usar apenas eles
+      // 2. Se não há blocos específicos, usar os blocos gerais
+      let blocosDoLocal: any[] = [];
+      
+      if (blocosEspecificosDoLocal.length > 0) {
+        blocosDoLocal = blocosEspecificosDoLocal;
+        console.log(`📍 Local ${local.nome_local}: usando ${blocosEspecificosDoLocal.length} blocos específicos`);
+      } else if (blocosGerais.length > 0) {
+        blocosDoLocal = blocosGerais;
+        console.log(`📍 Local ${local.nome_local}: usando ${blocosGerais.length} blocos gerais`);
+      } else {
+        console.log(`📍 Local ${local.nome_local}: nenhum bloco de horário encontrado`);
       }
 
       if (blocosDoLocal.length > 0) {
