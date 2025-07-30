@@ -195,24 +195,27 @@ export const appointmentService = {
 
     console.log("🔍 Buscando horários para médico:", { doctorId, date });
 
-    const { data: medico, error: medicoError } = await supabase
-      .from('medicos')
-      .select('configuracoes, locais:locais_atendimento(*)')
-      .eq('user_id', doctorId)
-      .single();
+    // Usar RPC function para contornar problemas de RLS
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .rpc('get_doctor_schedule_data', { p_doctor_id: doctorId });
 
-    if (medicoError) {
-      console.error("❌ Erro ao buscar médico:", medicoError);
-      throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
+    if (scheduleError || !scheduleData || scheduleData.length === 0) {
+      console.error("❌ Erro ao buscar dados do médico:", scheduleError);
+      throw new Error(`Erro ao buscar dados do médico: ${scheduleError?.message || 'Dados não encontrados'}`);
     }
 
+    const { doctor_config: configuracoes, locations: locaisData } = scheduleData[0];
+    
     console.log("✅ Dados do médico encontrados:", { 
-      configuracoes: medico.configuracoes, 
-      locaisCount: medico.locais?.length || 0,
-      locais: medico.locais
+      configuracoes, 
+      locaisCount: Array.isArray(locaisData) ? locaisData.length : 0,
+      locais: locaisData
     });
 
-    const { configuracoes, locais } = medico;
+    // Converter JSONB locations para formato esperado
+    const locais: LocalAtendimento[] = Array.isArray(locaisData) 
+      ? (locaisData as unknown as LocalAtendimento[]) 
+      : [];
     
     if (!isValidConfiguration(configuracoes)) {
       logger.error("Invalid doctor configuration", "AppointmentService", { 
