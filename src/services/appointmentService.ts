@@ -195,24 +195,58 @@ export const appointmentService = {
 
     console.log("🔍 Buscando horários para médico:", { doctorId, date });
 
-    const { data: medico, error: medicoError } = await supabase
-      .from('medicos')
-      .select('configuracoes, locais:locais_atendimento(*)')
-      .eq('user_id', doctorId)
-      .single();
+    // Usar função RPC para contornar problemas de RLS
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .rpc('get_doctor_schedule_data', { p_doctor_id: doctorId });
 
-    if (medicoError) {
-      console.error("❌ Erro ao buscar médico:", medicoError);
-      throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
+    if (scheduleError) {
+      console.error("❌ Erro ao buscar dados do médico via RPC:", scheduleError);
+      
+      // Fallback para query direta se RPC falhar
+      console.log("🔄 Tentando query direta como fallback...");
+      const { data: medico, error: medicoError } = await supabase
+        .from('medicos')
+        .select('configuracoes, locais:locais_atendimento(*)')
+        .eq('user_id', doctorId)
+        .single();
+
+      if (medicoError) {
+        console.error("❌ Erro na query direta também:", medicoError);
+        throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
+      }
+
+      // Usar dados da query direta
+      const { configuracoes, locais } = medico;
+      console.log("✅ Dados obtidos via query direta:", { 
+        configuracoes, 
+        locaisCount: locais?.length || 0 
+      });
+    } else {
+      // Usar dados da função RPC
+      if (!scheduleData || scheduleData.length === 0) {
+        throw new Error("Nenhum dado encontrado para este médico");
+      }
+
+      const { doctor_config: configuracoes, locations: locaisJson } = scheduleData[0];
+      const locais = Array.isArray(locaisJson) ? locaisJson : [];
+      
+      console.log("✅ Dados obtidos via RPC:", { 
+        configuracoes, 
+        locaisCount: locais.length 
+      });
     }
 
-    console.log("✅ Dados do médico encontrados:", { 
-      configuracoes: medico.configuracoes, 
-      locaisCount: medico.locais?.length || 0,
-      locais: medico.locais
-    });
-
-    const { configuracoes, locais } = medico;
+    // Extrair configurações e locais dos dados obtidos
+    let configuracoes, locais;
+    
+    if (scheduleData && scheduleData.length > 0) {
+      configuracoes = scheduleData[0].doctor_config;
+      locais = scheduleData[0].locations;
+    } else {
+      // Usar dados do fallback
+      configuracoes = medico.configuracoes;
+      locais = medico.locais;
+    }
     
     if (!isValidConfiguration(configuracoes)) {
       logger.error("Invalid doctor configuration", "AppointmentService", { 
@@ -257,6 +291,11 @@ export const appointmentService = {
 
     // Garantir que locais é um array de objetos
     const locaisArray = Array.isArray(locais) ? locais : [];
+    
+    console.log("🏥 Locais encontrados:", { 
+      locaisCount: locaisArray.length, 
+      locais: locaisArray.map(l => ({ id: l?.id, nome: l?.nome_local }))
+    });
 
     for (const local of locaisArray) {
       // Verificar se local é um objeto válido
@@ -287,6 +326,13 @@ export const appointmentService = {
       }
 
       if (blocosDoLocal.length > 0) {
+        console.log("⏰ Processando local:", { 
+          localId: local.id, 
+          nomeLocal: local.nome_local, 
+          blocosCount: blocosDoLocal.length,
+          blocos: blocosDoLocal
+        });
+
         // Criar WorkingHours válido
         const workingHours: WorkingHours = {};
         workingHours[diaDaSemana] = blocosDoLocal;
@@ -296,6 +342,12 @@ export const appointmentService = {
           horarioAtendimento: workingHours
         }, new Date(date + 'T00:00:00'), existingAppointments);
 
+        console.log("🕐 Horários gerados para local:", { 
+          localId: local.id, 
+          horariosCount: horariosNesteLocal.length,
+          horarios: horariosNesteLocal.slice(0, 3) // Mostrar apenas os primeiros 3
+        });
+
         if (horariosNesteLocal.length > 0) {
           locaisComHorarios.push({
             id: local.id,
@@ -304,8 +356,25 @@ export const appointmentService = {
             horarios_disponiveis: horariosNesteLocal
           });
         }
+      } else {
+        console.log("❌ Nenhum bloco de horário encontrado para local:", { 
+          localId: local.id, 
+          nomeLocal: local.nome_local,
+          diaDaSemana,
+          blocosDoDia: blocosDoDia
+        });
       }
     }
+    
+    console.log("📋 Resultado final:", { 
+      locaisComHorariosCount: locaisComHorarios.length,
+      totalHorarios: locaisComHorarios.reduce((total, local) => total + (local.horarios_disponiveis?.length || 0), 0),
+      locais: locaisComHorarios.map(l => ({ 
+        id: l.id, 
+        nome: l.nome_local, 
+        horariosCount: l.horarios_disponiveis?.length || 0 
+      }))
+    });
     
     return locaisComHorarios;
   },

@@ -12,12 +12,12 @@ interface InfoRowProps {
 
 export const InfoRow = ({ icon: Icon, label, value, isCompleted }: InfoRowProps) => {
   return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 gap-1 sm:gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <Icon className={cn("h-4 w-4", isCompleted ? "text-green-600" : "text-gray-400")} />
         <span className="text-sm font-medium text-gray-700">{label}</span>
       </div>
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-gray-600 sm:text-right min-w-0 break-words ml-6 sm:ml-0">
         {value || "Não selecionado"}
       </div>
     </div>

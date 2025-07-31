@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Context-aware Replace with Validation and Supabase RLS Verification",
+  "description": "Intelligently replaces code with context awareness, validates changes against business rules, and verifies Supabase RLS policies are properly implemented and secure",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.ts",
+      "supabase/migrations/*.sql",
+      "src/lib/supabase/**/*.ts",
+      "src/hooks/**/*.ts",
+      "src/services/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Kiro, um arquivo foi modificado que pode afetar a segurança ou integridade dos dados. Execute esta verificação completa:\n\n## 1. ANÁLISE DE CONTEXTO\n- Identifique o tipo de mudança (componente, hook, serviço, migração SQL)\n- Analise dependências e impactos em outros arquivos\n- Verifique se a mudança segue os padrões do projeto\n\n## 2. VALIDAÇÃO DE CÓDIGO\n- Verifique TypeScript types e interfaces\n- Confirme que hooks do React seguem as regras\n- Valide que queries Supabase estão tipadas corretamente\n- Teste se imports/exports estão corretos\n\n## 3. VERIFICAÇÃO RLS (Row Level Security)\nPara mudanças relacionadas ao Supabase:\n- Conecte ao Supabase usando as credenciais do .env\n- Verifique se as políticas RLS estão ativas nas tabelas afetadas\n- Teste se as políticas permitem apenas acesso autorizado\n- Confirme que não há vazamentos de dados entre usuários\n- Execute queries de teste para validar segurança:\n  ```sql\n  -- Teste como usuário não autenticado\n  SELECT * FROM [tabela_afetada] LIMIT 1;\n  \n  -- Teste como usuário diferente\n  SELECT * FROM [tabela_afetada] WHERE user_id != auth.uid() LIMIT 1;\n  ```\n\n## 4. VALIDAÇÃO DE NEGÓCIO\n- Verifique se regras de negócio estão sendo respeitadas\n- Confirme validações de entrada de dados\n- Teste cenários edge cases\n- Valide permissões de usuário (paciente vs médico vs admin)\n\n## 5. TESTES AUTOMATIZADOS\n- Execute testes relacionados aos arquivos modificados\n- Rode linting e type checking\n- Teste integração com Supabase\n- Valide que não há regressões\n\n## 6. RELATÓRIO FINAL\nSe tudo estiver OK:\n- Confirme que as mudanças são seguras\n- Liste as validações executadas\n- Sugira melhorias se aplicável\n\nSe houver problemas:\n- Liste todos os issues encontrados\n- Sugira correções específicas\n- Priorize problemas de segurança\n- Forneça código corrigido quando necessário\n\n**IMPORTANTE**: Trate questões de segurança como CRÍTICAS. Nunca permita que dados de um usuário sejam acessíveis por outro usuário não autorizado."
+  }
+}

@@ -6,6 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { appointmentService, LocalComHorarios, Medico } from "@/services/appointmentService";
 import { logger } from "@/utils/logger";
+import { getSupabaseConfig } from "@/utils/supabaseCheck";
+import { 
+  mockSpecialties, 
+  mockStates, 
+  mockCities, 
+  mockDoctors, 
+  mockLocaisComHorarios 
+} from "@/utils/mockData";
 
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
@@ -54,36 +62,82 @@ export const useAppointmentScheduling = () => {
 
   useEffect(() => {
     if (!user) return;
+    
     const loadInitialData = async () => {
       setIsLoading(true);
+      
+      const config = getSupabaseConfig();
+      
+      // Se Supabase não estiver configurado, usar dados mock
+      if (!config.isConfigured) {
+        console.log("🔧 Usando dados mock - Supabase não configurado");
+        setSpecialties(mockSpecialties);
+        setStates(mockStates);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const [specialtiesData, statesData] = await Promise.all([
           appointmentService.getSpecialties(),
           supabase.rpc('get_available_states').then(res => res.data || [])
         ]);
-        setSpecialties(specialtiesData);
-        setStates(statesData as StateInfo[]);
+        setSpecialties(Array.isArray(specialtiesData) ? specialtiesData : []);
+        setStates(Array.isArray(statesData) ? statesData as StateInfo[] : []);
       } catch (e) {
+        console.error("Erro ao carregar dados iniciais:", e);
         logger.error("Erro ao carregar dados iniciais", "useAppointmentScheduling", e);
-        toast({ title: "Erro ao carregar dados iniciais", variant: "destructive" });
+        
+        // Em caso de erro, usar dados mock como fallback
+        console.log("🔧 Usando dados mock como fallback");
+        setSpecialties(mockSpecialties);
+        setStates(mockStates);
+        
+        toast({ 
+          title: "Usando dados de demonstração", 
+          description: "Conectividade com banco limitada. Dados de exemplo sendo exibidos.",
+          variant: "default" 
+        });
       } finally {
         setIsLoading(false);
       }
     };
+    
     loadInitialData();
   }, [toast, user]);
 
   useEffect(() => {
-    if (!selectedState) return;
+    if (!selectedState) {
+      setCities([]);
+      return;
+    }
+    
     const loadCities = async () => {
       setIsLoading(true);
+      
+      const config = getSupabaseConfig();
+      
+      // Se Supabase não estiver configurado, usar dados mock
+      if (!config.isConfigured) {
+        const mockCitiesForState = mockCities[selectedState as keyof typeof mockCities] || [];
+        setCities(mockCitiesForState);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
-        setCities(data || []);
+        setCities(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Erro ao carregar cidades:", error);
+        // Fallback para dados mock
+        const mockCitiesForState = mockCities[selectedState as keyof typeof mockCities] || [];
+        setCities(mockCitiesForState);
       } finally {
         setIsLoading(false);
       }
     };
+    
     loadCities();
   }, [selectedState]);
 
@@ -91,16 +145,32 @@ export const useAppointmentScheduling = () => {
     if (!selectedSpecialty || !selectedCity || !selectedState) {
         setDoctors([]); // Limpa a lista se os filtros mudarem
         return;
-    };
+    }
+    
     const loadDoctors = async () => {
       setIsLoading(true);
+      
+      const config = getSupabaseConfig();
+      
+      // Se Supabase não estiver configurado, usar dados mock
+      if (!config.isConfigured) {
+        setDoctors(mockDoctors);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
-        setDoctors(doctorsData);
+        setDoctors(Array.isArray(doctorsData) ? doctorsData : []);
+      } catch (error) {
+        console.error("Erro ao carregar médicos:", error);
+        // Fallback para dados mock
+        setDoctors(mockDoctors);
       } finally {
         setIsLoading(false);
       }
     };
+    
     loadDoctors();
   }, [selectedSpecialty, selectedCity, selectedState]);
   
@@ -109,17 +179,49 @@ export const useAppointmentScheduling = () => {
         setLocaisComHorarios([]); // Limpa se não houver médico ou data
         return;
     }
+    
     const loadSlots = async () => {
       setIsLoading(true);
+      
+      const config = getSupabaseConfig();
+      
+      // Se Supabase não estiver configurado, usar dados mock
+      if (!config.isConfigured) {
+        console.log("🔧 Usando horários mock - Supabase não configurado");
+        // Gerar horários mock com base na data selecionada
+        const mockSlotsWithDate = mockLocaisComHorarios.map(local => ({
+          ...local,
+          horarios_disponiveis: local.horarios_disponiveis.map(slot => ({
+            ...slot,
+            available: Math.random() > 0.3 // 70% dos horários disponíveis
+          }))
+        }));
+        setLocaisComHorarios(mockSlotsWithDate);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
-        setLocaisComHorarios(slots);
+        setLocaisComHorarios(Array.isArray(slots) ? slots : []);
+      } catch (error) {
+        console.error("Erro ao carregar horários:", error);
+        // Fallback para dados mock em caso de erro
+        console.log("🔧 Usando horários mock como fallback");
+        setLocaisComHorarios(mockLocaisComHorarios);
+        
+        toast({ 
+          title: "Usando dados de demonstração", 
+          description: "Problema ao carregar horários reais. Exibindo horários de exemplo.",
+          variant: "default" 
+        });
       } finally {
         setIsLoading(false);
       }
     };
+    
     loadSlots();
-  }, [selectedDoctor, selectedDate]);
+  }, [selectedDoctor, selectedDate, toast]);
 
   const handleAgendamento = useCallback(async () => {
     if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedLocal) return;

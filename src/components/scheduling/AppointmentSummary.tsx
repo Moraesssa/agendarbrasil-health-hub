@@ -30,13 +30,13 @@ export const AppointmentSummary = ({
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-blue-600" />
-                    Resumo do Agendamento
+            <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                    <span>Resumo do Agendamento</span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-1 sm:space-y-2">
                 {selectedPatientName && (
                   <InfoRow icon={User} label="Paciente" value={selectedPatientName} isCompleted={!!selectedPatientName} />
                 )}

@@ -29,7 +29,15 @@ export function TimeSlotGrid({
   const safeTimeSlots = safeArrayAccess(timeSlots);
   const timeSlotsLength = safeArrayLength(timeSlots);
   const hasNoTimeSlots = isEmptyOrUndefined(timeSlots);
-  const availableSlots = safeTimeSlots.filter(slot => slot.available);
+  const availableSlots = safeTimeSlots.filter(slot => slot && slot.available);
+  
+  console.log("🔍 TimeSlotGrid - Debug:", {
+    timeSlots,
+    safeTimeSlots: safeTimeSlots.length,
+    hasNoTimeSlots,
+    availableSlots: availableSlots.length,
+    isLoading
+  });
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-lg border-0 bg-gradient-to-br from-white to-orange-50/30">

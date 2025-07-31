@@ -90,7 +90,16 @@ export const generateTimeSlots = (
   const dayName = getDayName(selectedDate);
   const workingHoursBlocks = doctorConfig.horarioAtendimento?.[dayName] || [];
 
+  console.log("🔧 generateTimeSlots - Entrada:", {
+    dayName,
+    workingHoursBlocksCount: workingHoursBlocks.length,
+    workingHoursBlocks,
+    selectedDate: selectedDate.toISOString(),
+    existingAppointmentsCount: existingAppointments.length
+  });
+
   if (!workingHoursBlocks.length) {
+    console.log("❌ generateTimeSlots - Nenhum bloco de horário encontrado para", dayName);
     return [];
   }
 
@@ -132,6 +141,11 @@ export const generateTimeSlots = (
       }
     }
   }
+
+  console.log("✅ generateTimeSlots - Resultado:", {
+    slotsCount: slots.length,
+    sampleSlots: slots.slice(0, 5)
+  });
 
   return slots;
 };
