@@ -1746,6 +1746,13 @@ export type Database = {
           uf: string
         }[]
       }
+      get_doctor_schedule_data: {
+        Args: { p_doctor_id: string }
+        Returns: {
+          doctor_config: Json
+          locations: Json
+        }[]
+      }
       get_doctors_by_location_and_specialty: {
         Args: { p_specialty: string; p_city: string; p_state: string }
         Returns: {
