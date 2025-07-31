@@ -26,7 +26,8 @@ export const AppointmentSummary = ({
   selectedPatientName
 }: AppointmentSummaryProps) => {
     
-    const locationText = selectedLocal ? `${selectedLocal.nome_local} (${selectedLocal.endereco.cidade}, ${selectedLocal.endereco.uf})` : null;
+    const locationText = selectedLocal ? selectedLocal.nome_local : null;
+    const locationAddress = selectedLocal ? `${selectedLocal.endereco?.logradouro}, ${selectedLocal.endereco?.numero} - ${selectedLocal.endereco?.bairro}, ${selectedLocal.endereco?.cidade}/${selectedLocal.endereco?.uf}` : null;
 
     return (
         <Card>
@@ -46,7 +47,10 @@ export const AppointmentSummary = ({
                 <InfoRow icon={Building} label="Cidade" value={selectedCity} isCompleted={!!selectedCity} />
                 <InfoRow icon={Calendar} label="Data" value={selectedDate} isCompleted={!!selectedDate} />
                 <InfoRow icon={Clock} label="Horário" value={selectedTime} isCompleted={!!selectedTime} />
-                <InfoRow icon={MapPin} label="Local" value={locationText} isCompleted={!!locationText}/>
+                <InfoRow icon={Building} label="Estabelecimento" value={locationText} isCompleted={!!locationText}/>
+                {locationAddress && (
+                  <InfoRow icon={MapPin} label="Endereço" value={locationAddress} isCompleted={!!locationAddress}/>
+                )}
             </CardContent>
         </Card>
     );

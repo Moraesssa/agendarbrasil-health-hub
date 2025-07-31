@@ -368,9 +368,31 @@ const Agendamento = () => {
           />
         );
       case 6:
-        const timeSlots = locaisComHorarios?.flatMap(local => 
-          (local.horarios_disponiveis || []).map(slot => ({ time: slot.time, available: slot.available }))
-        ) || [];
+        // Processar horários removendo duplicatas e agrupando por horário
+        const processedTimeSlots = new Map<string, { time: string; available: boolean; locations: string[] }>();
+        
+        locaisComHorarios?.forEach(local => {
+          (local.horarios_disponiveis || []).forEach(slot => {
+            const existing = processedTimeSlots.get(slot.time);
+            if (existing) {
+              // Se já existe, adiciona o local e mantém disponibilidade se pelo menos um estiver disponível
+              existing.available = existing.available || slot.available;
+              existing.locations.push(local.nome_local);
+            } else {
+              // Novo horário
+              processedTimeSlots.set(slot.time, {
+                time: slot.time,
+                available: slot.available,
+                locations: [local.nome_local]
+              });
+            }
+          });
+        });
+        
+        // Converter para array e ordenar por horário
+        const timeSlots = Array.from(processedTimeSlots.values())
+          .map(slot => ({ time: slot.time, available: slot.available }))
+          .sort((a, b) => a.time.localeCompare(b.time));
         
         return (
           <div>
@@ -381,6 +403,7 @@ const Agendamento = () => {
                 selectedTime={selectedTime}
                 timeSlots={timeSlots}
                 isLoading={isLoading}
+                locaisInfo={locaisComHorarios}
                 onChange={(value) => {
                   handleTimeSelect(value);
                   clearFieldError('time');

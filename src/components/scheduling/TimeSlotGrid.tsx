@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Clock, CheckCircle2, ArrowLeft, ArrowRight, Calendar } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, ArrowLeft, ArrowRight, Calendar, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { safeArrayAccess, safeArrayLength, isEmptyOrUndefined } from "@/utils/arrayUtils";
 
@@ -16,6 +16,12 @@ interface TimeSlotGridProps {
   isLoading: boolean;
   onChange: (time: string) => void;
   disabled?: boolean;
+  locaisInfo?: Array<{
+    id: string;
+    nome_local: string;
+    endereco: any;
+    horarios_disponiveis: Array<{ time: string; available: boolean }>;
+  }>;
 }
 
 export function TimeSlotGrid({ 
@@ -23,7 +29,8 @@ export function TimeSlotGrid({
   selectedTime, 
   isLoading, 
   onChange, 
-  disabled = false
+  disabled = false,
+  locaisInfo = []
 }: TimeSlotGridProps) {
   // Use defensive programming to safely access timeSlots array
   const safeTimeSlots = safeArrayAccess(timeSlots);
@@ -52,6 +59,42 @@ export function TimeSlotGrid({
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* Estabelecimentos Disponíveis */}
+        {locaisInfo.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <Building className="h-4 w-4 text-orange-600" />
+              Estabelecimentos Disponíveis
+            </h3>
+            <div className="grid gap-2">
+              {locaisInfo.map((local) => (
+                <div key={local.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 rounded-lg">
+                      <Building className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{local.nome_local}</p>
+                      <p className="text-xs text-gray-600">
+                        {local.endereco?.logradouro}, {local.endereco?.numero} - {local.endereco?.bairro}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {local.endereco?.cidade}, {local.endereco?.uf}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-orange-700">
+                      {local.horarios_disponiveis?.filter(h => h.available).length || 0} horários
+                    </p>
+                    <p className="text-xs text-gray-500">disponíveis</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Time Slots Grid */}
         <div className="space-y-4">
           {isLoading ? (
@@ -72,7 +115,7 @@ export function TimeSlotGrid({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                 {safeTimeSlots.map((slot) => (
                   <Button
                     key={slot.time}
@@ -80,15 +123,22 @@ export function TimeSlotGrid({
                     onClick={() => onChange(slot.time)}
                     disabled={disabled || !slot.available}
                     className={cn(
-                      "h-12 flex flex-col items-center justify-center gap-1 border-2 transition-all duration-200",
-                      "hover:shadow-md",
+                      "h-14 flex flex-col items-center justify-center gap-1 border-2 transition-all duration-200 relative",
+                      "hover:shadow-md hover:scale-105 active:scale-95",
                       !slot.available && "opacity-40 cursor-not-allowed bg-gray-50 text-gray-400 line-through",
-                      slot.available && selectedTime !== slot.time && "border-gray-200 hover:border-orange-300 hover:bg-orange-50",
-                      selectedTime === slot.time && slot.available && "border-orange-500 bg-orange-100 text-orange-800 shadow-lg ring-2 ring-orange-200"
+                      slot.available && selectedTime !== slot.time && "border-gray-200 hover:border-orange-300 hover:bg-orange-50 bg-white",
+                      selectedTime === slot.time && slot.available && "border-orange-500 bg-gradient-to-br from-orange-100 to-orange-200 text-orange-800 shadow-lg ring-2 ring-orange-300"
                     )}
+                    aria-label={`Horário ${slot.time} ${slot.available ? 'disponível' : 'indisponível'}`}
                   >
-                    <Clock className="h-3 w-3" />
-                    <span className="text-xs font-medium">{slot.time}</span>
+                    <Clock className={cn(
+                      "h-4 w-4",
+                      selectedTime === slot.time && slot.available ? "text-orange-600" : "text-gray-500"
+                    )} />
+                    <span className="text-sm font-semibold">{slot.time}</span>
+                    {selectedTime === slot.time && slot.available && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white"></div>
+                    )}
                   </Button>
                 ))}
               </div>
