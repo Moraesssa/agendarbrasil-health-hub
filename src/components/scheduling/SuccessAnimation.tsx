@@ -8,6 +8,7 @@ interface SuccessAnimationProps {
   duration?: number;
   onComplete?: () => void;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export const SuccessAnimation = ({ 

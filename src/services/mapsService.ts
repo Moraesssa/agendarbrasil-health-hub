@@ -478,5 +478,4 @@ class MapsService {
 export const mapsService = new MapsService();
 
 // Export types and utilities
-export type { MapsProvider, MapsConfig };
-export { MapsService };
+export type { MapsConfig };

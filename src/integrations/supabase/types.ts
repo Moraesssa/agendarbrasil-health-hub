@@ -32,6 +32,7 @@ export type Database = {
           medico_id: string | null
           metadata: Json | null
           notes: string | null
+          paciente_familiar_id: string | null
           paciente_id: string | null
           patient_email: string
           patient_name: string
@@ -68,6 +69,7 @@ export type Database = {
           medico_id?: string | null
           metadata?: Json | null
           notes?: string | null
+          paciente_familiar_id?: string | null
           paciente_id?: string | null
           patient_email: string
           patient_name: string
@@ -104,6 +106,7 @@ export type Database = {
           medico_id?: string | null
           metadata?: Json | null
           notes?: string | null
+          paciente_familiar_id?: string | null
           paciente_id?: string | null
           patient_email?: string
           patient_name?: string
@@ -127,6 +130,13 @@ export type Database = {
           {
             foreignKeyName: "consultas_medico_id_fkey"
             columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_paciente_familiar_id_fkey"
+            columns: ["paciente_familiar_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -598,30 +608,90 @@ export type Database = {
       locais_atendimento: {
         Row: {
           ativo: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          coordenadas: Json | null
           created_at: string
+          descricao: string | null
+          email: string | null
           endereco: Json
+          endereco_completo: string | null
+          estado: string | null
+          facilidades: Json | null
+          fonte_dados: string | null
+          horario_funcionamento: Json | null
           id: string
+          instrucoes_acesso: string | null
           medico_id: string
+          motivo_fechamento: string | null
           nome_local: string
+          observacoes_especiais: string | null
+          previsao_reabertura: string | null
+          status: string | null
           telefone: string | null
+          ultima_atualizacao: string | null
+          verificado_em: string | null
+          website: string | null
+          whatsapp: string | null
         }
         Insert: {
           ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          coordenadas?: Json | null
           created_at?: string
+          descricao?: string | null
+          email?: string | null
           endereco: Json
+          endereco_completo?: string | null
+          estado?: string | null
+          facilidades?: Json | null
+          fonte_dados?: string | null
+          horario_funcionamento?: Json | null
           id?: string
+          instrucoes_acesso?: string | null
           medico_id: string
+          motivo_fechamento?: string | null
           nome_local: string
+          observacoes_especiais?: string | null
+          previsao_reabertura?: string | null
+          status?: string | null
           telefone?: string | null
+          ultima_atualizacao?: string | null
+          verificado_em?: string | null
+          website?: string | null
+          whatsapp?: string | null
         }
         Update: {
           ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          coordenadas?: Json | null
           created_at?: string
+          descricao?: string | null
+          email?: string | null
           endereco?: Json
+          endereco_completo?: string | null
+          estado?: string | null
+          facilidades?: Json | null
+          fonte_dados?: string | null
+          horario_funcionamento?: Json | null
           id?: string
+          instrucoes_acesso?: string | null
           medico_id?: string
+          motivo_fechamento?: string | null
           nome_local?: string
+          observacoes_especiais?: string | null
+          previsao_reabertura?: string | null
+          status?: string | null
           telefone?: string | null
+          ultima_atualizacao?: string | null
+          verificado_em?: string | null
+          website?: string | null
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -1762,6 +1832,39 @@ export type Database = {
           crm: string
         }[]
       }
+      get_enhanced_location_data: {
+        Args: { location_ids?: string[] }
+        Returns: {
+          id: string
+          nome_local: string
+          endereco_completo: string
+          bairro: string
+          cidade: string
+          estado: string
+          cep: string
+          telefone: string
+          whatsapp: string
+          email: string
+          website: string
+          coordenadas: Json
+          horario_funcionamento: Json
+          facilidades: Json
+          status: string
+          motivo_fechamento: string
+          previsao_reabertura: string
+          descricao: string
+          instrucoes_acesso: string
+          observacoes_especiais: string
+          ultima_atualizacao: string
+          verificado_em: string
+          fonte_dados: string
+          medico_id: string
+          ativo: boolean
+          is_open_now: boolean
+          has_coordinates: boolean
+          facility_count: number
+        }[]
+      }
       get_family_members: {
         Args: { user_uuid: string }
         Returns: {
@@ -1793,12 +1896,32 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           ativo: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          coordenadas: Json | null
           created_at: string
+          descricao: string | null
+          email: string | null
           endereco: Json
+          endereco_completo: string | null
+          estado: string | null
+          facilidades: Json | null
+          fonte_dados: string | null
+          horario_funcionamento: Json | null
           id: string
+          instrucoes_acesso: string | null
           medico_id: string
+          motivo_fechamento: string | null
           nome_local: string
+          observacoes_especiais: string | null
+          previsao_reabertura: string | null
+          status: string | null
           telefone: string | null
+          ultima_atualizacao: string | null
+          verificado_em: string | null
+          website: string | null
+          whatsapp: string | null
         }[]
       }
       get_specialties: {
@@ -1816,9 +1939,38 @@ export type Database = {
         }
         Returns: {
           success: boolean
-          message: string
           appointment_id: string
+          message: string
         }[]
+      }
+      search_locations: {
+        Args: {
+          search_query?: string
+          filter_cidade?: string
+          filter_bairro?: string
+          filter_status?: string[]
+          filter_facilidades?: string[]
+          has_parking?: boolean
+          is_accessible?: boolean
+          limit_results?: number
+          offset_results?: number
+        }
+        Returns: {
+          id: string
+          nome_local: string
+          endereco_completo: string
+          cidade: string
+          bairro: string
+          telefone: string
+          status: string
+          facilidades: Json
+          coordenadas: Json
+          match_score: number
+        }[]
+      }
+      validate_facility_data: {
+        Args: { facilidades_json: Json }
+        Returns: boolean
       }
     }
     Enums: {

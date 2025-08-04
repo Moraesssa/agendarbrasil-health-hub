@@ -243,9 +243,8 @@ export const appointmentService = {
       configuracoes = scheduleData[0].doctor_config;
       locais = scheduleData[0].locations;
     } else {
-      // Usar dados do fallback
-      configuracoes = medico.configuracoes;
-      locais = medico.locais;
+      // Dados não encontrados via RPC nem query direta
+      throw new Error('Configurações do médico não encontradas');
     }
     
     if (!isValidConfiguration(configuracoes)) {

@@ -112,13 +112,13 @@ export const TimeSlotButton: React.FC<TimeSlotButtonProps> = ({
   }, [handleClick, isDisabled]);
   
   // Touch event handlers for mobile feedback
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLButtonElement>) => {
     if (!isDisabled && !reducedMotion && isTouchDevice) {
       e.currentTarget.style.transform = 'scale(0.95)';
     }
   }, [isDisabled, reducedMotion, isTouchDevice]);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLButtonElement>) => {
     if (!isDisabled && !reducedMotion && isTouchDevice) {
       e.currentTarget.style.transform = 'scale(1)';
     }
@@ -161,7 +161,7 @@ export const TimeSlotButton: React.FC<TimeSlotButtonProps> = ({
         ),
         className
       )}
-      style={getAccessibleStyles}
+      style={{ ...getAccessibleStyles, forcedColorAdjust: 'none' as const }}
       aria-label={ariaLabel}
       aria-pressed={selected}
       aria-disabled={isDisabled}

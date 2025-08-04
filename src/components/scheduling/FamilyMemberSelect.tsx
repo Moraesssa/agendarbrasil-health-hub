@@ -89,16 +89,16 @@ export const FamilyMemberSelect = ({
             className="p-3 bg-white rounded-lg border border-green-200 shadow-sm"
             role="status"
             aria-live="polite"
-            aria-label={`Selecionado para agendamento: ${selectedMember?.isCurrentUser ? 'Você mesmo' : selectedMember?.name || 'Selecionado'}`}
+            aria-label={`Selecionado para agendamento: ${'isCurrentUser' in (selectedMember || {}) ? 'Você mesmo' : (selectedMember as any)?.name || 'Selecionado'}`}
           >
             <div className="flex items-start sm:items-center space-x-3">
               <UserCheck className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-900 text-sm sm:text-base leading-tight">
-                  Agendando para: {selectedMember?.isCurrentUser ? 'Você mesmo' : selectedMember?.name || 'Selecionado'}
+                  Agendando para: {'isCurrentUser' in (selectedMember || {}) ? 'Você mesmo' : (selectedMember as any)?.name || 'Selecionado'}
                 </p>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  {selectedMember?.isCurrentUser ? currentUserName : 'Membro da família'}
+                  {'isCurrentUser' in (selectedMember || {}) ? currentUserName : 'Membro da família'}
                 </p>
               </div>
               {showSuccess && (
