@@ -28,31 +28,9 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Production optimizations
     target: 'es2015',
     minify: mode === 'production' ? 'terser' : false,
     sourcemap: mode === 'development',
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // CRITICAL: Keep React and React-DOM in main chunk to prevent createContext issues
-          if (id.includes('node_modules')) {
-            // Force React to stay in main chunk - NEVER separate it
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react/')) {
-              return 'main'; // Explicitly keep in main chunk
-            }
-            if (id.includes('@supabase/supabase-js')) {
-              return 'supabase-vendor';
-            }
-            if (id.includes('lucide-react') || id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            return 'vendor';
-          }
-        },
-      },
-    },
-    // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
   },
   // Enable dependency pre-bundling for faster dev server
