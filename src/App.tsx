@@ -37,197 +37,71 @@ import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
 
 const queryClient = new QueryClient();
 
-// Enhanced error boundary component with specific undefined property error handling
+// Simplified error boundary component
 interface ErrorBoundaryState {
   hasError: boolean;
-  errorType: 'undefined_property' | 'network' | 'generic' | null;
   errorMessage: string;
-  retryCount: number;
-  canRecover: boolean;
 }
-
-
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   ErrorBoundaryState
 > {
-  private maxRetries = 3;
-  private retryDelay = 2000; // 2 seconds
-
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = {
       hasError: false,
-      errorType: null,
-      errorMessage: '',
-      retryCount: 0,
-      canRecover: false
+      errorMessage: ''
     };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    const errorMessage = error.message;
-    const errorStack = error.stack || '';
-    let errorType: ErrorBoundaryState['errorType'] = 'generic';
-    let canRecover = false;
-
-    // Detect specific error types with more comprehensive patterns
-    if (errorMessage.includes("Cannot read properties of undefined") || 
-        errorMessage.includes("Cannot read property") ||
-        errorMessage.includes("undefined is not an object") ||
-        errorMessage.includes("reading 'length'") ||
-        errorStack.includes("reading 'length'")) {
-      errorType = 'undefined_property';
-      canRecover = true; // These errors can often be recovered from
-    } else if (errorMessage.includes("fetch") || 
-               errorMessage.includes("network") ||
-               errorMessage.includes("Failed to load") ||
-               errorMessage.includes("NetworkError")) {
-      errorType = 'network';
-      canRecover = true;
-    }
-
     return {
       hasError: true,
-      errorType,
-      errorMessage,
-      canRecover
+      errorMessage: error.message
     };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Use the enhanced error logger
-    const errorId = errorLogger.logError(
-      error,
-      this.state.errorType || 'generic',
-      {
+    // Log error for debugging
+    console.error('Error caught by boundary:', error, errorInfo);
+    
+    // Use the error logger if available
+    if (errorLogger?.logError) {
+      errorLogger.logError(error, 'generic', {
         componentStack: errorInfo.componentStack,
-        stack: errorInfo.componentStack,
-        location: window.location.pathname,
-        retryAttempt: this.state.retryCount + 1
-      },
-      this.state.retryCount
-    );
-
-    console.log(`Error logged with ID: ${errorId}`);
-
-    // Attempt automatic recovery for recoverable errors
-    if (this.state.canRecover && this.state.retryCount < this.maxRetries) {
-      this.attemptRecovery();
+        location: window.location.pathname
+      });
     }
   }
 
-
-
-  private attemptRecovery = () => {
-    console.log(`🔄 Attempting automatic recovery (attempt ${this.state.retryCount + 1}/${this.maxRetries})`);
-    
-    setTimeout(() => {
-      this.setState(prevState => ({
-        hasError: false,
-        errorType: null,
-        errorMessage: '',
-        retryCount: prevState.retryCount + 1,
-        canRecover: true
-      }));
-    }, this.retryDelay);
-  };
-
-  private handleManualRetry = () => {
-    console.log('🔄 Manual retry initiated by user');
-    this.setState({
-      hasError: false,
-      errorType: null,
-      errorMessage: '',
-      retryCount: 0,
-      canRecover: false
-    });
-  };
-
   private handleReload = () => {
-    console.log('🔄 Page reload initiated by user');
     window.location.reload();
   };
 
-  private getErrorTitle(): string {
-    switch (this.state.errorType) {
-      case 'undefined_property':
-        return 'Erro de Dados Não Carregados';
-      case 'network':
-        return 'Erro de Conexão';
-      default:
-        return 'Algo deu errado';
-    }
-  }
-
-  private getErrorDescription(): string {
-    switch (this.state.errorType) {
-      case 'undefined_property':
-        return 'Os dados ainda estão sendo carregados. Tentando novamente automaticamente...';
-      case 'network':
-        return 'Problema de conexão detectado. Verifique sua internet e tente novamente.';
-      default:
-        return 'Ocorreu um erro inesperado. Por favor, recarregue a página.';
-    }
-  }
-
   render() {
     if (this.state.hasError) {
-      const showRetryButton = this.state.retryCount < this.maxRetries && this.state.canRecover;
-      
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center max-w-md mx-auto p-6">
-            <div className="mb-4">
-              {this.state.errorType === 'undefined_property' && (
-                <div className="w-16 h-16 mx-auto mb-4 text-yellow-500">
-                  ⚠️
-                </div>
-              )}
-              {this.state.errorType === 'network' && (
-                <div className="w-16 h-16 mx-auto mb-4 text-red-500">
-                  🌐
-                </div>
-              )}
-              {this.state.errorType === 'generic' && (
-                <div className="w-16 h-16 mx-auto mb-4 text-red-500">
-                  ❌
-                </div>
-              )}
+            <div className="w-16 h-16 mx-auto mb-4 text-red-500">
+              ❌
             </div>
             
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              {this.getErrorTitle()}
+              Algo deu errado
             </h2>
             
             <p className="text-gray-600 mb-4">
-              {this.getErrorDescription()}
+              Ocorreu um erro inesperado. Por favor, recarregue a página.
             </p>
 
-            {this.state.retryCount > 0 && (
-              <p className="text-sm text-gray-500 mb-4">
-                Tentativa {this.state.retryCount} de {this.maxRetries}
-              </p>
-            )}
-
-            <div className="space-y-2">
-              {showRetryButton && (
-                <button
-                  onClick={this.handleManualRetry}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Tentar Novamente
-                </button>
-              )}
-              
-              <button
-                onClick={this.handleReload}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-              >
-                Recarregar Página
-              </button>
-            </div>
+            <button
+              onClick={this.handleReload}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Recarregar Página
+            </button>
 
             {process.env.NODE_ENV === 'development' && (
               <details className="mt-4 text-left">

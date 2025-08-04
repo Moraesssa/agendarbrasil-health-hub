@@ -2,7 +2,6 @@
  * Accessibility utilities for location components
  * Provides comprehensive accessibility support including ARIA labels,
  * keyboard navigation, screen reader announcements, and focus management
- */nouncements, and focus management
  */
 
 // ARIA label generators for location components

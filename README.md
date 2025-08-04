@@ -112,6 +112,32 @@ The core appointment scheduling functionality is managed by a custom React hook 
 - AppointmentService integration for doctor and slot management
 - Real-time availability checking
 
+### Authentication Initialization Hook (`useAuthInitialization`)
+
+O hook `useAuthInitialization` é responsável por garantir que o sistema de autenticação seja inicializado corretamente antes da aplicação principal ser renderizada.
+
+**Funcionalidades Principais:**
+- Verificação dinâmica da integridade dos módulos de autenticação
+- Validação de exportações do AuthContext (useAuth e AuthProvider)
+- Tratamento robusto de erros com recuperação automática
+- Estados de carregamento para feedback visual ao usuário
+
+**Estados Gerenciados:**
+- `isAuthReady`: Indica se a autenticação está pronta para uso
+- `initError`: Captura mensagens de erro durante a inicialização
+
+**Fluxo de Inicialização:**
+1. Importação dinâmica do módulo AuthContext
+2. Verificação se useAuth é uma função válida
+3. Verificação se AuthProvider é uma função válida
+4. Definição do estado como pronto ou captura de erro
+5. Em caso de erro, recarregamento automático da página após 2 segundos
+
+**Casos de Uso:**
+- Componente raiz da aplicação para garantir autenticação funcional
+- Páginas que dependem criticamente do sistema de autenticação
+- Ambientes de desenvolvimento para detectar problemas de configuração
+
 ### Services Architecture
 
 The application uses a service-oriented architecture with dedicated services for:
@@ -123,6 +149,64 @@ The application uses a service-oriented architecture with dedicated services for
 - `specialtyService`: Medical specialty management
 - `mapsService`: Maps integration and location sharing functionality
 - `communicationService`: Comprehensive communication integrations for phone calls, WhatsApp, SMS, email, and system-level sharing
+
+### Authentication System
+
+The authentication system includes robust initialization and error handling through custom hooks:
+
+#### useAuthInitialization Hook
+
+O hook `useAuthInitialization` garante que o sistema de autenticação seja inicializado corretamente antes da renderização da aplicação.
+
+**Funcionalidades:**
+- **Verificação de Módulos**: Valida se os módulos de autenticação estão exportados corretamente
+- **Inicialização Assíncrona**: Carrega dinamicamente o contexto de autenticação
+- **Tratamento de Erros**: Captura e reporta erros de inicialização
+- **Recuperação Automática**: Recarrega a página automaticamente em caso de falha crítica
+- **Estados de Carregamento**: Fornece feedback sobre o status da inicialização
+
+**Retorno:**
+```typescript
+interface AuthInitializationResult {
+  isAuthReady: boolean;    // Indica se a autenticação está pronta para uso
+  initError: string | null; // Mensagem de erro caso a inicialização falhe
+}
+```
+
+**Exemplo de Uso:**
+```tsx
+import { useAuthInitialization } from '@/hooks/useAuthInitialization';
+
+function App() {
+  const { isAuthReady, initError } = useAuthInitialization();
+
+  if (initError) {
+    return (
+      <div className="error-container">
+        <h2>Erro de Inicialização</h2>
+        <p>{initError}</p>
+        <p>A página será recarregada automaticamente...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthReady) {
+    return (
+      <div className="loading-container">
+        <p>Inicializando sistema de autenticação...</p>
+      </div>
+    );
+  }
+
+  return <MainApplication />;
+}
+```
+
+**Validações Realizadas:**
+- Verifica se `useAuth` está exportado como função do AuthContext
+- Verifica se `AuthProvider` está exportado como função do AuthContext
+- Valida a integridade dos módulos de autenticação
+- Detecta problemas de importação circular ou dependências quebradas
 
 ### Location Data Management
 

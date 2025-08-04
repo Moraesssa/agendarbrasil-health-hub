@@ -4,6 +4,46 @@
 
 This document outlines the API endpoints and service methods used in the AgendarBrasil Health Hub appointment scheduling system.
 
+## Authentication Hooks
+
+### useAuthInitialization()
+
+Hook responsável pela inicialização segura do sistema de autenticação da aplicação.
+
+**Returns:**
+```typescript
+interface AuthInitializationResult {
+  isAuthReady: boolean;      // Indica se a autenticação está pronta
+  initError: string | null;  // Mensagem de erro em caso de falha
+}
+```
+
+**Usage:**
+```typescript
+import { useAuthInitialization } from '@/hooks/useAuthInitialization';
+
+const { isAuthReady, initError } = useAuthInitialization();
+
+if (initError) {
+  // Tratar erro de inicialização
+  return <ErrorComponent message={initError} />;
+}
+
+if (!isAuthReady) {
+  // Exibir carregamento
+  return <LoadingComponent />;
+}
+
+// Prosseguir com aplicação
+return <App />;
+```
+
+**Error Handling:**
+- Captura erros de importação do AuthContext
+- Valida exportações de useAuth e AuthProvider
+- Implementa recuperação automática via reload da página
+- Fornece mensagens de erro em português
+
 ## Supabase RPC Functions
 
 ### get_available_states()

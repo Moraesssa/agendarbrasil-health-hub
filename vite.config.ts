@@ -35,35 +35,15 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Keep ALL auth-related modules in the main bundle to prevent loading issues
-          if (id.includes('contexts/AuthContext') || 
-              id.includes('hooks/useAuthState') || 
-              id.includes('hooks/useAuthActions') ||
-              id.includes('hooks/useAuthInitialization') ||
-              id.includes('hooks/useSafeAuth') ||
-              id.includes('types/auth') ||
-              id.includes('utils/moduleLoader') ||
-              id.includes('services/authService')) {
-            return undefined; // Force into main bundle
-          }
-          
-          // Separate vendor chunks for better caching
+          // Simplified chunking strategy
           if (id.includes('node_modules')) {
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
-            if (id.includes('react-router-dom')) {
-              return 'router-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'query-vendor';
-            }
             if (id.includes('@supabase/supabase-js')) {
               return 'supabase-vendor';
             }
+            return 'vendor';
           }
         },
       },

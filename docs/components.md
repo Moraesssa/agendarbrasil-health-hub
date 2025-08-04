@@ -4,6 +4,184 @@
 
 This document provides detailed information about the custom components used in the AgendarBrasil Health Hub application.
 
+## Authentication System Components
+
+### useAuthInitialization Hook
+
+O hook `useAuthInitialization` é um componente crítico do sistema de autenticação que garante a inicialização adequada dos módulos de autenticação antes da renderização da aplicação principal.
+
+#### Propósito
+- Verificar a integridade dos módulos de autenticação durante a inicialização
+- Fornecer estados de carregamento e erro para feedback ao usuário
+- Implementar recuperação automática em caso de falhas críticas
+- Prevenir renderização da aplicação com sistema de autenticação quebrado
+
+#### Interface
+```typescript
+interface AuthInitializationResult {
+  isAuthReady: boolean;      // Estado de prontidão da autenticação
+  initError: string | null;  // Mensagem de erro caso ocorra falha
+}
+
+export const useAuthInitialization = (): AuthInitializationResult
+```
+
+#### Funcionalidades Principais
+
+**Verificação de Módulos:**
+- Importação dinâmica do `@/contexts/AuthContext`
+- Validação se `useAuth` está exportado como função
+- Validação se `AuthProvider` está exportado como função
+- Detecção de problemas de importação circular
+
+**Tratamento de Erros:**
+- Captura de erros durante importação de módulos
+- Logging detalhado de erros para debugging
+- Mensagens de erro em português para usuários finais
+- Recuperação automática via recarregamento da página
+
+**Estados de Inicialização:**
+- `isAuthReady: false` - Inicialização em progresso
+- `isAuthReady: true` - Autenticação pronta para uso
+- `initError: string` - Erro crítico detectado
+
+#### Exemplo de Implementação
+
+**Uso Básico:**
+```tsx
+import { useAuthInitialization } from '@/hooks/useAuthInitialization';
+
+function App() {
+  const { isAuthReady, initError } = useAuthInitialization();
+
+  // Exibir erro crítico
+  if (initError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-50">
+        <div className="max-w-md p-6 bg-white rounded-lg shadow-lg border border-red-200">
+          <div className="flex items-center mb-4">
+            <AlertTriangle className="h-6 w-6 text-red-600 mr-2" />
+            <h2 className="text-lg font-semibold text-red-800">
+              Erro de Inicialização
+            </h2>
+          </div>
+          <p className="text-red-700 mb-4">{initError}</p>
+          <p className="text-sm text-red-600">
+            A página será recarregada automaticamente em alguns segundos...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Exibir carregamento
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-orange-500" />
+          <p className="text-gray-600">Inicializando sistema de autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Renderizar aplicação principal
+  return (
+    <AuthProvider>
+      <MainApplication />
+    </AuthProvider>
+  );
+}
+```
+
+**Uso Avançado com Retry Manual:**
+```tsx
+function AppWithRetry() {
+  const { isAuthReady, initError } = useAuthInitialization();
+  const [retryCount, setRetryCount] = useState(0);
+
+  const handleManualRetry = () => {
+    setRetryCount(prev => prev + 1);
+    window.location.reload();
+  };
+
+  if (initError) {
+    return (
+      <div className="error-container">
+        <h2>Erro de Inicialização</h2>
+        <p>{initError}</p>
+        <p>Tentativas: {retryCount}</p>
+        <Button onClick={handleManualRetry} variant="outline">
+          Tentar Novamente
+        </Button>
+      </div>
+    );
+  }
+
+  // ... resto da implementação
+}
+```
+
+#### Integração com Sistema de Monitoramento
+
+**Logging de Erros:**
+```tsx
+useEffect(() => {
+  if (initError) {
+    // Enviar erro para sistema de monitoramento
+    console.error('Auth initialization failed:', {
+      error: initError,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    });
+    
+    // Opcional: enviar para serviço de analytics
+    // analytics.track('auth_initialization_error', { error: initError });
+  }
+}, [initError]);
+```
+
+#### Dependências
+- `React` - useState, useEffect hooks
+- `@/contexts/AuthContext` - Módulo de autenticação (importação dinâmica)
+
+#### Casos de Uso Comuns
+1. **Aplicação Principal**: Garantir autenticação antes de renderizar rotas
+2. **Páginas Protegidas**: Verificar integridade antes de acessar contexto de auth
+3. **Desenvolvimento**: Detectar problemas de configuração rapidamente
+4. **Produção**: Recuperação automática de falhas temporárias
+
+#### Considerações de Performance
+- **Importação Dinâmica**: Evita problemas de dependência circular
+- **Execução Única**: useEffect com array de dependências vazio
+- **Recuperação Rápida**: Timeout de 2 segundos para recarregamento
+- **Estados Mínimos**: Apenas dois estados booleanos para eficiência
+
+#### Troubleshooting
+
+**Problemas Comuns:**
+1. **"useAuth is not properly exported"**: Verificar exportação no AuthContext
+2. **"AuthProvider is not properly exported"**: Verificar exportação do provider
+3. **Recarregamento infinito**: Problema persistente no AuthContext
+4. **Importação circular**: Reorganizar estrutura de imports
+
+**Soluções:**
+```typescript
+// AuthContext.tsx - Estrutura correta de exportação
+export const useAuth = () => {
+  // implementação do hook
+};
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // implementação do provider
+};
+
+// Exportação padrão opcional
+export default { useAuth, AuthProvider };
+```
+
 ## System Components
 
 ### Location Refresh Manager Integration
