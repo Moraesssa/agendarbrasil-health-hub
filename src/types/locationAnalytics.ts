@@ -104,7 +104,9 @@ export interface LocationAnalyticsService {
   // Ratings
   getLocationRating: (locationId: string) => Promise<{ average: number; count: number }>;
   getUserLocationRating: (locationId: string, userId: string) => Promise<LocationFeedback | null>;
-}ort interface LocationAnalytics {
+}
+
+export interface LocationAnalytics {
   locationId: string;
   totalViews: number;
   totalSelections: number;

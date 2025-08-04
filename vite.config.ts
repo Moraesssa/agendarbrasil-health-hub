@@ -35,13 +35,17 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Simplified chunking strategy
+          // Keep React and React-DOM together in main chunk to prevent context issues
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
-            }
             if (id.includes('@supabase/supabase-js')) {
               return 'supabase-vendor';
+            }
+            if (id.includes('lucide-react') || id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            // Don't separate React - keep it in main chunk
+            if (id.includes('react') || id.includes('react-dom')) {
+              return undefined; // Keep in main chunk
             }
             return 'vendor';
           }

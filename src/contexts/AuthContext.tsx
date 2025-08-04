@@ -4,21 +4,18 @@ import { useAuthState } from '@/hooks/useAuthState';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { useSecurityConfig } from '@/hooks/useSecurityConfig';
 
+// Global flag to track context initialization
+let isContextInitialized = false;
+
 // Create context with a default value to avoid undefined issues
 const AuthContext = createContext<AuthContextType | null>(null);
-
-// Create a flag to track if the context is properly initialized
-let isContextInitialized = false;
 
 // Create the useAuth hook with comprehensive error handling
 const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   
   if (!context) {
-    const error = new Error('useAuth must be used within an AuthProvider');
-    console.error('❌ useAuth hook error:', error);
-    console.error('🔍 Context initialized:', isContextInitialized);
-    throw error;
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   
   return context;
