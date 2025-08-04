@@ -1126,6 +1126,29 @@ The application requires specific environment variables for Supabase integration
 **Configuration Validation:**
 The system includes built-in validation through the `SupabaseConfigWarning` component, which automatically detects missing or incorrect configuration and provides user-friendly setup instructions.
 
+### Build Configuration
+
+The application uses Vite with advanced optimization strategies:
+
+**Development Server:**
+- **Port**: 8080 (fixed to avoid conflicts)
+- **Host**: `::` (IPv4 and IPv6 support)
+- **Hot Module Replacement**: Enabled via React SWC
+
+**Bundle Optimization:**
+- **Manual Chunking**: Intelligent chunk splitting strategy
+  - React/React-DOM: Kept in main chunk to prevent createContext issues
+  - Supabase: Separate vendor chunk for better caching
+  - UI Components: Separate chunk for Lucide React and Radix UI
+- **Minification**: Terser in production, disabled in development
+- **Sourcemaps**: Enabled only in development mode
+- **Bundle Analysis**: Automatic generation of `dist/stats.html` in production builds
+
+**Performance Optimizations:**
+- **Dependency Pre-bundling**: Critical dependencies are pre-bundled for faster dev server startup
+- **Target ES2015**: Balance between bundle size and browser compatibility
+- **Path Aliases**: `@/*` maps to `./src/*` for cleaner imports
+
 ## Testing and Debugging
 
 ### Environment Configuration Testing

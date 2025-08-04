@@ -35,17 +35,17 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Keep React and React-DOM together in main chunk to prevent context issues
+          // CRITICAL: Keep React and React-DOM in main chunk to prevent createContext issues
           if (id.includes('node_modules')) {
+            // Force React to stay in main chunk - NEVER separate it
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react/')) {
+              return 'main'; // Explicitly keep in main chunk
+            }
             if (id.includes('@supabase/supabase-js')) {
               return 'supabase-vendor';
             }
             if (id.includes('lucide-react') || id.includes('@radix-ui')) {
               return 'ui-vendor';
-            }
-            // Don't separate React - keep it in main chunk
-            if (id.includes('react') || id.includes('react-dom')) {
-              return undefined; // Keep in main chunk
             }
             return 'vendor';
           }
@@ -65,5 +65,7 @@ export default defineConfig(({ mode }) => ({
       '@supabase/supabase-js',
       'lucide-react',
     ],
+    // Force React to be pre-bundled to prevent context issues
+    force: true,
   },
 }));

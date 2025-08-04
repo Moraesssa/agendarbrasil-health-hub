@@ -4,6 +4,37 @@
 
 This document provides detailed information about the custom components used in the AgendarBrasil Health Hub application.
 
+## Build Optimization for Components
+
+### Component Loading Strategy
+
+Os componentes são otimizados para carregamento eficiente através da configuração de build:
+
+**Chunking Strategy:**
+- **Core Components**: Componentes críticos (AuthContext, SupabaseConfigWarning) permanecem no chunk principal
+- **UI Components**: Componentes shadcn/ui são agrupados no chunk `ui-vendor`
+- **Feature Components**: Componentes específicos de funcionalidades são carregados sob demanda
+
+**Import Optimization:**
+```typescript
+// ✅ Otimizado - Import específico
+import { Button } from '@/components/ui/button';
+
+// ❌ Evitar - Import de barrel que pode aumentar bundle
+import { Button, Card, Dialog } from '@/components/ui';
+```
+
+**Lazy Loading Pattern:**
+```typescript
+// Para componentes grandes ou raramente usados
+const HeavyComponent = lazy(() => import('@/components/HeavyComponent'));
+
+// Uso com Suspense
+<Suspense fallback={<LoadingSpinner />}>
+  <HeavyComponent />
+</Suspense>
+```
+
 ## Authentication System Components
 
 ### useAuthInitialization Hook

@@ -29,15 +29,17 @@ AgendarBrasil Health Hub is a full-featured healthcare management system that en
 ## Technology Stack
 
 - **Frontend**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **UI Framework**: shadcn/ui components
-- **Styling**: Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Auth + Real-time)
+- **Build Tool**: Vite com SWC para compilação rápida
+- **UI Framework**: shadcn/ui components com Radix UI primitives
+- **Styling**: Tailwind CSS com suporte a dark mode
+- **Backend**: Supabase (PostgreSQL + Auth + Real-time + Edge Functions)
 - **State Management**: React Query (@tanstack/react-query)
 - **Routing**: React Router DOM
-- **Form Handling**: React Hook Form with Zod validation
+- **Form Handling**: React Hook Form com validação Zod
 - **Date Handling**: date-fns
 - **Icons**: Lucide React
+- **Bundle Analysis**: Rollup Plugin Visualizer para análise de bundle
+- **Development Tools**: Lovable Tagger para desenvolvimento
 
 ## Getting Started
 
@@ -318,25 +320,96 @@ O Location Refresh Manager trabalha em conjunto com o `enhancedLocationService` 
 
 ```sh
 # Development server
-npm run dev
+npm run dev                    # Inicia servidor de desenvolvimento na porta 8080
 
 # Production build
-npm run build
+npm run build                  # Build de produção com otimizações completas
 
 # Development build
-npm run build:dev
+npm run build:dev              # Build de desenvolvimento com sourcemaps
 
 # Clean build (removes cache)
-npm run build:clean
+npm run build:clean            # Remove cache e dist, depois faz build limpo
 
 # Clean development (removes cache)
-npm run dev:clean
+npm run dev:clean              # Remove cache do Vite e inicia dev server
 
 # Linting
-npm run lint
+npm run lint                   # Executa ESLint para verificação de código
 
 # Preview production build
-npm run preview
+npm run preview                # Visualiza build de produção localmente
+
+# Environment and validation
+npm run setup                  # Assistente interativo de configuração do ambiente
+npm run test:env               # Valida variáveis de ambiente
+npm run test:connections       # Testa conexões com serviços externos
+npm run validate               # Executa todas as validações
+```
+
+## Configuração de Build e Otimizações
+
+### Configuração do Vite
+
+O projeto utiliza uma configuração avançada do Vite otimizada para performance e desenvolvimento:
+
+#### Servidor de Desenvolvimento
+- **Porta**: 8080 (configurada para evitar conflitos)
+- **Host**: `::` (aceita conexões IPv4 e IPv6)
+- **Hot Module Replacement**: Habilitado via React SWC
+
+#### Plugins Utilizados
+- **@vitejs/plugin-react-swc**: Compilação rápida com SWC
+- **lovable-tagger**: Ferramenta de desenvolvimento (apenas em modo development)
+- **rollup-plugin-visualizer**: Análise de bundle (apenas em produção)
+
+#### Otimizações de Bundle
+
+**Chunking Manual Inteligente:**
+- **React/React-DOM**: Mantidos no chunk principal para evitar problemas com createContext
+- **Supabase**: Chunk separado (`supabase-vendor`) para melhor cache
+- **UI Components**: Chunk separado (`ui-vendor`) para Lucide React e Radix UI
+- **Outros vendors**: Chunk genérico para demais dependências
+
+**Configurações de Build:**
+- **Target**: ES2015 para compatibilidade ampla
+- **Minificação**: Terser em produção, desabilitada em desenvolvimento
+- **Sourcemaps**: Habilitados apenas em modo desenvolvimento
+- **Limite de aviso**: 1000kb para chunks grandes
+
+#### Pré-bundling de Dependências
+
+Para melhor performance do servidor de desenvolvimento, as seguintes dependências são pré-bundled:
+- React e React-DOM
+- React Router DOM
+- Tanstack React Query
+- Supabase JS
+- Lucide React
+
+#### Análise de Bundle
+
+Em builds de produção, é gerado automaticamente um arquivo `dist/stats.html` com:
+- **Tamanho dos chunks**: Análise detalhada de cada chunk
+- **Compressão Gzip**: Tamanhos com compressão Gzip
+- **Compressão Brotli**: Tamanhos com compressão Brotli
+- **Visualização interativa**: Interface gráfica para explorar o bundle
+
+Para visualizar a análise:
+```sh
+npm run build
+# Abrir dist/stats.html no navegador
+```
+
+#### Path Aliases
+
+O projeto utiliza path aliases para imports mais limpos:
+- `@/*` mapeia para `./src/*`
+
+Exemplo de uso:
+```typescript
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { appointmentService } from '@/services/appointmentService';
 ```
 
 ### Testing and Debugging Tools
