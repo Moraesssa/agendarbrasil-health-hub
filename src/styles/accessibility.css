@@ -1,73 +1,10 @@
-/* Accessibility enhancements for WCAG compliance */
+/**
+ * Accessibility-specific CSS styles
+ * Provides comprehensive accessibility support including screen reader content,
+ * high contrast mode, reduced motion, and focus management
+ */
 
-/* Enhanced focus indicators */
-.focus-ring:focus {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-/* High contrast focus for better visibility */
-.focus-ring:focus-visible {
-  outline: 3px solid #2563eb;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
-}
-
-/* Enhanced button focus states */
-.btn-enhanced-hover:focus {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-.btn-enhanced-hover:focus-visible {
-  outline: 3px solid #2563eb;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
-}
-
-/* Progress step focus indicators */
-.progress-step-active:focus,
-.progress-step-completed:focus {
-  outline: 3px solid #ffffff;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.4);
-}
-
-/* Select component focus enhancement */
-.select-trigger:focus {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-/* Card focus for keyboard navigation */
-.card-focusable:focus {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-/* Skip link for keyboard navigation */
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 6px;
-  background: #2563eb;
-  color: white;
-  padding: 8px;
-  text-decoration: none;
-  border-radius: 4px;
-  z-index: 1000;
-  transition: top 0.3s;
-}
-
-.skip-link:focus {
-  top: 6px;
-}
-
-/* Screen reader only content */
+/* Screen Reader Only Content */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -80,68 +17,540 @@
   border: 0;
 }
 
-/* Ensure sufficient color contrast for error states */
-.error-text {
-  color: #dc2626;
-  font-weight: 500;
+/* Screen Reader Only Content that becomes visible on focus */
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
 }
 
-.error-border {
-  border-color: #dc2626;
-}
-
-/* Success states with good contrast */
-.success-text {
-  color: #059669;
-  font-weight: 500;
-}
-
-.success-border {
-  border-color: #059669;
-}
-
-/* Loading states with proper contrast */
-.loading-text {
-  color: #2563eb;
-}
-
-/* Ensure interactive elements have minimum touch target size */
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* High contrast mode support */
+/* High Contrast Mode Support */
 @media (prefers-contrast: high) {
-  .focus-ring:focus,
-  .focus-ring:focus-visible {
-    outline: 4px solid;
-    outline-offset: 2px;
+  /* Enhanced borders for better visibility */
+  .location-card,
+  .time-slot-button,
+  .facility-badge,
+  .action-button {
+    border: 2px solid !important;
+    outline: 2px solid transparent !important;
+    outline-offset: 2px !important;
   }
-  
-  .btn-enhanced-hover:focus,
-  .btn-enhanced-hover:focus-visible {
-    outline: 4px solid;
-    outline-offset: 2px;
+
+  /* Force colors for high contrast */
+  .location-card {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
+  }
+
+  .location-card.selected {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+    border-color: HighlightText !important;
+  }
+
+  .time-slot-button {
+    background-color: ButtonFace !important;
+    color: ButtonText !important;
+    border-color: ButtonText !important;
+  }
+
+  .time-slot-button:hover,
+  .time-slot-button:focus {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+  }
+
+  .time-slot-button.selected {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+    border-color: HighlightText !important;
+  }
+
+  .time-slot-button:disabled {
+    background-color: GrayText !important;
+    color: Canvas !important;
+    border-color: GrayText !important;
+  }
+
+  /* Facility badges */
+  .facility-badge {
+    background-color: ButtonFace !important;
+    color: ButtonText !important;
+    border-color: ButtonText !important;
+  }
+
+  .facility-badge.available {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+  }
+
+  .facility-badge.unavailable {
+    background-color: GrayText !important;
+    color: Canvas !important;
+  }
+
+  /* Action buttons */
+  .action-button {
+    background-color: ButtonFace !important;
+    color: ButtonText !important;
+    border-color: ButtonText !important;
+  }
+
+  .action-button:hover,
+  .action-button:focus {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+  }
+
+  /* Icons and decorative elements */
+  .decorative-gradient,
+  .shadow-lg,
+  .shadow-md {
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Force color adjustments off for better control */
+  * {
+    forced-color-adjust: none;
   }
 }
 
-/* Reduced motion support */
+/* Windows High Contrast Mode (legacy) */
+@media (-ms-high-contrast: active) {
+  .location-card,
+  .time-slot-button,
+  .facility-badge,
+  .action-button {
+    border: 2px solid windowText !important;
+    background-color: window !important;
+    color: windowText !important;
+  }
+
+  .location-card.selected,
+  .time-slot-button.selected {
+    background-color: highlight !important;
+    color: highlightText !important;
+    border-color: highlightText !important;
+  }
+
+  .time-slot-button:disabled {
+    background-color: grayText !important;
+    color: window !important;
+    border-color: grayText !important;
+  }
+}
+
+/* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-  .transition-all,
-  .animate-spin,
-  .animate-pulse {
+  /* Disable all animations and transitions */
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Remove transform animations */
+  .location-card:hover,
+  .time-slot-button:hover,
+  .action-button:hover {
+    transform: none !important;
+  }
+
+  /* Remove scale animations */
+  .location-card:active,
+  .time-slot-button:active,
+  .action-button:active {
+    transform: none !important;
+  }
+
+  /* Disable parallax and auto-playing media */
+  .parallax {
+    transform: none !important;
+  }
+
+  video {
+    animation-play-state: paused !important;
   }
 }
 
-/* Dark mode accessibility */
-@media (prefers-color-scheme: dark) {
-  .focus-ring:focus,
-  .focus-ring:focus-visible {
-    outline-color: #60a5fa;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+/* Enhanced Focus Indicators */
+.focus-visible,
+*:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+
+/* Custom focus styles for specific components */
+.location-card:focus-visible {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.2) !important;
+}
+
+.time-slot-button:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
+}
+
+.facility-badge:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 1px !important;
+}
+
+.action-button:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+/* Skip Links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Touch Target Optimization */
+@media (pointer: coarse) {
+  /* Ensure minimum touch target size of 44px */
+  .location-card,
+  .time-slot-button,
+  .action-button,
+  .facility-badge {
+    min-height: 44px !important;
+    min-width: 44px !important;
   }
+
+  /* Increase spacing for touch devices */
+  .location-actions {
+    gap: 12px !important;
+  }
+
+  .facility-list {
+    gap: 8px !important;
+  }
+
+  .time-slot-grid {
+    gap: 8px !important;
+  }
+}
+
+/* Print Styles for Accessibility */
+@media print {
+  /* Ensure good contrast in print */
+  .location-card,
+  .time-slot-button,
+  .facility-badge {
+    background: white !important;
+    color: black !important;
+    border: 1px solid black !important;
+  }
+
+  /* Hide decorative elements */
+  .decorative-gradient,
+  .shadow-lg,
+  .shadow-md {
+    display: none !important;
+  }
+
+  /* Show URLs for links */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  /* Ensure important information is visible */
+  .sr-only {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    clip: auto !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+  }
+}
+
+/* Dark Mode Accessibility */
+@media (prefers-color-scheme: dark) {
+  /* Ensure sufficient contrast in dark mode */
+  .location-card {
+    background-color: #1f2937;
+    color: #f9fafb;
+    border-color: #4b5563;
+  }
+
+  .location-card.selected {
+    background-color: #1e40af;
+    color: #dbeafe;
+    border-color: #3b82f6;
+  }
+
+  .time-slot-button {
+    background-color: #374151;
+    color: #f9fafb;
+    border-color: #6b7280;
+  }
+
+  .time-slot-button:hover {
+    background-color: #4b5563;
+  }
+
+  .time-slot-button.selected {
+    background-color: #ea580c;
+    color: #fed7aa;
+    border-color: #f97316;
+  }
+
+  .facility-badge {
+    background-color: #374151;
+    color: #f9fafb;
+    border-color: #6b7280;
+  }
+
+  .facility-badge.available {
+    background-color: #065f46;
+    color: #a7f3d0;
+    border-color: #10b981;
+  }
+
+  .action-button {
+    background-color: #374151;
+    color: #f9fafb;
+    border-color: #6b7280;
+  }
+
+  .action-button:hover {
+    background-color: #4b5563;
+  }
+}
+
+/* Keyboard Navigation Indicators */
+.keyboard-navigation-active {
+  /* Show focus indicators more prominently during keyboard navigation */
+}
+
+.keyboard-navigation-active *:focus {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Loading States for Accessibility */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-skeleton {
+    animation: none;
+    background: #f0f0f0;
+  }
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error States */
+.error-state {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+}
+
+.error-state:focus {
+  outline-color: #dc2626 !important;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2) !important;
+}
+
+/* Success States */
+.success-state {
+  border-color: #16a34a !important;
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+}
+
+.success-state:focus {
+  outline-color: #16a34a !important;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2) !important;
+}
+
+/* Live Region Styling */
+.live-region {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Tooltip Accessibility */
+.tooltip {
+  background-color: #1f2937;
+  color: #f9fafb;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  max-width: 300px;
+  z-index: 1000;
+}
+
+.tooltip[role="tooltip"] {
+  /* Ensure tooltips are properly announced */
+}
+
+/* Modal and Dialog Accessibility */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-content:focus {
+  outline: none;
+}
+
+/* Responsive Text Sizing for Accessibility */
+@media (max-width: 640px) {
+  /* Ensure text is large enough on mobile */
+  .location-card,
+  .time-slot-button,
+  .facility-badge,
+  .action-button {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+}
+
+/* Custom Properties for Accessibility */
+:root {
+  --focus-color: #2563eb;
+  --focus-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+  --error-color: #dc2626;
+  --success-color: #16a34a;
+  --warning-color: #d97706;
+  --info-color: #0891b2;
+  
+  /* Touch target sizes */
+  --touch-target-min: 44px;
+  --touch-spacing: 8px;
+  
+  /* High contrast colors */
+  --hc-text: CanvasText;
+  --hc-background: Canvas;
+  --hc-border: CanvasText;
+  --hc-highlight-bg: Highlight;
+  --hc-highlight-text: HighlightText;
+}
+
+/* Utility Classes for Accessibility */
+.visually-hidden {
+  @apply sr-only;
+}
+
+.focus-visible-only {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.focus-visible-only:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.keyboard-only {
+  display: none;
+}
+
+.keyboard-navigation-active .keyboard-only {
+  display: block;
+}
+
+.touch-only {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .touch-only {
+    display: block;
+  }
+}
+
+/* Animation Utilities with Reduced Motion Support */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-in,
+  .animate-scale-in {
+    animation: none;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }

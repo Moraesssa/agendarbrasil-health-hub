@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Integrações de Comunicação - AgendarBrasil</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .button.whatsapp {
+            background: #25d366;
+        }
+        .button.email {
+            background: #ea4335;
+        }
+        .button.sms {
+            background: #8b5cf6;
+        }
+        .button.system {
+            background: #6b7280;
+        }
+        .info {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #f0fdf4;
+            border: 1px solid #22c55e;
+            color: #15803d;
+        }
+        .error {
+            background: #fef2f2;
+            border: 1px solid #ef4444;
+            color: #dc2626;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status.supported {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.not-supported {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏥 Teste de Integrações de Comunicação</h1>
+    <p>Esta página testa as funcionalidades de comunicação implementadas para o AgendarBrasil Health Hub.</p>
+
+    <div class="card">
+        <h2>📱 Capacidades do Dispositivo</h2>
+        <ul class="feature-list">
+            <li>
+                <strong>Chamadas Telefônicas:</strong>
+                <span id="phone-support" class="status">Verificando...</span>
+            </li>
+            <li>
+                <strong>SMS:</strong>
+                <span id="sms-support" class="status">Verificando...</span>
+            </li>
+            <li>
+                <strong>Compartilhamento Nativo:</strong>
+                <span id="share-support" class="status">Verificando...</span>
+            </li>
+            <li>
+                <strong>Área de Transferência:</strong>
+                <span id="clipboard-support" class="status">Verificando...</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>🏥 Informações do Local de Teste</h2>
+        <div class="grid">
+            <div>
+                <h3>Estabelecimento</h3>
+                <p><strong>Nome:</strong> Clínica Demo São Paulo</p>
+                <p><strong>Endereço:</strong> Rua das Flores, 123, Centro</p>
+                <p><strong>Telefone:</strong> (11) 98765-4321</p>
+                <p><strong>Email:</strong> contato@clinicademo.com.br</p>
+            </div>
+            <div>
+                <h3>Consulta</h3>
+                <p><strong>Data:</strong> 15/01/2025</p>
+                <p><strong>Horário:</strong> 14:30</p>
+                <p><strong>Médico:</strong> Dr. João Silva</p>
+                <p><strong>Especialidade:</strong> Cardiologia</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🧪 Testes de Comunicação</h2>
+        <p>Clique nos botões abaixo para testar cada funcionalidade:</p>
+
+        <div style="margin: 20px 0;">
+            <h3>📞 Chamada Telefônica</h3>
+            <button class="button" onclick="testPhoneCall()">Testar Chamada</button>
+            <div id="phone-result"></div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h3>💬 WhatsApp</h3>
+            <button class="button whatsapp" onclick="testWhatsAppChat()">Chat WhatsApp</button>
+            <button class="button whatsapp" onclick="testWhatsAppShare()">Compartilhar WhatsApp</button>
+            <div id="whatsapp-result"></div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h3>📧 Email</h3>
+            <button class="button email" onclick="testEmailShare()">Compartilhar Email</button>
+            <div id="email-result"></div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h3>📱 SMS</h3>
+            <button class="button sms" onclick="testSMSShare()">Compartilhar SMS</button>
+            <div id="sms-result"></div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <h3>🔗 Compartilhamento do Sistema</h3>
+            <button class="button system" onclick="testSystemShare()">Compartilhar Sistema</button>
+            <div id="system-result"></div>
+        </div>
+    </div>
+
+    <div class="info">
+        <h3>ℹ️ Informações Importantes</h3>
+        <ul>
+            <li><strong>Dispositivos Móveis:</strong> As funcionalidades funcionam melhor em smartphones e tablets</li>
+            <li><strong>Navegadores:</strong> Alguns recursos podem não estar disponíveis em todos os navegadores</li>
+            <li><strong>Fallbacks:</strong> Quando uma funcionalidade não está disponível, alternativas são oferecidas automaticamente</li>
+            <li><strong>Privacidade:</strong> Nenhuma informação é enviada para servidores externos durante os testes</li>
+        </ul>
+    </div>
+
+    <script>
+        // Mock data for testing
+        const mockLocation = {
+            id: 'demo-001',
+            nome_local: 'Clínica Demo São Paulo',
+            endereco_completo: 'Rua das Flores, 123, Centro',
+            bairro: 'Centro',
+            cidade: 'São Paulo',
+            estado: 'SP',
+            cep: '01234-567',
+            telefone: '11987654321',
+            whatsapp: '11987654321',
+            email: 'contato@clinicademo.com.br',
+            website: 'https://clinicademo.com.br',
+            coordenadas: { lat: -23.5505, lng: -46.6333, precisao: 'exata' },
+            horario_funcionamento: {
+                segunda: { abertura: '08:00', fechamento: '18:00', fechado: false },
+                terca: { abertura: '08:00', fechamento: '18:00', fechado: false },
+                quarta: { abertura: '08:00', fechamento: '18:00', fechado: false },
+                quinta: { abertura: '08:00', fechamento: '18:00', fechado: false },
+                sexta: { abertura: '08:00', fechamento: '17:00', fechado: false },
+                sabado: { abertura: '08:00', fechamento: '12:00', fechado: false },
+                domingo: { abertura: '00:00', fechamento: '00:00', fechado: true }
+            },
+            facilidades: [
+                { type: 'estacionamento', available: true, cost: 'gratuito' },
+                { type: 'acessibilidade', available: true },
+                { type: 'wifi', available: true },
+                { type: 'ar_condicionado', available: true }
+            ],
+            status: 'ativo',
+            ultima_atualizacao: new Date().toISOString(),
+            verificado_em: new Date().toISOString(),
+            fonte_dados: 'manual',
+            instrucoes_acesso: 'Entrada principal pela Rua das Flores. Estacionamento nos fundos.',
+            observacoes_especiais: 'Favor chegar 15 minutos antes da consulta.',
+            horarios_disponiveis: []
+        };
+
+        const mockShareData = {
+            location: mockLocation,
+            appointmentDate: '15/01/2025',
+            appointmentTime: '14:30',
+            doctorName: 'Dr. João Silva',
+            specialty: 'Cardiologia',
+            patientName: 'Maria Santos',
+            additionalNotes: 'Trazer exames anteriores'
+        };
+
+        // Utility functions
+        function formatPhoneNumber(phone) {
+            const cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 11) {
+                return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+            } else if (cleaned.length === 10) {
+                return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+            }
+            return phone;
+        }
+
+        function canMakePhoneCalls() {
+            return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function canSendSMS() {
+            return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function supportsNativeSharing() {
+            return 'share' in navigator;
+        }
+
+        function supportsClipboard() {
+            return 'clipboard' in navigator;
+        }
+
+        function showResult(elementId, success, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="info ${success ? 'success' : 'error'}" style="margin-top: 10px;">
+                ${success ? '✅' : '❌'} ${message}
+            </div>`;
+        }
+
+        // Test functions
+        function testPhoneCall() {
+            try {
+                const phone = mockLocation.telefone;
+                const cleanPhone = phone.replace(/\D/g, '');
+                
+                if (canMakePhoneCalls()) {
+                    window.location.href = `tel:${cleanPhone}`;
+                    showResult('phone-result', true, `Abrindo discador para ${formatPhoneNumber(phone)}`);
+                } else {
+                    showResult('phone-result', false, `Chamadas não suportadas neste dispositivo. Ligue para: ${formatPhoneNumber(phone)}`);
+                }
+            } catch (error) {
+                showResult('phone-result', false, 'Erro ao tentar fazer chamada: ' + error.message);
+            }
+        }
+
+        function testWhatsAppChat() {
+            try {
+                const phone = mockLocation.whatsapp.replace(/\D/g, '');
+                const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
+                const message = 'Olá! Gostaria de confirmar minha consulta.';
+                const whatsappUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+                
+                window.open(whatsappUrl, '_blank');
+                showResult('whatsapp-result', true, 'Abrindo WhatsApp...');
+            } catch (error) {
+                showResult('whatsapp-result', false, 'Erro ao abrir WhatsApp: ' + error.message);
+            }
+        }
+
+        function testWhatsAppShare() {
+            try {
+                const { location, appointmentDate, appointmentTime, doctorName, specialty, patientName } = mockShareData;
+                
+                let message = `🏥 *${location.nome_local}*\n`;
+                message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+                message += `📍 *Endereço:*\n${location.endereco_completo}\n`;
+                message += `${location.bairro}, ${location.cidade} - ${location.estado}\n`;
+                message += `CEP: ${location.cep}\n\n`;
+                message += `📞 *Telefone:* ${formatPhoneNumber(location.telefone)}\n`;
+                message += `📧 *Email:* ${location.email}\n\n`;
+                message += `📅 *CONSULTA AGENDADA*\n`;
+                message += `━━━━━━━━━━━━━━━━━━━━\n`;
+                message += `📆 *Data:* ${appointmentDate}\n`;
+                message += `⏰ *Horário:* ${appointmentTime}\n`;
+                message += `👤 *Paciente:* ${patientName}\n`;
+                message += `👨‍⚕️ *Médico:* ${doctorName}\n`;
+                message += `🩺 *Especialidade:* ${specialty}\n\n`;
+                message += `🗺️ *Ver no Mapa:*\n`;
+                message += `https://maps.google.com/maps?q=${location.coordenadas.lat},${location.coordenadas.lng}\n\n`;
+                message += `━━━━━━━━━━━━━━━━━━━━\n`;
+                message += `📱 Agendado via *AgendarBrasil*\n`;
+                message += `🌐 Sua saúde em primeiro lugar! 💙`;
+                
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+                
+                window.open(whatsappUrl, '_blank');
+                showResult('whatsapp-result', true, 'Compartilhando informações detalhadas via WhatsApp...');
+            } catch (error) {
+                showResult('whatsapp-result', false, 'Erro ao compartilhar via WhatsApp: ' + error.message);
+            }
+        }
+
+        function testEmailShare() {
+            try {
+                const { location, appointmentDate, appointmentTime, doctorName, specialty, patientName } = mockShareData;
+                
+                const subject = `Consulta Agendada - ${location.nome_local} - ${appointmentDate}`;
+                
+                let body = `INFORMAÇÕES DO ESTABELECIMENTO\n`;
+                body += `${'='.repeat(50)}\n\n`;
+                body += `ESTABELECIMENTO: ${location.nome_local}\n`;
+                body += `ENDEREÇO: ${location.endereco_completo}\n`;
+                body += `LOCALIZAÇÃO: ${location.bairro}, ${location.cidade} - ${location.estado}\n`;
+                body += `CEP: ${location.cep}\n\n`;
+                body += `CONTATO:\n${'-'.repeat(20)}\n`;
+                body += `Telefone: ${formatPhoneNumber(location.telefone)}\n`;
+                body += `Email: ${location.email}\n\n`;
+                body += `DETALHES DA CONSULTA:\n${'='.repeat(25)}\n`;
+                body += `Data: ${appointmentDate}\n`;
+                body += `Horário: ${appointmentTime}\n`;
+                body += `Paciente: ${patientName}\n`;
+                body += `Médico: ${doctorName}\n`;
+                body += `Especialidade: ${specialty}\n\n`;
+                body += `LOCALIZAÇÃO NO MAPA:\n${'-'.repeat(20)}\n`;
+                body += `Google Maps: https://maps.google.com/maps?q=${location.coordenadas.lat},${location.coordenadas.lng}\n\n`;
+                body += `${'='.repeat(50)}\n`;
+                body += `Agendado via AgendarBrasil - Sua saúde em primeiro lugar!\n`;
+                body += `Data de envio: ${new Date().toLocaleString('pt-BR')}\n`;
+                
+                const encodedSubject = encodeURIComponent(subject);
+                const encodedBody = encodeURIComponent(body);
+                const mailtoUrl = `mailto:?subject=${encodedSubject}&body=${encodedBody}`;
+                
+                window.location.href = mailtoUrl;
+                showResult('email-result', true, 'Abrindo cliente de email...');
+            } catch (error) {
+                showResult('email-result', false, 'Erro ao compartilhar via email: ' + error.message);
+            }
+        }
+
+        function testSMSShare() {
+            try {
+                const { location, appointmentDate, appointmentTime, doctorName } = mockShareData;
+                
+                let message = `🏥 ${location.nome_local}\n`;
+                message += `📍 ${location.endereco_completo}\n`;
+                message += `📞 ${formatPhoneNumber(location.telefone)}\n`;
+                message += `📅 ${appointmentDate} ${appointmentTime}`;
+                if (doctorName) {
+                    message += ` - Dr. ${doctorName}`;
+                }
+                
+                if (canSendSMS()) {
+                    const encodedMessage = encodeURIComponent(message);
+                    const smsUrl = `sms:?body=${encodedMessage}`;
+                    window.location.href = smsUrl;
+                    showResult('sms-result', true, 'Abrindo aplicativo de SMS...');
+                } else {
+                    // Fallback: copy to clipboard
+                    if (supportsClipboard()) {
+                        navigator.clipboard.writeText(message).then(() => {
+                            showResult('sms-result', true, 'SMS não disponível. Mensagem copiada para área de transferência.');
+                        });
+                    } else {
+                        showResult('sms-result', false, 'SMS não disponível neste dispositivo.');
+                    }
+                }
+            } catch (error) {
+                showResult('sms-result', false, 'Erro ao compartilhar via SMS: ' + error.message);
+            }
+        }
+
+        function testSystemShare() {
+            if (supportsNativeSharing()) {
+                try {
+                    const { location, appointmentDate, appointmentTime, doctorName, specialty } = mockShareData;
+                    
+                    const title = `Consulta - ${location.nome_local}`;
+                    let text = `🏥 ${location.nome_local}\n`;
+                    text += `📍 ${location.endereco_completo}\n`;
+                    text += `📞 ${formatPhoneNumber(location.telefone)}\n\n`;
+                    text += `📅 CONSULTA AGENDADA\n`;
+                    text += `Data: ${appointmentDate}\n`;
+                    text += `Horário: ${appointmentTime}\n`;
+                    text += `Médico: Dr. ${doctorName}\n`;
+                    text += `Especialidade: ${specialty}\n\n`;
+                    text += `💙 Agendado via AgendarBrasil`;
+                    
+                    const url = `https://maps.google.com/maps?q=${location.coordenadas.lat},${location.coordenadas.lng}`;
+                    
+                    navigator.share({
+                        title: title,
+                        text: text,
+                        url: url
+                    }).then(() => {
+                        showResult('system-result', true, 'Compartilhado com sucesso');
+                    }).catch((error) => {
+                        if (error.name === 'AbortError') {
+                            showResult('system-result', false, 'Compartilhamento cancelado pelo usuário');
+                        } else {
+                            throw error;
+                        }
+                    });
+                } catch (error) {
+                    showResult('system-result', false, 'Erro no compartilhamento: ' + error.message);
+                }
+            } else {
+                // Fallback: copy to clipboard
+                try {
+                    const { location, appointmentDate, appointmentTime, doctorName } = mockShareData;
+                    const shareText = `${location.nome_local}\n${location.endereco_completo}\nConsulta: ${appointmentDate} às ${appointmentTime} - ${doctorName}\nTel: ${formatPhoneNumber(location.telefone)}`;
+                    
+                    if (supportsClipboard()) {
+                        navigator.clipboard.writeText(shareText).then(() => {
+                            showResult('system-result', true, 'Compartilhamento nativo não disponível. Informações copiadas para área de transferência.');
+                        });
+                    } else {
+                        showResult('system-result', false, 'Compartilhamento não disponível neste navegador.');
+                    }
+                } catch (error) {
+                    showResult('system-result', false, 'Erro ao tentar compartilhar: ' + error.message);
+                }
+            }
+        }
+
+        // Check device capabilities on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('phone-support').textContent = canMakePhoneCalls() ? 'Suportado' : 'Não Suportado';
+            document.getElementById('phone-support').className = `status ${canMakePhoneCalls() ? 'supported' : 'not-supported'}`;
+            
+            document.getElementById('sms-support').textContent = canSendSMS() ? 'Suportado' : 'Não Suportado';
+            document.getElementById('sms-support').className = `status ${canSendSMS() ? 'supported' : 'not-supported'}`;
+            
+            document.getElementById('share-support').textContent = supportsNativeSharing() ? 'Suportado' : 'Não Suportado';
+            document.getElementById('share-support').className = `status ${supportsNativeSharing() ? 'supported' : 'not-supported'}`;
+            
+            document.getElementById('clipboard-support').textContent = supportsClipboard() ? 'Suportado' : 'Não Suportado';
+            document.getElementById('clipboard-support').className = `status ${supportsClipboard() ? 'supported' : 'not-supported'}`;
+        });
+    </script>
+</body>
+</html>

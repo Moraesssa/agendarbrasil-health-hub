@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "npm:resend@2.0.0";
 
+// replaced by kiro @2025-02-08T19:55:00Z
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -35,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Buscando detalhes da consulta: ${appointmentId}`);
 
-    // Buscar detalhes da consulta com dados do paciente e médico
+    // Buscar detalhes da consulta com dados do paciente, médico e localização
     const { data: appointment, error: appointmentError } = await supabase
       .from('consultas')
       .select(`
@@ -43,16 +45,32 @@ const handler = async (req: Request): Promise<Response> => {
         patient_profile:profiles!consultas_paciente_id_fkey (
           id,
           email,
-          display_name
+          display_name,
+          telefone
         ),
         doctor_profile:profiles!consultas_medico_id_fkey (
           id,
           email,
-          display_name
+          display_name,
+          especialidade
         )
       `)
       .eq('id', appointmentId)
       .single();
+
+    // Se a consulta tem location_id, buscar dados aprimorados da localização
+    let enhancedLocation = null;
+    if (appointment && appointment.location_id) {
+      const { data: locationData, error: locationError } = await supabase
+        .from('locais_atendimento')
+        .select('*')
+        .eq('id', appointment.location_id)
+        .single();
+
+      if (!locationError && locationData) {
+        enhancedLocation = locationData;
+      }
+    }
 
     if (appointmentError || !appointment) {
       console.error("Erro ao buscar consulta:", appointmentError);

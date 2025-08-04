@@ -258,6 +258,63 @@ node debug-doctor-config.js
 - Active time blocks with lunch break handling
 - Location-based search functionality testing results
 
+## Enhanced Time Slot Display
+
+### TimeSlotButton Component
+
+O sistema de agendamento agora inclui um componente avançado `TimeSlotButton` que oferece uma experiência visual aprimorada para seleção de horários.
+
+#### Funcionalidades de Localização
+
+**Integração com Informações de Estabelecimento:**
+- Badges coloridos para identificação rápida de localizações
+- Sistema de cores consistente baseado em hash do ID da localização
+- Tooltips informativos com nome do estabelecimento
+- Suporte a filtragem visual por localização
+
+**Estados Visuais Aprimorados:**
+- Indicadores claros de disponibilidade, seleção e filtragem
+- Transições suaves e efeitos de hover responsivos
+- Feedback visual imediato para interações do usuário
+- Acessibilidade completa com ARIA labels descritivos
+
+#### Implementação no Fluxo de Agendamento
+
+```typescript
+// Exemplo de integração com o hook de agendamento
+const {
+  models: { selectedTime, locaisComHorarios },
+  setters: { setSelectedTime, setSelectedLocal }
+} = useAppointmentScheduling();
+
+// Renderização de horários com informações de localização
+{locaisComHorarios.map(local => 
+  local.horarios.map(horario => (
+    <TimeSlotButton
+      key={`${local.id}-${horario}`}
+      time={horario}
+      available={true}
+      selected={selectedTime === horario}
+      onClick={() => {
+        setSelectedTime(horario);
+        setSelectedLocal(local);
+      }}
+      locationId={local.id}
+      locationName={local.nome_local}
+      showLocationBadge={true}
+    />
+  ))
+)}
+```
+
+#### Benefícios para a Experiência do Usuário
+
+1. **Identificação Visual Rápida**: Cores consistentes permitem identificação imediata de estabelecimentos
+2. **Informações Contextuais**: Tooltips fornecem detalhes adicionais sem poluir a interface
+3. **Feedback Imediato**: Estados visuais claros para todas as interações
+4. **Acessibilidade Aprimorada**: Suporte completo a tecnologias assistivas
+5. **Filtragem Intuitiva**: Estados visuais para horários filtrados por localização
+
 ## Future Enhancements
 
 - Appointment rescheduling functionality
@@ -268,3 +325,6 @@ node debug-doctor-config.js
 - SMS/Email notifications
 - Holiday and break time handling
 - Dynamic consultation duration per specialty
+- Location-based appointment preferences
+- Real-time availability updates
+- Enhanced location comparison features

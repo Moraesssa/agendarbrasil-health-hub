@@ -43,6 +43,425 @@ const { data } = await supabase.rpc('get_available_cities', {
 });
 ```
 
+## CommunicationService Methods
+
+### makePhoneCall(phoneNumber, options)
+
+Inicia uma chamada telefônica para o número especificado com opções avançadas de fallback.
+
+**Parameters:**
+- `phoneNumber` (string): Número de telefone para ligar
+- `options` (PhoneCallOptions): Opções de configuração
+  - `useWhatsApp?` (boolean): Tentar usar WhatsApp primeiro
+  - `fallbackToWhatsApp?` (boolean): Usar WhatsApp como fallback se chamada falhar
+  - `showConfirmation?` (boolean): Mostrar confirmação antes de ligar
+
+**Returns:**
+```typescript
+Promise<CommunicationResult>
+```
+
+**Usage:**
+```typescript
+const result = await CommunicationService.makePhoneCall(
+  '+5511999999999',
+  { fallbackToWhatsApp: true }
+);
+
+if (result.success) {
+  console.log(`Chamada iniciada via ${result.provider}`);
+} else {
+  console.error(`Erro: ${result.error}`);
+}
+```
+
+### shareViaWhatsApp(data, options)
+
+Compartilha informações detalhadas de localização via WhatsApp com formatação rica.
+
+**Parameters:**
+- `data` (ShareLocationData): Dados da localização e consulta
+- `options` (ShareOptions): Opções de formatação e conteúdo
+
+**Returns:**
+```typescript
+Promise<CommunicationResult>
+```
+
+**Usage:**
+```typescript
+const result = await CommunicationService.shareViaWhatsApp({
+  location: enhancedLocation,
+  appointmentDate: '15/01/2025',
+  appointmentTime: '14:30',
+  doctorName: 'Dr. João Silva',
+  patientName: 'Maria Santos'
+}, {
+  includeDirections: true,
+  includeOperatingHours: true,
+  includeFacilities: true,
+  format: 'detailed'
+});
+```
+
+### shareViaEmail(data, options)
+
+Compartilha informações via cliente de email com formatação estruturada em texto.
+
+**Parameters:**
+- `data` (ShareLocationData): Dados da localização e consulta
+- `options` (ShareOptions): Opções de formatação
+
+**Returns:**
+```typescript
+Promise<CommunicationResult>
+```
+
+### shareViaSMS(data, options)
+
+Compartilha informações via SMS com formatação otimizada para limite de caracteres.
+
+**Parameters:**
+- `data` (ShareLocationData): Dados da localização e consulta
+- `options` (ShareOptions): Opções de formatação
+  - `format?` ('simple' | 'detailed'): Nível de detalhamento da mensagem
+
+**Returns:**
+```typescript
+Promise<CommunicationResult>
+```
+
+### shareViaSystem(data, options)
+
+Usa a Web Share API nativa do sistema operacional para compartilhamento.
+
+**Parameters:**
+- `data` (ShareLocationData): Dados da localização e consulta
+- `options` (ShareOptions): Opções de formatação
+
+**Returns:**
+```typescript
+Promise<CommunicationResult>
+```
+
+**Usage:**
+```typescript
+const result = await CommunicationService.shareViaSystem({
+  location: enhancedLocation,
+  appointmentDate: '15/01/2025',
+  appointmentTime: '14:30'
+}, {
+  includeDirections: true,
+  customMessage: 'Consulta médica agendada:'
+});
+```
+
+### openWhatsAppChat(phoneNumber, message?)
+
+Abre chat do WhatsApp com número específico e mensagem opcional.
+
+**Parameters:**
+- `phoneNumber` (string): Número de telefone (será formatado automaticamente)
+- `message?` (string): Mensagem inicial opcional
+
+**Returns:**
+```typescript
+Promise<CommunicationResult>
+```
+
+## MapsService Methods
+
+### openLocation(location, options)
+
+Opens a location in the user's preferred maps application with intelligent fallback handling.
+
+**Parameters:**
+- `location` (EnhancedLocation): Location object with coordinates and address information
+- `options` (object): Configuration options
+  - `provider?` (MapsProvider): Preferred maps provider ('google' | 'openstreetmap' | 'apple' | 'waze')
+  - `newWindow?` (boolean): Whether to open in new window/tab (default: true)
+  - `fallbackOnError?` (boolean): Enable automatic fallback to other providers (default: true)
+
+**Returns:**
+```typescript
+Promise<{
+  success: boolean;
+  provider: MapsProvider;
+  error?: string;
+}>
+```
+
+**Usage:**
+```typescript
+const result = await mapsService.openLocation(location, {
+  provider: 'google',
+  newWindow: true,
+  fallbackOnError: true
+});
+
+if (result.success) {
+  console.log(`Opened in ${result.provider}`);
+} else {
+  console.error(`Failed to open: ${result.error}`);
+}
+```
+
+### openDirections(destination, options)
+
+Opens directions to a location in the user's preferred maps application.
+
+**Parameters:**
+- `destination` (EnhancedLocation): Target location
+- `options` (object): Configuration options
+  - `origin?` (LocationCoordinates | string): Starting point (default: current location)
+  - `provider?` (MapsProvider): Preferred maps provider
+  - `newWindow?` (boolean): Whether to open in new window/tab (default: true)
+  - `fallbackOnError?` (boolean): Enable automatic fallback (default: true)
+
+**Returns:**
+```typescript
+Promise<{
+  success: boolean;
+  provider: MapsProvider;
+  error?: string;
+}>
+```
+
+### shareLocation(location, method, options)
+
+Shares location information through various communication channels.
+
+**Parameters:**
+- `location` (EnhancedLocation): Location to share
+- `method` ('system' | 'whatsapp' | 'sms' | 'email' | 'copy'): Sharing method
+- `options` (object): Sharing configuration
+  - `message?` (string): Custom message to include
+  - `includeDirections?` (boolean): Include directions link (default: false)
+  - `provider?` (MapsProvider): Maps provider for links
+
+**Returns:**
+```typescript
+Promise<{
+  success: boolean;
+  error?: string;
+}>
+```
+
+**Usage:**
+```typescript
+await mapsService.shareLocation(location, 'whatsapp', {
+  message: 'Consulta médica agendada aqui:',
+  includeDirections: true,
+  provider: 'google'
+});
+```
+
+### getCurrentLocation()
+
+Gets the user's current geographic location using the browser's geolocation API.
+
+**Returns:**
+```typescript
+Promise<LocationCoordinates | null>
+```
+
+**Usage:**
+```typescript
+const currentLocation = await mapsService.getCurrentLocation();
+if (currentLocation) {
+  console.log(`Current position: ${currentLocation.lat}, ${currentLocation.lng}`);
+}
+```
+
+### generateMapViewUrl(location, provider?)
+
+Generates a URL for viewing a location on a specific maps provider.
+
+**Parameters:**
+- `location` (EnhancedLocation): Location to view
+- `provider?` (MapsProvider): Maps provider (auto-detected if not specified)
+
+**Returns:**
+```typescript
+string
+```
+
+### generateDirectionsUrl(destination, origin?, provider?)
+
+Generates a URL for directions to a location.
+
+**Parameters:**
+- `destination` (EnhancedLocation): Target location
+- `origin?` (LocationCoordinates | string): Starting point
+- `provider?` (MapsProvider): Maps provider
+
+**Returns:**
+```typescript
+string
+```
+
+### getAvailableProviders()
+
+Returns a list of maps providers available on the current platform.
+
+**Returns:**
+```typescript
+Promise<MapsProvider[]>
+```
+
+## LocationRefreshManager Methods
+
+### refreshLocation(locationId, priority?)
+
+Agenda o refresh de uma localização específica com prioridade configurável.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+- `priority?` (RefreshPriority): Prioridade do refresh ('critical' | 'normal' | 'background', padrão: 'normal')
+
+**Returns:**
+```typescript
+string // Task ID para acompanhamento
+```
+
+**Usage:**
+```typescript
+const taskId = locationRefreshManager.refreshLocation('loc_123', 'critical');
+```
+
+### refreshLocations(locationIds, priority?)
+
+Agenda o refresh de múltiplas localizações simultaneamente.
+
+**Parameters:**
+- `locationIds` (string[]): Array de identificadores de localização
+- `priority?` (RefreshPriority): Prioridade do refresh (padrão: 'normal')
+
+**Returns:**
+```typescript
+string // Task ID para acompanhamento
+```
+
+**Usage:**
+```typescript
+const taskId = locationRefreshManager.refreshLocations(['loc_1', 'loc_2'], 'normal');
+```
+
+### refreshAllLocations(priority?)
+
+Agenda o refresh de todas as localizações do sistema.
+
+**Parameters:**
+- `priority?` (RefreshPriority): Prioridade do refresh (padrão: 'background')
+
+**Returns:**
+```typescript
+string // Task ID para acompanhamento
+```
+
+**Usage:**
+```typescript
+const taskId = locationRefreshManager.refreshAllLocations('background');
+```
+
+### forceRefresh(locationId)
+
+Força o refresh imediato de uma localização com prioridade máxima, cancelando tasks pendentes para a mesma localização.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+
+**Returns:**
+```typescript
+string // Task ID para acompanhamento
+```
+
+**Usage:**
+```typescript
+const taskId = locationRefreshManager.forceRefresh('loc_123');
+```
+
+### getStats()
+
+Retorna estatísticas detalhadas sobre o sistema de refresh.
+
+**Returns:**
+```typescript
+RefreshStats = {
+  totalRefreshes: number;        // Total de refreshes executados
+  successfulRefreshes: number;   // Refreshes bem-sucedidos
+  failedRefreshes: number;       // Refreshes que falharam
+  averageRefreshTime: number;    // Tempo médio de refresh em ms
+  activeRefreshes: number;       // Refreshes em execução
+  queuedRefreshes: number;       // Refreshes na fila
+}
+```
+
+**Usage:**
+```typescript
+const stats = locationRefreshManager.getStats();
+console.log(`Taxa de sucesso: ${(stats.successfulRefreshes / stats.totalRefreshes * 100).toFixed(1)}%`);
+```
+
+## RefreshUtils Methods
+
+### schedulePeriodicRefresh(intervalMs?)
+
+Agenda refresh periódico automático de todas as localizações.
+
+**Parameters:**
+- `intervalMs?` (number): Intervalo em milissegundos (padrão: 15 minutos)
+
+**Returns:**
+```typescript
+() => void // Função para cancelar o refresh periódico
+```
+
+**Usage:**
+```typescript
+// Agendar refresh a cada 10 minutos
+const stopRefresh = refreshUtils.schedulePeriodicRefresh(10 * 60 * 1000);
+
+// Cancelar quando necessário
+stopRefresh();
+```
+
+### prefreshPopularLocations(locationIds)
+
+Executa refresh preventivo de localizações populares para melhorar performance.
+
+**Parameters:**
+- `locationIds` (string[]): Array de IDs de localizações populares
+
+**Returns:**
+```typescript
+Promise<void>
+```
+
+**Usage:**
+```typescript
+const popularLocations = ['loc_1', 'loc_2', 'loc_3'];
+await refreshUtils.prefreshPopularLocations(popularLocations);
+```
+
+### emergencyRefresh(locationIds)
+
+Executa refresh de emergência com prioridade máxima para localizações críticas.
+
+**Parameters:**
+- `locationIds` (string[]): Array de IDs de localizações críticas
+
+**Returns:**
+```typescript
+string[] // Array de Task IDs para acompanhamento
+```
+
+**Usage:**
+```typescript
+const criticalLocations = ['loc_emergency_1', 'loc_emergency_2'];
+const taskIds = refreshUtils.emergencyRefresh(criticalLocations);
+```
+
 ## AppointmentService Methods
 
 ### getSpecialties()
@@ -138,6 +557,242 @@ await appointmentService.scheduleAppointment({
 
 ## Data Types
 
+### Location Analytics Types
+
+#### LocationAnalytics
+```typescript
+interface LocationAnalytics {
+  locationId: string;           // Identificador único da localização
+  totalViews: number;           // Total de visualizações
+  totalSelections: number;      // Total de seleções
+  selectionRate: number;        // Taxa de conversão (seleções/visualizações)
+  averageRating: number;        // Avaliação média (1-5 estrelas)
+  totalRatings: number;         // Total de avaliações recebidas
+  popularityScore: number;      // Score calculado de popularidade
+  lastUpdated: string;          // Última atualização dos dados
+}
+```
+
+#### LocationFeedback
+```typescript
+interface LocationFeedback {
+  id: string;                   // Identificador único do feedback
+  locationId: string;           // ID da localização
+  userId: string;               // ID do usuário
+  rating: number;               // Avaliação de 1-5 estrelas
+  comment?: string;             // Comentário opcional
+  feedbackType: 'rating' | 'correction' | 'suggestion';  // Tipo de feedback
+  category?: 'facilities' | 'contact' | 'hours' | 'accessibility' | 'general';
+  isVerified: boolean;          // Se o feedback foi verificado
+  createdAt: string;            // Data de criação
+  updatedAt: string;            // Data de atualização
+}
+```
+
+#### LocationCorrection
+```typescript
+interface LocationCorrection {
+  id: string;                   // Identificador único da correção
+  locationId: string;           // ID da localização
+  userId: string;               // ID do usuário que sugeriu
+  fieldName: string;            // Campo que precisa de correção
+  currentValue: string;         // Valor atual
+  suggestedValue: string;       // Valor sugerido
+  description?: string;         // Descrição da correção
+  status: 'pending' | 'approved' | 'rejected';  // Status da correção
+  createdAt: string;            // Data de criação
+  reviewedAt?: string;          // Data de revisão
+  reviewedBy?: string;          // Quem revisou
+}
+```
+
+#### LocationInteraction
+```typescript
+interface LocationInteraction {
+  id: string;                   // Identificador único da interação
+  locationId: string;           // ID da localização
+  userId?: string;              // ID do usuário (opcional para tracking anônimo)
+  sessionId: string;            // ID da sessão
+  interactionType: 'view' | 'select' | 'call' | 'map' | 'share' | 'compare';
+  timestamp: string;            // Timestamp da interação
+  metadata?: {
+    duration?: number;          // Tempo gasto em milissegundos
+    source?: string;            // Como chegou à localização
+    device?: 'mobile' | 'tablet' | 'desktop';  // Tipo de dispositivo
+  };
+}
+```
+
+#### LocationPopularityIndicator
+```typescript
+interface LocationPopularityIndicator {
+  locationId: string;           // ID da localização
+  popularityLevel: 'baixa' | 'média' | 'alta' | 'muito_alta';  // Nível de popularidade
+  popularityScore: number;      // Score numérico de popularidade
+  trendDirection: 'crescendo' | 'estável' | 'decrescendo';     // Direção da tendência
+  recentSelections: number;     // Seleções dos últimos 7 dias
+  comparisonToAverage: number;  // Percentual acima/abaixo da média
+}
+```
+
+#### FeedbackSubmission
+```typescript
+interface FeedbackSubmission {
+  locationId: string;           // ID da localização
+  rating?: number;              // Avaliação opcional (1-5)
+  comment?: string;             // Comentário opcional
+  feedbackType: 'rating' | 'correction' | 'suggestion';  // Tipo de feedback
+  category?: string;            // Categoria do feedback
+  correctionData?: {            // Dados de correção se aplicável
+    fieldName: string;          // Campo a ser corrigido
+    currentValue: string;       // Valor atual
+    suggestedValue: string;     // Valor sugerido
+  };
+}
+```
+
+#### AnalyticsFilters
+```typescript
+interface AnalyticsFilters {
+  dateRange?: {                 // Filtro por período
+    start: string;              // Data de início
+    end: string;                // Data de fim
+  };
+  locationIds?: string[];       // Filtro por localizações específicas
+  interactionTypes?: string[];  // Filtro por tipos de interação
+  deviceTypes?: string[];       // Filtro por tipos de dispositivo
+}
+```
+
+### Location Refresh Manager Types
+
+#### RefreshPriority
+```typescript
+type RefreshPriority = 'critical' | 'normal' | 'background';
+```
+
+#### RefreshStatus
+```typescript
+type RefreshStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
+```
+
+#### RefreshTask
+```typescript
+interface RefreshTask {
+  id: string;                    // Identificador único da task
+  locationId?: string;           // ID da localização (para refresh específico)
+  priority: RefreshPriority;     // Prioridade da task
+  status: RefreshStatus;         // Status atual da task
+  createdAt: Date;              // Data/hora de criação
+  startedAt?: Date;             // Data/hora de início da execução
+  completedAt?: Date;           // Data/hora de conclusão
+  error?: string;               // Mensagem de erro (se houver)
+  retryCount: number;           // Número de tentativas realizadas
+  maxRetries: number;           // Número máximo de tentativas
+}
+```
+
+#### RefreshStats
+```typescript
+interface RefreshStats {
+  totalRefreshes: number;        // Total de refreshes executados
+  successfulRefreshes: number;   // Refreshes bem-sucedidos
+  failedRefreshes: number;       // Refreshes que falharam
+  averageRefreshTime: number;    // Tempo médio de refresh em ms
+  activeRefreshes: number;       // Refreshes em execução no momento
+  queuedRefreshes: number;       // Refreshes aguardando na fila
+}
+```
+
+### Communication Service Types
+
+#### ShareLocationData
+```typescript
+interface ShareLocationData {
+  location: EnhancedLocation;
+  appointmentDate?: string;
+  appointmentTime?: string;
+  doctorName?: string;
+  specialty?: string;
+  patientName?: string;
+  additionalNotes?: string;
+}
+```
+
+#### CommunicationResult
+```typescript
+interface CommunicationResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+  provider?: string;
+  fallbackUsed?: boolean;
+}
+```
+
+#### PhoneCallOptions
+```typescript
+interface PhoneCallOptions {
+  useWhatsApp?: boolean;
+  fallbackToWhatsApp?: boolean;
+  showConfirmation?: boolean;
+}
+```
+
+#### ShareOptions
+```typescript
+interface ShareOptions {
+  includeDirections?: boolean;
+  includeOperatingHours?: boolean;
+  includeFacilities?: boolean;
+  customMessage?: string;
+  format?: 'simple' | 'detailed' | 'appointment';
+}
+```
+
+### Maps Service Types
+
+#### MapsProvider
+```typescript
+type MapsProvider = 'google' | 'openstreetmap' | 'apple' | 'waze';
+```
+
+#### MapsConfig
+```typescript
+interface MapsConfig {
+  defaultProvider: MapsProvider;
+  fallbackProviders: MapsProvider[];
+  googleMapsApiKey?: string;
+}
+```
+
+#### LocationCoordinates
+```typescript
+interface LocationCoordinates {
+  lat: number;
+  lng: number;
+  precisao: 'exata' | 'aproximada';
+}
+```
+
+#### EnhancedLocation
+```typescript
+interface EnhancedLocation {
+  id: string;
+  nome_local: string;
+  coordenadas?: LocationCoordinates;
+  endereco: {
+    logradouro: string;
+    numero: string;
+    cidade: string;
+    uf: string;
+    cep?: string;
+  };
+  telefone?: string;
+  // Additional location properties
+}
+```
+
 ### StateInfo
 ```typescript
 interface StateInfo {
@@ -210,6 +865,212 @@ Consider implementing rate limiting for API calls to prevent abuse and ensure sy
 ## Caching
 
 The system uses React Query for caching API responses. Consider implementing appropriate cache invalidation strategies for real-time data updates.
+
+## LocationAnalyticsService Methods
+
+### trackLocationView(locationId, metadata?)
+
+Registra uma visualização de localização para análise de popularidade e comportamento do usuário.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+- `metadata?` (object): Metadados opcionais da interação
+  - `duration?` (number): Tempo gasto visualizando em milissegundos
+  - `source?` (string): Como o usuário chegou à localização
+  - `device?` (string): Tipo de dispositivo ('mobile' | 'tablet' | 'desktop')
+
+**Returns:**
+```typescript
+Promise<void>
+```
+
+**Usage:**
+```typescript
+await locationAnalyticsService.trackLocationView('loc_123', {
+  duration: 5000,
+  source: 'search',
+  device: 'mobile'
+});
+```
+
+### trackLocationSelection(locationId, metadata?)
+
+Registra uma seleção de localização para cálculo de taxa de conversão.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+- `metadata?` (object): Metadados opcionais da seleção
+
+**Returns:**
+```typescript
+Promise<void>
+```
+
+### trackLocationInteraction(interaction)
+
+Registra uma interação específica com uma localização.
+
+**Parameters:**
+- `interaction` (LocationInteraction): Dados da interação
+  - `locationId` (string): ID da localização
+  - `userId?` (string): ID do usuário (opcional para tracking anônimo)
+  - `sessionId` (string): ID da sessão
+  - `interactionType` ('view' | 'select' | 'call' | 'map' | 'share' | 'compare'): Tipo de interação
+  - `metadata?` (object): Metadados adicionais
+
+**Returns:**
+```typescript
+Promise<void>
+```
+
+**Usage:**
+```typescript
+await locationAnalyticsService.trackLocationInteraction({
+  locationId: 'loc_123',
+  userId: 'user_456',
+  sessionId: 'session_789',
+  interactionType: 'call',
+  metadata: {
+    device: 'mobile',
+    source: 'appointment_booking'
+  }
+});
+```
+
+### getLocationAnalytics(locationId)
+
+Obtém dados analíticos completos de uma localização específica.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+
+**Returns:**
+```typescript
+Promise<LocationAnalytics>
+```
+
+**Usage:**
+```typescript
+const analytics = await locationAnalyticsService.getLocationAnalytics('loc_123');
+console.log(`Taxa de conversão: ${(analytics.selectionRate * 100).toFixed(1)}%`);
+console.log(`Avaliação média: ${analytics.averageRating.toFixed(1)} estrelas`);
+```
+
+### getPopularityIndicators(locationIds)
+
+Obtém indicadores de popularidade para múltiplas localizações.
+
+**Parameters:**
+- `locationIds` (string[]): Array de identificadores de localização
+
+**Returns:**
+```typescript
+Promise<LocationPopularityIndicator[]>
+```
+
+**Usage:**
+```typescript
+const indicators = await locationAnalyticsService.getPopularityIndicators(['loc_1', 'loc_2']);
+indicators.forEach(indicator => {
+  console.log(`${indicator.locationId}: ${indicator.popularityLevel} (${indicator.trendDirection})`);
+});
+```
+
+### submitFeedback(feedback)
+
+Submete feedback ou avaliação para uma localização.
+
+**Parameters:**
+- `feedback` (FeedbackSubmission): Dados do feedback
+  - `locationId` (string): ID da localização
+  - `rating?` (number): Avaliação de 1-5 estrelas
+  - `comment?` (string): Comentário opcional
+  - `feedbackType` ('rating' | 'correction' | 'suggestion'): Tipo de feedback
+  - `category?` (string): Categoria do feedback
+  - `correctionData?` (object): Dados de correção se aplicável
+
+**Returns:**
+```typescript
+Promise<string> // ID do feedback criado
+```
+
+**Usage:**
+```typescript
+const feedbackId = await locationAnalyticsService.submitFeedback({
+  locationId: 'loc_123',
+  rating: 5,
+  comment: 'Excelente atendimento e instalações modernas',
+  feedbackType: 'rating',
+  category: 'general'
+});
+```
+
+### getLocationFeedback(locationId)
+
+Obtém todos os feedbacks de uma localização específica.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+
+**Returns:**
+```typescript
+Promise<LocationFeedback[]>
+```
+
+### submitCorrection(correction)
+
+Submete uma correção para informações desatualizadas de uma localização.
+
+**Parameters:**
+- `correction` (LocationCorrection): Dados da correção
+  - `locationId` (string): ID da localização
+  - `userId` (string): ID do usuário que sugere a correção
+  - `fieldName` (string): Campo que precisa de correção
+  - `currentValue` (string): Valor atual
+  - `suggestedValue` (string): Valor sugerido
+  - `description?` (string): Descrição da correção
+
+**Returns:**
+```typescript
+Promise<string> // ID da correção criada
+```
+
+**Usage:**
+```typescript
+const correctionId = await locationAnalyticsService.submitCorrection({
+  locationId: 'loc_123',
+  userId: 'user_456',
+  fieldName: 'telefone',
+  currentValue: '(11) 1234-5678',
+  suggestedValue: '(11) 9876-5432',
+  description: 'Número de telefone atualizado conforme informado pela recepção'
+});
+```
+
+### getLocationRating(locationId)
+
+Obtém a avaliação média e contagem total de avaliações de uma localização.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+
+**Returns:**
+```typescript
+Promise<{ average: number; count: number }>
+```
+
+### getUserLocationRating(locationId, userId)
+
+Obtém a avaliação específica de um usuário para uma localização.
+
+**Parameters:**
+- `locationId` (string): Identificador único da localização
+- `userId` (string): Identificador único do usuário
+
+**Returns:**
+```typescript
+Promise<LocationFeedback | null>
+```
 
 ## Configuration Management
 
