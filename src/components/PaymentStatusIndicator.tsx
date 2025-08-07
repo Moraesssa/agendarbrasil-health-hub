@@ -64,10 +64,10 @@ export const PaymentStatusIndicator = ({
     switch (status) {
       case 'pago':
         return {
-          variant: 'default' as const,
+          variant: 'outline' as const,
           icon: <CheckCircle className="h-3 w-3" />,
           text: 'Pago',
-          color: 'text-green-600'
+          color: 'text-success bg-success/10 border-success/20'
         };
       case 'pendente':
         return {
