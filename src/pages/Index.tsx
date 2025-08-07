@@ -128,7 +128,7 @@ const Index = () => {
             title: "Agendando check-up",
             description: "Exames preventivos são importantes para sua saúde",
           });
-          navigate("/agendamento");
+          navigate("/agendamento?preset=checkup");
         }, "agendar check-up");
         break;
       case "Consulta por telemedicina":

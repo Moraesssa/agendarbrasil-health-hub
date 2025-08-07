@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -25,6 +25,8 @@ import { useErrorHandling } from '@/hooks/useErrorHandling';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getSupabaseConfig, checkSupabaseConnection } from '@/utils/supabaseCheck';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useSearchParams } from 'react-router-dom';
 
 const TOTAL_STEPS = 7;
 
@@ -83,6 +85,17 @@ const Agendamento = () => {
     state: { isLoading, isSubmitting },
     actions: { handleAgendamento, resetSelection }
   } = appointmentHook;
+
+  // Check-up preset support
+  const [searchParams] = useSearchParams();
+  const preset = searchParams.get('preset');
+  const isCheckupPreset = preset === 'checkup';
+
+  const checkupSuggestionsBase = ['Clínica Geral','Cardiologia','Ginecologia','Urologia'];
+  const checkupSuggestions = useMemo(() => {
+    const list = (specialties || []) as string[];
+    return checkupSuggestionsBase.filter((s) => list.includes(s));
+  }, [specialties]);
 
   const selectedPatientName = selectedFamilyMember 
     ? familyMembers?.find(member => member.id === selectedFamilyMember)?.display_name 
@@ -301,16 +314,43 @@ const Agendamento = () => {
         return isLoading && !specialties ? (
           <LoadingSkeleton variant="card" lines={3} />
         ) : (
-          <SpecialtySelect
-            selectedSpecialty={selectedSpecialty}
-            specialties={specialties}
-            isLoading={isLoading}
-            onChange={(value) => {
-              setSelectedSpecialty(value);
-              clearFieldError('specialty');
-            }}
-            disabled={isLoading}
-          />
+          <>
+            {isCheckupPreset && !selectedSpecialty && (
+              <Alert className="mb-4 border-success/30 bg-success/5">
+                <AlertTitle>Check-up preventivo</AlertTitle>
+                <AlertDescription>
+                  <p className="mb-3">Escolha uma especialidade para iniciar seu check-up:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {checkupSuggestions.length > 0 ? (
+                      checkupSuggestions.map((s) => (
+                        <Button
+                          key={s}
+                          variant="outline"
+                          size="sm"
+                          className="border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => setSelectedSpecialty(s)}
+                        >
+                          {s}
+                        </Button>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Use o seletor abaixo para escolher a especialidade.</span>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+            <SpecialtySelect
+              selectedSpecialty={selectedSpecialty}
+              specialties={specialties}
+              isLoading={isLoading}
+              onChange={(value) => {
+                setSelectedSpecialty(value);
+                clearFieldError('specialty');
+              }}
+              disabled={isLoading}
+            />
+          </>
         );
       case 2:
         return isLoading && !states ? (
