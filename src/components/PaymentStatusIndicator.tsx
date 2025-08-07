@@ -88,7 +88,7 @@ export const PaymentStatusIndicator = ({
           variant: 'outline' as const,
           icon: <CreditCard className="h-3 w-3" />,
           text: status,
-          color: 'text-gray-600'
+          color: 'text-muted-foreground'
         };
     }
   };
