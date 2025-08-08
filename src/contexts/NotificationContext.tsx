@@ -44,9 +44,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   return (
     <NotificationContext.Provider value={value}>
       {children}
-      {/* Floating notification bell visible on all pages */}
-      <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
-        <NotificationBadge />
+      {/* Floating notification bell visible on all pages with safe-area offsets and responsive spacing */}
+      <div className="fixed z-[60] right-[calc(env(safe-area-inset-right)+0.75rem)] bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:right-[calc(env(safe-area-inset-right)+1rem)] sm:bottom-[calc(env(safe-area-inset-bottom)+1rem)] md:right-6 md:bottom-6 pointer-events-none">
+        <div className="pointer-events-auto">
+          <NotificationBadge />
+        </div>
       </div>
     </NotificationContext.Provider>
   );

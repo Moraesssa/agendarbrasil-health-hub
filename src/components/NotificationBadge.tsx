@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface NotificationBadgeProps {
   className?: string;
@@ -48,15 +49,18 @@ export const NotificationBadge = ({ className, onClick }: NotificationBadgeProps
         <Button
           aria-label="Abrir notificações"
           variant="ghost"
-          size="sm"
-          className={`relative ${className ?? ''}`}
+          size="icon"
+          className={cn(
+            "relative h-12 w-12 md:h-10 md:w-10 rounded-full shadow-sm bg-background/80 supports-[backdrop-filter]:bg-background/60 backdrop-blur touch-manipulation",
+            className
+          )}
           onClick={onClick}
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold min-w-[20px]"
+            <Badge
+              variant="destructive"
+              className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold min-w-[20px]"
               aria-label={`${unreadCount} notificações não lidas`}
             >
               {unreadCount > 99 ? '99+' : unreadCount}
@@ -64,7 +68,12 @@ export const NotificationBadge = ({ className, onClick }: NotificationBadgeProps
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="z-50 w-96 p-0 bg-popover text-popover-foreground border shadow-lg">
+      <PopoverContent
+        side="top"
+        align="end"
+        sideOffset={8}
+        className="z-[60] w-[min(92vw,24rem)] xs:w-[min(88vw,24rem)] md:w-96 p-0 bg-popover text-popover-foreground border shadow-lg"
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -92,7 +101,7 @@ export const NotificationBadge = ({ className, onClick }: NotificationBadgeProps
             Sem notificações no momento
           </div>
         ) : (
-          <ScrollArea className="max-h-80">
+          <ScrollArea className="max-h-[min(70vh,20rem)] md:max-h-80">
             <ul className="divide-y">
               {firstItems.map((n) => (
                 <li key={n.id}>
