@@ -1,14 +1,14 @@
 
-import { Bell, Menu, Search, LogIn } from "lucide-react";
+import { Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useNotificationContext } from "@/contexts/NotificationContext";
+import { NotificationBadge } from "@/components/NotificationBadge";
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { unreadCount } = useNotificationContext();
+  
   const navigate = useNavigate();
 
   const handleAuthAction = () => {
@@ -46,14 +46,7 @@ const Header = () => {
                 <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                   <Search className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                  <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-pink-500 text-xs font-bold animate-bounce">
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </Button>
+                <NotificationBadge className="h-9 w-9 sm:h-11 sm:w-11" />
                 <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                   <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>

@@ -69,7 +69,7 @@ export const NotificationBadge = ({ className, onClick }: NotificationBadgeProps
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        side="top"
+        side="bottom"
         align="end"
         sideOffset={8}
         className="z-[60] w-[min(92vw,24rem)] xs:w-[min(88vw,24rem)] md:w-96 p-0 bg-popover text-popover-foreground border shadow-lg"
