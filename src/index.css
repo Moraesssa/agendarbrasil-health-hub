@@ -174,4 +174,9 @@
   .success-highlight {
     @apply border-green-500 bg-green-50 text-green-900;
   }
+
+  /* Kill-switch for legacy floating notification bell in bottom-right */
+  .fixed[class*="bottom"][class*="right"] [aria-label="Abrir notificações"] {
+    display: none !important;
+  }
 }

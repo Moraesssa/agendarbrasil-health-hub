@@ -3,11 +3,12 @@ import { Menu, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { NotificationBadge } from "@/components/NotificationBadge";
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
   
   const navigate = useNavigate();
 
@@ -42,7 +43,7 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
-            {user && <>
+            {user && location.pathname !== "/login" && <>
                 <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-11 sm:w-11 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                   <Search className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
