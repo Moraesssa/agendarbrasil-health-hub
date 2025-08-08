@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { encaminhamentoService } from "@/services/encaminhamentoService";
 import { specialtyService } from "@/services/specialtyService";
@@ -13,9 +14,11 @@ interface NovoEncaminhamentoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  prefillEspecialidade?: string;
+  prefillMedico?: { id: string; display_name: string };
 }
 
-export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess }: NovoEncaminhamentoDialogProps) => {
+export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefillEspecialidade, prefillMedico }: NovoEncaminhamentoDialogProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [especialidades, setEspecialidades] = useState<string[]>([]);
@@ -61,6 +64,16 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess }: Novo
 
     carregarMedicos();
   }, [formData.especialidade]);
+
+  useEffect(() => {
+    if (open) {
+      setFormData(prev => ({
+        ...prev,
+        especialidade: prefillEspecialidade || prev.especialidade,
+        medico_destino_id: prefillMedico?.id || (prefillEspecialidade ? "" : prev.medico_destino_id)
+      }));
+    }
+  }, [open, prefillEspecialidade, prefillMedico]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,36 +154,46 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess }: Novo
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="paciente_cpf">CPF do Paciente</Label>
-            <Input
-              id="paciente_cpf"
-              value={formData.paciente_cpf}
-              onChange={(e) => setFormData(prev => ({ ...prev, paciente_cpf: e.target.value }))}
-              placeholder="000.000.000-00"
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="especialidade">Especialidade *</Label>
-            <Select 
-              value={formData.especialidade} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, especialidade: value, medico_destino_id: "" }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a especialidade" />
-              </SelectTrigger>
-              <SelectContent>
-                {especialidades.map((especialidade) => (
-                  <SelectItem key={especialidade} value={especialidade}>
-                    {especialidade}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {prefillEspecialidade ? (
+            <div className="space-y-2" aria-live="polite">
+              <Label>Resumo da Seleção</Label>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" aria-label={`Especialidade selecionada: ${prefillEspecialidade}`}>
+                  {prefillEspecialidade}
+                </Badge>
+                {prefillMedico && (
+                  <Badge variant="outline" aria-label={`Médico selecionado: ${prefillMedico.display_name}`}>
+                    {prefillMedico.display_name}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Você já selecionou a especialidade{prefillMedico ? " e o médico." : "."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="especialidade">Especialidade *</Label>
+              <Select 
+                value={formData.especialidade} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, especialidade: value, medico_destino_id: "" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a especialidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {especialidades.map((especialidade) => (
+                    <SelectItem key={especialidade} value={especialidade}>
+                      {especialidade}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {medicos.length > 0 && (
+          {medicos.length > 0 && !prefillEspecialidade && (
             <div className="space-y-2">
               <Label htmlFor="medico_destino">Médico Específico (Opcional)</Label>
               <Select 

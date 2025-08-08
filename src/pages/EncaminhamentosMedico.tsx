@@ -34,6 +34,8 @@ const EncaminhamentosMedico = () => {
     medicos: [],
     visible: false
   });
+  const [prefillEspecialidade, setPrefillEspecialidade] = useState<string | undefined>(undefined);
+  const [prefillMedico, setPrefillMedico] = useState<Medico | undefined>(undefined);
   
   const { toast } = useToast();
   
@@ -59,6 +61,8 @@ const EncaminhamentosMedico = () => {
   }, []);
 
   const handleNovoEncaminhamento = () => {
+    setPrefillEspecialidade(undefined);
+    setPrefillMedico(undefined);
     setNovoEncaminhamentoOpen(true);
   };
 
@@ -113,8 +117,12 @@ const EncaminhamentosMedico = () => {
   const handleSelecionarMedico = (medico: Medico, especialidade: string) => {
     // Fechar resultado da busca
     setResultadoBusca(prev => ({ ...prev, visible: false }));
+
+    // Definir pré-preenchimento
+    setPrefillEspecialidade(especialidade);
+    setPrefillMedico(medico);
     
-    // Abrir dialog de novo encaminhamento com dados pré-preenchidos
+    // Abrir dialog de novo encaminhamento
     setNovoEncaminhamentoOpen(true);
     
     toast({
@@ -206,6 +214,8 @@ const EncaminhamentosMedico = () => {
         open={novoEncaminhamentoOpen}
         onOpenChange={setNovoEncaminhamentoOpen}
         onSuccess={carregarEncaminhamentos}
+        prefillEspecialidade={prefillEspecialidade}
+        prefillMedico={prefillMedico}
       />
     </SidebarProvider>
   );
