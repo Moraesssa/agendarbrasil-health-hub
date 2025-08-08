@@ -11,6 +11,9 @@ export interface Notification {
   priority?: string;
   read: boolean;
   created_at: string;
+  // New optional fields for referral CTAs
+  actionUrl?: string;
+  actionRequired?: boolean;
 }
 
 export const useNotifications = () => {
@@ -102,7 +105,10 @@ export const useNotifications = () => {
           type: fn.notification_type,
           priority: fn.priority || 'normal',
           read: fn.read,
-          created_at: fn.created_at
+          created_at: fn.created_at,
+          // map CTA fields from DB
+          actionUrl: fn.action_url ?? undefined,
+          actionRequired: fn.action_required ?? false,
         })),
         ...consultationNotifications
       ];
