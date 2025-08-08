@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { encaminhamentoService } from "@/services/encaminhamentoService";
 import { specialtyService } from "@/services/specialtyService";
+import { PatientSelect } from "@/components/encaminhamentos/PatientSelect";
 
 interface NovoEncaminhamentoDialogProps {
   open: boolean;
@@ -24,13 +24,12 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefil
   const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [medicos, setMedicos] = useState<Array<{id: string, display_name: string}>>([]);
   const [formData, setFormData] = useState({
-    paciente_nome: "",
-    paciente_cpf: "",
     especialidade: "",
     medico_destino_id: "",
     motivo: "",
     observacoes: ""
   });
+  const [selectedPatient, setSelectedPatient] = useState<{ id: string; display_name: string; email?: string } | null>(null);
 
   useEffect(() => {
     const carregarEspecialidades = async () => {
@@ -78,10 +77,10 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefil
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.especialidade || !formData.motivo) {
+    if (!selectedPatient || !formData.especialidade || !formData.motivo) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Selecione o paciente e preencha os campos obrigatórios",
         variant: "destructive"
       });
       return;
@@ -90,12 +89,8 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefil
     setLoading(true);
 
     try {
-      // Por enquanto, vamos criar um paciente temporário ou buscar por CPF
-      // Em uma implementação completa, haveria uma busca de pacientes
-      const pacienteId = "temp-patient-id"; // Substituir por lógica real de busca de paciente
-
       const result = await encaminhamentoService.criarEncaminhamento({
-        paciente_id: pacienteId,
+        paciente_id: selectedPatient.id,
         especialidade: formData.especialidade,
         motivo: formData.motivo,
         observacoes: formData.observacoes || undefined,
@@ -108,13 +103,12 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefil
           description: "Encaminhamento criado com sucesso"
         });
         setFormData({
-          paciente_nome: "",
-          paciente_cpf: "",
           especialidade: "",
           medico_destino_id: "",
           motivo: "",
           observacoes: ""
         });
+        setSelectedPatient(null);
         onSuccess();
         onOpenChange(false);
       } else {
@@ -144,13 +138,11 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefil
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="paciente_nome">Nome do Paciente *</Label>
-            <Input
-              id="paciente_nome"
-              value={formData.paciente_nome}
-              onChange={(e) => setFormData(prev => ({ ...prev, paciente_nome: e.target.value }))}
-              placeholder="Digite o nome do paciente"
-              required
+            <Label>Paciente *</Label>
+            <PatientSelect
+              value={selectedPatient}
+              onChange={setSelectedPatient}
+              placeholder="Buscar e selecionar paciente"
             />
           </div>
 
@@ -241,7 +233,7 @@ export const NovoEncaminhamentoDialog = ({ open, onOpenChange, onSuccess, prefil
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
+            <Button type="submit" disabled={loading || !selectedPatient} className="flex-1">
               {loading ? "Criando..." : "Criar Encaminhamento"}
             </Button>
           </div>
