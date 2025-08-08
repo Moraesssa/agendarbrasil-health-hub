@@ -1,6 +1,7 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { NotificationBadge } from '@/components/NotificationBadge';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -43,6 +44,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   return (
     <NotificationContext.Provider value={value}>
       {children}
+      {/* Floating notification bell visible on all pages */}
+      <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
+        <NotificationBadge />
+      </div>
     </NotificationContext.Provider>
   );
 };
