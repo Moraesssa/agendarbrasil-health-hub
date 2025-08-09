@@ -220,7 +220,7 @@ export const TimeSlotButton: React.FC<TimeSlotButtonProps> = ({
   );
 
   // Wrap with tooltip if location information is available
-  if (locationName && !isDisabled) {
+  if (locationName && !isDisabled && !isTouchDevice) {
     return (
       <TooltipProvider>
         <Tooltip>

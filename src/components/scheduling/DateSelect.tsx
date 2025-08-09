@@ -13,7 +13,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { useAvailableDates } from "@/hooks/useAvailableDates";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DateSelectProps {
   doctorId: string;
@@ -37,6 +39,9 @@ export function DateSelect({
   onChange
 }: DateSelectProps) {
   const dateValue = selectedDate ? new Date(selectedDate.replace(/-/g, '/')) : undefined;
+
+  const isMobile = useIsMobile();
+  const [open, setOpen] = React.useState(false);
 
   // Use the available dates hook
   const { 
@@ -62,6 +67,7 @@ export function DateSelect({
       } else if (onChange) {
         onChange(formattedDate);
       }
+      if (isMobile) setOpen(false);
     }
   };
 
@@ -112,133 +118,269 @@ export function DateSelect({
         {/* Date Selection Section */}
         <div className="space-y-4">
           <div className="relative">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-14 justify-start text-left font-medium border-2 transition-all duration-200",
-                    "hover:border-blue-300 hover:bg-blue-50/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                    selectedDate 
-                      ? "border-green-300 bg-green-50/50 text-green-800" 
-                      : "border-gray-200 text-gray-600",
-                    disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""
-                  )}
-                  disabled={disabled || isLoading}
-                  aria-label={
-                    isLoading 
-                      ? "Carregando datas disponíveis" 
-                      : selectedDate 
-                        ? `Data selecionada: ${format(dateValue!, "EEEE, dd 'de' MMMM", { locale: ptBR })}`
-                        : "Clique para selecionar uma data"
-                  }
-                  aria-expanded="false"
-                  aria-haspopup="dialog"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    {isLoading ? (
-                      <>
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Carregando datas...</p>
-                          <p className="text-xs text-gray-500">Aguarde um momento</p>
-                        </div>
-                      </>
-                    ) : selectedDate ? (
-                      <>
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{format(dateValue!, "EEEE, dd 'de' MMMM", { locale: ptBR })}</p>
-                          <p className="text-xs text-gray-500">Data selecionada</p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="p-2 bg-gray-100 rounded-lg">
-                          <CalendarIcon className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Escolha uma data</p>
-                          <p className="text-xs text-gray-500">Clique para abrir o calendário</p>
-                        </div>
-                      </>
+            {isMobile ? (
+              <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-14 justify-start text-left font-medium border-2 transition-all duration-200",
+                      "hover:border-blue-300 hover:bg-blue-50/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                      selectedDate 
+                        ? "border-green-300 bg-green-50/50 text-green-800" 
+                        : "border-gray-200 text-gray-600",
+                      disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""
                     )}
-                  </div>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent 
-                className="w-auto p-0 shadow-xl border-0" 
-                align="start"
-                role="dialog"
-                aria-label="Seletor de data"
-              >
-                {isLoading ? (
-                  <div className="p-6 text-center bg-gradient-to-br from-blue-50 to-white">
-                    <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-3">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                    </div>
-                    <p className="font-medium text-gray-700">Carregando datas disponíveis</p>
-                    <p className="text-sm text-gray-500">Verificando agenda do médico...</p>
-                  </div>
-                ) : error ? (
-                  <div className="p-6 text-center space-y-4 bg-gradient-to-br from-red-50 to-white">
-                    <div className="p-3 bg-red-100 rounded-full w-fit mx-auto">
-                      <Clock className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-red-700 mb-1">
-                        {isRetrying ? "Tentando reconectar..." : "Erro ao carregar datas"}
-                      </p>
-                      <p className="text-sm text-red-600">{error}</p>
-                      {retryCount > 0 && (
-                        <p className="text-xs text-red-500 mt-1">
-                          Tentativa {retryCount} de 3
-                        </p>
+                    disabled={disabled || isLoading}
+                    aria-label={
+                      isLoading 
+                        ? "Carregando datas disponíveis" 
+                        : selectedDate 
+                          ? `Data selecionada: ${format(dateValue!, "EEEE, dd 'de' MMMM", { locale: ptBR })}`
+                          : "Clique para selecionar uma data"
+                    }
+                    aria-expanded={open}
+                    aria-haspopup="dialog"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      {isLoading ? (
+                        <>
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Carregando datas...</p>
+                            <p className="text-xs text-gray-500">Aguarde um momento</p>
+                          </div>
+                        </>
+                      ) : selectedDate ? (
+                        <>
+                          <div className="p-2 bg-green-100 rounded-lg">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{format(dateValue!, "EEEE, dd 'de' MMMM", { locale: ptBR })}</p>
+                            <p className="text-xs text-gray-500">Data selecionada</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Escolha uma data</p>
+                            <p className="text-xs text-gray-500">Toque para abrir o calendário</p>
+                          </div>
+                        </>
                       )}
                     </div>
-                    {!isRetrying && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="border-red-200 text-red-700 hover:bg-red-50"
-                        onClick={() => {
-                          clearError();
-                          refetch();
-                        }}
-                      >
-                        Tentar novamente
-                      </Button>
-                    )}
-                    {isRetrying && (
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-red-600" />
-                        <span className="text-sm text-red-600">Reconectando...</span>
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[80vh] h-[80vh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Selecione a Data</DrawerTitle>
+                  </DrawerHeader>
+                  <div className="bg-gradient-to-br from-white to-blue-50/30 px-2 pb-4">
+                    {isLoading ? (
+                      <div className="p-6 text-center">
+                        <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-3">
+                          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                        </div>
+                        <p className="font-medium text-gray-700">Carregando datas disponíveis</p>
+                        <p className="text-sm text-gray-500">Verificando agenda do médico...</p>
+                      </div>
+                    ) : error ? (
+                      <div className="p-6 text-center space-y-4">
+                        <div className="p-3 bg-red-100 rounded-full w-fit mx-auto">
+                          <Clock className="h-6 w-6 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-red-700 mb-1">
+                            {isRetrying ? "Tentando reconectar..." : "Erro ao carregar datas"}
+                          </p>
+                          <p className="text-sm text-red-600">{error}</p>
+                          {retryCount > 0 && (
+                            <p className="text-xs text-red-500 mt-1">
+                              Tentativa {retryCount} de 3
+                            </p>
+                          )}
+                        </div>
+                        {!isRetrying && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-red-200 text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              clearError();
+                              refetch();
+                            }}
+                          >
+                            Tentar novamente
+                          </Button>
+                        )}
+                        {isRetrying && (
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                            <span className="text-sm text-red-600">Reconectando...</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <Calendar
+                          locale={ptBR}
+                          mode="single"
+                          selected={dateValue}
+                          onSelect={handleDateSelect}
+                          initialFocus
+                          disabled={isDateDisabled}
+                          className="rounded-lg border-0 pointer-events-auto"
+                          aria-label="Calendário para seleção de data"
+                          showOutsideDays={false}
+                          fixedWeeks
+                        />
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="bg-gradient-to-br from-white to-blue-50/30">
-                    <Calendar
-                      locale={ptBR}
-                      mode="single"
-                      selected={dateValue}
-                      onSelect={handleDateSelect}
-                      initialFocus
-                      disabled={isDateDisabled}
-                      className="rounded-lg border-0"
-                      aria-label="Calendário para seleção de data"
-                      showOutsideDays={false}
-                      fixedWeeks
-                    />
+                  <div className="p-4">
+                    <DrawerClose asChild>
+                      <Button variant="outline" className="w-full">Fechar</Button>
+                    </DrawerClose>
                   </div>
-                )}
-              </PopoverContent>
-            </Popover>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-14 justify-start text-left font-medium border-2 transition-all duration-200",
+                      "hover:border-blue-300 hover:bg-blue-50/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                      selectedDate 
+                        ? "border-green-300 bg-green-50/50 text-green-800" 
+                        : "border-gray-200 text-gray-600",
+                      disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""
+                    )}
+                    disabled={disabled || isLoading}
+                    aria-label={
+                      isLoading 
+                        ? "Carregando datas disponíveis" 
+                        : selectedDate 
+                          ? `Data selecionada: ${format(dateValue!, "EEEE, dd 'de' MMMM", { locale: ptBR })}`
+                          : "Clique para selecionar uma data"
+                    }
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      {isLoading ? (
+                        <>
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Carregando datas...</p>
+                            <p className="text-xs text-gray-500">Aguarde um momento</p>
+                          </div>
+                        </>
+                      ) : selectedDate ? (
+                        <>
+                          <div className="p-2 bg-green-100 rounded-lg">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{format(dateValue!, "EEEE, dd 'de' MMMM", { locale: ptBR })}</p>
+                            <p className="text-xs text-gray-500">Data selecionada</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Escolha uma data</p>
+                            <p className="text-xs text-gray-500">Clique para abrir o calendário</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-auto p-0 shadow-xl border-0" 
+                  align="start"
+                  role="dialog"
+                  aria-label="Seletor de data"
+                >
+                  {isLoading ? (
+                    <div className="p-6 text-center bg-gradient-to-br from-blue-50 to-white">
+                      <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-3">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                      </div>
+                      <p className="font-medium text-gray-700">Carregando datas disponíveis</p>
+                      <p className="text-sm text-gray-500">Verificando agenda do médico...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="p-6 text-center space-y-4 bg-gradient-to-br from-red-50 to-white">
+                      <div className="p-3 bg-red-100 rounded-full w-fit mx-auto">
+                        <Clock className="h-6 w-6 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-red-700 mb-1">
+                          {isRetrying ? "Tentando reconectar..." : "Erro ao carregar datas"}
+                        </p>
+                        <p className="text-sm text-red-600">{error}</p>
+                        {retryCount > 0 && (
+                          <p className="text-xs text-red-500 mt-1">
+                            Tentativa {retryCount} de 3
+                          </p>
+                        )}
+                      </div>
+                      {!isRetrying && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="border-red-200 text-red-700 hover:bg-red-50"
+                          onClick={() => {
+                            clearError();
+                            refetch();
+                          }}
+                        >
+                          Tentar novamente
+                        </Button>
+                      )}
+                      {isRetrying && (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                          <span className="text-sm text-red-600">Reconectando...</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-gradient-to-br from-white to-blue-50/30">
+                      <Calendar
+                        locale={ptBR}
+                        mode="single"
+                        selected={dateValue}
+                        onSelect={handleDateSelect}
+                        initialFocus
+                        disabled={isDateDisabled}
+                        className="rounded-lg border-0 pointer-events-auto"
+                        aria-label="Calendário para seleção de data"
+                        showOutsideDays={false}
+                        fixedWeeks
+                      />
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            )}
+
           </div>
 
           {/* Status Information */}
