@@ -36,8 +36,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="AgendarBrasil" />
 
-    <!-- Preload non-blocking CSS to eliminate render-blocking -->
-    <link rel="preload" as="style" href="/src/index.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <!-- Async CSS load (non-blocking) with safe fallback; Vite rewrites /src path in prod -->
+    <link rel="stylesheet" href="/src/index.css" media="print" onload="this.onload=null;this.media='all'" />
     <noscript><link rel="stylesheet" href="/src/index.css" /></noscript>
   </head>
 
