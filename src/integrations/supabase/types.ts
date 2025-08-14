@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1789,11 +1789,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rls_enabled: {
+        Args: { table_name: string }
+        Returns: boolean
+      }
       confirm_appointment_payment: {
         Args: { p_appointment_id: string; p_payment_intent_id: string }
         Returns: {
-          success: boolean
           message: string
+          success: boolean
         }[]
       }
       convert_health_metric_to_fhir: {
@@ -1819,19 +1823,19 @@ export type Database = {
       get_doctor_basic_info: {
         Args: { doctor_ids?: string[] }
         Returns: {
-          id: string
           display_name: string
-          user_type: string
+          id: string
           is_active: boolean
           photo_url: string
+          user_type: string
         }[]
       }
       get_doctor_contact_info: {
         Args: { doctor_id: string }
         Returns: {
+          crm: string
           telefone: string
           whatsapp: string
-          crm: string
         }[]
       }
       get_doctor_schedule_data: {
@@ -1842,7 +1846,7 @@ export type Database = {
         }[]
       }
       get_doctor_scheduling_info: {
-        Args: { p_specialty?: string; p_city?: string; p_state?: string }
+        Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
           doctor_id: string
           especialidades: string[]
@@ -1851,70 +1855,70 @@ export type Database = {
         }[]
       }
       get_doctors_by_location_and_specialty: {
-        Args: { p_specialty: string; p_city: string; p_state: string }
+        Args: { p_city: string; p_specialty: string; p_state: string }
         Returns: {
-          id: string
+          crm: string
           display_name: string
           especialidades: string[]
-          crm: string
+          id: string
         }[]
       }
       get_doctors_for_scheduling: {
-        Args: { p_specialty?: string; p_city?: string; p_state?: string }
+        Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
-          id: string
           display_name: string
-          user_type: string
+          has_specialty: boolean
+          id: string
           is_active: boolean
           photo_url: string
-          has_specialty: boolean
+          user_type: string
         }[]
       }
       get_enhanced_location_data: {
         Args: { location_ids?: string[] }
         Returns: {
-          id: string
-          nome_local: string
-          endereco_completo: string
+          ativo: boolean
           bairro: string
-          cidade: string
-          estado: string
           cep: string
-          telefone: string
-          whatsapp: string
-          email: string
-          website: string
+          cidade: string
           coordenadas: Json
-          horario_funcionamento: Json
-          facilidades: Json
-          status: string
-          motivo_fechamento: string
-          previsao_reabertura: string
           descricao: string
+          email: string
+          endereco_completo: string
+          estado: string
+          facilidades: Json
+          facility_count: number
+          fonte_dados: string
+          has_coordinates: boolean
+          horario_funcionamento: Json
+          id: string
           instrucoes_acesso: string
+          is_open_now: boolean
+          medico_id: string
+          motivo_fechamento: string
+          nome_local: string
           observacoes_especiais: string
+          previsao_reabertura: string
+          status: string
+          telefone: string
           ultima_atualizacao: string
           verificado_em: string
-          fonte_dados: string
-          medico_id: string
-          ativo: boolean
-          is_open_now: boolean
-          has_coordinates: boolean
-          facility_count: number
+          website: string
+          whatsapp: string
         }[]
       }
       get_family_members: {
         Args: { user_uuid: string }
         Returns: {
-          id: string
-          family_member_id: string
-          display_name: string
-          email: string
-          relationship: string
-          permission_level: string
+          can_cancel: boolean
           can_schedule: boolean
           can_view_history: boolean
-          can_cancel: boolean
+          display_name: string
+          email: string
+          family_member_id: string
+          id: string
+          permission_level: string
+          relationship: string
           status: string
         }[]
       }
@@ -1922,12 +1926,12 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: {
           activity_type: string
-          patient_name: string
           patient_id: string
-          title: string
+          patient_name: string
           scheduled_date: string
-          urgency: string
           status: string
+          title: string
+          urgency: string
         }[]
       }
       get_my_locations: {
@@ -1966,49 +1970,68 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_table_policies: {
+        Args: { table_name: string }
+        Returns: {
+          cmd: string
+          permissive: string
+          policyname: unknown
+          qual: string
+          roles: string[]
+          with_check: string
+        }[]
+      }
       reserve_appointment_slot: {
         Args: {
-          p_doctor_id: string
-          p_patient_id: string
-          p_family_member_id: string
-          p_scheduled_by_id: string
           p_appointment_datetime: string
+          p_doctor_id: string
+          p_family_member_id: string
+          p_patient_id: string
+          p_scheduled_by_id: string
           p_specialty: string
         }
         Returns: {
-          success: boolean
           appointment_id: string
           message: string
+          success: boolean
         }[]
       }
       search_locations: {
         Args: {
-          search_query?: string
-          filter_cidade?: string
           filter_bairro?: string
-          filter_status?: string[]
+          filter_cidade?: string
           filter_facilidades?: string[]
+          filter_status?: string[]
           has_parking?: boolean
           is_accessible?: boolean
           limit_results?: number
           offset_results?: number
+          search_query?: string
         }
         Returns: {
-          id: string
-          nome_local: string
-          endereco_completo: string
-          cidade: string
           bairro: string
-          telefone: string
-          status: string
-          facilidades: Json
+          cidade: string
           coordenadas: Json
+          endereco_completo: string
+          facilidades: Json
+          id: string
           match_score: number
+          nome_local: string
+          status: string
+          telefone: string
         }[]
       }
       validate_facility_data: {
         Args: { facilidades_json: Json }
         Returns: boolean
+      }
+      validate_payment_table_security: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_name: string
+          details: string
+          status: string
+        }[]
       }
     }
     Enums: {
