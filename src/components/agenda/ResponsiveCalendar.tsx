@@ -241,15 +241,11 @@ export function ResponsiveCalendar({
                               </Button>
                             );
                           }
+                          // Handle retorno type
                           return (
                             <div
                               key={eventIndex}
-                              className={cn(
-                                "w-2 h-2 rounded-full",
-                                event.type === 'consulta' && "bg-teal-500",
-                                event.type === 'exame' && "bg-blue-500",
-                                event.type === 'retorno' && "bg-pink-500"
-                              )}
+                               className="w-2 h-2 rounded-full bg-pink-500"
                             />
                           );
                         })}
