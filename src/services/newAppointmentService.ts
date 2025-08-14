@@ -99,19 +99,22 @@ export const newAppointmentService = {
     try {
       await checkAuthentication();
       
-      const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
+      const { data, error } = await supabase.rpc('get_doctors_for_scheduling', {
         p_specialty: specialty,
         p_city: city,
         p_state: state
       });
       
       if (error) {
-        console.error("❌ Erro na RPC get_doctors_by_location_and_specialty:", error);
+        console.error("❌ Erro na RPC get_doctors_for_scheduling:", error);
         logger.error("Error fetching doctors by location", "NewAppointmentService", error);
         throw error;
       }
       
-      const doctors = (data || []) as Medico[];
+      const doctors = (data || []).map(doctor => ({
+        id: doctor.id,
+        display_name: doctor.display_name
+      }));
       return doctors;
     } catch (error) {
       logger.error("Failed to fetch doctors", "NewAppointmentService", error);

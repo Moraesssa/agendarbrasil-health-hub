@@ -92,7 +92,7 @@ export const appointmentService = {
 
   async getDoctorsByLocationAndSpecialty(specialty: string, city: string, state: string): Promise<Medico[]> {
     await checkAuthentication();
-    const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
+    const { data, error } = await supabase.rpc('get_doctors_for_scheduling', {
       p_specialty: specialty,
       p_city: city,
       p_state: state
@@ -101,7 +101,10 @@ export const appointmentService = {
       logger.error("Error fetching doctors by location", "AppointmentService", error);
       throw error;
     }
-    return (data || []) as Medico[];
+    return (data || []).map(doctor => ({
+      id: doctor.id,
+      display_name: doctor.display_name
+    }));
   },
 
   async getAvailableDates(doctorId: string, startDate?: string, endDate?: string): Promise<string[]> {
