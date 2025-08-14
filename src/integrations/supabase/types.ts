@@ -1816,6 +1816,16 @@ export type Database = {
           uf: string
         }[]
       }
+      get_doctor_basic_info: {
+        Args: { doctor_ids?: string[] }
+        Returns: {
+          id: string
+          display_name: string
+          user_type: string
+          is_active: boolean
+          photo_url: string
+        }[]
+      }
       get_doctor_schedule_data: {
         Args: { p_doctor_id: string }
         Returns: {
