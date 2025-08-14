@@ -1826,11 +1826,28 @@ export type Database = {
           photo_url: string
         }[]
       }
+      get_doctor_contact_info: {
+        Args: { doctor_id: string }
+        Returns: {
+          telefone: string
+          whatsapp: string
+          crm: string
+        }[]
+      }
       get_doctor_schedule_data: {
         Args: { p_doctor_id: string }
         Returns: {
           doctor_config: Json
           locations: Json
+        }[]
+      }
+      get_doctor_scheduling_info: {
+        Args: { p_specialty?: string; p_city?: string; p_state?: string }
+        Returns: {
+          doctor_id: string
+          especialidades: string[]
+          has_active_locations: boolean
+          total_locations: number
         }[]
       }
       get_doctors_by_location_and_specialty: {
