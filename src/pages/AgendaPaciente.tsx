@@ -1,24 +1,22 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Calendar, Clock, MapPin, User, Filter } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { useConsultas } from '@/hooks/useConsultas';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from "@/hooks/use-toast";
 import AppointmentCard from '@/components/appointments/AppointmentCard';
 import AppointmentSkeleton from '@/components/appointments/AppointmentSkeleton';
 import EmptyStateCard from '@/components/appointments/EmptyStateCard';
 import ErrorCard from '@/components/appointments/ErrorCard';
-import { RescheduleDialog } from '@/components/scheduling/RescheduleDialog';
-import { WaitingListDialog } from '@/components/scheduling/WaitingListDialog';
 import { ConsultasStatusFilter } from '@/components/dashboard/ConsultasStatusFilter';
 
 type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
 
 const AgendaPaciente = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showPastAppointments, setShowPastAppointments] = useState(false);
 
@@ -27,7 +25,42 @@ const AgendaPaciente = () => {
     futureOnly: !showPastAppointments
   };
 
-  const { consultas, loading, error, refetch } = useConsultas(filters);
+  const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas(filters);
+
+  // Handlers for AppointmentCard actions
+  const handleConfirmAppointment = async (appointmentId: string) => {
+    const result = await updateConsultaStatus(appointmentId, 'confirmada');
+    if (result.success) {
+      toast({ title: "Consulta confirmada!", description: "Sua presença foi confirmada com sucesso." });
+    } else {
+      toast({ title: "Erro", description: "Não foi possível confirmar a consulta.", variant: "destructive" });
+    }
+  };
+
+  const handleViewDetails = (appointment: any) => {
+    toast({
+      title: "Detalhes da Consulta",
+      description: `Consulta com ${appointment.doctor_profile?.display_name || 'Médico'} em ${new Date(appointment.consultation_date).toLocaleDateString('pt-BR')}.`,
+    });
+  };
+
+  const handleGetDirections = (appointment: any) => {
+    if (appointment.local_consulta) {
+      toast({
+        title: "Obtendo direções...",
+        description: `Abrindo mapa para ${appointment.local_consulta}.`,
+      });
+      // Here you would typically open a map link
+    }
+  };
+
+  const handleStartVideoCall = (appointment: any) => {
+    toast({
+      title: "Iniciando videochamada...",
+      description: "O link para a chamada será disponibilizado 30 minutos antes do início.",
+    });
+    // Here you would typically integrate with a video call service
+  };
 
   if (!user) {
     return (
@@ -96,90 +129,16 @@ const AgendaPaciente = () => {
         />
       ) : (
         <div className="grid gap-6">
-          {consultas.map((consulta) => {
-            const appointmentDate = new Date(consulta.consultation_date || '');
-            const isPast = appointmentDate < new Date();
-            
-            return (
-              <Card key={consulta.id} className={isPast ? 'opacity-75' : ''}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Dr. {consulta.doctor_profile?.display_name || 'Médico'}
-                      </CardTitle>
-                      <Badge variant={
-                        consulta.status === 'agendada' ? 'secondary' :
-                        consulta.status === 'confirmada' ? 'default' :
-                        consulta.status === 'realizada' ? 'secondary' :
-                        'destructive'
-                      }>
-                        {consulta.status === 'agendada' ? 'Agendada' :
-                         consulta.status === 'confirmada' ? 'Confirmada' :
-                         consulta.status === 'realizada' ? 'Realizada' :
-                         consulta.status === 'cancelada' ? 'Cancelada' : consulta.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{appointmentDate.toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{appointmentDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{consulta.consultation_type || 'Consulta Médica'}</span>
-                    {consulta.notes && (
-                      <span className="text-muted-foreground">• {consulta.notes}</span>
-                    )}
-                  </div>
-
-                  {consulta.notes && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm">{consulta.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 pt-2">
-                    {!isPast && consulta.status === 'agendada' && (
-                      <RescheduleDialog
-                        appointmentId={consulta.id}
-                        currentDateTime={consulta.consultation_date || ''}
-                        onReschedule={refetch}
-                      >
-                        <Button variant="outline" size="sm">
-                          Reagendar
-                        </Button>
-                      </RescheduleDialog>
-                    )}
-
-                    {isPast && consulta.status === 'cancelada' && (
-                      <WaitingListDialog
-                        medicoId={consulta.medico_id || ''}
-                        medicoNome={consulta.doctor_profile?.display_name || 'Médico'}
-                        especialidade={consulta.consultation_type || ''}
-                        trigger={
-                          <Button variant="outline" size="sm">
-                            Entrar na Lista de Espera
-                          </Button>
-                        }
-                      />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {consultas.map((consulta) => (
+            <AppointmentCard
+              key={consulta.id}
+              appointment={consulta}
+              onConfirm={handleConfirmAppointment}
+              onViewDetails={handleViewDetails}
+              onGetDirections={handleGetDirections}
+              onStartVideoCall={handleStartVideoCall}
+            />
+          ))}
         </div>
       )}
     </div>
