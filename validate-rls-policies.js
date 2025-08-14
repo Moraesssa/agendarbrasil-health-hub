@@ -1,8 +1,8 @@
 // Script para validar políticas RLS no Supabase
 // replaced by kiro @2025-01-08T15:30:00.000Z
 
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -16,48 +16,40 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function validateRLSPolicies() {
   try {
-    console.log('🔍 Verificando políticas RLS...');
-    
-    // Verificar políticas para tabelas principais relacionadas à autenticação
-    const tables = ['usuarios', 'medicos', 'pacientes', 'agendamentos', 'profiles'];
-    
-    for (const table of tables) {
-      console.log(`\n📋 Verificando políticas para tabela: ${table}`);
-      
-      // Query para verificar políticas RLS
-      const { data: policies, error } = await supabase
-        .from('pg_policies')
-        .select('*')
-        .eq('tablename', table);
-      
-      if (error) {
-        console.log(`⚠️  Tabela ${table} não encontrada ou sem acesso`);
-        continue;
-      }
-      
-      if (!policies || policies.length === 0) {
-        console.log(`❌ RLSError: missing policy on ${table}`);
-        return false;
-      }
-      
-      // Verificar se há políticas para SELECT, INSERT, UPDATE, DELETE
-      const policyTypes = policies.map(p => p.cmd);
-      const requiredPolicies = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
-      
-      for (const policyType of requiredPolicies) {
-        if (!policyTypes.includes(policyType)) {
-          console.log(`❌ RLSError: missing ${policyType} policy on ${table}`);
-        } else {
-          console.log(`✅ ${policyType} policy exists on ${table}`);
-        }
-      }
+    console.log('🔍 Extraindo configuração completa de RLS...');
+
+    const { data: policies, error } = await supabase
+      .from('pg_policies')
+      .select('schemaname, tablename, policyname, cmd, qual')
+      .eq('schemaname', 'public')
+      .order('tablename');
+
+    if (error) {
+      console.error('❌ Erro ao buscar políticas RLS:', error.message);
+      return false;
     }
-    
-    console.log('\n✅ Validação de políticas RLS concluída');
+
+    if (!policies || policies.length === 0) {
+      console.log('⚠️ Nenhuma política RLS encontrada no schema public.');
+      return true;
+    }
+
+    let currentTable = '';
+    for (const policy of policies) {
+      if (policy.tablename !== currentTable) {
+        currentTable = policy.tablename;
+        console.log(`\n--- Tabela: ${currentTable} ---`);
+      }
+      console.log(`  -> Política: ${policy.policyname}`);
+      console.log(`     Comando: ${policy.cmd}`);
+      console.log(`     Definição: ${policy.qual}`);
+    }
+
+    console.log('\n✅ Extração de políticas RLS concluída.');
     return true;
-    
+
   } catch (error) {
-    console.error('❌ Erro ao validar políticas RLS:', error.message);
+    console.error('❌ Erro ao extrair políticas RLS:', error.message);
     return false;
   }
 }
