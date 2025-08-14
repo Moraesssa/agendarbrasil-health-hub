@@ -168,7 +168,7 @@ export const AddMedicationDialog = ({ onAdd, isLoading }: AddMedicationDialogPro
                 onChange={(e) => setNewTime(e.target.value)}
                 className="flex-1"
               />
-              <Button type="button" onClick={addTime} size="sm">
+              <Button type="button" onClick={addTime} size="sm" disabled={!newTime}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
