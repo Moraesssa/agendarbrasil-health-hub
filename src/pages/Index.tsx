@@ -18,12 +18,16 @@ import { CalendarLoader } from "@/components/PageLoader";
 import { ErrorBoundary, CalendarErrorFallback } from "@/components/ErrorBoundary";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EmergencyDialog } from "@/components/EmergencyDialog";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, userData, loading } = useAuth();
+  const [isEmergencyDialogOpen, setIsEmergencyDialogOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Optional redirect to profile only on first load, not on intentional navigation
   useEffect(() => {
@@ -84,6 +88,43 @@ const Index = () => {
     }
   };
 
+  const handleUrgencyClick = () => {
+    setLocationError(null);
+    if (navigator.geolocation) {
+      toast({ title: "Buscando sua localização...", description: "Por favor, autorize o acesso à sua localização." });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setIsEmergencyDialogOpen(true);
+          toast({ title: "Localização encontrada!", description: "Buscando serviços de emergência..." });
+        },
+        (error) => {
+          console.error("Erro ao obter localização: ", error);
+          const errorMessage = "Não foi possível obter sua localização. Verifique as permissões do seu navegador.";
+          setLocationError(errorMessage);
+          toast({
+            title: "Erro de Localização",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          setIsEmergencyDialogOpen(true); // Open dialog to show the error
+        }
+      );
+    } else {
+      const errorMessage = "Geolocalização não é suportada por este navegador.";
+      setLocationError(errorMessage);
+      toast({
+        title: "Navegador incompatível",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setIsEmergencyDialogOpen(true); // Open dialog to show the error
+    }
+  };
+
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "Agendamento de consulta":
@@ -141,11 +182,7 @@ const Index = () => {
         }, "agendar consulta por telemedicina");
         break;
       case "Agendamento urgente":
-        toast({
-          title: "Urgência Médica",
-          description: "Para emergências, ligue 192 (SAMU) ou procure o pronto-socorro mais próximo imediatamente",
-          variant: "destructive"
-        });
+        handleUrgencyClick();
         break;
       case "Agendamento familiar":
         requireAuth(() => {
@@ -555,6 +592,12 @@ const Index = () => {
         {/* Bottom spacing for mobile navigation */}
         <div className="h-20 sm:hidden"></div>
       </div>
+      <EmergencyDialog
+        isOpen={isEmergencyDialogOpen}
+        onClose={() => setIsEmergencyDialogOpen(false)}
+        userLocation={userLocation}
+        locationError={locationError}
+      />
     </ErrorBoundary>
   );
 };
