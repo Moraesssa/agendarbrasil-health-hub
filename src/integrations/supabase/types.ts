@@ -1859,6 +1859,17 @@ export type Database = {
           crm: string
         }[]
       }
+      get_doctors_for_scheduling: {
+        Args: { p_specialty?: string; p_city?: string; p_state?: string }
+        Returns: {
+          id: string
+          display_name: string
+          user_type: string
+          is_active: boolean
+          photo_url: string
+          has_specialty: boolean
+        }[]
+      }
       get_enhanced_location_data: {
         Args: { location_ids?: string[] }
         Returns: {
