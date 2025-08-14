@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Home, ArrowRight } from 'lucide-react';
 import { Calendar, Clock, MapPin, User, Filter } from 'lucide-react';
 import { useConsultas } from '@/hooks/useConsultas';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +19,7 @@ import { ConsultasStatusFilter } from '@/components/dashboard/ConsultasStatusFil
 type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
 
 const AgendaPaciente = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showPastAppointments, setShowPastAppointments] = useState(false);
@@ -70,9 +72,17 @@ const AgendaPaciente = () => {
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold">Minhas Consultas</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-3xl font-bold">Minhas Consultas</h1>
+        </div>
         
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="icon" onClick={() => navigate('/')}>
+            <Home className="h-4 w-4" />
+          </Button>
           <ConsultasStatusFilter
             selectedStatuses={selectedStatuses}
             onStatusChange={setSelectedStatuses}
