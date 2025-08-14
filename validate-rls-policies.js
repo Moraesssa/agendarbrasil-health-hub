@@ -1,8 +1,8 @@
 // Script para validar políticas RLS no Supabase
 // replaced by kiro @2025-01-08T15:30:00.000Z
 
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,7 +19,7 @@ async function validateRLSPolicies() {
     console.log('🔍 Verificando políticas RLS...');
     
     // Verificar políticas para tabelas principais relacionadas à autenticação
-    const tables = ['usuarios', 'medicos', 'pacientes', 'agendamentos', 'profiles'];
+    const tables = ['usuarios', 'medicos', 'pacientes', 'agendamentos', 'profiles', 'pagamentos'];
     
     for (const table of tables) {
       console.log(`\n📋 Verificando políticas para tabela: ${table}`);
