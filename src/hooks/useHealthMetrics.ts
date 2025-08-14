@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { healthService } from '@/services/healthService';
 import { HealthMetric, CreateHealthMetricData, HealthMetricDisplay, HealthScore } from '@/types/health';
@@ -17,11 +17,7 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (useFhir) {
-    return fhirHook;
-  }
-
-  const loadHealthMetrics = async () => {
+  const loadHealthMetrics = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -41,7 +37,7 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, patientId, toast]);
 
   const createMetric = async (metricData: CreateHealthMetricData) => {
     try {
@@ -266,8 +262,14 @@ export const useHealthMetrics = (patientId?: string, useFhir: boolean = false) =
   };
 
   useEffect(() => {
-    loadHealthMetrics();
-  }, [user, patientId]);
+    if (!useFhir) {
+      loadHealthMetrics();
+    }
+  }, [useFhir, loadHealthMetrics]);
+
+  if (useFhir) {
+    return fhirHook;
+  }
 
   return {
     metrics,

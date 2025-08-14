@@ -90,8 +90,9 @@ async function getLocaisAtendimento(medicoId) {
   }
   
   return locais;
-}// 
-Schedule data retrieval and analysis
+}
+
+// Schedule data retrieval and analysis
 async function checkHorariosData(medicoId) {
   logStep('4️⃣', 'Testando dados de horários...');
   

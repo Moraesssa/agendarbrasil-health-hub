@@ -407,7 +407,7 @@ const Agendamento = () => {
             }}
           />
         );
-      case 6:
+      case 6: {
         // Processar horários removendo duplicatas e agrupando por horário
         const processedTimeSlots = new Map<string, { time: string; available: boolean; locations: string[] }>();
         
@@ -473,6 +473,7 @@ const Agendamento = () => {
             )}
           </div>
         );
+      }
       case 7:
         return (
           <div className="space-y-6">

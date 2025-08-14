@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { appointmentService } from '@/services/appointmentService'; // Import the actual service
 
 interface UseAvailableDatesOptions {
   startDate?: string;
@@ -23,11 +24,16 @@ interface UseAvailableDatesReturn {
 const cache = new Map<string, { data: string[]; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+export const clearCache = () => {
+  cache.clear();
+};
+
 const getCachedData = (key: string): string[] | null => {
   const cached = cache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return cached.data;
   }
+  cache.delete(key); // Expire cache
   return null;
 };
 
@@ -49,7 +55,7 @@ export const useAvailableDates = (
   
   const currentRequestRef = useRef<AbortController | null>(null);
 
-  const fetchAvailableDates = useCallback(async (signal?: AbortSignal, currentRetry = 0) => {
+  const fetchAvailableDates = useCallback(async (currentRetry = 0) => {
     if (!doctorId || !enabled) {
       setAvailableDates([]);
       return;
@@ -61,6 +67,7 @@ export const useAvailableDates = (
     if (cachedData) {
       console.log("🟢 Usando dados em cache:", cachedData);
       setAvailableDates(cachedData);
+      setIsLoading(false);
       return;
     }
 
@@ -69,37 +76,30 @@ export const useAvailableDates = (
     setIsRetrying(currentRetry > 0);
 
     try {
-      const start = startDate || new Date().toISOString().split('T')[0];
-      const end = endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      // Simular busca de datas (substituir por chamada real da API)
-      const dates = [];
-      const startDateObj = new Date(start);
-      const endDateObj = new Date(end);
+      // Use the actual service now
+      const dates = await appointmentService.getAvailableDates(doctorId, startDate, endDate);
       
-      for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
-        // Skip weekends for this example
-        if (d.getDay() !== 0 && d.getDay() !== 6) {
-          dates.push(d.toISOString().split('T')[0]);
-        }
-      }
-
       setCachedData(cacheKey, dates);
       setAvailableDates(dates);
       setRetryCount(0);
       setIsRetrying(false);
       
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    } catch (err) {
+      const error = err as Error;
+      // Ignore abort errors
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+
+      const errorMessage = error.message || 'Erro desconhecido';
       console.error("Erro ao buscar datas disponíveis:", error);
       
       if (currentRetry < maxRetries) {
         console.log(`Tentativa ${currentRetry + 1}/${maxRetries} falhou, tentando novamente em ${retryDelay}ms...`);
         setRetryCount(currentRetry + 1);
         setTimeout(() => {
-          if (!signal?.aborted) {
-            fetchAvailableDates(signal, currentRetry + 1);
-          }
+            fetchAvailableDates(currentRetry + 1);
         }, retryDelay);
       } else {
         setError(errorMessage);
@@ -116,12 +116,7 @@ export const useAvailableDates = (
   const refresh = useCallback(() => {
     const cacheKey = `${doctorId}-${startDate}-${endDate}`;
     cache.delete(cacheKey);
-    if (currentRequestRef.current) {
-      currentRequestRef.current.abort();
-    }
-    const abortController = new AbortController();
-    currentRequestRef.current = abortController;
-    fetchAvailableDates(abortController.signal);
+    fetchAvailableDates(0);
   }, [fetchAvailableDates, doctorId, startDate, endDate]);
 
   const clearError = useCallback(() => {
@@ -129,25 +124,12 @@ export const useAvailableDates = (
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-    
-    if (currentRequestRef.current) {
-      currentRequestRef.current.abort();
+    if (enabled) {
+      fetchAvailableDates(0);
+    } else {
+      setAvailableDates([]);
     }
-
-    if (!mounted || !doctorId || !enabled) return;
-
-    const abortController = new AbortController();
-    currentRequestRef.current = abortController;
-
-    fetchAvailableDates(abortController.signal);
-
-    return () => {
-      mounted = false;
-      abortController.abort();
-      currentRequestRef.current = null;
-    };
-  }, [doctorId, enabled, startDate, endDate]);
+  }, [enabled, fetchAvailableDates]);
 
   return {
     availableDates,

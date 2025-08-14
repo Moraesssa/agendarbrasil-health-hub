@@ -1,6 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { useAvailableDates } from '../useAvailableDates';
+import { useAvailableDates, clearCache } from '../useAvailableDates';
 
 // Mock the appointment service
 vi.mock('@/services/appointmentService', () => ({
@@ -22,7 +22,10 @@ const { appointmentService } = await import('@/services/appointmentService');
 const mockGetAvailableDates = appointmentService.getAvailableDates as any;
 
 describe('useAvailableDates', () => {
+
   beforeEach(() => {
+    // Clear the custom cache before each test
+    clearCache();
     vi.clearAllMocks();
   });
 
@@ -44,9 +47,9 @@ describe('useAvailableDates', () => {
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
+      expect(result.current.availableDates).toEqual(mockDates);
     });
 
-    expect(result.current.availableDates).toEqual(mockDates);
     expect(result.current.error).toBe(null);
     expect(mockGetAvailableDates).toHaveBeenCalledWith('doctor-123', undefined, undefined);
   });
@@ -61,6 +64,8 @@ describe('useAvailableDates', () => {
         endDate: '2025-02-07'
       })
     );
+
+    expect(result.current.isLoading).toBe(true);
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -86,6 +91,10 @@ describe('useAvailableDates', () => {
   it('should provide clearError function', async () => {
     const { result } = renderHook(() => useAvailableDates('doctor-123'));
     
+    act(() => {
+        result.current.clearError();
+    });
+
     expect(typeof result.current.clearError).toBe('function');
   });
 });
