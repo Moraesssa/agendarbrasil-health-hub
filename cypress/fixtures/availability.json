@@ -1,0 +1,74 @@
+{
+  "success": true,
+  "data": {
+    "doctorId": "1",
+    "availableSlots": [
+      {
+        "date": "2025-08-12",
+        "slots": [
+          {
+            "time": "09:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "10:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "11:00",
+            "available": false,
+            "price": 250.00
+          },
+          {
+            "time": "14:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "15:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "16:00",
+            "available": true,
+            "price": 250.00
+          }
+        ]
+      },
+      {
+        "date": "2025-08-13",
+        "slots": [
+          {
+            "time": "08:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "09:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "10:00",
+            "available": false,
+            "price": 250.00
+          },
+          {
+            "time": "14:00",
+            "available": true,
+            "price": 250.00
+          },
+          {
+            "time": "15:00",
+            "available": true,
+            "price": 250.00
+          }
+        ]
+      }
+    ],
+    "timezone": "America/Sao_Paulo"
+  }
+}

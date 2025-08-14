@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { useAvailableDates } from '../useAvailableDates';
 
-// Mock the appointment service
+// Test the appointment service
 vi.mock('@/services/appointmentService', () => ({
   appointmentService: {
     getAvailableDates: vi.fn(),
@@ -35,8 +35,8 @@ describe('useAvailableDates', () => {
   });
 
   it('should fetch available dates successfully', async () => {
-    const mockDates = ['2025-01-30', '2025-01-31', '2025-02-01'];
-    mockGetAvailableDates.mockResolvedValue(mockDates);
+    const testDates = ['2025-01-30', '2025-01-31', '2025-02-01'];
+    mockGetAvailableDates.mockResolvedValue(testDates);
 
     const { result } = renderHook(() => useAvailableDates('doctor-123'));
 
@@ -46,14 +46,14 @@ describe('useAvailableDates', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.availableDates).toEqual(mockDates);
+    expect(result.current.availableDates).toEqual(testDates);
     expect(result.current.error).toBe(null);
     expect(mockGetAvailableDates).toHaveBeenCalledWith('doctor-123', undefined, undefined);
   });
 
   it('should use custom date range when provided', async () => {
-    const mockDates = ['2025-02-01', '2025-02-02'];
-    mockGetAvailableDates.mockResolvedValue(mockDates);
+    const testDates = ['2025-02-01', '2025-02-02'];
+    mockGetAvailableDates.mockResolvedValue(testDates);
 
     const { result } = renderHook(() => 
       useAvailableDates('doctor-123', {

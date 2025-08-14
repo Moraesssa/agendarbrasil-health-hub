@@ -1,8 +1,46 @@
 // Script para testar webhook com signing secret real
 import crypto from 'crypto';
 
-const webhookUrl = 'https://ulebotjrsgheybhpdnxd.supabase.co/functions/v1/stripe-webhook';
-const webhookSecret = 'whsec_rk7shhs0l9gNzegM4p40lc5yHe333bao';
+// Load environment variables
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env file
+const envPath = path.join(__dirname, '.env');
+const envVars = {};
+
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      const [key, ...valueParts] = trimmedLine.split('=');
+      if (key && valueParts.length > 0) {
+        envVars[key.trim()] = valueParts.join('=').trim();
+      }
+    }
+  });
+}
+
+const supabaseUrl = envVars['VITE_SUPABASE_URL'];
+const webhookSecret = envVars['STRIPE_WEBHOOK_SECRET'];
+
+if (!supabaseUrl) {
+  console.error('❌ VITE_SUPABASE_URL não encontrada no .env');
+  process.exit(1);
+}
+
+if (!webhookSecret) {
+  console.error('❌ STRIPE_WEBHOOK_SECRET não encontrada no .env');
+  console.log('💡 Configure no .env: STRIPE_WEBHOOK_SECRET=whsec_...');
+  process.exit(1);
+}
+
+const webhookUrl = `${supabaseUrl}/functions/v1/stripe-webhook`;
 
 // Simular evento do Stripe
 const mockStripeEvent = {

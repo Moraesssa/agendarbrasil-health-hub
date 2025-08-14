@@ -7,13 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { appointmentService, LocalComHorarios, Medico } from "@/services/appointmentService";
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
-import { 
-  mockSpecialties, 
-  mockStates, 
-  mockCities, 
-  mockDoctors, 
-  mockLocaisComHorarios 
-} from "@/utils/mockData";
 
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
@@ -68,11 +61,15 @@ export const useAppointmentScheduling = () => {
       
       const config = getSupabaseConfig();
       
-      // Se Supabase não estiver configurado, usar dados mock
+      // Verificar se Supabase está configurado - OBRIGATÓRIO para produção
       if (!config.isConfigured) {
-        console.log("🔧 Usando dados mock - Supabase não configurado");
-        setSpecialties(mockSpecialties);
-        setStates(mockStates);
+        const errorMsg = "Configuração do Supabase não encontrada. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.";
+        logger.error(errorMsg, "useAppointmentScheduling");
+        toast({ 
+          title: "Erro de Configuração", 
+          description: "Sistema não configurado corretamente. Entre em contato com o suporte.",
+          variant: "destructive" 
+        });
         setIsLoading(false);
         return;
       }
@@ -88,15 +85,10 @@ export const useAppointmentScheduling = () => {
         console.error("Erro ao carregar dados iniciais:", e);
         logger.error("Erro ao carregar dados iniciais", "useAppointmentScheduling", e);
         
-        // Em caso de erro, usar dados mock como fallback
-        console.log("🔧 Usando dados mock como fallback");
-        setSpecialties(mockSpecialties);
-        setStates(mockStates);
-        
         toast({ 
-          title: "Usando dados de demonstração", 
-          description: "Conectividade com banco limitada. Dados de exemplo sendo exibidos.",
-          variant: "default" 
+          title: "Erro ao Carregar Dados", 
+          description: "Não foi possível carregar as informações. Tente novamente em alguns instantes.",
+          variant: "destructive" 
         });
       } finally {
         setIsLoading(false);
@@ -115,31 +107,25 @@ export const useAppointmentScheduling = () => {
     const loadCities = async () => {
       setIsLoading(true);
       
-      const config = getSupabaseConfig();
-      
-      // Se Supabase não estiver configurado, usar dados mock
-      if (!config.isConfigured) {
-        const mockCitiesForState = mockCities[selectedState as keyof typeof mockCities] || [];
-        setCities(mockCitiesForState);
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
         setCities(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Erro ao carregar cidades:", error);
-        // Fallback para dados mock
-        const mockCitiesForState = mockCities[selectedState as keyof typeof mockCities] || [];
-        setCities(mockCitiesForState);
+        logger.error("Erro ao carregar cidades", "useAppointmentScheduling", error);
+        setCities([]);
+        toast({ 
+          title: "Erro ao Carregar Cidades", 
+          description: "Não foi possível carregar as cidades disponíveis. Tente novamente.",
+          variant: "destructive" 
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     loadCities();
-  }, [selectedState]);
+  }, [selectedState, toast]);
 
   useEffect(() => {
     if (!selectedSpecialty || !selectedCity || !selectedState) {
@@ -150,29 +136,25 @@ export const useAppointmentScheduling = () => {
     const loadDoctors = async () => {
       setIsLoading(true);
       
-      const config = getSupabaseConfig();
-      
-      // Se Supabase não estiver configurado, usar dados mock
-      if (!config.isConfigured) {
-        setDoctors(mockDoctors);
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
         setDoctors(Array.isArray(doctorsData) ? doctorsData : []);
       } catch (error) {
         console.error("Erro ao carregar médicos:", error);
-        // Fallback para dados mock
-        setDoctors(mockDoctors);
+        logger.error("Erro ao carregar médicos", "useAppointmentScheduling", error);
+        setDoctors([]);
+        toast({ 
+          title: "Erro ao Carregar Médicos", 
+          description: "Não foi possível carregar os médicos disponíveis. Verifique os filtros selecionados.",
+          variant: "destructive" 
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     loadDoctors();
-  }, [selectedSpecialty, selectedCity, selectedState]);
+  }, [selectedSpecialty, selectedCity, selectedState, toast]);
   
   useEffect(() => {
     if (!selectedDoctor || !selectedDate) {
@@ -183,37 +165,18 @@ export const useAppointmentScheduling = () => {
     const loadSlots = async () => {
       setIsLoading(true);
       
-      const config = getSupabaseConfig();
-      
-      // Se Supabase não estiver configurado, usar dados mock
-      if (!config.isConfigured) {
-        console.log("🔧 Usando horários mock - Supabase não configurado");
-        // Gerar horários mock com base na data selecionada
-        const mockSlotsWithDate = mockLocaisComHorarios.map(local => ({
-          ...local,
-          horarios_disponiveis: local.horarios_disponiveis.map(slot => ({
-            ...slot,
-            available: Math.random() > 0.3 // 70% dos horários disponíveis
-          }))
-        }));
-        setLocaisComHorarios(mockSlotsWithDate);
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
         setLocaisComHorarios(Array.isArray(slots) ? slots : []);
       } catch (error) {
         console.error("Erro ao carregar horários:", error);
-        // Fallback para dados mock em caso de erro
-        console.log("🔧 Usando horários mock como fallback");
-        setLocaisComHorarios(mockLocaisComHorarios);
+        logger.error("Erro ao carregar horários", "useAppointmentScheduling", error);
+        setLocaisComHorarios([]);
         
         toast({ 
-          title: "Usando dados de demonstração", 
-          description: "Problema ao carregar horários reais. Exibindo horários de exemplo.",
-          variant: "default" 
+          title: "Erro ao Carregar Horários", 
+          description: "Não foi possível carregar os horários disponíveis. Tente selecionar outro médico ou data.",
+          variant: "destructive" 
         });
       } finally {
         setIsLoading(false);

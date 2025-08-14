@@ -1,0 +1,53 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "name": "Dr. João Silva",
+      "specialty": "Cardiologista",
+      "photo": "https://example.com/photos/dr-joao.jpg",
+      "rating": 4.8,
+      "experience": "15 anos",
+      "location": {
+        "city": "São Paulo",
+        "state": "SP",
+        "address": "Rua das Flores, 123"
+      },
+      "price": 250.00,
+      "available": true
+    },
+    {
+      "id": "2",
+      "name": "Dra. Maria Santos",
+      "specialty": "Cardiologista",
+      "photo": "https://example.com/photos/dra-maria.jpg",
+      "rating": 4.9,
+      "experience": "20 anos",
+      "location": {
+        "city": "São Paulo",
+        "state": "SP",
+        "address": "Av. Paulista, 456"
+      },
+      "price": 300.00,
+      "available": true
+    },
+    {
+      "id": "3",
+      "name": "Dr. Carlos Oliveira",
+      "specialty": "Cardiologista",
+      "photo": "https://example.com/photos/dr-carlos.jpg",
+      "rating": 4.7,
+      "experience": "12 anos",
+      "location": {
+        "city": "São Paulo",
+        "state": "SP",
+        "address": "Rua Augusta, 789"
+      },
+      "price": 280.00,
+      "available": true
+    }
+  ],
+  "total": 3,
+  "page": 1,
+  "limit": 10
+}

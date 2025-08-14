@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "data": {
+    "appointmentId": "apt_123456789",
+    "reference": "AGD-2025-001234",
+    "status": "confirmed",
+    "patient": {
+      "name": "João Silva Santos",
+      "email": "joao.silva@email.com",
+      "phone": "(11) 99999-9999"
+    },
+    "doctor": {
+      "id": "1",
+      "name": "Dr. João Silva",
+      "specialty": "Cardiologista"
+    },
+    "appointment": {
+      "date": "2025-08-12",
+      "time": "09:00",
+      "duration": 60,
+      "price": 250.00,
+      "location": {
+        "address": "Rua das Flores, 123",
+        "city": "São Paulo",
+        "state": "SP"
+      }
+    },
+    "payment": {
+      "status": "pending",
+      "method": "credit_card",
+      "amount": 250.00
+    },
+    "notifications": {
+      "email": true,
+      "sms": true,
+      "whatsapp": false
+    },
+    "createdAt": "2025-08-11T10:30:00Z"
+  },
+  "message": "Consulta agendada com sucesso!"
+}

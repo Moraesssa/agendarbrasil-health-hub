@@ -10,6 +10,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthRedirectController } from '@/components/AuthRedirectController';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { AuthErrorBoundary } from '@/components/AuthErrorBoundary';
+import { ConfigurationGuard } from '@/components/system/ConfigurationGuard';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Cadastrar from '@/pages/Cadastrar';
@@ -125,16 +126,17 @@ class ErrorBoundary extends React.Component<
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthErrorBoundary>
-              <AuthProvider>
-                <NotificationProvider>
-                  <AuthRedirectController>
-                  <Routes>
+      <ConfigurationGuard>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthErrorBoundary>
+                <AuthProvider>
+                  <NotificationProvider>
+                    <AuthRedirectController>
+                    <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/cadastrar" element={<Cadastrar />} />
@@ -159,14 +161,15 @@ function App() {
                     <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
                     <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  </AuthRedirectController>
-                </NotificationProvider>
-              </AuthProvider>
-            </AuthErrorBoundary>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
+                    </Routes>
+                    </AuthRedirectController>
+                  </NotificationProvider>
+                </AuthProvider>
+              </AuthErrorBoundary>
+            </BrowserRouter>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ConfigurationGuard>
     </ErrorBoundary>
   );
 }
