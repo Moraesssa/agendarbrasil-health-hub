@@ -5,11 +5,9 @@ import { logger } from '@/utils/logger';
 export const integrationService = {
   async getDataSources(): Promise<ExternalDataSource[]> {
     try {
+      // Use secure RPC that excludes API keys (security fix)
       const { data, error } = await supabase
-        .from('external_data_sources')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .rpc('get_external_data_sources_public');
 
       if (error) {
         throw new Error(`Erro ao buscar fontes de dados: ${error.message}`);

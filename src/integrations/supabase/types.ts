@@ -1971,6 +1971,17 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_external_data_sources_public: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          data_types: string[]
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+        }[]
+      }
       get_family_members: {
         Args: { user_uuid: string }
         Returns: {
