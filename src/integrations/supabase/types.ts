@@ -2009,6 +2009,14 @@ export type Database = {
           urgency: string
         }[]
       }
+      get_medicos_por_especialidade: {
+        Args: { p_especialidade: string }
+        Returns: {
+          display_name: string
+          especialidade: string
+          id: string
+        }[]
+      }
       get_my_locations: {
         Args: Record<PropertyKey, never>
         Returns: {
