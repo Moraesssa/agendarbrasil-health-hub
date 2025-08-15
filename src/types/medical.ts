@@ -113,3 +113,47 @@ export interface CreateExamData {
   preparation_instructions?: string;
   urgent: boolean;
 }
+
+// Appointment-related types
+export interface Specialty {
+  id?: string;
+  name: string;
+}
+
+export interface State {
+  uf: string;
+}
+
+export interface City {
+  cidade: string;
+}
+
+export interface Doctor {
+  id: string;
+  display_name: string;
+  especialidades?: string[];
+  crm?: string;
+}
+
+export interface Horario {
+  id: string;
+  hora: string;
+  disponivel: boolean;
+  time: string;
+  available: boolean;
+}
+
+export interface Local {
+  id: string;
+  nome_local: string;
+  endereco_completo?: string;
+  endereco?: {
+    logradouro: string;
+    numero: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+  };
+  horarios: Horario[];
+}
