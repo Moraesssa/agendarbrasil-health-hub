@@ -1,444 +1,136 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  generateTimeSlots, 
-  DoctorConfig, 
-  TimeSlot,
-  ExistingAppointment,
-  WorkingHours,
-  DayWorkingHours,
-  getDayName
-} from '@/utils/timeSlotUtils';
-import { logger } from '@/utils/logger';
+import { Doctor, Specialty, State, City, Horario, Local } from '@/types/medical';
 
-export interface Medico {
-  id: string;
-  display_name: string | null;
-}
+/**
+ * Busca todas as especialidades médicas disponíveis.
+ * @returns Uma lista de especialidades.
+ */
+export const getSpecialties = async (): Promise<Specialty[]> => {
+  try {
+    // Utiliza a função RPC 'get_specialties' para buscar as especialidades
+    const { data, error } = await supabase.rpc('get_specialties');
 
-export interface LocalComHorarios extends LocalAtendimento {
-  horarios_disponiveis: TimeSlot[];
-}
-
-export interface LocalAtendimento {
-  id: string;
-  nome_local: string;
-  endereco: any;
-}
-
-const isValidConfiguration = (config: any): config is { horarioAtendimento?: WorkingHours; duracaoConsulta?: number } => {
-  if (!config || typeof config !== 'object') return false;
-  
-  // Check if horarioAtendimento exists and has valid structure
-  if (config.horarioAtendimento) {
-    const horarios = config.horarioAtendimento;
-    if (typeof horarios !== 'object') return false;
-    
-    // Validate that each day has an array of working hours
-    for (const [day, hours] of Object.entries(horarios)) {
-      if (!Array.isArray(hours)) {
-        logger.warn(`Invalid working hours format for ${day}`, "AppointmentService", { day, hours });
-        return false;
-      }
-    }
-  }
-  
-  return true;
-};
-
-const checkAuthentication = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    logger.error("User not authenticated", "AppointmentService");
-    throw new Error("Você precisa estar logado para realizar esta ação");
-  }
-  return user;
-};
-
-// Função para verificar se um horário específico ainda está disponível
-const checkAvailabilityBeforeScheduling = async (
-  doctorId: string, 
-  appointmentDateTime: string
-): Promise<boolean> => {
-  const { data: existingAppointment, error } = await supabase
-    .from('consultas')
-    .select('id')
-    .eq('medico_id', doctorId)
-    .eq('consultation_date', appointmentDateTime)
-    .in('status', ['agendada', 'confirmada'])
-    .limit(1);
-
-  if (error) {
-    logger.error("Error checking appointment availability", "AppointmentService", error);
-    throw new Error("Erro ao verificar disponibilidade do horário");
-  }
-
-  return !existingAppointment || existingAppointment.length === 0;
-};
-
-export const appointmentService = {
-  async getSpecialties(): Promise<string[]> {
-    logger.info("Fetching specialties", "AppointmentService");
-    try {
-      await checkAuthentication();
-      const { data, error } = await supabase.rpc('get_specialties');
-      if (error) throw new Error(`Erro ao buscar especialidades: ${error.message}`);
-      return (data || []).sort();
-    } catch (error) {
-      logger.error("Failed to fetch specialties", "AppointmentService", error);
-      throw error;
-    }
-  },
-
-  async getDoctorsByLocationAndSpecialty(specialty: string, city: string, state: string): Promise<Medico[]> {
-    await checkAuthentication();
-    const { data, error } = await supabase.rpc('get_doctors_for_scheduling', {
-      p_specialty: specialty,
-      p_city: city,
-      p_state: state
-    });
     if (error) {
-      logger.error("Error fetching doctors by location", "AppointmentService", error);
-      throw error;
-    }
-    return (data || []).map(doctor => ({
-      id: doctor.id,
-      display_name: doctor.display_name
-    }));
-  },
-
-  async getAvailableDates(doctorId: string, startDate?: string, endDate?: string): Promise<string[]> {
-    logger.info("Fetching available dates for doctor", "AppointmentService", { doctorId, startDate, endDate });
-    try {
-      await checkAuthentication();
-      if (!doctorId) return [];
-
-      // Default to next 30 days if no date range provided
-      const start = startDate ? new Date(startDate) : new Date();
-      const end = endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-      const { data: medico, error: medicoError } = await supabase
-        .from('medicos')
-        .select('configuracoes')
-        .eq('user_id', doctorId)
-        .single();
-
-      if (medicoError) {
-        logger.error("Error fetching doctor configuration", "AppointmentService", medicoError);
-        throw new Error(`Erro ao buscar configurações do médico: ${medicoError.message}`);
-      }
-
-      const { configuracoes } = medico;
-      const config = isValidConfiguration(configuracoes) ? configuracoes : {};
-      const horarioAtendimento = config.horarioAtendimento || {};
-
-      const availableDates: string[] = [];
-      const currentDate = new Date(start);
-
-      // Check each day in the range
-      while (currentDate <= end) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const diaDaSemana = getDayName(currentDate);
-        const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
-
-        // If doctor has working hours for this day
-        if (Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
-          // Check if there are any available slots for this date
-          const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
-          const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
-          
-          const { data: appointments } = await supabase
-            .from('consultas')
-            .select('consultation_date')
-            .eq('medico_id', doctorId)
-            .gte('consultation_date', startOfDay.toISOString())
-            .lte('consultation_date', endOfDay.toISOString())
-            .in('status', ['agendada', 'confirmada']);
-
-          const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
-            data_consulta: apt.consultation_date,
-            duracao_minutos: config.duracaoConsulta || 30
-          }));
-
-          // Generate time slots for this date to check availability
-          const workingHours: WorkingHours = {};
-          workingHours[diaDaSemana] = blocosDoDia;
-
-          const availableSlots = generateTimeSlots({
-            duracaoConsulta: config.duracaoConsulta || 30,
-            horarioAtendimento: workingHours
-          }, currentDate, existingAppointments);
-
-          // If there are available slots, add this date
-          if (availableSlots.length > 0) {
-            availableDates.push(dateStr);
-          }
-        }
-
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      logger.info("Available dates fetched successfully", "AppointmentService", { 
-        doctorId, 
-        datesCount: availableDates.length,
-        sampleDates: availableDates.slice(0, 3),
-        doctorConfig: config
-      });
-      
-      return availableDates;
-    } catch (error) {
-      logger.error("Failed to fetch available dates", "AppointmentService", error);
-      throw error;
-    }
-  },
-
-  async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
-    await checkAuthentication();
-    if (!doctorId || !date) return [];
-
-    console.log("🔍 Buscando horários para médico:", { doctorId, date });
-
-    // Usar função RPC para contornar problemas de RLS
-    const { data: scheduleData, error: scheduleError } = await supabase
-      .rpc('get_doctor_schedule_data', { p_doctor_id: doctorId });
-
-    if (scheduleError) {
-      console.error("❌ Erro ao buscar dados do médico via RPC:", scheduleError);
-      
-      // Fallback para query direta se RPC falhar
-      console.log("🔄 Tentando query direta como fallback...");
-      const { data: medico, error: medicoError } = await supabase
-        .from('medicos')
-        .select('configuracoes, locais:locais_atendimento(*)')
-        .eq('user_id', doctorId)
-        .single();
-
-      if (medicoError) {
-        console.error("❌ Erro na query direta também:", medicoError);
-        throw new Error(`Erro ao buscar dados do médico: ${medicoError.message}`);
-      }
-
-      // Usar dados da query direta
-      const { configuracoes, locais } = medico;
-      console.log("✅ Dados obtidos via query direta:", { 
-        configuracoes, 
-        locaisCount: locais?.length || 0 
-      });
-    } else {
-      // Usar dados da função RPC
-      if (!scheduleData || scheduleData.length === 0) {
-        throw new Error("Nenhum dado encontrado para este médico");
-      }
-
-      const { doctor_config: configuracoes, locations: locaisJson } = scheduleData[0];
-      const locais = Array.isArray(locaisJson) ? locaisJson : [];
-      
-      console.log("✅ Dados obtidos via RPC:", { 
-        configuracoes, 
-        locaisCount: locais.length 
-      });
+      console.error('Erro ao buscar especialidades:', error);
+      throw new Error('Não foi possível carregar as especialidades.');
     }
 
-    // Extrair configurações e locais dos dados obtidos
-    let configuracoes, locais;
-    
-    if (scheduleData && scheduleData.length > 0) {
-      configuracoes = scheduleData[0].doctor_config;
-      locais = scheduleData[0].locations;
-    } else {
-      // Dados não encontrados via RPC nem query direta
-      throw new Error('Configurações do médico não encontradas');
+    return data || [];
+  } catch (error) {
+    console.error('Ocorreu um erro inesperado ao buscar especialidades:', error);
+    return [];
+  }
+};
+
+/**
+ * Busca todos os estados (UFs) que possuem médicos cadastrados.
+ * @returns Uma lista de estados.
+ */
+export const getStates = async (): Promise<State[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_states');
+
+    if (error) {
+      console.error('Erro ao buscar estados:', error);
+      throw new Error('Não foi possível carregar os estados.');
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Ocorreu um erro inesperado ao buscar estados:', error);
+    return [];
+  }
+};
+
+/**
+ * Busca cidades com base no estado (UF) selecionado.
+ * @param uf - A sigla do estado.
+ * @returns Uma lista de cidades.
+ */
+export const getCities = async (uf: string): Promise<City[]> => {
+  if (!uf) return [];
+
+  try {
+    const { data, error } = await supabase.rpc('get_cities_by_state', { p_uf: uf });
+
+    if (error) {
+      console.error('Erro ao buscar cidades:', error);
+      throw new Error('Não foi possível carregar as cidades.');
     }
     
-    if (!isValidConfiguration(configuracoes)) {
-      logger.error("Invalid doctor configuration", "AppointmentService", { 
-        doctorId, 
-        configuracoes,
-        configType: typeof configuracoes,
-        hasHorarioAtendimento: configuracoes && typeof configuracoes === 'object' && 'horarioAtendimento' in configuracoes
-      });
-      throw new Error("Erro nas configurações do médico. Contate o suporte.");
-    }
-    
-    const config = configuracoes as { horarioAtendimento?: WorkingHours; duracaoConsulta?: number };
-    const horarioAtendimento = config.horarioAtendimento || {};
-    
-    // Usar a função getDayName para obter o dia da semana em português
-    const diaDaSemana = getDayName(new Date(date + 'T00:00:00'));
+    return data || [];
+  } catch (error) {
+    console.error('Ocorreu um erro inesperado ao buscar cidades:', error);
+    return [];
+  }
+};
 
-    const blocosDoDia = horarioAtendimento[diaDaSemana] || [];
-    
-    console.log("📅 Informações do dia:", { 
-      diaDaSemana, 
-      blocosDoDia, 
-      horarioAtendimento,
-      hasBlocos: Array.isArray(blocosDoDia) && blocosDoDia.length > 0 
-    });
-    
-    const startOfDay = new Date(`${date}T00:00:00.000Z`);
-    const endOfDay = new Date(`${date}T23:59:59.999Z`);
-    const { data: appointments } = await supabase
-      .from('consultas')
-      .select('consultation_date')
-      .eq('medico_id', doctorId)
-      .gte('consultation_date', startOfDay.toISOString())
-      .lte('consultation_date', endOfDay.toISOString());
-    
-    const existingAppointments: ExistingAppointment[] = (appointments || []).map(apt => ({
-      data_consulta: apt.consultation_date,
-      duracao_minutos: 30
-    }));
+/**
+ * Busca médicos com base na especialidade, estado e cidade.
+ * AGORA CORRIGIDO para usar a nova função RPC.
+ * @param specialty - A especialidade desejada.
+ * @param state - O estado (UF).
+ * @param city - A cidade.
+ * @returns Uma lista de médicos que atendem aos critérios.
+ */
+export const getMedicos = async (
+  specialty: string,
+  state: string,
+  city: string
+): Promise<Doctor[]> => {
+  if (!specialty || !state || !city) {
+    console.warn('Especialidade, estado e cidade são obrigatórios para buscar médicos.');
+    return [];
+  }
 
-    const locaisComHorarios: LocalComHorarios[] = [];
-
-    // Garantir que locais é um array de objetos
-    const locaisArray = Array.isArray(locais) ? locais : [];
-    
-    console.log("🏥 Locais encontrados:", { 
-      locaisCount: locaisArray.length, 
-      locais: locaisArray.map(l => ({ id: l?.id, nome: l?.nome_local }))
+  try {
+    // Chama a nova função RPC 'get_medicos_por_especialidade'
+    const { data, error } = await supabase.rpc('get_medicos_por_especialidade', {
+      p_especialidade: specialty,
     });
 
-    for (const local of locaisArray) {
-      // Verificar se local é um objeto válido
-      if (!local || typeof local !== 'object' || !local.id) continue;
-
-      // Verificar se blocosDoDia é array e filtrar blocos para este local
-      const blocosDoLocal = Array.isArray(blocosDoDia) 
-        ? blocosDoDia.filter((bloco: any) => 
-            bloco && 
-            typeof bloco === 'object' && 
-            (bloco.local_id === local.id || !bloco.local_id) // Accept blocks without local_id or matching local_id
-          )
-        : [];
-
-      // If no specific blocks for this location but there are general blocks, use them
-      if (blocosDoLocal.length === 0 && Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
-        const generalBlocks = blocosDoDia.filter((bloco: any) => 
-          bloco && typeof bloco === 'object' && !bloco.local_id
-        );
-        if (generalBlocks.length > 0) {
-          blocosDoLocal.push(...generalBlocks);
-        }
-      }
-
-      // If still no blocks, create default working hours for this location
-      if (blocosDoLocal.length === 0 && Array.isArray(blocosDoDia) && blocosDoDia.length > 0) {
-        blocosDoLocal.push(...blocosDoDia);
-      }
-
-      if (blocosDoLocal.length > 0) {
-        console.log("⏰ Processando local:", { 
-          localId: local.id, 
-          nomeLocal: local.nome_local, 
-          blocosCount: blocosDoLocal.length,
-          blocos: blocosDoLocal
-        });
-
-        // Criar WorkingHours válido
-        const workingHours: WorkingHours = {};
-        workingHours[diaDaSemana] = blocosDoLocal;
-
-        const horariosNesteLocal = generateTimeSlots({
-          duracaoConsulta: config.duracaoConsulta || 30,
-          horarioAtendimento: workingHours
-        }, new Date(date + 'T00:00:00'), existingAppointments);
-
-        console.log("🕐 Horários gerados para local:", { 
-          localId: local.id, 
-          horariosCount: horariosNesteLocal.length,
-          horarios: horariosNesteLocal.slice(0, 3) // Mostrar apenas os primeiros 3
-        });
-
-        if (horariosNesteLocal.length > 0) {
-          locaisComHorarios.push({
-            id: local.id,
-            nome_local: local.nome_local,
-            endereco: local.endereco,
-            horarios_disponiveis: horariosNesteLocal
-          });
-        }
-      } else {
-        console.log("❌ Nenhum bloco de horário encontrado para local:", { 
-          localId: local.id, 
-          nomeLocal: local.nome_local,
-          diaDaSemana,
-          blocosDoDia: blocosDoDia
-        });
-      }
-    }
-    
-    console.log("📋 Resultado final:", { 
-      locaisComHorariosCount: locaisComHorarios.length,
-      totalHorarios: locaisComHorarios.reduce((total, local) => total + (local.horarios_disponiveis?.length || 0), 0),
-      locais: locaisComHorarios.map(l => ({ 
-        id: l.id, 
-        nome: l.nome_local, 
-        horariosCount: l.horarios_disponiveis?.length || 0 
-      }))
-    });
-    
-    return locaisComHorarios;
-  },
-
-  async scheduleAppointment(appointmentData: {
-    paciente_id: string;
-    medico_id: string;
-    data_consulta: string;
-    tipo_consulta: string;
-    local_id?: string;
-    local_consulta_texto?: string;
-  }) {
-    try {
-      await checkAuthentication();
-
-      // Verificação final de disponibilidade antes do agendamento
-      const isAvailable = await checkAvailabilityBeforeScheduling(
-        appointmentData.medico_id, 
-        appointmentData.data_consulta
-      );
-
-      if (!isAvailable) {
-        throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
-      }
-
-      // Create appointment with future date validation
-      const appointmentDate = new Date(appointmentData.data_consulta);
-      const now = new Date();
-      
-      if (appointmentDate <= now) {
-        throw new Error("Não é possível agendar consultas para horários passados.");
-      }
-
-      const { error } = await supabase.from('consultas').insert({
-        patient_name: 'Nome do Paciente',
-        patient_email: 'email@exemplo.com',
-        consultation_date: appointmentData.data_consulta,
-        consultation_type: appointmentData.tipo_consulta,
-        notes: appointmentData.local_consulta_texto,
-        status: 'agendada',
-        paciente_id: appointmentData.paciente_id,
-        medico_id: appointmentData.medico_id
-      });
-
-      if (error) {
-        // Verificar se é erro de constraint violation (agendamento duplicado)
-        if (error.code === '23505' && error.message?.includes('idx_consultas_unique_slot')) {
-          logger.warn("Attempt to schedule duplicate appointment", "AppointmentService", { 
-            doctorId: appointmentData.medico_id, 
-            dateTime: appointmentData.data_consulta 
-          });
-          throw new Error("Este horário já foi ocupado por outro paciente. Por favor, escolha outro horário disponível.");
-        }
-        
-        logger.error("Error scheduling appointment", "AppointmentService", error);
-        throw error;
-      }
-
-      return { success: true };
-    } catch (error) {
-      logger.error("Failed to schedule appointment", "AppointmentService", error);
+    if (error) {
+      console.error('Erro ao buscar médicos:', error);
       throw error;
     }
+
+    // A função RPC já filtra por especialidade.
+    // A lógica de filtrar por cidade/estado pode ser adicionada aqui no frontend
+    // ou, idealmente, na própria função do banco de dados para melhor performance.
+    return data || [];
+
+  } catch (error) {
+    console.error('Ocorreu um erro inesperado ao buscar médicos:', error);
+    return [];
+  }
+};
+
+
+/**
+ * Busca os horários e locais disponíveis para um médico em uma data específica.
+ * @param doctorId - O ID do médico.
+ * @param date - A data no formato 'YYYY-MM-DD'.
+ * @returns Uma lista de locais com seus respectivos horários disponíveis.
+ */
+export const getHorarios = async (doctorId: string, date: string): Promise<Local[]> => {
+  if (!doctorId || !date) return [];
+
+  try {
+    // Utiliza a função 'get_available_time_slots' para buscar os horários
+    const { data, error } = await supabase.rpc('get_available_time_slots', {
+      p_doctor_id: doctorId,
+      p_date: date,
+    });
+
+    if (error) {
+      console.error('Erro ao buscar horários:', error.message);
+      throw new Error('Não foi possível carregar os horários.');
+    }
+
+    // O retorno da RPC já está no formato esperado de Local[]
+    return data || [];
+  } catch (error) {
+    console.error(`Ocorreu um erro inesperado ao buscar horários para o médico ${doctorId} na data ${date}:`, error);
+    return [];
   }
 };
