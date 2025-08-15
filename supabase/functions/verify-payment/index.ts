@@ -84,9 +84,18 @@ serve(async (req) => {
     // Obter dados da requisição
     const { session_id, consulta_id } = await req.json();
     
-    // Input validation
+    // Input validation crítica
     if (!session_id && !consulta_id) {
       throw new Error("Session ID ou Consulta ID é obrigatório");
+    }
+    
+    // Validar UUID se consulta_id foi fornecido
+    if (consulta_id) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (consulta_id === 'undefined' || consulta_id === 'null' || !uuidRegex.test(consulta_id)) {
+        console.error('UUID inválido detectado:', consulta_id);
+        throw new Error("ID da consulta inválido");
+      }
     }
     
     console.log("Session ID:", session_id ? '[PROTECTED]' : 'Not provided');

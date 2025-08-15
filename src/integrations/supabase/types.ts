@@ -1580,6 +1580,33 @@ export type Database = {
         }
         Relationships: []
       }
+      simple_audit_log: {
+        Row: {
+          data: Json | null
+          id: string
+          operation: string
+          table_name: string
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          data?: Json | null
+          id?: string
+          operation: string
+          table_name: string
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          data?: Json | null
+          id?: string
+          operation?: string
+          table_name?: string
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       temporary_reservations: {
         Row: {
           created_at: string
@@ -1822,6 +1849,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_payment_access: {
+        Args: { payment_id: string }
+        Returns: boolean
+      }
       check_rls_enabled: {
         Args: { table_name: string }
         Returns: boolean

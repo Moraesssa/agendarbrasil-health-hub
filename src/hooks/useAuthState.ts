@@ -15,6 +15,14 @@ export const useAuthState = () => {
   const loadingUserRef = useRef<string | null>(null);
 
   const loadUserData = async (uid: string, retryCount = 0) => {
+    // Validação crítica: verificar se uid é válido
+    if (!uid || uid === 'undefined' || uid === 'null') {
+      console.error('🚨 ERRO CRÍTICO: UID inválido detectado:', uid);
+      setLoading(false);
+      loadingUserRef.current = null;
+      return;
+    }
+
     if (loadingUserRef.current === uid) return;
     loadingUserRef.current = uid;
     
@@ -103,12 +111,18 @@ export const useAuthState = () => {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log(`🔔 Auth state mudou: ${event}`, !!session?.user);
+        console.log(`🔔 Auth state mudou: ${event}`, !!session?.user, session?.user?.id);
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
-        if (event === 'SIGNED_IN' && currentUser) {
+        if (event === 'SIGNED_IN' && currentUser?.id) {
+          // Validação adicional antes de carregar dados
+          if (currentUser.id === 'undefined' || !currentUser.id) {
+            console.error('🚨 ERRO: User ID inválido no sign in:', currentUser.id);
+            setLoading(false);
+            return;
+          }
           setLoading(true);
           loadUserData(currentUser.id);
         } else if (event === 'SIGNED_OUT') {
@@ -116,20 +130,41 @@ export const useAuthState = () => {
           setOnboardingStatus(null);
           setLoading(false);
           loadingUserRef.current = null;
+        } else if (event === 'INITIAL_SESSION' && currentUser?.id) {
+          // Tratar sessão inicial separadamente
+          if (currentUser.id === 'undefined' || !currentUser.id) {
+            console.error('🚨 ERRO: User ID inválido na sessão inicial:', currentUser.id);
+            setLoading(false);
+            return;
+          }
+          setLoading(true);
+          loadUserData(currentUser.id);
+        } else {
+          setLoading(false);
         }
       }
     );
 
     // Verificação da sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-            console.log("🔑 Sessão inicial encontrada");
+        if (session?.user?.id) {
+            console.log("🔑 Sessão inicial encontrada, User ID:", session.user.id);
+            // Validação crítica de UUID
+            if (session.user.id === 'undefined' || !session.user.id) {
+              console.error('🚨 ERRO: User ID inválido na sessão:', session.user.id);
+              setLoading(false);
+              return;
+            }
             setSession(session);
             setUser(session.user);
             loadUserData(session.user.id);
         } else {
+            console.log("❌ Nenhuma sessão inicial encontrada");
             setLoading(false);
         }
+    }).catch(error => {
+        console.error('🚨 Erro ao obter sessão inicial:', error);
+        setLoading(false);
     });
 
     return () => {

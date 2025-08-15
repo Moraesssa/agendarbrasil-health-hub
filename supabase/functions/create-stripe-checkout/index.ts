@@ -96,9 +96,20 @@ serve(async (req) => {
     // Obter dados da requisição
     const { consultaId, medicoId, amount, currency, paymentMethod, successUrl, cancelUrl } = await req.json();
     
-    // Input validation
+    // Input validation crítica com verificação de UUID
     if (!consultaId || !medicoId || !amount || amount <= 0) {
       throw new Error("Dados de consulta inválidos");
+    }
+    
+    // Validar UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (consultaId === 'undefined' || consultaId === 'null' || !uuidRegex.test(consultaId)) {
+      console.error('Consulta ID inválido:', consultaId);
+      throw new Error("ID da consulta inválido");
+    }
+    if (medicoId === 'undefined' || medicoId === 'null' || !uuidRegex.test(medicoId)) {
+      console.error('Médico ID inválido:', medicoId);
+      throw new Error("ID do médico inválido");
     }
     
     if (amount > 100000) { // R$ 1000 max

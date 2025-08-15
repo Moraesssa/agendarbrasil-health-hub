@@ -31,7 +31,13 @@ export const useErrorHandling = (options: UseErrorHandlingOptions = {}) => {
   const handleError = useCallback((error: Error | string, context?: string) => {
     const errorObj = typeof error === 'string' ? new Error(error) : error;
     
-    console.error(`Error in ${context || 'unknown context'}:`, errorObj);
+    // Log detalhado para debugging
+    console.error(`🚨 Error in ${context || 'unknown context'}:`, {
+      message: errorObj.message,
+      name: errorObj.name,
+      stack: errorObj.stack,
+      timestamp: new Date().toISOString()
+    });
     
     setErrorState(prev => ({
       ...prev,
@@ -40,9 +46,21 @@ export const useErrorHandling = (options: UseErrorHandlingOptions = {}) => {
     }));
 
     if (showToast) {
+      // Mensagens de erro mais amigáveis
+      let userMessage = errorObj.message || "Ocorreu um erro inesperado";
+      
+      // Tratar erros comuns de UUID
+      if (userMessage.includes('invalid input syntax for type uuid')) {
+        userMessage = "Dados inválidos detectados. Tente novamente.";
+      } else if (userMessage.includes('undefined')) {
+        userMessage = "Erro de dados não encontrados. Recarregue a página.";
+      } else if (userMessage.includes('auth')) {
+        userMessage = "Erro de autenticação. Faça login novamente.";
+      }
+      
       toast({
-        title: "Erro no agendamento",
-        description: errorObj.message || "Ocorreu um erro inesperado",
+        title: "Erro no sistema",
+        description: userMessage,
         variant: "destructive"
       });
     }
