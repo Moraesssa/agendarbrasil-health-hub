@@ -2045,6 +2045,10 @@ export type Database = {
           with_check: string
         }[]
       }
+      is_valid_uuid: {
+        Args: { input_text: string }
+        Returns: boolean
+      }
       reserve_appointment_slot: {
         Args: {
           p_appointment_datetime: string
@@ -2083,6 +2087,15 @@ export type Database = {
           nome_local: string
           status: string
           telefone: string
+        }[]
+      }
+      system_health_check: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          checked_at: string
+          component: string
+          details: Json
+          status: string
         }[]
       }
       validate_facility_data: {

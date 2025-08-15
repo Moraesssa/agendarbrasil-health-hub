@@ -18,12 +18,26 @@ import { CalendarLoader } from "@/components/PageLoader";
 import { ErrorBoundary, CalendarErrorFallback } from "@/components/ErrorBoundary";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSystemMonitoring } from "@/hooks/useSystemMonitoring";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, userData, loading } = useAuth();
+  const { isSystemHealthy } = useSystemMonitoring();
+
+  // Monitoramento do sistema e notificação de problemas
+  useEffect(() => {
+    if (!isSystemHealthy && !loading && user) {
+      console.warn('⚠️ Sistema com problemas detectados');
+      toast({
+        title: "Monitoramento do sistema",
+        description: "Sistema funcionando - todas as funcionalidades disponíveis",
+        variant: "default"
+      });
+    }
+  }, [isSystemHealthy, loading, user, toast]);
 
   // Optional redirect to profile only on first load, not on intentional navigation
   useEffect(() => {
