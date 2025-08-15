@@ -133,9 +133,14 @@ export const DoctorSelect = ({
           {!isLoading && isDoctorsEmpty && !disabled && (
             <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <User className="h-4 w-4 text-amber-600 flex-shrink-0" />
-              <p className="text-sm text-amber-700 font-medium">
-                Nenhum médico encontrado para os filtros selecionados
-              </p>
+              <div>
+                <p className="text-sm text-amber-700 font-medium">
+                  Nenhum médico encontrado para os filtros selecionados
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  Tente selecionar uma especialidade, estado e cidade diferentes
+                </p>
+              </div>
             </div>
           )}
 
@@ -145,6 +150,13 @@ export const DoctorSelect = ({
               <p className="text-sm text-green-700 font-medium">
                 {doctorsLength} médico{doctorsLength !== 1 ? 's' : ''} disponível{doctorsLength !== 1 ? 'eis' : ''}
               </p>
+            </div>
+          )}
+
+          {/* Debug Info - Development Only */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
+              <strong>Debug:</strong> {doctorsLength} médicos | Loading: {isLoading ? 'Sim' : 'Não'} | Dados: {JSON.stringify(safeDoctors.map(d => ({ id: d.id, name: d.display_name })), null, 2)}
             </div>
           )}
         </div>

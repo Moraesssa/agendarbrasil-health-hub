@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Doctor, Specialty, State, City, Horario, Local } from '@/types/medical';
 
-// Service interfaces
+// Service interfaces - Aligned with RPC function return
 export interface Medico {
   id: string;
   display_name: string;
@@ -100,13 +100,15 @@ export const getMedicos = async (
   specialty: string,
   state: string,
   city: string
-): Promise<Doctor[]> => {
+): Promise<Medico[]> => {
   if (!specialty || !state || !city) {
-    console.warn('Especialidade, estado e cidade são obrigatórios para buscar médicos.');
+    console.warn('⚠️ [getMedicos] Parâmetros faltando:', { specialty, state, city });
     return [];
   }
 
   try {
+    console.log('🔍 [getMedicos] Buscando médicos com parâmetros:', { specialty, state, city });
+    
     const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
       p_specialty: specialty,
       p_city: city,
@@ -114,14 +116,25 @@ export const getMedicos = async (
     });
 
     if (error) {
-      console.error('Erro ao buscar médicos:', error);
+      console.error('❌ [getMedicos] Erro na RPC:', error);
       throw error;
     }
 
-    return data || [];
+    console.log('✅ [getMedicos] Dados retornados:', data);
+    
+    // Convert to Medico format if needed
+    const doctors: Medico[] = (data || []).map((doctor: any) => ({
+      id: doctor.id,
+      display_name: doctor.display_name,
+      especialidades: doctor.especialidades,
+      crm: doctor.crm
+    }));
+
+    console.log('📋 [getMedicos] Médicos formatados:', doctors);
+    return doctors;
 
   } catch (error) {
-    console.error('Ocorreu um erro inesperado ao buscar médicos:', error);
+    console.error('🚨 [getMedicos] Erro inesperado:', error);
     return [];
   }
 };

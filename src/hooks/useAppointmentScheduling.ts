@@ -129,18 +129,34 @@ export const useAppointmentScheduling = () => {
 
   useEffect(() => {
     if (!selectedSpecialty || !selectedCity || !selectedState) {
-        setDoctors([]); // Limpa a lista se os filtros mudarem
+        console.log('🔄 [useAppointmentScheduling] Limpando médicos - filtros incompletos:', { selectedSpecialty, selectedCity, selectedState });
+        setDoctors([]);
         return;
     }
     
     const loadDoctors = async () => {
+      console.log('🚀 [useAppointmentScheduling] Iniciando busca de médicos:', { selectedSpecialty, selectedCity, selectedState });
       setIsLoading(true);
       
       try {
         const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
-        setDoctors(Array.isArray(doctorsData) ? doctorsData : []);
+        console.log('📊 [useAppointmentScheduling] Médicos recebidos:', doctorsData);
+        
+        const validDoctors = Array.isArray(doctorsData) ? doctorsData : [];
+        setDoctors(validDoctors);
+        
+        if (validDoctors.length === 0) {
+          console.warn('⚠️ [useAppointmentScheduling] Nenhum médico encontrado para os filtros selecionados');
+          toast({
+            title: "Nenhum médico encontrado",
+            description: `Não há médicos de ${selectedSpecialty} disponíveis em ${selectedCity}/${selectedState}.`,
+            variant: "default"
+          });
+        } else {
+          console.log(`✅ [useAppointmentScheduling] ${validDoctors.length} médico(s) encontrado(s)`);
+        }
       } catch (error) {
-        console.error("Erro ao carregar médicos:", error);
+        console.error("❌ [useAppointmentScheduling] Erro ao carregar médicos:", error);
         logger.error("Erro ao carregar médicos", "useAppointmentScheduling", error);
         setDoctors([]);
         toast({ 
