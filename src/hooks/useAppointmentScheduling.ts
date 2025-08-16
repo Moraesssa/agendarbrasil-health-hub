@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { appointmentServiceProxy } from "@/services/mockAppointmentService";
 import { LocalComHorarios } from "@/services/mockDataService";
+import { Medico } from "@/services/newAppointmentService";
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
 
@@ -77,7 +78,7 @@ export const useAppointmentScheduling = () => {
       
       try {
         const [specialtiesData, statesData] = await Promise.all([
-          appointmentService.getSpecialties(),
+          appointmentServiceProxy.getSpecialties(),
           supabase.rpc('get_available_states').then(res => res.data || [])
         ]);
         setSpecialties(Array.isArray(specialtiesData) ? specialtiesData : []);
@@ -140,7 +141,7 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
+        const doctorsData = await appointmentServiceProxy.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
         console.log('📊 [useAppointmentScheduling] Médicos recebidos:', doctorsData);
         
         const validDoctors = Array.isArray(doctorsData) ? doctorsData : [];
@@ -183,7 +184,7 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
+        const slots = await appointmentServiceProxy.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
         setLocaisComHorarios(Array.isArray(slots) ? slots : []);
       } catch (error) {
         console.error("Erro ao carregar horários:", error);
@@ -210,7 +211,7 @@ export const useAppointmentScheduling = () => {
       const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
       const localTexto = `${selectedLocal.nome_local} - ${selectedLocal.endereco.logradouro}, ${selectedLocal.endereco.numero}`;
 
-      await appointmentService.scheduleAppointment({
+      await appointmentServiceProxy.scheduleAppointment({
         paciente_id: user.id,
         medico_id: selectedDoctor,
         data_consulta: appointmentDateTime,
