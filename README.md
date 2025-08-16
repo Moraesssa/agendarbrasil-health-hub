@@ -318,33 +318,51 @@ O Location Refresh Manager trabalha em conjunto com o `enhancedLocationService` 
 
 ### Available Scripts
 
+## Development Scripts
 ```sh
 # Development server
 npm run dev                    # Inicia servidor de desenvolvimento na porta 8080
+npm run dev:clean              # Remove cache do Vite e inicia dev server
 
 # Production build
 npm run build                  # Build de produção com otimizações completas
-
-# Development build
 npm run build:dev              # Build de desenvolvimento com sourcemaps
-
-# Clean build (removes cache)
 npm run build:clean            # Remove cache e dist, depois faz build limpo
+npm run build:production       # Build de produção com validações completas
 
-# Clean development (removes cache)
-npm run dev:clean              # Remove cache do Vite e inicia dev server
-
-# Linting
-npm run lint                   # Executa ESLint para verificação de código
-
-# Preview production build
+# Preview and linting
 npm run preview                # Visualiza build de produção localmente
+npm run lint                   # Executa ESLint para verificação de código
+```
 
-# Environment and validation
+## Testing and Validation Scripts
+```sh
+# Environment and connections
 npm run setup                  # Assistente interativo de configuração do ambiente
 npm run test:env               # Valida variáveis de ambiente
 npm run test:connections       # Testa conexões com serviços externos
-npm run validate               # Executa todas as validações
+npm run validate               # Executa todas as validações básicas
+
+# Security testing
+npm run security:audit         # Auditoria de segurança de dependências
+npm run security:fix           # Correção automática de vulnerabilidades
+npm run security:payment       # Teste de segurança de pagamentos
+npm run security:validate      # Validação completa de segurança de pagamentos
+
+# Production readiness
+npm run production:validate    # Validação completa de prontidão para produção
+npm run validate:production    # Validação específica de produção
+
+# Unit testing
+npm run test:unit              # Executar testes unitários
+npm run test:unit:watch        # Executar testes em modo watch
+npm run test:coverage          # Executar testes com cobertura
+
+# End-to-end testing
+npm run test:e2e               # Executar testes E2E com Cypress
+npm run test:e2e:open          # Abrir interface do Cypress
+npm run cypress:run:chrome     # Executar testes no Chrome
+npm run cypress:run:edge       # Executar testes no Edge
 ```
 
 ## Configuração de Build e Otimizações
@@ -414,7 +432,7 @@ import { appointmentService } from '@/services/appointmentService';
 
 ### Testing and Debugging Tools
 
-The project includes several debugging and testing utilities:
+The project includes several debugging and testing utilities. For comprehensive documentation of all testing scripts, see [Testing Scripts Documentation](./docs/testing-scripts.md).
 
 #### Environment Configuration Testing
 - **`test-env-vars.js`**: Environment variables validation script
@@ -456,6 +474,34 @@ node debug-doctor-config.js
 
 **⚠️ Security Note**: This script contains hardcoded database credentials and should only be used in development environments. Ensure credentials are removed before committing to version control.
 
+#### Location and City Testing
+- **`testar-cidades-mg.js`**: Comprehensive testing script for Minas Gerais cities and doctors
+  - Tests the `get_available_cities` function for MG state
+  - Validates doctor search by specialty and location for each city
+  - Tests multiple specialties: Cardiologia, Pediatria, Clínica Geral
+  - Provides detailed statistics on doctor availability per city
+  - Uses ES modules with proper environment variable loading
+  - Identifies cities with no doctors for data quality assurance
+
+```sh
+# Run Minas Gerais cities and doctors test
+node testar-cidades-mg.js
+```
+
+- **`testar-todas-cidades.js`**: Complete national testing script for all cities and states with registered doctors
+  - Tests `get_available_states` function to list all available states
+  - Validates `get_available_cities` function for each Brazilian state
+  - Searches doctors by specialty and location across all cities
+  - Tests 7 main specialties: Cardiologia, Pediatria, Anestesiologia, Dermatologia, Ginecologia, Infectologia, Medicina de Família
+  - Provides comprehensive national coverage statistics
+  - Generates consolidated summary of states and cities with doctors
+  - Secure environment variable loading with ES modules
+
+```sh
+# Run comprehensive national cities and doctors test
+node testar-todas-cidades.js
+```
+
 #### Other Testing Scripts
 - **`test-auth.html`**: Authentication testing interface
 - **`test-backend-functions.sql`**: Backend function testing queries
@@ -471,6 +517,12 @@ node debug-doctor-config.js
 
 # Run location debugging
 node debug-locations.js
+
+# Run comprehensive MG cities test
+node testar-cidades-mg.js
+
+# Run national coverage test
+node testar-todas-cidades.js
 ```
 
 ### Database Setup and Migration Scripts

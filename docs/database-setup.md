@@ -48,6 +48,16 @@ O sistema utiliza PostgreSQL através do Supabase com Row Level Security (RLS) p
 
 **Melhorias Implementadas:**
 - Retorna apenas cidades onde há médicos efetivamente cadastrados
+- Inclui contagem de médicos por cidade para melhor experiência do usuário
+- Melhora significativamente a performance das consultas de localização
+- Adiciona validação rigorosa de dados nulos
+
+**Validação:**
+Após executar este script, você pode validar o funcionamento usando:
+```bash
+node testar-cidades-mg.js
+```
+Este script testa especificamente as cidades de Minas Gerais e valida se a função está retornando dados corretos.
 - Inclui contagem de médicos por cidade para informação do usuário
 - Filtra registros com campos cidade/estado nulos
 - Performance otimizada com JOINs diretos entre tabelas

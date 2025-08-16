@@ -1021,6 +1021,70 @@ interface Medico {
 }
 ```
 
+## Testing and Validation Scripts
+
+### testar-cidades-mg.js
+
+Script abrangente para teste de cidades e médicos em Minas Gerais, validando a integridade dos dados e funcionalidade das APIs de busca.
+
+**Funcionalidades:**
+- Testa a função `get_available_cities` para o estado de MG
+- Valida busca de médicos por especialidade e localização em cada cidade
+- Testa múltiplas especialidades: Cardiologia, Pediatria, Clínica Geral
+- Fornece estatísticas detalhadas sobre disponibilidade de médicos por cidade
+- Identifica cidades sem médicos para garantia de qualidade dos dados
+- Utiliza ES modules com carregamento adequado de variáveis de ambiente
+
+**Execução:**
+```bash
+node testar-cidades-mg.js
+```
+
+**Saída Esperada:**
+```
+🔍 TESTANDO CIDADES EM MINAS GERAIS
+
+📋 Cidades retornadas pela função get_available_cities para MG:
+   Total de cidades: 2
+   1. Belo Horizonte (15 médicos)
+   2. Uberlândia (8 médicos)
+
+🔍 Testando busca de médicos em cada cidade:
+
+🔸 Testando Belo Horizonte/MG:
+   Cardiologia: 5 médicos
+   Pediatria: 3 médicos
+   Clínica Geral: 7 médicos
+   📊 Total verificado: 15 médicos
+
+🔸 Testando Uberlândia/MG:
+   Cardiologia: 2 médicos
+   Pediatria: 2 médicos
+   Clínica Geral: 4 médicos
+   📊 Total verificado: 8 médicos
+
+✅ Teste de cidades em MG concluído!
+```
+
+**Validações Realizadas:**
+- Conectividade com Supabase usando variáveis de ambiente
+- Integridade da função `get_available_cities`
+- Precisão da função `get_doctors_by_location_and_specialty`
+- Consistência entre contagem de médicos e dados reais
+- Identificação de inconsistências nos dados
+
+**Dependências:**
+- Arquivo `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
+- Acesso às funções RPC do Supabase
+- Políticas RLS configuradas para acesso público aos dados de médicos
+
+**Casos de Uso:**
+- Validação após atualizações no banco de dados
+- Verificação de integridade dos dados de localização
+- Teste de performance das funções de busca
+- Identificação de problemas de configuração RLS
+- Monitoramento da qualidade dos dados de médicos
+
 ## Error Handling
 
 All API methods should be wrapped in try-catch blocks:
