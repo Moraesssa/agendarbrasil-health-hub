@@ -473,6 +473,146 @@ node debug-doctor-config.js
 node debug-locations.js
 ```
 
+### Database Setup and Migration Scripts
+
+O projeto inclui scripts SQL essenciais para configuração e correção do banco de dados Supabase:
+
+#### Scripts de Configuração do Supabase
+
+**`EXECUTAR-NO-SUPABASE-1.sql`** - Correção de Políticas RLS
+- Remove políticas restritivas que impedem acesso público aos dados
+- Cria políticas públicas para leitura de médicos e locais de atendimento
+- Permite acesso anônimo necessário para busca de profissionais de saúde
+- Essencial para funcionamento da busca por especialidade e localização
+
+**`EXECUTAR-NO-SUPABASE-2.sql`** - Correção de Dados de Localização
+- Atualiza campos cidade/estado baseado no CRM dos médicos
+- Mapeia estados brasileiros (MG, SP, SC, AM, DF) para cidades principais
+- Garante consistência dos dados geográficos no sistema
+- Corrige registros com informações de localização incompletas
+
+**`EXECUTAR-NO-SUPABASE-3.sql`** - Otimização da Função `get_available_cities`
+- Reescreve a função para retornar apenas cidades com médicos reais
+- Inclui contagem de médicos por cidade para melhor experiência do usuário
+- Melhora significativamente a performance das consultas de localização
+- Adiciona validação rigorosa de dados nulos
+
+**`EXECUTAR-NO-SUPABASE-4.sql`** - Correção da Função `get_doctors_by_location_and_specialty`
+- Corrige e otimiza a função de busca de médicos por especialidade e localização
+- Implementa testes de validação antes e depois da correção
+- Melhora a performance das consultas de agendamento
+- Garante retorno consistente de dados de médicos e locais de atendimento
+
+#### Função Otimizada: `get_available_cities`
+
+A função `get_available_cities` foi completamente reescrita para maior precisão e performance:
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_available_cities(state_uf text)
+RETURNS TABLE(cidade text, estado text, total_medicos bigint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT 
+        la.cidade,
+        la.estado,
+        COUNT(*) as total_medicos
+    FROM public.locais_atendimento la
+    JOIN public.medicos m ON la.medico_id = m.user_id
+    WHERE la.estado = state_uf
+    AND la.cidade IS NOT NULL
+    AND la.estado IS NOT NULL
+    GROUP BY la.cidade, la.estado
+    ORDER BY la.cidade;
+END;
+$;
+```
+
+**Melhorias Implementadas:**
+- **Dados Reais**: Retorna apenas cidades onde há médicos efetivamente cadastrados
+- **Contagem de Médicos**: Inclui número de profissionais por cidade para informação do usuário
+- **Validação de Dados**: Filtra registros com campos cidade/estado nulos
+- **Performance Otimizada**: JOIN direto entre tabelas para consultas mais rápidas
+- **Ordenação Consistente**: Mantém ordem alfabética das cidades para melhor UX
+
+**Exemplo de Uso:**
+```sql
+-- Buscar cidades disponíveis em Minas Gerais
+SELECT * FROM get_available_cities('MG');
+
+-- Resultado esperado:
+-- cidade          | estado | total_medicos
+-- Belo Horizonte  | MG     | 15
+-- Uberlândia      | MG     | 8
+```
+
+#### Função Otimizada: `get_doctors_by_location_and_specialty`
+
+A função `get_doctors_by_location_and_specialty` foi corrigida para garantir busca precisa de médicos baseada em especialidade e localização:
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_doctors_by_location_and_specialty(
+    p_specialty text,
+    p_city text,
+    p_state text
+)
+RETURNS TABLE(
+    id uuid,
+    display_name text,
+    crm text,
+    especialidades text[],
+    local_nome text,
+    local_cidade text,
+    local_estado text,
+    local_endereco text,
+    local_telefone text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $
+BEGIN
+    RETURN QUERY
+    SELECT 
+        m.user_id as id,
+        p.display_name,
+        m.crm,
+        m.especialidades,
+        la.nome_local as local_nome,
+        la.cidade as local_cidade,
+        la.estado as local_estado,
+        la.endereco as local_endereco,
+        la.telefone as local_telefone
+    FROM public.medicos m
+    JOIN public.profiles p ON m.user_id = p.id
+    JOIN public.locais_atendimento la ON m.user_id = la.medico_id
+    WHERE p_specialty = ANY(m.especialidades)
+    AND la.cidade = p_city
+    AND la.estado = p_state
+    ORDER BY p.display_name;
+END;
+$;
+```
+
+**Melhorias Implementadas:**
+- **Busca por Especialidade**: Utiliza operador `ANY` para busca eficiente em arrays de especialidades
+- **Filtros Geográficos**: Filtragem precisa por cidade e estado
+- **Dados Completos**: Retorna informações completas do médico e local de atendimento
+- **Performance Otimizada**: JOINs eficientes entre tabelas relacionadas
+- **Validação Integrada**: Inclui testes de validação antes e depois da correção
+
+#### Ordem de Execução Recomendada
+
+Para configuração completa do banco de dados, execute os scripts na seguinte ordem:
+
+1. **EXECUTAR-NO-SUPABASE-1.sql** - Configurar políticas RLS
+2. **EXECUTAR-NO-SUPABASE-2.sql** - Corrigir dados de localização
+3. **EXECUTAR-NO-SUPABASE-3.sql** - Otimizar função de cidades
+4. **EXECUTAR-NO-SUPABASE-4.sql** - Corrigir função de busca de médicos
+
+**⚠️ Importante**: Execute cada script individualmente no Supabase SQL Editor e verifique os resultados antes de prosseguir para o próximo.
+
 ### Project Structure
 
 ```

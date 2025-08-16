@@ -64,23 +64,161 @@ const { data } = await supabase.rpc('get_available_states');
 
 ### get_available_cities(state_uf)
 
-Returns cities within a specified state that have healthcare providers.
+Retorna cidades dentro de um estado específico que possuem profissionais de saúde cadastrados. Esta função foi otimizada para retornar apenas dados reais e incluir contagem de médicos.
 
 **Parameters:**
-- `state_uf` (string): State abbreviation
+- `state_uf` (string): Sigla do estado brasileiro (ex: "SP", "MG", "RJ")
 
 **Returns:**
 ```typescript
-CityInfo[] = {
-  cidade: string; // City name
+CityWithDoctorCount[] = {
+  cidade: string;        // Nome da cidade
+  estado: string;        // Sigla do estado
+  total_medicos: number; // Número de médicos na cidade
 }[]
 ```
+
+### get_doctors_by_location_and_specialty(p_specialty, p_city, p_state)
+
+Busca médicos baseado na especialidade e localização específica. Esta função foi corrigida para garantir busca precisa e retorno de dados completos.
+
+**Parameters:**
+- `p_specialty` (string): Especialidade médica (ex: "Cardiologia", "Pediatria")
+- `p_city` (string): Nome da cidade (ex: "Belo Horizonte", "São Paulo")
+- `p_state` (string): Sigla do estado (ex: "MG", "SP")
+
+**Returns:**
+```typescript
+DoctorWithLocation[] = {
+  id: string;              // UUID do médico
+  display_name: string;    // Nome completo do médico
+  crm: string;            // Número do CRM
+  especialidades: string[]; // Array de especialidades
+  local_nome: string;      // Nome do local de atendimento
+  local_cidade: string;    // Cidade do local
+  local_estado: string;    // Estado do local
+  local_endereco: string;  // Endereço completo
+  local_telefone: string;  // Telefone do local
+}[]
+```
+
+**Melhorias da Função:**
+- **Busca por Especialidade**: Utiliza operador `ANY` para busca eficiente em arrays de especialidades
+- **Filtros Geográficos**: Filtragem precisa por cidade e estado
+- **Dados Completos**: Retorna informações completas do médico e local de atendimento
+- **Performance Otimizada**: JOINs eficientes entre tabelas relacionadas
+- **Validação Integrada**: Inclui testes de validação antes e depois da correção
+
+**Usage:**
+```typescript
+const { data } = await supabase.rpc('get_doctors_by_location_and_specialty', { 
+  p_specialty: 'Cardiologia',
+  p_city: 'Belo Horizonte',
+  p_state: 'MG'
+});
+
+// Exemplo de resposta:
+// [
+//   {
+//     id: "uuid-123",
+//     display_name: "Dr. João Silva",
+//     crm: "CRM/MG 12345",
+//     especialidades: ["Cardiologia", "Clínica Médica"],
+//     local_nome: "Clínica Coração Saudável",
+//     local_cidade: "Belo Horizonte",
+//     local_estado: "MG",
+//     local_endereco: "Rua das Flores, 123",
+//     local_telefone: "(31) 3333-4444"
+//   }
+// ]
+```
+
+**Implementação SQL:**
+```sql
+CREATE OR REPLACE FUNCTION public.get_doctors_by_location_and_specialty(
+    p_specialty text,
+    p_city text,
+    p_state text
+)
+RETURNS TABLE(
+    id uuid,
+    display_name text,
+    crm text,
+    especialidades text[],
+    local_nome text,
+    local_cidade text,
+    local_estado text,
+    local_endereco text,
+    local_telefone text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $
+BEGIN
+    RETURN QUERY
+    SELECT 
+        m.user_id as id,
+        p.display_name,
+        m.crm,
+        m.especialidades,
+        la.nome_local as local_nome,
+        la.cidade as local_cidade,
+        la.estado as local_estado,
+        la.endereco as local_endereco,
+        la.telefone as local_telefone
+    FROM public.medicos m
+    JOIN public.profiles p ON m.user_id = p.id
+    JOIN public.locais_atendimento la ON m.user_id = la.medico_id
+    WHERE p_specialty = ANY(m.especialidades)
+    AND la.cidade = p_city
+    AND la.estado = p_state
+    ORDER BY p.display_name;
+END;
+$;
+```
+
+**Melhorias da Função:**
+- **Dados Reais**: Retorna apenas cidades com médicos efetivamente cadastrados
+- **Contagem de Médicos**: Inclui número de profissionais por cidade
+- **Validação Rigorosa**: Filtra registros com dados nulos
+- **Performance Otimizada**: JOIN direto entre tabelas para consultas mais rápidas
+- **Ordenação Alfabética**: Cidades ordenadas para melhor experiência do usuário
 
 **Usage:**
 ```typescript
 const { data } = await supabase.rpc('get_available_cities', { 
   state_uf: selectedState 
 });
+
+// Exemplo de resposta para 'MG':
+// [
+//   { cidade: "Belo Horizonte", estado: "MG", total_medicos: 15 },
+//   { cidade: "Uberlândia", estado: "MG", total_medicos: 8 }
+// ]
+```
+
+**Implementação SQL:**
+```sql
+CREATE OR REPLACE FUNCTION public.get_available_cities(state_uf text)
+RETURNS TABLE(cidade text, estado text, total_medicos bigint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT 
+        la.cidade,
+        la.estado,
+        COUNT(*) as total_medicos
+    FROM public.locais_atendimento la
+    JOIN public.medicos m ON la.medico_id = m.user_id
+    WHERE la.estado = state_uf
+    AND la.cidade IS NOT NULL
+    AND la.estado IS NOT NULL
+    GROUP BY la.cidade, la.estado
+    ORDER BY la.cidade;
+END;
+$;
 ```
 
 ## CommunicationService Methods
@@ -520,25 +658,37 @@ const specialties = await appointmentService.getSpecialties();
 
 ### getDoctorsByLocationAndSpecialty(specialty, city, state)
 
-Finds doctors matching the specified location and specialty criteria.
+Busca médicos que correspondem aos critérios de localização e especialidade especificados. Utiliza a função otimizada `get_doctors_by_location_and_specialty` do Supabase.
 
 **Parameters:**
-- `specialty` (string): Medical specialty
-- `city` (string): City name
-- `state` (string): State abbreviation
+- `specialty` (string): Especialidade médica (ex: "Cardiologia", "Pediatria")
+- `city` (string): Nome da cidade (ex: "Belo Horizonte", "São Paulo")
+- `state` (string): Sigla do estado (ex: "MG", "SP")
 
 **Returns:**
 ```typescript
-Promise<Medico[]>
+Promise<DoctorWithLocation[]>
 ```
+
+**Funcionalidades:**
+- Busca eficiente por especialidade usando operador `ANY` em arrays
+- Filtragem geográfica precisa por cidade e estado
+- Retorna dados completos do médico e local de atendimento
+- Performance otimizada com JOINs eficientes
+- Ordenação alfabética por nome do médico
 
 **Usage:**
 ```typescript
 const doctors = await appointmentService.getDoctorsByLocationAndSpecialty(
-  selectedSpecialty, 
-  selectedCity, 
-  selectedState
+  'Cardiologia', 
+  'Belo Horizonte', 
+  'MG'
 );
+
+// Resultado inclui informações completas:
+// - Dados do médico (nome, CRM, especialidades)
+// - Dados do local (nome, endereço, telefone)
+// - Localização geográfica (cidade, estado)
 ```
 
 ### getAvailableSlotsByDoctor(doctorId, date)
@@ -843,7 +993,9 @@ interface StateInfo {
 ### CityInfo
 ```typescript
 interface CityInfo {
-  cidade: string; // City name
+  cidade: string;        // City name
+  estado: string;        // State abbreviation
+  total_medicos: number; // Number of doctors in the city
 }
 ```
 
