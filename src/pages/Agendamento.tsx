@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { SpecialtySelect } from '@/components/scheduling/SpecialtySelect';
-import { StateSelect } from '@/components/scheduling/StateSelect';
-import { CitySelect } from '@/components/scheduling/CitySelect';
-import { DoctorSelect } from '@/components/scheduling/DoctorSelect';
+import { EnhancedStateSelect } from '@/components/scheduling/EnhancedStateSelect';
+import { EnhancedCitySelect } from '@/components/scheduling/EnhancedCitySelect';
+import { EnhancedDoctorSelect } from '@/components/scheduling/EnhancedDoctorSelect';
 import { DateSelect } from '@/components/scheduling/DateSelect';
-import { TimeSlotGrid } from '@/components/scheduling/TimeSlotGrid';
+import { EnhancedTimeSlotGrid } from '@/components/scheduling/EnhancedTimeSlotGrid';
+import { SmartRecommendations } from '@/components/scheduling/SmartRecommendations';
 import { AppointmentSummary } from '@/components/scheduling/AppointmentSummary';
 import { FamilyMemberSelect } from '@/components/scheduling/FamilyMemberSelect';
 import { NavigationHeader } from '@/components/scheduling/NavigationHeader';
@@ -18,6 +19,7 @@ import { SuccessAnimation, StepCompletion } from '@/components/scheduling/Succes
 import { validateSchedulingStep } from '@/components/scheduling/FieldValidation';
 import { SupabaseConfigWarning } from '@/components/SupabaseConfigWarning';
 import { useAppointmentScheduling } from '@/hooks/useAppointmentScheduling';
+import { useAdvancedScheduling } from '@/hooks/useAdvancedScheduling';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamilyData } from '@/hooks/useFamilyData';
 import { usePayment } from '@/hooks/usePayment';
@@ -58,6 +60,7 @@ const Agendamento = () => {
   });
 
   const appointmentHook = useAppointmentScheduling();
+  const advancedScheduling = useAdvancedScheduling();
   
   const {
     models: {
@@ -340,23 +343,40 @@ const Agendamento = () => {
                 </AlertDescription>
               </Alert>
             )}
-            <SpecialtySelect
-              selectedSpecialty={selectedSpecialty}
-              specialties={specialties}
-              isLoading={isLoading}
-              onChange={(value) => {
-                setSelectedSpecialty(value);
-                clearFieldError('specialty');
-              }}
-              disabled={isLoading}
-            />
+            <div className="space-y-6">
+              <SpecialtySelect
+                selectedSpecialty={selectedSpecialty}
+                specialties={specialties}
+                isLoading={isLoading}
+                onChange={(value) => {
+                  setSelectedSpecialty(value);
+                  clearFieldError('specialty');
+                }}
+                disabled={isLoading}
+              />
+              {selectedSpecialty && selectedState && selectedCity && (
+                <SmartRecommendations
+                  specialty={selectedSpecialty}
+                  city={selectedCity}
+                  state={selectedState}
+                  selectedDate={selectedDate}
+                  onDoctorSelect={(doctorId) => {
+                    setSelectedDoctor(doctorId);
+                    if (step < 4) setStep(4);
+                  }}
+                  onLocationSelect={(location) => {
+                    // Handle location selection if needed
+                  }}
+                />
+              )}
+            </div>
           </>
         );
       case 2:
         return isLoading && !states ? (
           <LoadingSkeleton variant="card" lines={3} />
         ) : (
-          <StateSelect
+          <EnhancedStateSelect
             selectedState={selectedState}
             states={states}
             isLoading={isLoading}
@@ -370,9 +390,10 @@ const Agendamento = () => {
         return isLoading && !cities ? (
           <LoadingSkeleton variant="card" lines={3} />
         ) : (
-          <CitySelect
+          <EnhancedCitySelect
             selectedCity={selectedCity}
             cities={cities}
+            selectedState={selectedState}
             isLoading={isLoading}
             onChange={(value) => {
               setSelectedCity(value);
@@ -384,9 +405,12 @@ const Agendamento = () => {
         return isLoading && !doctors ? (
           <LoadingSkeleton variant="card" lines={3} />
         ) : (
-          <DoctorSelect
+          <EnhancedDoctorSelect
             selectedDoctor={selectedDoctor}
             doctors={doctors}
+            specialty={selectedSpecialty}
+            city={selectedCity}
+            state={selectedState}
             isLoading={isLoading}
             onChange={(value) => {
               setSelectedDoctor(value);
@@ -439,7 +463,7 @@ const Agendamento = () => {
             {isLoading && timeSlots.length === 0 ? (
               <LoadingSkeleton variant="grid" lines={8} />
             ) : (
-              <TimeSlotGrid
+              <EnhancedTimeSlotGrid
                 selectedTime={selectedTime}
                 timeSlots={timeSlots}
                 isLoading={isLoading}
@@ -448,6 +472,8 @@ const Agendamento = () => {
                   handleTimeSelect(value);
                   clearFieldError('time');
                 }}
+                selectedDoctor={selectedDoctor}
+                selectedDate={selectedDate}
               />
             )}
             {process.env.NODE_ENV === 'development' && (

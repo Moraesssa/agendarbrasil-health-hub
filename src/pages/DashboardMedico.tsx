@@ -17,6 +17,8 @@ import { toast } from "@/hooks/use-toast";
 import { financeService } from "@/services/financeService";
 import { format, parseISO, isSameDay, isAfter, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { LocationManagement } from "@/components/doctor/LocationManagement";
+import { ScheduleManagement } from "@/components/doctor/ScheduleManagement";
 
 interface ChartData {
   dia: string;
@@ -259,6 +261,12 @@ const DashboardMedico = () => {
             </div>
 
             <PacientesRecentes />
+
+            {/* Enhanced Doctor Management Modules */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+              <LocationManagement />
+              <ScheduleManagement />
+            </div>
           </div>
         </main>
       </div>
