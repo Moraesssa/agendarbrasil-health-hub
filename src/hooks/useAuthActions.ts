@@ -44,30 +44,31 @@ export const useAuthActions = (
     }
   };
 
-  const setUserType = async (type: UserType) => {
-    if (!user) return;
-
-    try {
-      console.log('Setting user type:', type);
-      
-      const { error } = await authService.updateUserType(user.id, type);
-
-      if (error) {
-        console.error('Erro ao definir tipo de usuário:', error);
-        return;
+  const setUserType = (type: UserType): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+      if (!user) {
+        return reject(new Error("Usuário não autenticado"));
       }
 
-      // Atualizar o estado local
-      if (userData) {
-        const updatedUserData = {
-          ...userData,
-          userType: type,
-          onboardingCompleted: false
-        };
+      try {
+        console.log('Setting user type:', type);
 
-        setUserData(updatedUserData);
+        // 1. Atualiza o tipo de usuário no banco de dados
+        const { error: updateError } = await authService.updateUserType(user.id, type);
+        if (updateError) {
+          throw updateError;
+        }
+
+        // 2. Re-busca o perfil completo do banco para garantir consistência
+        const { profile: freshProfile, error: fetchError } = await authService.loadUserProfile(user.id);
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        // 3. Atualiza o estado global com os dados novos e consistentes
+        setUserData(freshProfile);
         
-        // Atualizar status de onboarding
+        // 4. Atualiza o estado do onboarding
         const totalSteps = type === 'medico' ? 7 : 5;
         setOnboardingStatus({
           currentStep: 2,
@@ -76,10 +77,20 @@ export const useAuthActions = (
           canProceed: true,
           errors: []
         });
+
+        // 5. Resolve a promessa para sinalizar que o fluxo pode continuar
+        resolve();
+
+      } catch (error) {
+        console.error('Erro ao definir tipo de usuário:', error);
+        toast({
+          title: "Erro ao Salvar",
+          description: "Não foi possível salvar sua escolha. Tente novamente.",
+          variant: "destructive",
+        });
+        reject(error);
       }
-    } catch (error) {
-      console.error('Erro ao definir tipo de usuário:', error);
-    }
+    });
   };
 
   const updateOnboardingStep = async (step: number) => {
