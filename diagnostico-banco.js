@@ -22,7 +22,12 @@ function loadEnvVars() {
     if (trimmedLine && !trimmedLine.startsWith('#')) {
       const [key, ...valueParts] = trimmedLine.split('=');
       if (key && valueParts.length > 0) {
-        envVars[key.trim()] = valueParts.join('=').trim();
+        let value = valueParts.join('=').trim();
+        // Remover aspas do início e do fim, se existirem
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.substring(1, value.length - 1);
+        }
+        envVars[key.trim()] = value;
       }
     }
   });
