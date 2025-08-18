@@ -18,6 +18,7 @@ const UserTypeSelection = () => {
     setIsSubmitting(true);
     
     try {
+      // Await the promise from setUserType. Navigation will only happen if it resolves.
       await setUserType(type);
       
       toast({
@@ -25,14 +26,12 @@ const UserTypeSelection = () => {
         description: `Você foi cadastrado como ${type}. Vamos completar seu perfil.`,
       });
       
+      // This navigation is now safe because the user state is guaranteed to be updated.
       navigate("/onboarding");
+
     } catch (error) {
-      console.error('Erro ao definir tipo de usuário:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível definir o tipo de usuário. Tente novamente.",
-        variant: "destructive",
-      });
+      // The error toast is now handled inside setUserType, so we just need to log it here.
+      console.error('Erro no fluxo de seleção de tipo de usuário:', error);
     } finally {
       setIsSubmitting(false);
     }
