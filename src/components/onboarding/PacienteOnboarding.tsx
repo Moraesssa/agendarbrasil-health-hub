@@ -13,26 +13,31 @@ interface PacienteOnboardingProps {
   currentStep: number;
   setCurrentStep: (step: number) => void;
   totalSteps: number;
+  onboardingData: any;
+  setOnboardingData: (data: any) => void;
 }
 
 export const PacienteOnboarding = ({ 
   currentStep, 
   setCurrentStep, 
-  totalSteps 
+  totalSteps,
+  onboardingData,
+  setOnboardingData
 }: PacienteOnboardingProps) => {
   const navigate = useNavigate();
   const { finishOnboarding, isSubmitting } = useOnboarding();
   const { toast } = useToast();
-  const [pacienteData, setPacienteData] = useState<Partial<Paciente>>({});
 
   const handleNext = async (stepData: any) => {
-    const updatedData = { ...pacienteData, ...stepData };
-    setPacienteData(updatedData);
+    // 1. Atualiza o estado centralizado no componente pai
+    const updatedData = { ...onboardingData, ...stepData };
+    setOnboardingData(updatedData);
 
+    // 2. Avança para o próximo passo ou finaliza
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Finalizar onboarding
+      // Finalizar onboarding com os dados completos
       const success = await finishOnboarding(updatedData);
       if (success) {
         toast({
@@ -56,14 +61,14 @@ export const PacienteOnboarding = ({
         return (
           <DadosPessoaisForm
             onNext={handleNext}
-            initialData={pacienteData.dadosPessoais}
+            initialData={onboardingData.dadosPessoais}
           />
         );
       case 2:
         return (
           <EnderecoForm
             onNext={handleNext}
-            initialData={pacienteData.endereco}
+            initialData={onboardingData.endereco}
           />
         );
       case 3:

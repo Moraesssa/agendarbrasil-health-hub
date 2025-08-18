@@ -8,13 +8,17 @@ interface OnboardingStepsProps {
   setCurrentStep: (step: number) => void;
   userType: UserType;
   totalSteps: number;
+  onboardingData: any;
+  setOnboardingData: (data: any) => void;
 }
 
 export const OnboardingSteps = ({ 
   currentStep, 
   setCurrentStep, 
   userType, 
-  totalSteps 
+  totalSteps,
+  onboardingData,
+  setOnboardingData
 }: OnboardingStepsProps) => {
   if (userType === 'medico') {
     return (
@@ -22,6 +26,8 @@ export const OnboardingSteps = ({
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
         totalSteps={totalSteps}
+        onboardingData={onboardingData}
+        setOnboardingData={setOnboardingData}
       />
     );
   }
@@ -31,6 +37,8 @@ export const OnboardingSteps = ({
       currentStep={currentStep}
       setCurrentStep={setCurrentStep}
       totalSteps={totalSteps}
+      onboardingData={onboardingData}
+      setOnboardingData={setOnboardingData}
     />
   );
 };
