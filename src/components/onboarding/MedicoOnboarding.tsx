@@ -14,26 +14,31 @@ interface MedicoOnboardingProps {
   currentStep: number;
   setCurrentStep: (step: number) => void;
   totalSteps: number;
+  onboardingData: any;
+  setOnboardingData: (data: any) => void;
 }
 
 export const MedicoOnboarding = ({ 
   currentStep, 
   setCurrentStep, 
-  totalSteps 
+  totalSteps,
+  onboardingData,
+  setOnboardingData
 }: MedicoOnboardingProps) => {
   const navigate = useNavigate();
   const { finishOnboarding, isSubmitting } = useOnboarding();
   const { toast } = useToast();
-  const [medicoData, setMedicoData] = useState<Partial<Medico>>({});
 
   const handleNext = async (stepData: any) => {
-    const updatedData = { ...medicoData, ...stepData };
-    setMedicoData(updatedData);
+    // 1. Atualiza o estado centralizado no componente pai
+    const updatedData = { ...onboardingData, ...stepData };
+    setOnboardingData(updatedData);
 
+    // 2. Avança para o próximo passo ou finaliza
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Finalizar onboarding
+      // Finalizar onboarding com os dados completos
       const success = await finishOnboarding(updatedData);
       if (success) {
         toast({
@@ -57,21 +62,21 @@ export const MedicoOnboarding = ({
         return (
           <DadosProfissionaisForm
             onNext={handleNext}
-            initialData={medicoData.dadosProfissionais}
+            initialData={onboardingData.dadosProfissionais}
           />
         );
       case 2:
         return (
           <EnderecoForm
             onNext={handleNext}
-            initialData={medicoData.endereco}
+            initialData={onboardingData.endereco}
           />
         );
       case 3:
         return (
           <ConfiguracoesForm
             onNext={handleNext}
-            initialData={medicoData.configuracoes}
+            initialData={onboardingData.configuracoes}
           />
         );
       case 4:
