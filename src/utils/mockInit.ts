@@ -8,11 +8,11 @@ if (process.env.NODE_ENV === 'development') {
   const enableMocks = urlParams.has('mocks') || localStorage.getItem('enableMocks') === 'true';
   
   if (enableMocks) {
-    MockUtils.enable();
-    console.log('🎭 Mocks ativados automaticamente');
+    // MockUtils.enable(); // Comentado para desativar mocks por padrão
+    // console.log('🎭 Mocks ativados automaticamente');
     
     // Salvar preferência
-    localStorage.setItem('enableMocks', 'true');
+    // localStorage.setItem('enableMocks', 'true');
   }
 }
 
