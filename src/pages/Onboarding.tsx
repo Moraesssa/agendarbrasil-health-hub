@@ -9,6 +9,7 @@ const Onboarding = () => {
   const { userData, loading } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [onboardingData, setOnboardingData] = useState({});
 
   useEffect(() => {
     if (loading) return;
@@ -89,6 +90,8 @@ const Onboarding = () => {
             setCurrentStep={setCurrentStep}
             userType={userData.userType}
             totalSteps={totalSteps}
+            onboardingData={onboardingData}
+            setOnboardingData={setOnboardingData}
           />
         </div>
       </div>
