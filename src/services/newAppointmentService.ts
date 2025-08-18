@@ -99,7 +99,7 @@ export const newAppointmentService = {
     try {
       await checkAuthentication();
       
-      const { data, error } = await supabase.rpc('get_doctors_for_scheduling', {
+      const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
         p_specialty: specialty,
         p_city: city,
         p_state: state
