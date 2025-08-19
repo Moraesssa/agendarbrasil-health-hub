@@ -116,8 +116,8 @@ async function diagnosticar() {
     method: 'POST',
     body: JSON.stringify({
       p_specialty: 'Cardiologia',
-      p_city: 'Brasília',
-      p_state: 'DF'
+      p_city: 'São Paulo',
+      p_state: 'SP'
     })
   });
   
