@@ -136,6 +136,10 @@ END;
 $function$;
 
 -- 4. Criar função para monitoramento de sistema
+-- Adicionar a coluna 'is_active' se ela não existir, para garantir a robustez do script
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true NOT NULL;
+
 CREATE OR REPLACE FUNCTION public.system_health_check()
 RETURNS TABLE(
   component text,
