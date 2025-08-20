@@ -75,6 +75,7 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
                     <Input
                       placeholder="Ex: 123456/SP"
                       {...field}
+                      data-testid="crm-input"
                     />
                   </FormControl>
                   <FormMessage />
@@ -86,7 +87,7 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
               control={form.control}
               name="especialidades"
               render={({ field }) => (
-                <FormItem>
+                <FormItem data-testid="especialidade-select">
                   <SpecialtyMultiSelect
                     initialSpecialties={field.value}
                     onChange={(specialties) => {
@@ -108,6 +109,7 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
                     <Input
                       placeholder="(11) 99999-9999"
                       {...field}
+                      data-testid="telefone-input"
                     />
                   </FormControl>
                   <FormMessage />
@@ -125,6 +127,7 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
                     <Input
                       placeholder="(11) 99999-9999"
                       {...field}
+                      data-testid="whatsapp-input"
                     />
                   </FormControl>
                   <FormMessage />
@@ -132,7 +135,7 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
               )}
             />
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" data-testid="form-step-1-next">
               Próximo
             </Button>
           </form>

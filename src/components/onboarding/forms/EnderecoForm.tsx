@@ -136,6 +136,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
             <Label htmlFor="cep">CEP</Label>
             <Input
               id="cep"
+              data-testid="cep-input"
               value={formData.cep}
               onChange={(e) => handleCepChange(e.target.value)}
               placeholder="00000-000"
@@ -149,6 +150,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
             <Label htmlFor="logradouro">Logradouro</Label>
             <Input
               id="logradouro"
+              data-testid="logradouro-input"
               value={formData.logradouro}
               onChange={(e) => setFormData({ ...formData, logradouro: sanitizeInput(e.target.value) })}
               className={errors.logradouro ? 'border-red-500' : ''}
@@ -162,6 +164,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
               <Label htmlFor="numero">Número</Label>
               <Input
                 id="numero"
+                data-testid="numero-input"
                 value={formData.numero}
                 onChange={(e) => setFormData({ ...formData, numero: sanitizeInput(e.target.value) })}
                 className={errors.numero ? 'border-red-500' : ''}
@@ -174,6 +177,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
               <Label htmlFor="complemento">Complemento</Label>
               <Input
                 id="complemento"
+                data-testid="complemento-input"
                 value={formData.complemento}
                 onChange={(e) => setFormData({ ...formData, complemento: sanitizeInput(e.target.value) })}
               />
@@ -184,6 +188,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
             <Label htmlFor="bairro">Bairro</Label>
             <Input
               id="bairro"
+              data-testid="bairro-input"
               value={formData.bairro}
               onChange={(e) => setFormData({ ...formData, bairro: sanitizeInput(e.target.value) })}
               className={errors.bairro ? 'border-red-500' : ''}
@@ -197,6 +202,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
               <Label htmlFor="cidade">Cidade</Label>
               <Input
                 id="cidade"
+                data-testid="cidade-input"
                 value={formData.cidade}
                 onChange={(e) => setFormData({ ...formData, cidade: sanitizeInput(e.target.value) })}
                 className={errors.cidade ? 'border-red-500' : ''}
@@ -209,6 +215,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
               <Label htmlFor="uf">UF</Label>
               <Input
                 id="uf"
+                data-testid="uf-input"
                 value={formData.uf}
                 onChange={(e) => setFormData({ ...formData, uf: sanitizeInput(e.target.value.toUpperCase()) })}
                 maxLength={2}
@@ -219,7 +226,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" data-testid="form-step-2-next">
             Próximo
           </Button>
         </form>
