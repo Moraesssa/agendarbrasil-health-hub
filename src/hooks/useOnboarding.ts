@@ -23,6 +23,17 @@ export const useOnboarding = () => {
       
       if (!newConfiguracoes.horarioAtendimento) {
         newConfiguracoes.horarioAtendimento = getDefaultWorkingHours();
+      } else {
+        // Transforma o formato do horário para corresponder à restrição do banco de dados
+        const horarios = newConfiguracoes.horarioAtendimento;
+        const horariosFormatados: Record<string, any[]> = {};
+        for (const dia in horarios) {
+          if (Object.prototype.hasOwnProperty.call(horarios, dia)) {
+            // Garante que cada dia seja um array de blocos de horário
+            horariosFormatados[dia] = Array.isArray(horarios[dia]) ? horarios[dia] : [horarios[dia]];
+          }
+        }
+        newConfiguracoes.horarioAtendimento = horariosFormatados;
       }
 
       const medicoData = {

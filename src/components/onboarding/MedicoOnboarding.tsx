@@ -102,6 +102,7 @@ export const MedicoOnboarding = ({
                   onClick={() => handleNext({})}
                   disabled={isSubmitting}
                   className="flex-1"
+                  data-testid="finish-onboarding-button"
                 >
                   {isSubmitting ? "Finalizando..." : "Finalizar Cadastro"}
                 </Button>

@@ -100,11 +100,12 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                     <FormLabel>Duração da Consulta (minutos)</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        min="15" 
+                        type="number"
+                        min="15"
                         max="120"
-                        {...field} 
+                        {...field}
                         onChange={(e) => field.onChange(sanitizeNumericInput(e.target.value))}
+                        data-testid="duracao-consulta-select"
                       />
                     </FormControl>
                     <FormMessage />
@@ -114,13 +115,14 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                   <FormItem>
                     <FormLabel>Valor da Consulta (R$)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
+                      <Input
+                        type="number"
+                        step="0.01"
                         min="0.01"
                         max="10000"
-                        {...field} 
+                        {...field}
                         onChange={(e) => field.onChange(sanitizeNumericInput(e.target.value))}
+                        data-testid="valor-consulta-input"
                       />
                     </FormControl>
                     <FormMessage />
@@ -128,7 +130,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                 )} />
               </div>
               <FormField control={form.control} name="aceitaConvenio" render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4" data-testid="aceita-convenio-checkbox">
                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                    <div className="space-y-1 leading-none">
                     <FormLabel>Aceita convênios</FormLabel>
@@ -147,7 +149,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
               </div>
               <div className="space-y-3">
                 {diasDaSemana.map((dia) => (
-                  <Card key={dia.key} className="p-4 bg-slate-50">
+                  <Card key={dia.key} className="p-4 bg-slate-50" data-testid={`horario-${dia.key}`}>
                     <Controller
                       name={`horarios.${dia.key}`}
                       control={form.control}
@@ -158,6 +160,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                               checked={field.value.ativo}
                               onCheckedChange={(checked) => field.onChange({ ...field.value, ativo: checked })}
                               id={`switch-${dia.key}`}
+                              data-testid={`switch-${dia.key}`}
                             />
                             <Label htmlFor={`switch-${dia.key}`} className="ml-3 font-semibold text-base">
                               {dia.label}
@@ -172,6 +175,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                                 value={field.value.inicio}
                                 onChange={(e) => field.onChange({ ...field.value, inicio: e.target.value })}
                                 disabled={!field.value.ativo}
+                                data-testid={`inicio-${dia.key}`}
                               />
                             </div>
                             <div>
@@ -182,6 +186,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
                                 value={field.value.fim}
                                 onChange={(e) => field.onChange({ ...field.value, fim: e.target.value })}
                                 disabled={!field.value.ativo}
+                                data-testid={`fim-${dia.key}`}
                               />
                             </div>
                           </div>
@@ -194,7 +199,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
               </div>
             </div>
 
-            <Button type="submit" className="w-full">Próximo</Button>
+            <Button type="submit" className="w-full" data-testid="form-step-3-next">Próximo</Button>
           </form>
         </Form>
       </CardContent>
