@@ -151,18 +151,15 @@ DECLARE
   auth_users_count integer;
   profiles_count integer;
   consultas_today integer;
-  pagamentos_today integer;
 BEGIN
   -- Verificar contadores básicos
   SELECT COUNT(*) INTO profiles_count FROM public.profiles WHERE is_active = true;
   SELECT COUNT(*) INTO consultas_today FROM public.consultas WHERE DATE(created_at) = CURRENT_DATE;
-  SELECT COUNT(*) INTO pagamentos_today FROM public.pagamentos WHERE DATE(created_at) = CURRENT_DATE;
 
   -- Retornar status dos componentes
   RETURN QUERY VALUES
     ('database'::text, 'healthy'::text, jsonb_build_object('profiles', profiles_count)::jsonb, now()::timestamptz),
-    ('appointments'::text, 'healthy'::text, jsonb_build_object('today', consultas_today)::jsonb, now()::timestamptz),
-    ('payments'::text, 'healthy'::text, jsonb_build_object('today', pagamentos_today)::jsonb, now()::timestamptz);
+    ('appointments'::text, 'healthy'::text, jsonb_build_object('today', consultas_today)::jsonb, now()::timestamptz);
 END;
 $function$;
 
