@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VideoCallInterface } from "./VideoCallInterface";
+import { VirtualWaitingRoom } from "@/components/telemedicine/VirtualWaitingRoom";
+import { EnhancedDoctorVideoInterface } from "@/components/telemedicine/EnhancedDoctorVideoInterface";
 import { Video, AlertTriangle, Info } from "lucide-react";
 
 interface VideoCallModalProps {
@@ -28,6 +30,7 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
   isDoctor = false
 }) => {
   const [showVideoInterface, setShowVideoInterface] = useState(false);
+  const [showWaitingRoom, setShowWaitingRoom] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
 
   const roomId = appointment.video_room_id || appointment.id;
@@ -46,6 +49,7 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
     try {
       // Simular um pequeno delay para mostrar o loading
       await new Promise(resolve => setTimeout(resolve, 1000));
+      setShowWaitingRoom(false);
       setShowVideoInterface(true);
     } catch (error) {
       console.error('Erro ao iniciar chamada:', error);
@@ -56,6 +60,7 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
   const handleCallEnd = () => {
     setShowVideoInterface(false);
+    setShowWaitingRoom(true);
     onClose();
   };
 
@@ -84,14 +89,63 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
   };
 
   if (showVideoInterface) {
+    if (isDoctor) {
+      return (
+        <Dialog open={isOpen} onOpenChange={() => {}}>
+          <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0">
+            <EnhancedDoctorVideoInterface
+              roomId={roomId}
+              userName={userName}
+              userEmail={userEmail}
+              appointment={{
+                id: appointment.id,
+                paciente_id: appointment.video_room_id || '', // This would need proper patient ID
+                data_consulta: appointment.data_consulta,
+                tipo_consulta: appointment.tipo_consulta,
+                paciente: {
+                  display_name: 'Paciente', // This would come from appointment data
+                  email: userEmail
+                }
+              }}
+              onCallEnd={handleCallEnd}
+            />
+          </DialogContent>
+        </Dialog>
+      );
+    } else {
+      return (
+        <Dialog open={isOpen} onOpenChange={() => {}}>
+          <DialogContent className="max-w-6xl w-full h-[90vh] p-0">
+            <VideoCallInterface
+              roomId={roomId}
+              userName={userName}
+              userEmail={userEmail}
+              onCallEnd={handleCallEnd}
+              isDoctor={isDoctor}
+            />
+          </DialogContent>
+        </Dialog>
+      );
+    }
+  }
+
+  if (showWaitingRoom) {
     return (
-      <Dialog open={isOpen} onOpenChange={() => {}}>
-        <DialogContent className="max-w-6xl w-full h-[90vh] p-0">
-          <VideoCallInterface
-            roomId={roomId}
-            userName={userName}
-            userEmail={userEmail}
-            onCallEnd={handleCallEnd}
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl w-full h-[80vh] p-0">
+          <VirtualWaitingRoom
+            appointment={{
+              id: appointment.id,
+              data_consulta: appointment.data_consulta,
+              tipo_consulta: appointment.tipo_consulta,
+              medico: {
+                dados_profissionais: {
+                  nome: 'Dr. Exemplo',
+                  especialidade: 'Clínica Geral'
+                }
+              }
+            }}
+            onJoinCall={handleStartCall}
             isDoctor={isDoctor}
           />
         </DialogContent>
