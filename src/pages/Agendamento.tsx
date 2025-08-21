@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getSupabaseConfig, checkSupabaseConnection } from '@/utils/supabaseCheck';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { LocalComHorarios } from '@/services/mockDataService';
 import { useSearchParams } from 'react-router-dom';
 
 const TOTAL_STEPS = 7;
@@ -174,21 +175,10 @@ const Agendamento = () => {
     }
   };
 
-  const handleTimeSelect = (time: string) => {
+  const handleTimeSelect = (time: string, local: LocalComHorarios) => {
     setSelectedTime(time);
-    
-    // Encontrar o local correspondente ao horário selecionado
-    if (locaisComHorarios && locaisComHorarios.length > 0) {
-      const localComHorario = locaisComHorarios.find(local => 
-        local.horarios_disponiveis?.some(slot => slot.time === time)
-      );
-      
-      if (localComHorario) {
-        appointmentHook.setters.setSelectedLocal(localComHorario);
-      } else if (locaisComHorarios.length === 1) {
-        // Se há apenas um local, selecionar automaticamente
-        appointmentHook.setters.setSelectedLocal(locaisComHorarios[0]);
-      }
+    if (local) {
+      appointmentHook.setters.setSelectedLocal(local);
     }
   };
 
@@ -468,8 +458,8 @@ const Agendamento = () => {
                 timeSlots={timeSlots}
                 isLoading={isLoading}
                 locaisInfo={locaisComHorarios}
-                onChange={(value) => {
-                  handleTimeSelect(value);
+                onChange={(time, local) => {
+                  handleTimeSelect(time, local);
                   clearFieldError('time');
                 }}
                 selectedDoctor={selectedDoctor}
