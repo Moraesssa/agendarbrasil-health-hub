@@ -9,12 +9,17 @@ import { ProfileActions } from "@/components/profile/ProfileActions";
 import { ContactInfoCard } from "@/components/profile/ContactInfoCard";
 import { StatusCard } from "@/components/profile/StatusCard";
 import { PageHeader } from "@/components/profile/PageHeader";
+import { MockSimulationBanner } from "@/components/MockSimulationBanner";
+import { MockControl } from "@/components/MockControl";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { mockDataService } from "@/services/mockDataService";
 
 const Perfil = () => {
   const { userData, user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string>("");
+  const [showMockControls, setShowMockControls] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -129,6 +134,9 @@ const Perfil = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Banner de simulação se mocks estão ativos */}
+          <MockSimulationBanner onShowControls={() => setShowMockControls(true)} />
+          
           <ProfileHeader
             displayName={userData.displayName}
             userType="paciente"
@@ -143,6 +151,16 @@ const Perfil = () => {
           </div>
 
           <ProfileActions actions={profileActions} />
+
+          {/* Dialog para controles mock */}
+          <Dialog open={showMockControls} onOpenChange={setShowMockControls}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>Controles de Simulação</DialogTitle>
+              </DialogHeader>
+              <MockControl />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

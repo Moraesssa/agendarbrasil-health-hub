@@ -5,20 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { mockDataService, MockUtils, MockData } from '@/services/mockDataService';
+import { mockDataService } from '@/services/mockDataService';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const MockControl = () => {
   const [isEnabled, setIsEnabled] = useState(mockDataService.isEnabled());
   const [currentPatientIndex, setCurrentPatientIndex] = useState(0);
-  const [stats, setStats] = useState(mockDataService.getStatistics());
   const { user } = useAuth();
 
   // Atualizar estado quando mocks mudam
   useEffect(() => {
     const checkMockStatus = () => {
       setIsEnabled(mockDataService.isEnabled());
-      setStats(mockDataService.getStatistics());
     };
 
     const interval = setInterval(checkMockStatus, 1000);
@@ -27,12 +25,11 @@ export const MockControl = () => {
 
   const toggleMocks = (enabled: boolean) => {
     if (enabled) {
-      MockUtils.enable();
+      mockDataService.enableMocks(true);
       setCurrentPatientIndex(0);
-      // Recarregar página para aplicar mudanças
       window.location.reload();
     } else {
-      MockUtils.disable();
+      mockDataService.disableMocks();
       window.location.reload();
     }
   };
@@ -46,7 +43,31 @@ export const MockControl = () => {
   };
 
   const currentPatient = mockDataService.getCurrentPatient();
-  const allCities = MockUtils.getAllCities();
+  const allPatients = mockDataService.getAllPatients();
+  
+  // Calculate statistics
+  const stats = {
+    totalPatients: allPatients.length,
+    byGender: allPatients.reduce((acc, p) => {
+      acc[p.sexo] = (acc[p.sexo] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    byState: allPatients.reduce((acc, p) => {
+      acc[p.estado] = (acc[p.estado] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  };
+  
+  const cityStats = allPatients.reduce((acc, p) => {
+    const key = `${p.cidade}-${p.estado}`;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const allCities = Object.entries(cityStats).map(([key, count]) => {
+    const [city, state] = key.split('-');
+    return { city, state, count };
+  });
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -99,7 +120,7 @@ export const MockControl = () => {
                   <SelectValue placeholder="Selecione um paciente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MockData.patients.map((patient, index) => (
+                  {allPatients.map((patient, index) => (
                     <SelectItem key={patient.id} value={index.toString()}>
                       {patient.display_name} - {patient.cidade}/{patient.estado}
                     </SelectItem>
@@ -173,9 +194,8 @@ export const MockControl = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    const randomPatient = MockUtils.getRandomPatient();
-                    const index = MockData.patients.findIndex(p => p.id === randomPatient.id);
-                    changePatient(index.toString());
+                    const randomIndex = Math.floor(Math.random() * allPatients.length);
+                    changePatient(randomIndex.toString());
                   }}
                 >
                   Paciente Aleatório
@@ -186,7 +206,7 @@ export const MockControl = () => {
                   size="sm"
                   onClick={() => {
                     console.log('📊 Estatísticas Mock:', stats);
-                    console.log('👥 Todos os pacientes:', MockData.patients);
+                    console.log('👥 Todos os pacientes:', allPatients);
                     console.log('🏙️ Cidades:', allCities);
                   }}
                 >
@@ -202,7 +222,7 @@ export const MockControl = () => {
               Os dados mock estão desativados. Ative para usar dados de teste.
             </p>
             <p className="text-sm text-muted-foreground">
-              Dados mock incluem {MockData.totalPatients} pacientes distribuídos em 9 estados brasileiros.
+              Dados mock incluem {allPatients.length} pacientes distribuídos em 9 estados brasileiros.
             </p>
           </div>
         )}
