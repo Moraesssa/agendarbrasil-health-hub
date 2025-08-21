@@ -276,6 +276,37 @@ export const newAppointmentService = {
     }
   },
 
+  async cleanupTemporaryReservation(sessionId: string): Promise<void> {
+    logger.info("Cleaning up temporary reservation", "NewAppointmentService");
+    if (!sessionId) return;
+    try {
+      await supabase
+        .from('temporary_reservations')
+        .delete()
+        .eq('session_id', sessionId);
+    } catch (error) {
+      logger.error('Error cleaning up temporary reservation', "NewAppointmentService", error);
+      // Do not throw, as this is a background cleanup task.
+    }
+  },
+
+  async extendReservation(sessionId: string): Promise<{ expiresAt: Date } | null> {
+    logger.info("Extending temporary reservation", "NewAppointmentService");
+    try {
+      await checkAuthentication();
+      const newExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const { error } = await supabase
+        .from('temporary_reservations')
+        .update({ expires_at: newExpiresAt.toISOString() })
+        .eq('session_id', sessionId);
+      if (error) throw error;
+      return { expiresAt: newExpiresAt };
+    } catch (error) {
+      logger.error('Error extending reservation', "NewAppointmentService", error);
+      throw error;
+    }
+  },
+
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
