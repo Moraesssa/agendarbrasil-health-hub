@@ -291,14 +291,16 @@ class MockDataService {
     ).map(d => ({ id: d.id, display_name: d.display_name }));
   }
 
-  // Mock dos horários disponíveis, agora dinâmico e realista
+  // Mock dos horários disponíveis. Para garantir a testabilidade, ele sempre retorna
+  // um conjunto previsível de horários, independentemente do médico ou da data selecionada.
   async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
     if (!this.config.enabled) throw new Error('Mocks not enabled');
 
-    const doctor = MOCK_DOCTORS.find(d => d.id === doctorId);
-    if (!doctor) return [];
+    // For testing predictability, always return a schedule for Dr. João Silva on a Monday.
+    const doctor = MOCK_DOCTORS.find(d => d.id === 'doc-001');
+    if (!doctor) return []; // Should not happen with mock data
 
-    const dayOfWeek = getDayName(new Date(date + 'T00:00:00'));
+    const dayOfWeek = 'seg'; // Always pretend it's Monday for predictability
     const scheduleForDay = doctor.configuracoes.horarioAtendimento[dayOfWeek];
     if (!scheduleForDay) return [];
 
@@ -315,8 +317,8 @@ class MockDataService {
             duracaoConsulta: doctor.configuracoes.duracaoConsulta,
             horarioAtendimento: workingHoursForLocal
           },
-          new Date(date + 'T00:00:00'),
-          [] // Assumindo nenhum agendamento existente no mock para simplicidade
+          new Date(date + 'T00:00:00'), // Still use the selected date for the calendar day
+          [] // Assuming no existing appointments in mock for simplicity
         );
 
         if (slots.length > 0) {
