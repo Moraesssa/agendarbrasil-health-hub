@@ -1,4 +1,4 @@
-import { TimeSlot } from '@/utils/timeSlotUtils';
+import { generateTimeSlots, getDayName, TimeSlot } from '@/utils/timeSlotUtils';
 
 // Interface LocalComHorarios local
 export interface LocalComHorarios {
@@ -43,6 +43,71 @@ export interface MockDoctor {
     ativo: boolean;
   }[];
 }
+
+const MOCK_DOCTORS: MockDoctor[] = [
+  {
+    id: 'doc-001',
+    display_name: 'Dr. João Silva',
+    especialidades: ['Cardiologia', 'Clínica Geral'],
+    crm: '12345-SP',
+    telefone: '(11) 98765-4321',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    configuracoes: {
+      duracaoConsulta: 30,
+      horarioAtendimento: {
+        seg: [{ local_id: 'local-001', inicio: '08:00', fim: '12:00' }, { local_id: 'local-001', inicio: '14:00', fim: '18:00' }],
+        qua: [{ local_id: 'local-001', inicio: '08:00', fim: '12:00' }],
+        sex: [{ local_id: 'local-002', inicio: '10:00', fim: '19:00', inicioAlmoco: '13:00', fimAlmoco: '14:00' }]
+      }
+    },
+    locais_atendimento: [
+      { id: 'local-001', nome_local: 'Clínica Central SP', endereco: { rua: 'Rua Augusta, 1000' }, ativo: true },
+      { id: 'local-002', nome_local: 'Consultório Itaim', endereco: { rua: 'Rua Itaim Bibi, 800' }, ativo: true }
+    ]
+  },
+  {
+    id: 'doc-002',
+    display_name: 'Dra. Maria Santos',
+    especialidades: ['Dermatologia'],
+    crm: '54321-RJ',
+    telefone: '(21) 91234-5678',
+    cidade: 'Rio de Janeiro',
+    estado: 'RJ',
+    configuracoes: {
+      duracaoConsulta: 20,
+      horarioAtendimento: {
+        ter: [{ local_id: 'local-003', inicio: '09:00', fim: '17:00', inicioAlmoco: '12:00', fimAlmoco: '13:00' }],
+        qui: [{ local_id: 'local-003', inicio: '09:00', fim: '17:00', inicioAlmoco: '12:00', fimAlmoco: '13:00' }]
+      }
+    },
+    locais_atendimento: [
+      { id: 'local-003', nome_local: 'Dermaclinica RJ', endereco: { rua: 'Rua Copacabana, 300' }, ativo: true }
+    ]
+  },
+  {
+    id: 'doc-003',
+    display_name: 'Dr. Pedro Oliveira',
+    especialidades: ['Pediatria', 'Clínica Geral'],
+    crm: '67890-MG',
+    telefone: '(31) 95555-4444',
+    cidade: 'Belo Horizonte',
+    estado: 'MG',
+    configuracoes: {
+      duracaoConsulta: 40,
+      horarioAtendimento: {
+        seg: [{ local_id: 'local-004', inicio: '08:00', fim: '16:00' }],
+        ter: [{ local_id: 'local-004', inicio: '08:00', fim: '16:00' }],
+        qua: [{ local_id: 'local-004', inicio: '08:00', fim: '16:00' }],
+        qui: [{ local_id: 'local-004', inicio: '08:00', fim: '16:00' }],
+        sex: [{ local_id: 'local-004', inicio: '08:00', fim: '12:00' }]
+      }
+    },
+    locais_atendimento: [
+      { id: 'local-004', nome_local: 'Pediatria BH Kids', endereco: { rua: 'Av. Afonso Pena, 1500' }, ativo: true }
+    ]
+  }
+];
 
 // 40 pacientes distribuídos geograficamente conforme planejado
 const MOCK_PATIENTS: MockPatient[] = [
@@ -215,51 +280,57 @@ class MockDataService {
     return cityMap[state] || [];
   }
 
-  // Mock dos médicos (baseado nos dados existentes do banco)
+  // Mock dos médicos, agora usando a lista MOCK_DOCTORS
   async getDoctorsByLocationAndSpecialty(specialty: string, city: string, state: string): Promise<any[]> {
     if (!this.config.enabled) throw new Error('Mocks not enabled');
     
-    // Simular busca de médicos - retorna médicos fictícios baseados na localização
-    const baseDoctors = [
-      { id: 'doc-001', display_name: 'Dr. João Silva' },
-      { id: 'doc-002', display_name: 'Dra. Maria Santos' },
-      { id: 'doc-003', display_name: 'Dr. Pedro Oliveira' }
-    ];
-    
-    // Filtrar por localização (simulado)
-    return baseDoctors.filter((_, index) => {
-      // Simular disponibilidade baseada em hash da cidade/estado
-      const hash = (city + state + specialty).length;
-      return hash % 3 >= index;
-    });
+    return MOCK_DOCTORS.filter(doctor =>
+      doctor.cidade === city &&
+      doctor.estado === state &&
+      doctor.especialidades.includes(specialty)
+    ).map(d => ({ id: d.id, display_name: d.display_name }));
   }
 
-  // Mock dos horários disponíveis
+  // Mock dos horários disponíveis, agora dinâmico e realista
   async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
     if (!this.config.enabled) throw new Error('Mocks not enabled');
+
+    const doctor = MOCK_DOCTORS.find(d => d.id === doctorId);
+    if (!doctor) return [];
+
+    const dayOfWeek = getDayName(new Date(date + 'T00:00:00'));
+    const scheduleForDay = doctor.configuracoes.horarioAtendimento[dayOfWeek];
+    if (!scheduleForDay) return [];
+
+    const locaisComHorarios: LocalComHorarios[] = [];
+
+    for (const local of doctor.locais_atendimento) {
+      const workingHoursForLocal = {
+        [dayOfWeek]: scheduleForDay.filter(s => s.local_id === local.id)
+      };
+
+      if (workingHoursForLocal[dayOfWeek].length > 0) {
+        const slots = generateTimeSlots(
+          {
+            duracaoConsulta: doctor.configuracoes.duracaoConsulta,
+            horarioAtendimento: workingHoursForLocal
+          },
+          new Date(date + 'T00:00:00'),
+          [] // Assumindo nenhum agendamento existente no mock para simplicidade
+        );
+
+        if (slots.length > 0) {
+          locaisComHorarios.push({
+            id: local.id,
+            nome_local: local.nome_local,
+            endereco: local.endereco,
+            horarios_disponiveis: slots
+          });
+        }
+      }
+    }
     
-    // Gerar horários mockados
-    const timeSlots: TimeSlot[] = [
-      { time: '08:00', available: true },
-      { time: '08:30', available: true },
-      { time: '09:00', available: false },
-      { time: '09:30', available: true },
-      { time: '10:00', available: true },
-      { time: '10:30', available: false },
-      { time: '14:00', available: true },
-      { time: '14:30', available: true },
-      { time: '15:00', available: true },
-      { time: '15:30', available: false },
-      { time: '16:00', available: true },
-      { time: '16:30', available: true }
-    ];
-    
-    return [{
-      id: 'local-001',
-      nome_local: 'Clínica Central',
-      endereco: { rua: 'Rua Principal, 123', bairro: 'Centro', cep: '01234-567' },
-      horarios_disponiveis: timeSlots
-    }];
+    return locaisComHorarios;
   }
 
   // Mock do agendamento
