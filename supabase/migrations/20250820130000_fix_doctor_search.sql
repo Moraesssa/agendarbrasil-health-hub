@@ -72,7 +72,7 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT
-        m.id,
+        m.user_id as id,
         p.display_name,
         m.especialidades,
         m.crm
