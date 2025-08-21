@@ -114,7 +114,7 @@ interface MockConfig {
 
 class MockDataService {
   private config: MockConfig = {
-    enabled: false,
+    enabled: true,
     currentPatientIndex: 0,
     autoAuth: false
   };
