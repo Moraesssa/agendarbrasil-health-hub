@@ -92,7 +92,7 @@ export const useAdvancedScheduling = () => {
 
       // Set cleanup timer
       const timer = setTimeout(() => {
-        cleanupTemporaryReservation(sessionId);
+        cleanupTemporaryReservation(result.sessionId);
       }, 15 * 60 * 1000);
 
       setReservationTimer(timer);
