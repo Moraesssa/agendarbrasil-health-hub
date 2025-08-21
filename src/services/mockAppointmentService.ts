@@ -56,6 +56,16 @@ export const mockAppointmentService = {
     return mockDataService.getAvailableSlotsByDoctor(doctorId, date);
   },
 
+  async createTemporaryReservation(doctorId: string, dateTime: string, localId?: string): Promise<any> {
+    logger.info("Mock: Creating temporary reservation", "MockAppointmentService");
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return {
+      data: { id: 'mock-res-id' },
+      sessionId: `temp_mock_${Date.now()}`,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+    };
+  },
+
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
@@ -118,5 +128,14 @@ export const appointmentServiceProxy = {
     
     const { newAppointmentService } = await import('@/services/newAppointmentService');
     return newAppointmentService.scheduleAppointment(appointmentData);
+  },
+
+  async createTemporaryReservation(doctorId: string, dateTime: string, localId?: string): Promise<any> {
+    if (shouldUseMockService()) {
+      return mockAppointmentService.createTemporaryReservation(doctorId, dateTime, localId);
+    }
+
+    const { newAppointmentService } = await import('@/services/newAppointmentService');
+    return newAppointmentService.createTemporaryReservation(doctorId, dateTime, localId);
   }
 };

@@ -242,64 +242,9 @@ const Agendamento = () => {
     setHasUnsavedChanges(true);
   }, [selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedFamilyMember]);
 
-  const handleAppointmentConfirm = async () => {
-    if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedLocal) {
-      toast({
-        title: "Dados incompletos",
-        description: "Por favor, preencha todos os campos antes de confirmar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Create a temporary reservation with pending payment status
-      const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
-      
-      // Use the reserve_appointment_slot function
-      const { data: reservationData, error: reservationError } = await supabase.rpc('reserve_appointment_slot', {
-        p_doctor_id: selectedDoctor,
-        p_patient_id: user.id,
-        p_family_member_id: selectedFamilyMember || null,
-        p_scheduled_by_id: user.id,
-        p_appointment_datetime: appointmentDateTime,
-        p_specialty: selectedSpecialty
-      });
-
-      if (reservationError) {
-        console.error('Reservation error:', reservationError);
-        throw new Error(reservationError.message || "Erro ao reservar horário");
-      }
-
-      if (reservationData && reservationData.length > 0 && reservationData[0].success) {
-        const consultaId = reservationData[0].appointment_id;
-        
-        // Process payment with Stripe
-        const paymentResult = await processPayment({
-          consultaId,
-          medicoId: selectedDoctor,
-          valor: 150, // Default consultation price - adjust as needed
-          metodo: 'credit_card'
-        });
-
-        if (paymentResult.success) {
-          toast({
-            title: "Redirecionando para pagamento",
-            description: "Você será redirecionado para completar o pagamento da consulta",
-          });
-        }
-      } else {
-        throw new Error(reservationData?.[0]?.message || "Horário não disponível");
-      }
-    } catch (error) {
-      console.error('Error in appointment confirmation:', error);
-      toast({
-        title: "Erro ao processar agendamento",
-        description: error instanceof Error ? error.message : "Tente novamente ou entre em contato com o suporte",
-        variant: "destructive",
-      });
-    }
-  };
+  // The handleAppointmentConfirm function was removed because its logic is now correctly
+  // handled by the handleAgendamento function from the useAppointmentScheduling hook,
+  // which properly uses the mock service proxy. The button's onClick now calls handleAgendamento directly.
 
   const renderStep = () => {
     switch (step) {
@@ -550,7 +495,7 @@ const Agendamento = () => {
               </div>
 
               <Button
-                onClick={handleAppointmentConfirm}
+                onClick={handleAgendamento}
                 disabled={processing || isSubmitting || isRetrying}
                 className="w-full h-11 sm:h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none"
                 aria-label="Confirmar agendamento e prosseguir para pagamento"

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { appointmentServiceProxy } from '@/services/mockAppointmentService';
 import { generateTimeSlots, TimeSlot, DoctorConfig, ExistingAppointment } from '@/utils/timeSlotUtils';
 
 interface ReservationData {
@@ -73,40 +74,18 @@ export const useAdvancedScheduling = () => {
     setIsReserving(true);
     
     try {
-      const sessionId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
-      
-      const { data, error } = await supabase
-        .from('temporary_reservations')
-        .insert({
-          medico_id: doctorId,
-          paciente_id: (await supabase.auth.getUser()).data.user?.id,
-          data_consulta: dateTime,
-          local_id: localId,
-          session_id: sessionId,
-          expires_at: expiresAt.toISOString()
-        })
-        .select()
-        .single();
+      const result = await appointmentServiceProxy.createTemporaryReservation(doctorId, dateTime, localId);
 
-      if (error) {
-        // Check if it's a conflict (slot already reserved)
-        if (error.code === '23505') {
-          toast({
-            title: "Horário indisponível",
-            description: "Este horário acabou de ser reservado por outro paciente. Escolha outro horário.",
-            variant: "destructive"
-          });
-          return false;
-        }
-        throw error;
+      if (!result) {
+        // Errors are handled inside the service, just need to stop execution here
+        return false;
       }
 
       const reservationData: ReservationData = {
         doctorId,
         dateTime,
-        sessionId,
-        expiresAt
+        sessionId: result.sessionId,
+        expiresAt: result.expiresAt
       };
 
       setTemporaryReservation(reservationData);

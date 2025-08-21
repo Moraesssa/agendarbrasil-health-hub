@@ -242,6 +242,40 @@ export const newAppointmentService = {
     }
   },
 
+  async createTemporaryReservation(
+    doctorId: string,
+    dateTime: string,
+    localId: string | undefined
+  ): Promise<{ data: any; sessionId: string; expiresAt: Date }> {
+    logger.info("Creating temporary reservation", "NewAppointmentService");
+    try {
+      const user = await checkAuthentication();
+      const sessionId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+
+      const { data, error } = await supabase
+        .from('temporary_reservations')
+        .insert({
+          medico_id: doctorId,
+          paciente_id: user.id,
+          data_consulta: dateTime,
+          local_id: localId,
+          session_id: sessionId,
+          expires_at: expiresAt.toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+      return { data, sessionId, expiresAt };
+    } catch (error) {
+      logger.error("Failed to create temporary reservation", "NewAppointmentService", error);
+      throw error;
+    }
+  },
+
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
