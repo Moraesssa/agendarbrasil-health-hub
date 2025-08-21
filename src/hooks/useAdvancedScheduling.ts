@@ -118,23 +118,17 @@ export const useAdvancedScheduling = () => {
 
   const cleanupTemporaryReservation = useCallback(async (sessionId?: string) => {
     const targetSessionId = sessionId || temporaryReservation?.sessionId;
-    
     if (!targetSessionId) return;
 
     try {
-      await supabase
-        .from('temporary_reservations')
-        .delete()
-        .eq('session_id', targetSessionId);
-
+      await appointmentServiceProxy.cleanupTemporaryReservation(targetSessionId);
       setTemporaryReservation(null);
-      
       if (reservationTimer) {
         clearTimeout(reservationTimer);
         setReservationTimer(null);
       }
     } catch (error) {
-      console.error('Error cleaning up temporary reservation:', error);
+      // Errors are logged in the service, no need to re-log here unless for specific UI feedback
     }
   }, [temporaryReservation, reservationTimer]);
 
@@ -142,26 +136,19 @@ export const useAdvancedScheduling = () => {
     if (!temporaryReservation) return false;
 
     try {
-      const newExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-      
-      const { error } = await supabase
-        .from('temporary_reservations')
-        .update({ expires_at: newExpiresAt.toISOString() })
-        .eq('session_id', temporaryReservation.sessionId);
+      const result = await appointmentServiceProxy.extendReservation(temporaryReservation.sessionId);
+      if (!result) return false;
 
-      if (error) throw error;
-
+      const newExpiresAt = result.expiresAt;
       setTemporaryReservation(prev => prev ? { ...prev, expiresAt: newExpiresAt } : null);
 
       // Reset timer
       if (reservationTimer) {
         clearTimeout(reservationTimer);
       }
-      
       const timer = setTimeout(() => {
         cleanupTemporaryReservation();
       }, 15 * 60 * 1000);
-
       setReservationTimer(timer);
 
       toast({
@@ -171,7 +158,6 @@ export const useAdvancedScheduling = () => {
 
       return true;
     } catch (error) {
-      console.error('Error extending reservation:', error);
       toast({
         title: "Erro ao estender reserva",
         description: "Não foi possível estender a reserva. Complete o agendamento rapidamente.",

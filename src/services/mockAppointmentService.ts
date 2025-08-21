@@ -66,6 +66,18 @@ export const mockAppointmentService = {
     };
   },
 
+  async cleanupTemporaryReservation(sessionId: string): Promise<void> {
+    logger.info(`Mock: Cleaning up reservation ${sessionId}`, "MockAppointmentService");
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return;
+  },
+
+  async extendReservation(sessionId: string): Promise<{ expiresAt: Date } | null> {
+    logger.info(`Mock: Extending reservation ${sessionId}`, "MockAppointmentService");
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { expiresAt: new Date(Date.now() + 15 * 60 * 1000) };
+  },
+
   async scheduleAppointment(appointmentData: {
     paciente_id: string;
     medico_id: string;
@@ -137,5 +149,21 @@ export const appointmentServiceProxy = {
 
     const { newAppointmentService } = await import('@/services/newAppointmentService');
     return newAppointmentService.createTemporaryReservation(doctorId, dateTime, localId);
+  },
+
+  async cleanupTemporaryReservation(sessionId: string): Promise<void> {
+    if (shouldUseMockService()) {
+      return mockAppointmentService.cleanupTemporaryReservation(sessionId);
+    }
+    const { newAppointmentService } = await import('@/services/newAppointmentService');
+    return newAppointmentService.cleanupTemporaryReservation(sessionId);
+  },
+
+  async extendReservation(sessionId: string): Promise<{ expiresAt: Date } | null> {
+    if (shouldUseMockService()) {
+      return mockAppointmentService.extendReservation(sessionId);
+    }
+    const { newAppointmentService } = await import('@/services/newAppointmentService');
+    return newAppointmentService.extendReservation(sessionId);
   }
 };
