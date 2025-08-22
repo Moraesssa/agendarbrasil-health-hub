@@ -5,6 +5,9 @@ import App from './App.tsx';
 import './index.css';
 import './utils/mockInit';
 
+// Initialize advanced logger
+import './utils/advancedLogger';
+
 
 // Ensure React is available globally to prevent createContext issues
 if (typeof window !== 'undefined') {

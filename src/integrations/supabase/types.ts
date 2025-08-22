@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_logs: {
+        Row: {
+          breadcrumbs: Json | null
+          context: string | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          meta: Json | null
+          performance_data: Json | null
+          session_id: string | null
+          stack_trace: string | null
+          timestamp: string
+          trace_id: string
+          url: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          breadcrumbs?: Json | null
+          context?: string | null
+          created_at?: string
+          id?: string
+          level: string
+          message: string
+          meta?: Json | null
+          performance_data?: Json | null
+          session_id?: string | null
+          stack_trace?: string | null
+          timestamp?: string
+          trace_id: string
+          url: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          breadcrumbs?: Json | null
+          context?: string | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          meta?: Json | null
+          performance_data?: Json | null
+          session_id?: string | null
+          stack_trace?: string | null
+          timestamp?: string
+          trace_id?: string
+          url?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       consultas: {
         Row: {
           amount: number | null
@@ -196,6 +250,36 @@ export type Database = {
           patient_phone?: string | null
           status?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      debug_allowlist: {
+        Row: {
+          email: string
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          id: string
+          is_active: boolean
+          user_id: string
+        }
+        Insert: {
+          email: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          user_id: string
+        }
+        Update: {
+          email?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          user_id?: string
         }
         Relationships: []
       }
@@ -1768,6 +1852,10 @@ export type Database = {
       check_rls_enabled: {
         Args: { table_name: string }
         Returns: boolean
+      }
+      cleanup_old_client_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       confirm_appointment_payment: {
         Args: { p_appointment_id: string; p_payment_intent_id: string }

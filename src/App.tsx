@@ -36,6 +36,7 @@ import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
 import GerenciarConexoes from '@/pages/GerenciarConexoes';
 import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
+import Debug from '@/pages/Debug';
 
 const queryClient = new QueryClient();
 
@@ -162,6 +163,7 @@ function App() {
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                     <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
+                    <Route path="/debug" element={<Debug />} />
                       <Route path="*" element={<NotFound />} />
                       </Routes>
                       </AuthRedirectController>

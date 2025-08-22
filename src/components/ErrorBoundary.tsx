@@ -28,6 +28,15 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ error, errorInfo });
     console.error(`Error in ${this.props.context || 'component'}:`, error, errorInfo);
+    
+    // Send to advanced logger if available
+    if ((window as any).__AdvancedLogger) {
+      (window as any).__AdvancedLogger.captureException(error, {
+        component: this.props.context || 'component',
+        errorInfo,
+        componentStack: errorInfo.componentStack
+      });
+    }
   }
 
   private handleReload = () => {
