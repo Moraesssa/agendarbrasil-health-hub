@@ -1,447 +1,136 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { advancedLogger } from '@/utils/advancedLogger';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Bug, Info, AlertCircle, RefreshCw, Search, Terminal } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import AdvancedLoggingSetup from '@/components/AdvancedLoggingSetup';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { advancedLogger } from '@/utils/advancedLogger';
+import { logger } from '@/utils/logger';
+import { supabase } from '@/integrations/supabase/client';
+// CORREÇÃO: Importando com chaves {}
+import { PageLoader } from '@/components/PageLoader'; 
+import { AuthDebugInfo } from '@/components/AuthDebugInfo';
 
-interface LogEntry {
-  id: string;
-  trace_id: string;
-  level: string;
-  message: string;
-  timestamp: string;
-  url: string;
-  context?: string;
-  meta?: Record<string, unknown>;
-  stack_trace?: string;
-  user_id?: string;
-}
+// Definição de um tipo simples para o estado dos diagnósticos
+type DiagnosticsState = {
+  isEnabled: boolean | null;
+  logQueueSize: number | null;
+  lastSent: string | null;
+  traceId: string | null;
+  error?: string;
+};
 
-const Debug: React.FC = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    traceId: '',
-    level: '',
-    limit: 100
-  });
-  const [isAdvancedEnabled, setIsAdvancedEnabled] = useState<boolean>(false);
-  const [systemDiagnostics, setSystemDiagnostics] = useState<any>(null);
+const DebugPage = () => {
+  const [diagnostics, setDiagnostics] = useState<DiagnosticsState | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [queryResult, setQueryResult] = useState<any>(null);
+  const [isQuerying, setIsQuerying] = useState(false);
 
-  const loadLogs = useCallback(async () => {
-    const enabled = await advancedLogger.isAdvancedLoggingEnabled();
-    if (!enabled) {
-      console.debug('Debug: Advanced logging not enabled, skipping log load');
-      return;
-    }
-    
-    setLoading(true);
+  const checkLoggingStatus = async () => {
+    setIsLoading(true);
+    setDiagnostics(null);
+    logger.debug('Debug: Checking logging status...');
     try {
-      console.debug('Debug: Loading logs with filters:', filters);
-      const result = await advancedLogger.queryLogs(filters);
-      console.debug('Debug: Query result:', result);
-      
-      if (result?.logs) {
-        setLogs(result.logs);
-      } else if (result?.data) {
-        setLogs(result.data);
-      } else {
-        console.debug('Debug: No logs found in result:', result);
-        setLogs([]);
-      }
-    } catch (error) {
-      console.error('Debug: Error loading logs:', error);
-      toast({
-        title: 'Erro ao carregar logs',
-        description: 'Não foi possível carregar os logs avançados.',
-        variant: 'destructive'
+      const isEnabled = await advancedLogger.isAdvancedLoggingEnabled();
+      const traceId = advancedLogger.getTraceId();
+
+      setDiagnostics({
+        isEnabled,
+        logQueueSize: (advancedLogger as any).queue?.length ?? 0,
+        lastSent: 'Not tracked in this version',
+        traceId,
+      });
+    } catch (error: any) {
+      logger.error('Failed to get system diagnostics', 'DebugPage', { error });
+      setDiagnostics({
+        isEnabled: null,
+        logQueueSize: null,
+        lastSent: null,
+        traceId: null,
+        error: error.message,
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [filters, toast]);
-
-  const handleLoggingStatusChange = useCallback(async () => {
-    console.debug('Debug: Checking logging status...');
-    const enabled = await advancedLogger.isAdvancedLoggingEnabled();
-    const diagnostics = await advancedLogger.getSystemDiagnostics();
-    
-    console.debug('Debug: Status check results:', { enabled, diagnostics });
-    
-    setIsAdvancedEnabled(enabled);
-    setSystemDiagnostics(diagnostics);
-    
-    if (enabled) {
-      setTimeout(() => loadLogs(), 200);
-    } else {
-      setLogs([]);
-    }
-  }, [loadLogs]);
-
-  useEffect(() => {
-    handleLoggingStatusChange();
-  }, [handleLoggingStatusChange]);
-
-  const testErrorCapture = async () => {
-    // Test different types of errors
-    console.error('Test error from debug page');
-    
+  };
+  
+  const handleSendTestLogs = () => {
+    setIsSending(true);
+    logger.info('Este é um log de teste de INFORMAÇÃO da página de depuração.');
+    logger.warn('Este é um log de teste de AVISO.');
+    console.log('Este é um console.log de teste que será mapeado para "info".');
     try {
-      throw new Error('Test exception from debug page');
+      throw new Error('Este é um erro de teste para o Advanced Logger.');
     } catch (error) {
-      await advancedLogger.captureException(error as Error, { testType: 'manual' });
+      advancedLogger.captureException(error as Error, { customContext: 'From Debug Page' });
     }
-    
-    // Test network error
-    fetch('/nonexistent-endpoint').catch(() => {});
-    
-    // Force flush logs immediately
-    await advancedLogger.forceFlush();
-    
-    toast({
-      title: 'Testes executados',
-      description: 'Erros de teste foram gerados. Aguarde alguns segundos e recarregue os logs.'
-    });
-    
-    // Auto-reload logs after a delay
-    setTimeout(() => loadLogs(), 2000);
+    setTimeout(() => setIsSending(false), 1000);
   };
 
-  const generateTestLogs = async () => {
-    console.log('Test log message', { data: 'test' });
-    console.warn('Test warning message');
-    console.info('Test info message with complex data', { 
-      nested: { object: true },
-      array: [1, 2, 3],
-      timestamp: Date.now()
-    });
-    
-    await advancedLogger.captureBreadcrumb('User clicked generate test logs', { 
-      page: 'debug',
-      action: 'generate_test_logs'
-    });
-    
-    // Force flush logs immediately
-    await advancedLogger.forceFlush();
-    
-    toast({
-      title: 'Logs de teste gerados',
-      description: 'Mensagens de teste foram enviadas. Aguarde alguns segundos e recarregue os logs.'
-    });
-    
-    // Auto-reload logs after a delay
-    setTimeout(() => loadLogs(), 2000);
-  };
-
-  const getLevelIcon = (level: string) => {
-    switch (level) {
-      case 'error':
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'warn':
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
-      case 'info':
-        return <Info className="w-4 h-4 text-blue-500" />;
-      default:
-        return <Bug className="w-4 h-4 text-gray-500" />;
+  const handleQueryLogs = async () => {
+    setIsQuerying(true);
+    setQueryResult(null);
+    try {
+      const traceId = advancedLogger.getTraceId();
+      const results = await advancedLogger.queryLogs({ traceId, limit: 10 });
+      setQueryResult(results);
+    } catch (error) {
+      setQueryResult({ error: 'Failed to query logs' });
+    } finally {
+      setIsQuerying(false);
     }
   };
 
-  const getLevelColor = (level: string): "destructive" | "secondary" | "default" | "outline" => {
-    switch (level) {
-      case 'error':
-        return 'destructive';
-      case 'warn':
-        return 'secondary';
-      case 'info':
-        return 'default';
-      default:
-        return 'outline';
-    }
-  };
-
-  if (!user) {
-    return (
-      <div className="container max-w-4xl mx-auto py-8">
-        <Card>
-          <CardContent className="text-center py-8">
-            <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
-            <p className="text-muted-foreground">
-              Você precisa estar logado para acessar o painel de debug.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!supabase) {
+    // PageLoader precisa ser envolvido por um elemento JSX
+    return <PageLoader message="Supabase client not available." />;
   }
 
-
   return (
-    <div className="container max-w-6xl mx-auto py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Debug Avançado</h1>
-          <p className="text-muted-foreground">
-            Sistema de monitoramento e logging em tempo real
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">
-            Trace ID: {advancedLogger.getTraceId().slice(-8)}
-          </Badge>
-          <Button onClick={loadLogs} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-        </div>
-      </div>
-
-      <Tabs defaultValue="setup" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="setup">Configuração</TabsTrigger>
-          <TabsTrigger value="logs" disabled={!isAdvancedEnabled}>Logs em Tempo Real</TabsTrigger>
-          <TabsTrigger value="testing" disabled={!isAdvancedEnabled}>Ferramentas de Teste</TabsTrigger>
-          <TabsTrigger value="system" disabled={!isAdvancedEnabled}>Informações do Sistema</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="setup" className="space-y-4">
-          <AdvancedLoggingSetup onStatusChange={handleLoggingStatusChange} />
-        </TabsContent>
-
-        <TabsContent value="logs" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="w-5 h-5" />
-                Filtros
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Trace ID</label>
-                  <Input
-                    placeholder="UUID do trace..."
-                    value={filters.traceId}
-                    onChange={(e) => setFilters(prev => ({ ...prev, traceId: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Nível</label>
-                  <select
-                    className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                    value={filters.level}
-                    onChange={(e) => setFilters(prev => ({ ...prev, level: e.target.value }))}
-                  >
-                    <option value="">Todos</option>
-                    <option value="error">Error</option>
-                    <option value="warn">Warning</option>
-                    <option value="info">Info</option>
-                    <option value="debug">Debug</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Limite</label>
-                  <Input
-                    type="number"
-                    value={filters.limit}
-                    onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value) || 100 }))}
-                    min="10"
-                    max="1000"
-                  />
-                </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Página de Depuração</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Diagnóstico do Sistema</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={checkLoggingStatus} disabled={isLoading}>
+              {isLoading ? 'Verificando...' : 'Verificar Status do Logging'}
+            </Button>
+            {diagnostics && (
+              <div className="mt-4 p-2 border rounded">
+                <p>Logging Avançado Ativo: <strong>{diagnostics.isEnabled ? 'Sim' : 'Não'}</strong></p>
+                <p>Logs na Fila: <strong>{diagnostics.logQueueSize ?? 'N/A'}</strong></p>
+                <p>Trace ID Atual: <strong>{diagnostics.traceId ?? 'N/A'}</strong></p>
+                {diagnostics.error && <p className="text-red-500">Erro: {diagnostics.error}</p>}
               </div>
-              <Button onClick={loadLogs} disabled={loading}>
-                <Search className="w-4 h-4 mr-2" />
-                Filtrar Logs
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Logs Capturados ({logs.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  <p className="text-muted-foreground">Carregando logs...</p>
-                </div>
-              ) : logs.length > 0 ? (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {logs.map((log) => (
-                    <div key={log.id} className="border rounded-lg p-3 text-sm">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {getLevelIcon(log.level)}
-                          <Badge variant={getLevelColor(log.level)}>
-                            {log.level.toUpperCase()}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {log.trace_id.slice(-8)}
-                        </Badge>
-                      </div>
-                      
-                      <div className="font-medium mb-1">{log.message}</div>
-                      
-                      {log.context && (
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Contexto: {log.context}
-                        </div>
-                      )}
-                      
-                      {log.url && (
-                        <div className="text-xs text-muted-foreground mb-1">
-                          URL: {log.url}
-                        </div>
-                      )}
-                      
-                      {log.stack_trace && (
-                        <details className="mt-2">
-                          <summary className="text-xs cursor-pointer text-muted-foreground">
-                            Stack Trace
-                          </summary>
-                          <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
-                            {log.stack_trace}
-                          </pre>
-                        </details>
-                      )}
-                      
-                      {log.meta && Object.keys(log.meta).length > 0 && (
-                        <details className="mt-2">
-                          <summary className="text-xs cursor-pointer text-muted-foreground">
-                            Metadados
-                          </summary>
-                          <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
-                            {JSON.stringify(log.meta, null, 2)}
-                          </pre>
-                        </details>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhum log encontrado. Use as ferramentas de teste para gerar logs.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="testing" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ferramentas de Teste</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Use estas ferramentas para testar o sistema de logging.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button onClick={generateTestLogs} variant="outline">
-                  <Bug className="w-4 h-4 mr-2" />
-                  Gerar Logs de Teste
-                </Button>
-                
-                <Button onClick={testErrorCapture} variant="destructive">
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  Testar Captura de Erros
-                </Button>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                <p>• <strong>Gerar Logs de Teste:</strong> Cria diferentes tipos de mensagens de log</p>
-                <p>• <strong>Testar Captura de Erros:</strong> Simula erros JavaScript e de rede</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="system" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações da Sessão</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div><strong>User ID:</strong> {user?.id}</div>
-                <div><strong>Email:</strong> {user?.email}</div>
-                <div><strong>Session ID:</strong> {advancedLogger.getTraceId()}</div>
-                <div><strong>Logging Ativo:</strong> {isAdvancedEnabled ? 'Sim' : 'Não'}</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Navegador</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div><strong>User Agent:</strong> {navigator.userAgent}</div>
-                <div><strong>Idioma:</strong> {navigator.language}</div>
-                <div><strong>Online:</strong> {navigator.onLine ? 'Sim' : 'Não'}</div>
-                <div><strong>URL Atual:</strong> {window.location.href}</div>
-              </CardContent>
-            </Card>
-            
-            {systemDiagnostics && (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Terminal className="w-5 h-5" />
-                    Diagnósticos do Sistema de Logging
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><strong>Inicializado:</strong> {systemDiagnostics.initialized ? 'Sim' : 'Não'}</div>
-                    <div><strong>Habilitado:</strong> {systemDiagnostics.enabled ? 'Sim' : 'Não'}</div>
-                    <div><strong>User ID:</strong> {systemDiagnostics.userId || 'N/A'}</div>
-                    <div><strong>Session ID:</strong> {systemDiagnostics.sessionId}</div>
-                    <div><strong>Trace ID:</strong> {systemDiagnostics.traceId}</div>
-                    <div><strong>Logs na Fila:</strong> {systemDiagnostics.queueSize}</div>
-                    <div><strong>Breadcrumbs:</strong> {systemDiagnostics.breadcrumbsCount}</div>
-                    <div><strong>Último Flush:</strong> {new Date(systemDiagnostics.lastFlush).toLocaleString()}</div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t">
-                    <Button 
-                      onClick={async () => {
-                        await advancedLogger.forceFlush();
-                        await handleLoggingStatusChange();
-                        toast({
-                          title: 'Flush executado',
-                          description: 'Logs foram enviados para o servidor.'
-                        });
-                      }}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Forçar Envio de Logs
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             )}
-          </div>
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ações de Teste</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button onClick={handleSendTestLogs} disabled={isSending}>
+              {isSending ? 'Enviando...' : 'Enviar Logs de Teste'}
+            </Button>
+            <Button onClick={handleQueryLogs} disabled={isQuerying}>
+              {isQuerying ? 'Consultando...' : 'Consultar Logs (Trace ID Atual)'}
+            </Button>
+            {queryResult && (
+              <pre className="mt-4 p-2 border rounded bg-gray-100 dark:bg-gray-800 text-xs overflow-auto max-h-48">
+                {JSON.stringify(queryResult, null, 2)}
+              </pre>
+            )}
+          </CardContent>
+        </Card>
+
+        <AuthDebugInfo />
+      </div>
     </div>
   );
 };
 
-export default Debug;
+export default DebugPage;
