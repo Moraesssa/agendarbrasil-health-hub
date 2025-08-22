@@ -17,7 +17,11 @@ interface AllowlistEntry {
   is_active: boolean;
 }
 
-const AdvancedLoggingSetup: React.FC = () => {
+interface AdvancedLoggingSetupProps {
+  onStatusChange: () => void;
+}
+
+const AdvancedLoggingSetup: React.FC<AdvancedLoggingSetupProps> = ({ onStatusChange }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [allowlistEntry, setAllowlistEntry] = useState<AllowlistEntry | null>(null);
@@ -79,13 +83,8 @@ const AdvancedLoggingSetup: React.FC = () => {
       });
 
       setEmailToAdd('');
-      checkAllowlistStatus();
-
-      // Reload page to initialize advanced logger
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-
+      await checkAllowlistStatus();
+      onStatusChange();
     } catch (error) {
       console.error('Error adding to allowlist:', error);
       toast({
@@ -118,12 +117,7 @@ const AdvancedLoggingSetup: React.FC = () => {
       });
 
       setAllowlistEntry(null);
-
-      // Reload page to disable advanced logger
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-
+      onStatusChange();
     } catch (error) {
       console.error('Error removing from allowlist:', error);
       toast({
