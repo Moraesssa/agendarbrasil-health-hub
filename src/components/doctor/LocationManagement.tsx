@@ -49,17 +49,24 @@ interface LocationFormData {
   instrucoes_acesso: string;
 }
 
-const COMMON_FACILITIES = [
-  'Estacionamento',
-  'Acessibilidade',
-  'Wi-Fi',
-  'Ar Condicionado',
-  'Recepção 24h',
-  'Laboratório',
-  'Farmácia',
-  'Café',
-  'Banheiro Adaptado'
-];
+const FACILITY_DISPLAY_TO_CODE: Record<string, string> = {
+  'Estacionamento': 'estacionamento',
+  'Acessibilidade': 'acessibilidade',
+  'Wi-Fi': 'wifi',
+  'Ar Condicionado': 'ar_condicionado',
+  'Laboratório': 'laboratorio',
+  'Farmácia': 'farmacia',
+  'Elevador': 'elevador',
+  'Café': 'cafe',
+  'Banheiro Adaptado': 'banheiro_adaptado',
+  'Sala de Espera Infantil': 'sala_espera_criancas'
+};
+
+const FACILITY_CODE_TO_DISPLAY: Record<string, string> = Object.fromEntries(
+  Object.entries(FACILITY_DISPLAY_TO_CODE).map(([display, code]) => [code, display])
+);
+
+const COMMON_FACILITIES = Object.keys(FACILITY_DISPLAY_TO_CODE);
 
 export const LocationManagement: React.FC = () => {
   const { user } = useAuth();
@@ -132,6 +139,11 @@ export const LocationManagement: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      const facilidadesPayload = (formData.facilidades || [])
+        .map((display) => FACILITY_DISPLAY_TO_CODE[display])
+        .filter(Boolean)
+        .map((code) => ({ type: code, available: true }));
+
       const locationData = {
         medico_id: user?.id,
         nome_local: formData.nome_local,
@@ -148,7 +160,7 @@ export const LocationManagement: React.FC = () => {
         website: formData.website || '',
         ativo: formData.ativo,
         status: formData.ativo ? 'ativo' : 'temporariamente_fechado',
-        facilidades: formData.facilidades,
+        facilidades: facilidadesPayload,
         instrucoes_acesso: formData.instrucoes_acesso || '',
         cidade: formData.cidade,
         estado: formData.estado
@@ -176,18 +188,39 @@ export const LocationManagement: React.FC = () => {
       setIsDialogOpen(false);
       resetForm();
       loadLocations();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving location:', error);
+      const msg = (error?.message || '').toString();
+      const isFacilityError = msg.includes('check_facilidades_format') || msg.includes('validate_facility_data') || msg.toLowerCase().includes('facilidade');
       toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar o local. Tente novamente.",
-        variant: "destructive"
+        title: 'Erro ao salvar',
+        description: isFacilityError
+          ? 'Formato de facilidades inválido. Selecione opções válidas; salvamos internamente como objetos { type, available }.'
+          : 'Não foi possível salvar o local. Tente novamente.',
+        variant: 'destructive'
       });
     }
   };
 
   const handleEdit = (location: Location) => {
     setEditingLocation(location);
+
+    let selectedDisplays: string[] = [];
+    try {
+      const raw = (location as any).facilidades;
+      if (Array.isArray(raw)) {
+        if (raw.some((f: any) => f && typeof f === 'object' && 'type' in f)) {
+          selectedDisplays = (raw as any[])
+            .map((f: any) => FACILITY_CODE_TO_DISPLAY[f.type])
+            .filter(Boolean);
+        } else {
+          selectedDisplays = (raw as string[])
+            .map((s) => FACILITY_CODE_TO_DISPLAY[s] || s)
+            .filter(Boolean);
+        }
+      }
+    } catch {}
+
     setFormData({
       nome_local: location.nome_local,
       logradouro: location.endereco.logradouro,
@@ -200,7 +233,7 @@ export const LocationManagement: React.FC = () => {
       telefone: location.telefone || '',
       website: location.website || '',
       ativo: location.ativo,
-      facilidades: location.facilidades || [],
+      facilidades: selectedDisplays,
       instrucoes_acesso: location.instrucoes_acesso || ''
     });
     setIsDialogOpen(true);
@@ -509,11 +542,16 @@ export const LocationManagement: React.FC = () => {
                 
                 {location.facilidades && location.facilidades.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {location.facilidades.map(facility => (
-                      <Badge key={facility} variant="secondary" className="text-xs">
-                        {facility}
-                      </Badge>
-                    ))}
+                    {(location.facilidades as any[]).map((f, idx) => {
+                      const display = typeof f === 'string'
+                        ? (FACILITY_CODE_TO_DISPLAY[f] || f)
+                        : (FACILITY_CODE_TO_DISPLAY[(f as any)?.type] || (f as any)?.type);
+                      return (
+                        <Badge key={`${display}-${idx}`} variant="secondary" className="text-xs">
+                          {display}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 )}
                 
