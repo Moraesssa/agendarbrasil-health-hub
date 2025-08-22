@@ -149,9 +149,7 @@ export const LocationManagement: React.FC = () => {
         ativo: formData.ativo,
         status: formData.ativo ? 'ativo' : 'temporariamente_fechado',
         facilidades: formData.facilidades,
-        instrucoes_acesso: formData.instrucoes_acesso || '',
-        cidade: formData.cidade,
-        estado: formData.estado
+        instrucoes_acesso: formData.instrucoes_acesso || ''
       };
 
       let error;

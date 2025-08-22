@@ -87,7 +87,7 @@ export const useAuthState = () => {
           .from('medicos')
           .select('especialidades, crm')
           .eq('user_id', uid)
-          .single();
+          .maybeSingle();
         
         if (!medicoError && medicoData) {
           roleData = {

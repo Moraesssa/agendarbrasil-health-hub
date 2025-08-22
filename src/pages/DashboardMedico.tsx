@@ -85,7 +85,6 @@ const DashboardMedico = () => {
           )
         `)
         .eq('medico_id', user.id)
-        .gte('consultation_date', startDate)
         .order('consultation_date', { ascending: false })
         .limit(50);
 
