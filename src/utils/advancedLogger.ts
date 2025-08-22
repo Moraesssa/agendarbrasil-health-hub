@@ -3,7 +3,7 @@ import { logger } from './logger';
 
 const EDGE_FUNCTIONS_URL = 'https://ulebotjrsgheybhpdnxd.functions.supabase.co';
 
-export type AdvancedLogLevel = 'debug' | 'info' | 'warn' | 'error' | 'log';
+export type AdvancedLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface AdvancedLogEntry {
   id: string;
@@ -54,20 +54,14 @@ class AdvancedLogger {
       // Only initialize if we have an authenticated user
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        console.debug('AdvancedLogger: No authenticated user, skipping initialization');
         return; // Don't initialize during login flow
       }
 
-      console.debug('AdvancedLogger: Starting initialization for user:', session.user.id);
       await this.checkAccess();
       if (this.isEnabled) {
-        console.debug('AdvancedLogger: Access granted, initializing logger');
         this.init();
-      } else {
-        console.debug('AdvancedLogger: Access denied or not found in allowlist');
       }
       this.initialized = true;
-      console.debug('AdvancedLogger: Initialization complete, enabled:', this.isEnabled);
     } catch (e) {
       console.debug('AdvancedLogger initialization failed:', e);
     }
@@ -85,32 +79,19 @@ class AdvancedLogger {
     try {
       // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.debug('AdvancedLogger: No authenticated user found');
-        return;
-      }
+      if (!user) return;
 
       this.userId = user.id;
-      console.debug('AdvancedLogger: Checking access for user:', user.id);
 
-      // Check allowlist - use maybeSingle to handle no results gracefully
-      const { data, error } = await supabase
+      // Check allowlist - in production you might want to cache this
+      const { data } = await supabase
         .from('debug_allowlist')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) {
-        console.error('AdvancedLogger: Error checking allowlist:', error);
-        return;
-      }
+        .single();
 
       this.isEnabled = !!data;
-      console.debug('AdvancedLogger: Access check result:', { 
-        enabled: this.isEnabled, 
-        allowlistEntry: data ? 'found' : 'not found' 
-      });
     } catch (error) {
       console.debug('Advanced logging access check failed:', error);
     }
@@ -157,7 +138,9 @@ class AdvancedLogger {
         
         // Log to advanced logger
         if (this.isEnabled) {
-          this.captureLog(method as AdvancedLogLevel, args);
+          // Correction: Map 'log' level to 'info' to match the database constraint.
+          const mappedLevel = method === 'log' ? 'info' : method;
+          this.captureLog(mappedLevel as AdvancedLogLevel, args);
         }
       };
     });
@@ -365,20 +348,16 @@ class AdvancedLogger {
   // Public API
   public async captureException(error: Error, context?: Record<string, any>) {
     await this.ensureInitialized();
-    if (this.isEnabled) {
-      this.captureError(error, context);
-    }
+    this.captureError(error, context);
   }
 
   public async captureBreadcrumb(name: string, data?: any) {
     await this.ensureInitialized();
-    if (this.isEnabled) {
-      this.addBreadcrumb({
-        message: name,
-        data,
-        timestamp: Date.now()
-      });
-    }
+    this.addBreadcrumb({
+      message: name,
+      data,
+      timestamp: Date.now()
+    });
   }
 
   public setUserId(userId: string) {
@@ -400,65 +379,26 @@ class AdvancedLogger {
 
   public async queryLogs(filters?: { traceId?: string; level?: string; limit?: number }) {
     await this.ensureInitialized();
-    if (!this.isEnabled) {
-      console.debug('AdvancedLogger: Logging not enabled, cannot query logs');
-      return null;
-    }
+    if (!this.isEnabled) return null;
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        console.error('AdvancedLogger: No access token available');
-        return null;
-      }
-
       const params = new URLSearchParams();
       
       if (filters?.traceId) params.set('traceId', filters.traceId);
       if (filters?.level) params.set('level', filters.level);
       if (filters?.limit) params.set('limit', filters.limit.toString());
       
-      console.debug('AdvancedLogger: Querying logs with filters:', filters);
-      
       const response = await fetch(`${EDGE_FUNCTIONS_URL}/client-logs?${params}`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${session?.access_token}`
         }
       });
       
-      if (!response.ok) {
-        console.error('AdvancedLogger: Query logs failed:', response.status, response.statusText);
-        return null;
-      }
-      
-      const result = await response.json();
-      console.debug('AdvancedLogger: Query logs result:', result);
-      return result;
+      return await response.json();
     } catch (error) {
       console.error('Failed to query logs:', error);
       return null;
-    }
-  }
-
-  // New diagnostic methods
-  public async getSystemDiagnostics() {
-    return {
-      initialized: this.initialized,
-      enabled: this.isEnabled,
-      userId: this.userId,
-      sessionId: this.sessionId,
-      traceId: this.traceId,
-      queueSize: this.queue.length,
-      breadcrumbsCount: this.breadcrumbs.length,
-      lastFlush: new Date().toISOString()
-    };
-  }
-
-  public async forceFlush() {
-    if (this.isEnabled) {
-      await this.flush();
-      console.debug('AdvancedLogger: Manual flush completed');
     }
   }
 }
