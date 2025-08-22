@@ -127,10 +127,29 @@ export class RealAppointmentService implements IAppointmentService {
       const sessionId = `temp_${user.id}_${Date.now()}`;
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-      // For now, just return a mock reservation
+      // Insert into temporary_reservations table using correct column names
+      const { data, error } = await supabase
+        .from('temporary_reservations')
+        .insert({
+          session_id: sessionId,
+          medico_id: doctorId,
+          paciente_id: user.id,
+          data_consulta: dateTime,
+          local_id: localId || null,
+          expires_at: expiresAt.toISOString(),
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("Error creating temporary reservation", "RealAppointmentService", error);
+        throw new Error(`Erro ao criar reserva temporária: ${error.message}`);
+      }
+
       logger.info("Temporary reservation created successfully", "RealAppointmentService");
       return {
-        data: { id: 'temp-reservation-id' },
+        data: { id: data.id },
         sessionId,
         expiresAt
       };
@@ -142,17 +161,53 @@ export class RealAppointmentService implements IAppointmentService {
 
   async cleanupTemporaryReservation(sessionId: string): Promise<void> {
     logger.info("Cleaning up temporary reservation", "RealAppointmentService", { sessionId });
-    // Mock cleanup - no actual database operation for now
-    logger.info("Temporary reservation cleaned up successfully", "RealAppointmentService");
+    
+    try {
+      // Delete from temporary_reservations table
+      const { error } = await supabase
+        .from('temporary_reservations')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (error) {
+        logger.error("Error cleaning up temporary reservation", "RealAppointmentService", error);
+        // Don't throw - cleanup should be best effort
+      } else {
+        logger.info("Temporary reservation cleaned up successfully", "RealAppointmentService");
+      }
+    } catch (error) {
+      logger.error("Failed to cleanup temporary reservation", "RealAppointmentService", error);
+      // Don't throw - cleanup should be best effort
+    }
   }
 
   async extendReservation(sessionId: string): Promise<{ expiresAt: Date } | null> {
     logger.info("Extending temporary reservation", "RealAppointmentService", { sessionId });
     
-    // Mock extension
-    const newExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    logger.info("Temporary reservation extended successfully", "RealAppointmentService");
-    return { expiresAt: newExpiresAt };
+    try {
+      // Use the extend_temporary_reservation RPC function
+      const { data, error } = await supabase.rpc('extend_temporary_reservation', {
+        p_session_id: sessionId,
+        p_minutes: 15
+      });
+
+      if (error) {
+        logger.error("Error extending reservation", "RealAppointmentService", error);
+        return null;
+      }
+
+      if (data && data.length > 0 && data[0].success) {
+        const expiresAt = new Date(data[0].expires_at);
+        logger.info("Temporary reservation extended successfully", "RealAppointmentService");
+        return { expiresAt };
+      }
+      
+      logger.warn("Could not extend reservation - not found or expired", "RealAppointmentService");
+      return null;
+    } catch (error) {
+      logger.error("Failed to extend temporary reservation", "RealAppointmentService", error);
+      return null;
+    }
   }
 
   async scheduleAppointment(appointmentData: {

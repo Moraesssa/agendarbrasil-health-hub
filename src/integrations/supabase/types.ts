@@ -1505,8 +1505,13 @@ export type Database = {
           id: string
           local_id: string | null
           medico_id: string
+          notes: string | null
+          paciente_familiar_id: string | null
           paciente_id: string
           session_id: string
+          specialty: string | null
+          status: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -1515,8 +1520,13 @@ export type Database = {
           id?: string
           local_id?: string | null
           medico_id: string
+          notes?: string | null
+          paciente_familiar_id?: string | null
           paciente_id: string
           session_id: string
+          specialty?: string | null
+          status?: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -1525,10 +1535,44 @@ export type Database = {
           id?: string
           local_id?: string | null
           medico_id?: string
+          notes?: string | null
+          paciente_familiar_id?: string | null
           paciente_id?: string
           session_id?: string
+          specialty?: string | null
+          status?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "temporary_reservations_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_atendimento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "temporary_reservations_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "temporary_reservations_paciente_familiar_id_fkey"
+            columns: ["paciente_familiar_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "temporary_reservations_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_consents: {
         Row: {
@@ -1739,6 +1783,14 @@ export type Database = {
       convert_profile_to_fhir_patient: {
         Args: { profile_id: string }
         Returns: Json
+      }
+      extend_temporary_reservation: {
+        Args: { p_minutes?: number; p_session_id: string }
+        Returns: {
+          expires_at: string
+          message: string
+          success: boolean
+        }[]
       }
       get_available_cities: {
         Args: { state_uf: string }
