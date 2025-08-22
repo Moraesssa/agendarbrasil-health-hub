@@ -59,13 +59,21 @@ export class RealAppointmentService implements IAppointmentService {
     });
 
     try {
-      await this.checkAuthentication();
+      const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
+        p_specialty: specialty,
+        p_city: city,
+        p_state: state
+      });
 
-      // Simplified query avoiding type issues
-      const doctors: Medico[] = [
-        { id: 'doc-001', display_name: `Dr. Silva (${specialty})` },
-        { id: 'doc-002', display_name: `Dra. Santos (${specialty})` }
-      ];
+      if (error) {
+        logger.error("Error fetching doctors via RPC", "RealAppointmentService", error);
+        throw new Error(`Erro ao buscar médicos: ${error.message}`);
+      }
+
+      const doctors: Medico[] = (data || []).map((d: any) => ({
+        id: d.id,
+        display_name: d.display_name
+      }));
       
       logger.info(`Found ${doctors.length} doctors`, "RealAppointmentService");
       return doctors;
@@ -81,7 +89,7 @@ export class RealAppointmentService implements IAppointmentService {
     });
 
     try {
-      await this.checkAuthentication();
+      // Public read: no auth required
 
       // Simplified: generate mock locations and time slots
       const mockLocation: LocalComHorarios = {

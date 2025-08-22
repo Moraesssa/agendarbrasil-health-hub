@@ -95,6 +95,56 @@ const Agendamento = () => {
   const preset = searchParams.get('preset');
   const isCheckupPreset = preset === 'checkup';
 
+  // Prefill from URL params (especialidade, estado, cidade, medicoId, data, hora)
+  const [prefilledFromUrl, setPrefilledFromUrl] = useState(false);
+  useEffect(() => {
+    if (prefilledFromUrl) return;
+    const esp = searchParams.get('especialidade') || searchParams.get('specialty');
+    const uf = searchParams.get('estado') || searchParams.get('state');
+    const cid = searchParams.get('cidade') || searchParams.get('city');
+    const doc = searchParams.get('medicoId') || searchParams.get('doctorId');
+    const data = searchParams.get('data') || searchParams.get('date');
+    const hora = searchParams.get('hora') || searchParams.get('time');
+
+    if (esp) setSelectedSpecialty(esp);
+    if (uf) setSelectedState(uf);
+    if (cid) setSelectedCity(cid);
+    if (doc) setSelectedDoctor(doc);
+    if (data) setSelectedDate(data);
+    if (hora) setSelectedTime(hora);
+
+    let next = 1;
+    if (esp) next = Math.max(next, 2);
+    if (uf) next = Math.max(next, 3);
+    if (cid) next = Math.max(next, 4);
+    if (doc) next = Math.max(next, 5);
+    if (data) next = Math.max(next, 6);
+    if (hora) next = Math.max(next, 7);
+    if (next > 1) setStep(next);
+
+    setPrefilledFromUrl(true);
+  }, [searchParams, prefilledFromUrl, setSelectedSpecialty, setSelectedState, setSelectedCity, setSelectedDoctor, setSelectedDate, setSelectedTime]);
+
+  // If only medicoId provided, infer city/state from active locations
+  useEffect(() => {
+    const doc = selectedDoctor || (searchParams.get('medicoId') || searchParams.get('doctorId'));
+    if (!doc) return;
+    if (selectedState && selectedCity) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('locais_atendimento')
+        .select('cidade, estado')
+        .eq('medico_id', doc)
+        .eq('ativo', true)
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        if (!selectedState && data[0].estado) setSelectedState(data[0].estado);
+        if (!selectedCity && data[0].cidade) setSelectedCity(data[0].cidade);
+        if (step < 4) setStep(4);
+      }
+    })();
+  }, [selectedDoctor, selectedState, selectedCity, searchParams]);
+
   const checkupSuggestionsBase = ['Clínica Geral','Cardiologia','Ginecologia','Urologia'];
   const checkupSuggestions = useMemo(() => {
     const list = (specialties || []) as string[];
@@ -350,6 +400,8 @@ const Agendamento = () => {
             onChange={(value) => {
               setSelectedDoctor(value);
               clearFieldError('doctor');
+              // Advance to next step when doctor selected via deep link
+              if (step < 5) setStep(5);
             }}
           />
         );
@@ -363,6 +415,7 @@ const Agendamento = () => {
             onDateSelect={(value) => {
               setSelectedDate(value);
               clearFieldError('date');
+              if (step < 6) setStep(6);
             }}
           />
         );
@@ -406,6 +459,7 @@ const Agendamento = () => {
                 onChange={(time, local) => {
                   handleTimeSelect(time, local);
                   clearFieldError('time');
+                  if (step < 7) setStep(7);
                 }}
                 selectedDoctor={selectedDoctor}
                 selectedDate={selectedDate}
