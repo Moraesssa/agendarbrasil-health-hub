@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, Bug, Info, AlertCircle, RefreshCw, Search, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AdvancedLoggingSetup from '@/components/AdvancedLoggingSetup';
 
 interface LogEntry {
   id: string;
@@ -181,12 +182,17 @@ const Debug: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="logs" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="setup" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="setup">Configuração</TabsTrigger>
           <TabsTrigger value="logs">Logs em Tempo Real</TabsTrigger>
           <TabsTrigger value="testing">Ferramentas de Teste</TabsTrigger>
           <TabsTrigger value="system">Informações do Sistema</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="setup" className="space-y-4">
+          <AdvancedLoggingSetup />
+        </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
           <Card>

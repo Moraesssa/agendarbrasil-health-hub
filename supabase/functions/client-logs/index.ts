@@ -8,7 +8,8 @@ const corsHeaders = {
 
 // Allowlist of emails that can use advanced logging (replace with your actual email)
 const ALLOWED_EMAILS = [
-  'your-email@example.com', // Replace with your actual email
+  // Add your email here to enable advanced logging for your account
+  // 'your-email@example.com',
 ]
 
 serve(async (req) => {
