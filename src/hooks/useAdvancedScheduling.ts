@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { appointmentServiceProxy } from '@/services/mockAppointmentService';
+import { useAppointmentServiceInstance } from '@/contexts/AppointmentServiceProvider';
 import { generateTimeSlots, TimeSlot, DoctorConfig, ExistingAppointment } from '@/utils/timeSlotUtils';
 
 interface ReservationData {
@@ -35,6 +35,7 @@ interface DoctorWithAvailability {
 }
 
 export const useAdvancedScheduling = () => {
+  const appointmentService = useAppointmentServiceInstance();
   const [temporaryReservation, setTemporaryReservation] = useState<ReservationData | null>(null);
   const [reservationTimer, setReservationTimer] = useState<NodeJS.Timeout | null>(null);
   const [isReserving, setIsReserving] = useState(false);
@@ -74,7 +75,7 @@ export const useAdvancedScheduling = () => {
     setIsReserving(true);
     
     try {
-      const result = await appointmentServiceProxy.createTemporaryReservation(doctorId, dateTime, localId);
+      const result = await appointmentService.createTemporaryReservation(doctorId, dateTime, localId);
 
       if (!result) {
         // Errors are handled inside the service, just need to stop execution here
@@ -121,7 +122,7 @@ export const useAdvancedScheduling = () => {
     if (!targetSessionId) return;
 
     try {
-      await appointmentServiceProxy.cleanupTemporaryReservation(targetSessionId);
+      await appointmentService.cleanupTemporaryReservation(targetSessionId);
       setTemporaryReservation(null);
       if (reservationTimer) {
         clearTimeout(reservationTimer);
@@ -136,7 +137,7 @@ export const useAdvancedScheduling = () => {
     if (!temporaryReservation) return false;
 
     try {
-      const result = await appointmentServiceProxy.extendReservation(temporaryReservation.sessionId);
+      const result = await appointmentService.extendReservation(temporaryReservation.sessionId);
       if (!result) return false;
 
       const newExpiresAt = result.expiresAt;

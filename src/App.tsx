@@ -11,6 +11,7 @@ import { AuthRedirectController } from '@/components/AuthRedirectController';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { AuthErrorBoundary } from '@/components/AuthErrorBoundary';
 import { ConfigurationGuard } from '@/components/system/ConfigurationGuard';
+import { AppointmentServiceProvider } from '@/contexts/AppointmentServiceProvider';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Cadastrar from '@/pages/Cadastrar';
@@ -135,8 +136,9 @@ function App() {
               <AuthErrorBoundary>
                 <AuthProvider>
                   <NotificationProvider>
-                    <AuthRedirectController>
-                    <Routes>
+                    <AppointmentServiceProvider>
+                      <AuthRedirectController>
+                      <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/cadastrar" element={<Cadastrar />} />
@@ -160,9 +162,10 @@ function App() {
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                     <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
-                    <Route path="*" element={<NotFound />} />
-                    </Routes>
-                    </AuthRedirectController>
+                      <Route path="*" element={<NotFound />} />
+                      </Routes>
+                      </AuthRedirectController>
+                    </AppointmentServiceProvider>
                   </NotificationProvider>
                 </AuthProvider>
               </AuthErrorBoundary>

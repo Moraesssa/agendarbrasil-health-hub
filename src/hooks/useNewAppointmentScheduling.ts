@@ -4,7 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { newAppointmentService, LocalComHorarios, Medico } from "@/services/newAppointmentService";
+import { LocalComHorarios, Medico } from "@/services/newAppointmentService";
+import { useAppointmentServiceInstance } from '@/contexts/AppointmentServiceProvider';
 import { logger } from "@/utils/logger";
 import { safeArrayAccess, isValidArray } from "@/utils/arrayUtils";
 
@@ -28,6 +29,7 @@ export const useNewAppointmentScheduling = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const appointmentService = useAppointmentServiceInstance();
 
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedState, setSelectedState] = useState("");
@@ -149,7 +151,7 @@ export const useNewAppointmentScheduling = () => {
       
       try {
         // Load specialties with defensive checks
-        const specialtiesData = await newAppointmentService.getSpecialties();
+        const specialtiesData = await appointmentService.getSpecialties();
         console.log("✅ Especialidades carregadas:", specialtiesData?.length || 0);
         safeSetSpecialties(specialtiesData);
         setLoadingState('specialties', false);
@@ -249,7 +251,7 @@ export const useNewAppointmentScheduling = () => {
       setLoadingState('doctors', true);
       
       try {
-        const doctorsData = await newAppointmentService.getDoctorsByLocationAndSpecialty(
+        const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(
           selectedSpecialty, 
           selectedCity, 
           selectedState
@@ -301,7 +303,7 @@ export const useNewAppointmentScheduling = () => {
       setLoadingState('timeSlots', true);
       
       try {
-        const slots = await newAppointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
+        const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
         console.log("✅ Slots encontrados:", slots?.length || 0);
         safeSetLocaisComHorarios(slots);
         
@@ -345,7 +347,7 @@ export const useNewAppointmentScheduling = () => {
       const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
       const localTexto = `${selectedLocal.nome_local} - ${selectedLocal.endereco.logradouro}, ${selectedLocal.endereco.numero}`;
 
-      await newAppointmentService.scheduleAppointment({
+      await appointmentService.scheduleAppointment({
         paciente_id: user.id,
         medico_id: selectedDoctor,
         consultation_date: appointmentDateTime,
