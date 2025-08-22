@@ -143,24 +143,6 @@ const Debug: React.FC = () => {
     );
   }
 
-  if (!isAdvancedEnabled) {
-    return (
-      <div className="container max-w-4xl mx-auto py-8">
-        <Card>
-          <CardContent className="text-center py-8">
-            <Terminal className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Debug Avançado Não Disponível</h2>
-            <p className="text-muted-foreground mb-4">
-              O sistema de logging avançado não está habilitado para sua conta.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Entre em contato com o administrador para solicitar acesso.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container max-w-6xl mx-auto py-8 space-y-6">
@@ -185,9 +167,9 @@ const Debug: React.FC = () => {
       <Tabs defaultValue="setup" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="setup">Configuração</TabsTrigger>
-          <TabsTrigger value="logs">Logs em Tempo Real</TabsTrigger>
-          <TabsTrigger value="testing">Ferramentas de Teste</TabsTrigger>
-          <TabsTrigger value="system">Informações do Sistema</TabsTrigger>
+          <TabsTrigger value="logs" disabled={!isAdvancedEnabled}>Logs em Tempo Real</TabsTrigger>
+          <TabsTrigger value="testing" disabled={!isAdvancedEnabled}>Ferramentas de Teste</TabsTrigger>
+          <TabsTrigger value="system" disabled={!isAdvancedEnabled}>Informações do Sistema</TabsTrigger>
         </TabsList>
 
         <TabsContent value="setup" className="space-y-4">

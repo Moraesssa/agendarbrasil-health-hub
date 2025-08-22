@@ -27,6 +27,10 @@ const AdvancedLoggingSetup: React.FC = () => {
   useEffect(() => {
     if (user) {
       checkAllowlistStatus();
+      // Pre-fill email field if not already filled
+      if (!emailToAdd && user.email) {
+        setEmailToAdd(user.email);
+      }
     }
   }, [user]);
 
@@ -164,11 +168,16 @@ const AdvancedLoggingSetup: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-              <Info className="w-4 h-4 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p><strong>Acesso liberado!</strong></p>
-                <p>Você pode acessar o painel de debug em <code>/debug</code></p>
+            <div className="flex items-start gap-2 p-3 bg-green-50 rounded-lg">
+              <Info className="w-4 h-4 text-green-600 mt-0.5" />
+              <div className="text-sm text-green-800">
+                <p><strong>Logging avançado ativado!</strong></p>
+                <p>Agora você pode usar todas as abas do sistema de debug avançado:</p>
+                <ul className="mt-1 ml-4 list-disc">
+                  <li>Logs em Tempo Real - Visualize logs capturados</li>
+                  <li>Ferramentas de Teste - Gere logs e teste captura de erros</li>
+                  <li>Informações do Sistema - Veja detalhes da sessão e navegador</li>
+                </ul>
               </div>
             </div>
 
@@ -192,32 +201,48 @@ const AdvancedLoggingSetup: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Seu email para habilitar logging avançado:
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="seu-email@exemplo.com"
-                  value={emailToAdd}
-                  onChange={(e) => setEmailToAdd(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={addToAllowlist}
-                  disabled={loading || !emailToAdd}
-                >
-                  Habilitar
-                </Button>
+            <div className="space-y-4">
+              <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+                <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                <div className="text-sm text-blue-800">
+                  <p><strong>Como ativar o logging avançado:</strong></p>
+                  <ol className="mt-1 ml-4 list-decimal">
+                    <li>Confirme seu email abaixo</li>
+                    <li>Clique em "Habilitar"</li>
+                    <li>A página será recarregada com todas as funcionalidades ativas</li>
+                  </ol>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <p><strong>Atenção:</strong></p>
-                <p>O logging avançado captura informações detalhadas do navegador e deve ser usado apenas para debug.</p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Email para ativar logging avançado:
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="seu-email@exemplo.com"
+                    value={emailToAdd}
+                    onChange={(e) => setEmailToAdd(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={addToAllowlist}
+                    disabled={loading || !emailToAdd}
+                  >
+                    {loading ? 'Ativando...' : 'Habilitar'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                <div className="text-sm text-yellow-800">
+                  <p><strong>Sobre o sistema de logging:</strong></p>
+                  <p>• Captura informações detalhadas para debug e análise</p>
+                  <p>• Inclui logs do console, erros JavaScript e dados de navegação</p>
+                  <p>• Use apenas para desenvolvimento e resolução de problemas</p>
+                </div>
               </div>
             </div>
           </div>
