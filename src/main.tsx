@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './utils/mockInit';
+import GlobalErrorBoundary from './components/system/GlobalErrorBoundary.tsx';
 
 // Initialize advanced logger
 import './utils/advancedLogger';
@@ -20,4 +21,10 @@ if (!container) {
 }
 
 const root = createRoot(container);
-root.render(<App />);
+root.render(
+  <React.StrictMode>
+    <GlobalErrorBoundary>
+      <App />
+    </GlobalErrorBoundary>
+  </React.StrictMode>
+);
