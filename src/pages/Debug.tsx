@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { advancedLogger } from '@/utils/advancedLogger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,7 @@ interface LogEntry {
   timestamp: string;
   url: string;
   context?: string;
-  meta?: any;
+  meta?: Record<string, unknown>;
   stack_trace?: string;
   user_id?: string;
 }
@@ -35,21 +35,7 @@ const Debug: React.FC = () => {
   });
   const [isAdvancedEnabled, setIsAdvancedEnabled] = useState(false);
 
-  const handleLoggingStatusChange = async () => {
-    const enabled = await advancedLogger.isAdvancedLoggingEnabled();
-    setIsAdvancedEnabled(enabled);
-    if (enabled) {
-      setTimeout(() => loadLogs(), 200);
-    } else {
-      setLogs([]);
-    }
-  };
-
-  useEffect(() => {
-    handleLoggingStatusChange();
-  }, []);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     const enabled = await advancedLogger.isAdvancedLoggingEnabled();
     if (!enabled) return;
     
@@ -68,7 +54,21 @@ const Debug: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, toast]);
+
+  const handleLoggingStatusChange = useCallback(async () => {
+    const enabled = await advancedLogger.isAdvancedLoggingEnabled();
+    setIsAdvancedEnabled(enabled);
+    if (enabled) {
+      setTimeout(() => loadLogs(), 200);
+    } else {
+      setLogs([]);
+    }
+  }, [loadLogs]);
+
+  useEffect(() => {
+    handleLoggingStatusChange();
+  }, [handleLoggingStatusChange]);
 
   const testErrorCapture = () => {
     // Test different types of errors
@@ -122,7 +122,7 @@ const Debug: React.FC = () => {
     }
   };
 
-  const getLevelColor = (level: string) => {
+  const getLevelColor = (level: string): "destructive" | "secondary" | "default" | "outline" => {
     switch (level) {
       case 'error':
         return 'destructive';
@@ -251,7 +251,7 @@ const Debug: React.FC = () => {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {getLevelIcon(log.level)}
-                          <Badge variant={getLevelColor(log.level) as any}>
+                          <Badge variant={getLevelColor(log.level)}>
                             {log.level.toUpperCase()}
                           </Badge>
                           <span className="text-xs text-muted-foreground">

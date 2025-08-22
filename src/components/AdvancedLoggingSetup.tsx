@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,17 +28,7 @@ const AdvancedLoggingSetup: React.FC<AdvancedLoggingSetupProps> = ({ onStatusCha
   const [loading, setLoading] = useState(false);
   const [emailToAdd, setEmailToAdd] = useState('');
 
-  useEffect(() => {
-    if (user) {
-      checkAllowlistStatus();
-      // Pre-fill email field if not already filled
-      if (!emailToAdd && user.email) {
-        setEmailToAdd(user.email);
-      }
-    }
-  }, [user]);
-
-  const checkAllowlistStatus = async () => {
+  const checkAllowlistStatus = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -53,11 +43,21 @@ const AdvancedLoggingSetup: React.FC<AdvancedLoggingSetupProps> = ({ onStatusCha
         return;
       }
 
-      setAllowlistEntry(data);
+      setAllowlistEntry(data as AllowlistEntry | null);
     } catch (error) {
       console.error('Error checking allowlist:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      checkAllowlistStatus();
+      // Pre-fill email field if not already filled
+      if (!emailToAdd && user.email) {
+        setEmailToAdd(user.email);
+      }
+    }
+  }, [user, checkAllowlistStatus, emailToAdd]);
 
   const addToAllowlist = async () => {
     if (!user || !emailToAdd) return;
