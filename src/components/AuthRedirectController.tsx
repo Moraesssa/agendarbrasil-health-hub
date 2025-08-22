@@ -67,8 +67,11 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
           return;
         }
       }
+      
+      // Authenticated users with completed onboarding can access any other protected route
+      // No additional redirects needed for routes like /debug, /perfil, etc.
     } 
-    else if (!user && !isPublicRoute) {
+    else if (!user && !isPublicRoute && !isOnboardingRoute) {
       // Se não está logado e tenta acessar rota protegida, vai para login
       navigate('/login');
     }
