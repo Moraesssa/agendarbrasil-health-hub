@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 
 export const authService = {
   async signInWithGoogle() {
+    console.log("🔐 [AuthService] Starting Google sign-in...");
     logger.info("Attempting Google sign-in", "AuthService");
     
     const { error } = await supabase.auth.signInWithOAuth({
@@ -15,8 +16,10 @@ export const authService = {
     });
     
     if (error) {
+      console.error("🔐 [AuthService] Google sign-in failed:", error);
       logger.error("Google sign-in failed", "AuthService", error);
     } else {
+      console.log("🔐 [AuthService] Google sign-in initiated successfully");
       logger.info("Google sign-in initiated successfully", "AuthService");
     }
     

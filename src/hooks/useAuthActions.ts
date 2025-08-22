@@ -14,20 +14,22 @@ export const useAuthActions = (
 
   const signInWithGoogle = async () => {
     try {
-      console.log('Iniciando login com Google...');
+      console.log('🔐 [useAuthActions] Iniciando login com Google...');
       
       const { error } = await authService.signInWithGoogle();
 
       if (error) {
-        console.error('Erro no login:', error);
+        console.error('🔐 [useAuthActions] Erro no login:', error);
         toast({
           title: "Erro no login",
           description: error.message,
           variant: "destructive",
         });
+      } else {
+        console.log('🔐 [useAuthActions] Login Google iniciado com sucesso');
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('🔐 [useAuthActions] Erro no login:', error);
       toast({
         title: "Erro no login",
         description: "Tente novamente",

@@ -33,6 +33,7 @@ class AdvancedLogger {
   private traceId: string;
   private userId?: string;
   private isEnabled: boolean = false;
+  private initialized: boolean = false;
   private sendInterval: number = 5000; // 5 seconds
   private maxBatchSize: number = 50;
   private maxPayloadSize: number = 200000; // 200KB
@@ -42,17 +43,27 @@ class AdvancedLogger {
   constructor() {
     this.sessionId = this.generateId();
     this.traceId = this.generateId();
-    this.initialize();
+    // Don't initialize immediately - wait until after auth is established
   }
 
-  private async initialize() {
+  // Lazy initialization - only when actually needed and user is authenticated
+  private async ensureInitialized() {
+    if (this.initialized) return;
+    
     try {
+      // Only initialize if we have an authenticated user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        return; // Don't initialize during login flow
+      }
+
       await this.checkAccess();
       if (this.isEnabled) {
         this.init();
       }
+      this.initialized = true;
     } catch (e) {
-      console.debug('AdvancedLogger initialize failed:', e);
+      console.debug('AdvancedLogger initialization failed:', e);
     }
   }
 
@@ -333,11 +344,13 @@ class AdvancedLogger {
   }
 
   // Public API
-  public captureException(error: Error, context?: Record<string, any>) {
+  public async captureException(error: Error, context?: Record<string, any>) {
+    await this.ensureInitialized();
     this.captureError(error, context);
   }
 
-  public captureBreadcrumb(name: string, data?: any) {
+  public async captureBreadcrumb(name: string, data?: any) {
+    await this.ensureInitialized();
     this.addBreadcrumb({
       message: name,
       data,
@@ -357,11 +370,13 @@ class AdvancedLogger {
     return this.traceId;
   }
 
-  public isAdvancedLoggingEnabled(): boolean {
+  public async isAdvancedLoggingEnabled(): Promise<boolean> {
+    await this.ensureInitialized();
     return this.isEnabled;
   }
 
   public async queryLogs(filters?: { traceId?: string; level?: string; limit?: number }) {
+    await this.ensureInitialized();
     if (!this.isEnabled) return null;
     
     try {

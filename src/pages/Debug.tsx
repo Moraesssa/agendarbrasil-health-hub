@@ -36,14 +36,20 @@ const Debug: React.FC = () => {
   const [isAdvancedEnabled, setIsAdvancedEnabled] = useState(false);
 
   useEffect(() => {
-    setIsAdvancedEnabled(advancedLogger.isAdvancedLoggingEnabled());
-    if (advancedLogger.isAdvancedLoggingEnabled()) {
-      loadLogs();
-    }
+    const checkLoggingStatus = async () => {
+      const enabled = await advancedLogger.isAdvancedLoggingEnabled();
+      setIsAdvancedEnabled(enabled);
+      if (enabled) {
+        loadLogs();
+      }
+    };
+    
+    checkLoggingStatus();
   }, []);
 
   const loadLogs = async () => {
-    if (!advancedLogger.isAdvancedLoggingEnabled()) return;
+    const enabled = await advancedLogger.isAdvancedLoggingEnabled();
+    if (!enabled) return;
     
     setLoading(true);
     try {
