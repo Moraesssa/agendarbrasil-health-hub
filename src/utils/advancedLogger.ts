@@ -3,7 +3,7 @@ import { logger } from './logger';
 
 const EDGE_FUNCTIONS_URL = 'https://ulebotjrsgheybhpdnxd.functions.supabase.co';
 
-export type AdvancedLogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type AdvancedLogLevel = 'debug' | 'info' | 'warn' | 'error' | 'log';
 
 interface AdvancedLogEntry {
   id: string;
@@ -157,9 +157,7 @@ class AdvancedLogger {
         
         // Log to advanced logger
         if (this.isEnabled) {
-          // Remap 'log' to 'info' to align with standard log levels
-          const level = method === 'log' ? 'info' : method;
-          this.captureLog(level as AdvancedLogLevel, args);
+          this.captureLog(method as AdvancedLogLevel, args);
         }
       };
     });
