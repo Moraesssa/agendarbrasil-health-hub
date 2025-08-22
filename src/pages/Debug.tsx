@@ -35,16 +35,18 @@ const Debug: React.FC = () => {
   });
   const [isAdvancedEnabled, setIsAdvancedEnabled] = useState(false);
 
+  const handleLoggingStatusChange = async () => {
+    const enabled = await advancedLogger.isAdvancedLoggingEnabled();
+    setIsAdvancedEnabled(enabled);
+    if (enabled) {
+      setTimeout(() => loadLogs(), 200);
+    } else {
+      setLogs([]);
+    }
+  };
+
   useEffect(() => {
-    const checkLoggingStatus = async () => {
-      const enabled = await advancedLogger.isAdvancedLoggingEnabled();
-      setIsAdvancedEnabled(enabled);
-      if (enabled) {
-        loadLogs();
-      }
-    };
-    
-    checkLoggingStatus();
+    handleLoggingStatusChange();
   }, []);
 
   const loadLogs = async () => {
@@ -179,7 +181,7 @@ const Debug: React.FC = () => {
         </TabsList>
 
         <TabsContent value="setup" className="space-y-4">
-          <AdvancedLoggingSetup />
+          <AdvancedLoggingSetup onStatusChange={handleLoggingStatusChange} />
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
