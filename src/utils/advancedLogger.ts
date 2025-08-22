@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from './logger';
 
+const EDGE_FUNCTIONS_URL = 'https://ulebotjrsgheybhpdnxd.functions.supabase.co';
+
 export type AdvancedLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface AdvancedLogEntry {
@@ -40,13 +42,17 @@ class AdvancedLogger {
   constructor() {
     this.sessionId = this.generateId();
     this.traceId = this.generateId();
-    
-    // Check if advanced logging is enabled for this user
-    this.checkAccess();
-    
-    // Initialize if enabled
-    if (this.isEnabled) {
-      this.init();
+    this.initialize();
+  }
+
+  private async initialize() {
+    try {
+      await this.checkAccess();
+      if (this.isEnabled) {
+        this.init();
+      }
+    } catch (e) {
+      console.debug('AdvancedLogger initialize failed:', e);
     }
   }
 
@@ -311,18 +317,13 @@ class AdvancedLogger {
     try {
       if (useBeacon && navigator.sendBeacon) {
         const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-        navigator.sendBeacon('/functions/v1/client-logs', blob);
+        navigator.sendBeacon(`${EDGE_FUNCTIONS_URL}/client-logs`, blob);
       } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        await fetch('/functions/v1/client-logs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`
-          },
-          body: JSON.stringify(payload)
+        // Prefer using Supabase Functions SDK
+        const { error } = await supabase.functions.invoke('client-logs', {
+          body: payload,
         });
+        if (error) throw error;
       }
     } catch (error) {
       // Re-queue on failure
@@ -371,7 +372,7 @@ class AdvancedLogger {
       if (filters?.level) params.set('level', filters.level);
       if (filters?.limit) params.set('limit', filters.limit.toString());
       
-      const response = await fetch(`/functions/v1/client-logs?${params}`, {
+      const response = await fetch(`${EDGE_FUNCTIONS_URL}/client-logs?${params}`, {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
         }
