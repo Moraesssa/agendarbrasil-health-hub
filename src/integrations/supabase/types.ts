@@ -138,6 +138,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "consultas_paciente_familiar_id_fkey"
+            columns: ["paciente_familiar_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "consultas_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -1005,7 +1019,15 @@ export type Database = {
           verificacao?: Json
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "medicos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_settings: {
         Row: {
@@ -1723,6 +1745,7 @@ export type Database = {
         Returns: {
           cidade: string
           estado: string
+          total_medicos: number
         }[]
       }
       get_available_states: {
