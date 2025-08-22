@@ -12,7 +12,7 @@ import './utils/advancedLogger';
 
 // Ensure React is available globally to prevent createContext issues
 if (typeof window !== 'undefined') {
-  (window as any).React = React;
+  (window as Record<string, unknown>).React = React;
 }
 
 const container = document.getElementById("root");
