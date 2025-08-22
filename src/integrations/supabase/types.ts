@@ -41,6 +41,7 @@ export type Database = {
           payment_data: Json | null
           payment_intent_id: string | null
           payment_status: string | null
+          profile_id: string | null
           session_id: string | null
           status: string | null
           status_pagamento: string | null
@@ -78,6 +79,7 @@ export type Database = {
           payment_data?: Json | null
           payment_intent_id?: string | null
           payment_status?: string | null
+          profile_id?: string | null
           session_id?: string | null
           status?: string | null
           status_pagamento?: string | null
@@ -115,6 +117,7 @@ export type Database = {
           payment_data?: Json | null
           payment_intent_id?: string | null
           payment_status?: string | null
+          profile_id?: string | null
           session_id?: string | null
           status?: string | null
           status_pagamento?: string | null
@@ -135,15 +138,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consultas_paciente_familiar_id_fkey"
-            columns: ["paciente_familiar_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_paciente_id_fkey"
-            columns: ["paciente_id"]
+            foreignKeyName: "consultas_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -265,29 +261,7 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "encaminhamentos_medico_destino_id_fkey"
-            columns: ["medico_destino_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "encaminhamentos_medico_origem_id_fkey"
-            columns: ["medico_origem_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "encaminhamentos_paciente_id_fkey"
-            columns: ["paciente_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       especialidades_medicas: {
         Row: {
@@ -395,22 +369,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "family_members_family_member_id_fkey"
-            columns: ["family_member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       family_notifications: {
         Row: {
@@ -455,22 +414,7 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "family_notifications_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       fhir_resources: {
         Row: {
@@ -503,15 +447,7 @@ export type Database = {
           source_system?: string | null
           version_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fhir_resources_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       health_metrics: {
         Row: {
@@ -544,15 +480,7 @@ export type Database = {
           unit?: string
           value?: Json
         }
-        Relationships: [
-          {
-            foreignKeyName: "health_metrics_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       integration_logs: {
         Row: {
@@ -590,13 +518,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "integration_logs_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "integration_logs_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
@@ -623,6 +544,7 @@ export type Database = {
           horario_funcionamento: Json | null
           id: string
           instrucoes_acesso: string | null
+          is_active: boolean | null
           medico_id: string
           motivo_fechamento: string | null
           nome_local: string
@@ -652,6 +574,7 @@ export type Database = {
           horario_funcionamento?: Json | null
           id?: string
           instrucoes_acesso?: string | null
+          is_active?: boolean | null
           medico_id: string
           motivo_fechamento?: string | null
           nome_local: string
@@ -681,6 +604,7 @@ export type Database = {
           horario_funcionamento?: Json | null
           id?: string
           instrucoes_acesso?: string | null
+          is_active?: boolean | null
           medico_id?: string
           motivo_fechamento?: string | null
           nome_local?: string
@@ -698,7 +622,7 @@ export type Database = {
             foreignKeyName: "locais_atendimento_medico_id_fkey"
             columns: ["medico_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "medicos"
             referencedColumns: ["id"]
           },
         ]
@@ -812,22 +736,7 @@ export type Database = {
           updated_at?: string
           urgent?: boolean | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "medical_exams_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "medical_exams_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       medical_prescriptions: {
         Row: {
@@ -956,22 +865,7 @@ export type Database = {
           updated_at?: string
           urgency_level?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "medical_triage_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "medical_triage_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       medication_doses: {
         Row: {
@@ -1064,11 +958,13 @@ export type Database = {
       }
       medicos: {
         Row: {
+          cidade: string | null
           configuracoes: Json
           created_at: string
           crm: string
           dados_profissionais: Json
-          especialidades: string[]
+          especialidades: Json
+          estado: string | null
           id: string
           registro_especialista: string | null
           telefone: string
@@ -1078,11 +974,13 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          cidade?: string | null
           configuracoes?: Json
           created_at?: string
           crm: string
           dados_profissionais?: Json
-          especialidades?: string[]
+          especialidades?: Json
+          estado?: string | null
           id?: string
           registro_especialista?: string | null
           telefone: string
@@ -1092,11 +990,13 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          cidade?: string | null
           configuracoes?: Json
           created_at?: string
           crm?: string
           dados_profissionais?: Json
-          especialidades?: string[]
+          especialidades?: Json
+          estado?: string | null
           id?: string
           registro_especialista?: string | null
           telefone?: string
@@ -1105,15 +1005,7 @@ export type Database = {
           verificacao?: Json
           whatsapp?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "medicos_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       notification_settings: {
         Row: {
@@ -1149,15 +1041,7 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "notification_settings_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       pacientes: {
         Row: {
@@ -1193,15 +1077,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "pacientes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       pagamentos: {
         Row: {
@@ -1392,15 +1268,7 @@ export type Database = {
           storage_path?: string
           uploaded_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "patient_documents_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       payments: {
         Row: {
@@ -1510,39 +1378,39 @@ export type Database = {
       }
       profiles: {
         Row: {
-          created_at: string
+          avatar_url: string | null
+          created_at: string | null
           display_name: string | null
-          email: string
+          email: string | null
           id: string
           is_active: boolean
           last_login: string | null
           onboarding_completed: boolean
-          photo_url: string | null
-          preferences: Json | null
+          updated_at: string | null
           user_type: string | null
         }
         Insert: {
-          created_at?: string
+          avatar_url?: string | null
+          created_at?: string | null
           display_name?: string | null
-          email: string
+          email?: string | null
           id: string
           is_active?: boolean
           last_login?: string | null
           onboarding_completed?: boolean
-          photo_url?: string | null
-          preferences?: Json | null
+          updated_at?: string | null
           user_type?: string | null
         }
         Update: {
-          created_at?: string
+          avatar_url?: string | null
+          created_at?: string | null
           display_name?: string | null
-          email?: string
+          email?: string | null
           id?: string
           is_active?: boolean
           last_login?: string | null
           onboarding_completed?: boolean
-          photo_url?: string | null
-          preferences?: Json | null
+          updated_at?: string | null
           user_type?: string | null
         }
         Relationships: []
@@ -1682,13 +1550,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_consents_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "user_consents_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
@@ -1749,22 +1610,7 @@ export type Database = {
           vaccine_name?: string
           vaccine_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "vaccination_records_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vaccination_records_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       waiting_list: {
         Row: {
@@ -1876,11 +1722,13 @@ export type Database = {
         Args: { state_uf: string }
         Returns: {
           cidade: string
+          estado: string
         }[]
       }
       get_available_states: {
         Args: Record<PropertyKey, never>
         Returns: {
+          nome: string
           uf: string
         }[]
       }
@@ -1923,7 +1771,7 @@ export type Database = {
         Returns: {
           crm: string
           display_name: string
-          especialidades: string[]
+          especialidades: Json
           id: string
         }[]
       }
@@ -2036,6 +1884,7 @@ export type Database = {
           horario_funcionamento: Json | null
           id: string
           instrucoes_acesso: string | null
+          is_active: boolean | null
           medico_id: string
           motivo_fechamento: string | null
           nome_local: string

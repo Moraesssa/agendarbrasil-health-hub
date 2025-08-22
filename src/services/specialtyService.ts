@@ -34,7 +34,7 @@ export const specialtyService = {
         throw new Error(`Erro ao buscar especialidades do médico: ${error.message}`);
       }
 
-      return data?.especialidades || [];
+      return (data?.especialidades as string[]) || [];
     } catch (error) {
       logger.error("Failed to fetch doctor specialties", "SpecialtyService", { doctorId, error });
       throw error;

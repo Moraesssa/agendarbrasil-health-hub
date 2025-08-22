@@ -179,7 +179,7 @@ interface MockConfig {
 
 class MockDataService {
   private config: MockConfig = {
-    enabled: true,
+    enabled: process.env.NODE_ENV === 'development' && localStorage.getItem('enableMocks') === 'true',
     currentPatientIndex: 0,
     autoAuth: false
   };

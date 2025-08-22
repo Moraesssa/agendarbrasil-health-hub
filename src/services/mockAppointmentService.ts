@@ -103,14 +103,15 @@ export const shouldUseMockService = (): boolean => {
   return mockDataService.isEnabled();
 };
 
-// Proxy service que decide entre real e mock
+// Proxy service que decide entre real e mock - PRODUÇÃO POR PADRÃO
 export const appointmentServiceProxy = {
   async getSpecialties(): Promise<string[]> {
+    // Usar serviço real por padrão, mock apenas se explicitamente habilitado
     if (shouldUseMockService()) {
       return mockAppointmentService.getSpecialties();
     }
     
-    // Importar dinamicamente o serviço real para evitar dependência circular
+    // Serviço real (produção)
     const { newAppointmentService } = await import('@/services/newAppointmentService');
     return newAppointmentService.getSpecialties();
   },

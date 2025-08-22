@@ -61,7 +61,11 @@ export const encaminhamentoService = {
         throw new Error(`Erro ao buscar encaminhamentos enviados: ${error.message}`);
       }
 
-      return (data || []) as Encaminhamento[];
+      return (data || []).map(item => ({
+        ...item,
+        paciente: item.paciente || { display_name: 'Nome não disponível' },
+        medico_destino: item.medico_destino || { display_name: 'Nome não disponível' }
+      })) as Encaminhamento[];
     } catch (error) {
       logger.error("Falha ao buscar encaminhamentos enviados", "encaminhamentoService", error);
       throw error;
@@ -89,7 +93,11 @@ export const encaminhamentoService = {
         throw new Error(`Erro ao buscar encaminhamentos recebidos: ${error.message}`);
       }
 
-      return (data || []) as Encaminhamento[];
+      return (data || []).map(item => ({
+        ...item,
+        paciente: item.paciente || { display_name: 'Nome não disponível' },
+        medico_origem: item.medico_origem || { display_name: 'Nome não disponível' }
+      })) as Encaminhamento[];
     } catch (error) {
       logger.error("Falha ao buscar encaminhamentos recebidos", "encaminhamentoService", error);
       throw error;
@@ -119,7 +127,11 @@ export const encaminhamentoService = {
         throw new Error(`Erro ao buscar encaminhamentos por especialidade: ${error.message}`);
       }
 
-      return (data || []) as Encaminhamento[];
+      return (data || []).map(item => ({
+        ...item,
+        paciente: item.paciente || { display_name: 'Nome não disponível' },
+        medico_origem: item.medico_origem || { display_name: 'Nome não disponível' }
+      })) as Encaminhamento[];
     } catch (error) {
       logger.error("Falha ao buscar encaminhamentos por especialidade", "encaminhamentoService", error);
       throw error;
@@ -212,7 +224,7 @@ export const encaminhamentoService = {
 
       return data?.map(item => ({
         id: item.user_id,
-        display_name: item.profiles?.display_name || 'Nome não disponível'
+        display_name: (item.profiles as any)?.display_name || 'Nome não disponível'
       })) || [];
     } catch (error) {
       logger.error("Falha ao buscar médicos por especialidade", "encaminhamentoService", error);

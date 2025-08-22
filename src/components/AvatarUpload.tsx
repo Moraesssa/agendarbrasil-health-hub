@@ -79,7 +79,7 @@ export const AvatarUpload = ({
       // Atualizar a tabela profiles
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ photo_url: newPhotoUrl })
+        .update({ avatar_url: newPhotoUrl })
         .eq('id', userId);
 
       if (updateError) {

@@ -1,18 +1,16 @@
 // Utilitário para inicializar mocks rapidamente
 import { MockUtils } from '@/services/mockDataService';
 
-// Ativar mocks automaticamente em desenvolvimento
+// Mocks DESABILITADOS por padrão - apenas para desenvolvimento explícito
 if (process.env.NODE_ENV === 'development') {
-  // Verificar se existe flag para ativar mocks
+  // Verificar se existe flag EXPLÍCITA para ativar mocks
   const urlParams = new URLSearchParams(window.location.search);
-  const enableMocks = urlParams.has('mocks') || localStorage.getItem('enableMocks') === 'true';
+  const forceEnableMocks = urlParams.has('force-mocks');
   
-  if (enableMocks) {
-    // MockUtils.enable(); // Comentado para desativar mocks por padrão
-    // console.log('🎭 Mocks ativados automaticamente');
-    
-    // Salvar preferência
-    // localStorage.setItem('enableMocks', 'true');
+  if (forceEnableMocks && localStorage.getItem('enableMocks') !== 'true') {
+    console.log('🎭 Mocks ativados via URL para desenvolvimento');
+    localStorage.setItem('enableMocks', 'true');
+    window.location.reload();
   }
 }
 
