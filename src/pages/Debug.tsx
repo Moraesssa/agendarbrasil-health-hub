@@ -33,19 +33,32 @@ const Debug: React.FC = () => {
     level: '',
     limit: 100
   });
-  const [isAdvancedEnabled, setIsAdvancedEnabled] = useState(false);
+  const [isAdvancedEnabled, setIsAdvancedEnabled] = useState<boolean>(false);
+  const [systemDiagnostics, setSystemDiagnostics] = useState<any>(null);
 
   const loadLogs = useCallback(async () => {
     const enabled = await advancedLogger.isAdvancedLoggingEnabled();
-    if (!enabled) return;
+    if (!enabled) {
+      console.debug('Debug: Advanced logging not enabled, skipping log load');
+      return;
+    }
     
     setLoading(true);
     try {
+      console.debug('Debug: Loading logs with filters:', filters);
       const result = await advancedLogger.queryLogs(filters);
+      console.debug('Debug: Query result:', result);
+      
       if (result?.logs) {
         setLogs(result.logs);
+      } else if (result?.data) {
+        setLogs(result.data);
+      } else {
+        console.debug('Debug: No logs found in result:', result);
+        setLogs([]);
       }
     } catch (error) {
+      console.error('Debug: Error loading logs:', error);
       toast({
         title: 'Erro ao carregar logs',
         description: 'Não foi possível carregar os logs avançados.',
@@ -57,8 +70,15 @@ const Debug: React.FC = () => {
   }, [filters, toast]);
 
   const handleLoggingStatusChange = useCallback(async () => {
+    console.debug('Debug: Checking logging status...');
     const enabled = await advancedLogger.isAdvancedLoggingEnabled();
+    const diagnostics = await advancedLogger.getSystemDiagnostics();
+    
+    console.debug('Debug: Status check results:', { enabled, diagnostics });
+    
     setIsAdvancedEnabled(enabled);
+    setSystemDiagnostics(diagnostics);
+    
     if (enabled) {
       setTimeout(() => loadLogs(), 200);
     } else {
@@ -70,26 +90,32 @@ const Debug: React.FC = () => {
     handleLoggingStatusChange();
   }, [handleLoggingStatusChange]);
 
-  const testErrorCapture = () => {
+  const testErrorCapture = async () => {
     // Test different types of errors
     console.error('Test error from debug page');
     
     try {
       throw new Error('Test exception from debug page');
     } catch (error) {
-      advancedLogger.captureException(error as Error, { testType: 'manual' });
+      await advancedLogger.captureException(error as Error, { testType: 'manual' });
     }
     
     // Test network error
     fetch('/nonexistent-endpoint').catch(() => {});
     
+    // Force flush logs immediately
+    await advancedLogger.forceFlush();
+    
     toast({
       title: 'Testes executados',
-      description: 'Erros de teste foram gerados. Verifique os logs.'
+      description: 'Erros de teste foram gerados. Aguarde alguns segundos e recarregue os logs.'
     });
+    
+    // Auto-reload logs after a delay
+    setTimeout(() => loadLogs(), 2000);
   };
 
-  const generateTestLogs = () => {
+  const generateTestLogs = async () => {
     console.log('Test log message', { data: 'test' });
     console.warn('Test warning message');
     console.info('Test info message with complex data', { 
@@ -98,15 +124,21 @@ const Debug: React.FC = () => {
       timestamp: Date.now()
     });
     
-    advancedLogger.captureBreadcrumb('User clicked generate test logs', { 
+    await advancedLogger.captureBreadcrumb('User clicked generate test logs', { 
       page: 'debug',
       action: 'generate_test_logs'
     });
     
+    // Force flush logs immediately
+    await advancedLogger.forceFlush();
+    
     toast({
       title: 'Logs de teste gerados',
-      description: 'Mensagens de teste foram enviadas para o sistema de logging.'
+      description: 'Mensagens de teste foram enviadas. Aguarde alguns segundos e recarregue os logs.'
     });
+    
+    // Auto-reload logs after a delay
+    setTimeout(() => loadLogs(), 2000);
   };
 
   const getLevelIcon = (level: string) => {
@@ -364,6 +396,47 @@ const Debug: React.FC = () => {
                 <div><strong>URL Atual:</strong> {window.location.href}</div>
               </CardContent>
             </Card>
+            
+            {systemDiagnostics && (
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Terminal className="w-5 h-5" />
+                    Diagnósticos do Sistema de Logging
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><strong>Inicializado:</strong> {systemDiagnostics.initialized ? 'Sim' : 'Não'}</div>
+                    <div><strong>Habilitado:</strong> {systemDiagnostics.enabled ? 'Sim' : 'Não'}</div>
+                    <div><strong>User ID:</strong> {systemDiagnostics.userId || 'N/A'}</div>
+                    <div><strong>Session ID:</strong> {systemDiagnostics.sessionId}</div>
+                    <div><strong>Trace ID:</strong> {systemDiagnostics.traceId}</div>
+                    <div><strong>Logs na Fila:</strong> {systemDiagnostics.queueSize}</div>
+                    <div><strong>Breadcrumbs:</strong> {systemDiagnostics.breadcrumbsCount}</div>
+                    <div><strong>Último Flush:</strong> {new Date(systemDiagnostics.lastFlush).toLocaleString()}</div>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t">
+                    <Button 
+                      onClick={async () => {
+                        await advancedLogger.forceFlush();
+                        await handleLoggingStatusChange();
+                        toast({
+                          title: 'Flush executado',
+                          description: 'Logs foram enviados para o servidor.'
+                        });
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Forçar Envio de Logs
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>
