@@ -7,6 +7,7 @@ import {
   getDayName
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
+import { specialtyService } from '@/services/specialtyService';
 
 // Interfaces corrigidas
 export interface Medico {
@@ -77,17 +78,9 @@ export const newAppointmentService = {
   async getSpecialties(): Promise<string[]> {
     logger.info("Fetching specialties", "NewAppointmentService");
     try {
-      await checkAuthentication();
-      
-      const { data, error } = await supabase.rpc('get_specialties');
-      
-      if (error) {
-        console.error("❌ Erro na RPC get_specialties:", error);
-        throw new Error(`Erro ao buscar especialidades: ${error.message}`);
-      }
-      
-      const specialties = (data || []).sort();
-      return specialties;
+      // Public access: no authentication required
+      const specialties = await specialtyService.getAllSpecialties();
+      return Array.isArray(specialties) ? specialties.sort() : [];
     } catch (error) {
       logger.error("Failed to fetch specialties", "NewAppointmentService", error);
       throw error;

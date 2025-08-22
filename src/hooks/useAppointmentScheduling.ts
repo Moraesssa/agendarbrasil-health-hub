@@ -56,8 +56,6 @@ export const useAppointmentScheduling = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    
     const loadInitialData = async () => {
       setIsLoading(true);
       

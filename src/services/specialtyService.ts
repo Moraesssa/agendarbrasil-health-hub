@@ -5,18 +5,39 @@ import { logger } from '@/utils/logger';
 export const specialtyService = {
   async getAllSpecialties(): Promise<string[]> {
     logger.info("Fetching all specialties", "SpecialtyService");
+    const fetchFromTable = async (): Promise<string[]> => {
+      const { data: tableData, error: tableError } = await supabase
+        .from('especialidades_medicas')
+        .select('nome')
+        .eq('ativa', true)
+        .order('nome');
+
+      if (tableError) {
+        logger.error("Fallback select failed", "SpecialtyService", tableError);
+        throw new Error(`Erro ao buscar especialidades (fallback): ${tableError.message}`);
+      }
+
+      return (tableData || []).map((row: any) => row.nome);
+    };
+
     try {
       const { data, error } = await supabase.rpc('get_specialties');
-      
+
       if (error) {
-        logger.error("Error fetching specialties", "SpecialtyService", error);
-        throw new Error(`Erro ao buscar especialidades: ${error.message}`);
+        logger.warn("RPC get_specialties failed, using fallback", "SpecialtyService", error);
+        return await fetchFromTable();
       }
-      
+
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        logger.warn("RPC returned empty list, using fallback", "SpecialtyService");
+        return await fetchFromTable();
+      }
+
       return data || [];
     } catch (error) {
-      logger.error("Failed to fetch specialties", "SpecialtyService", error);
-      throw error;
+      logger.error("Failed to fetch specialties, trying fallback", "SpecialtyService", error);
+      // Last attempt: fallback
+      return await fetchFromTable();
     }
   },
 
