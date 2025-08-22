@@ -84,7 +84,11 @@ const AdvancedLoggingSetup: React.FC<AdvancedLoggingSetupProps> = ({ onStatusCha
 
       setEmailToAdd('');
       await checkAllowlistStatus();
-      onStatusChange();
+
+      // Add a small delay to account for database replication lag
+      setTimeout(() => {
+        onStatusChange();
+      }, 500);
     } catch (error) {
       console.error('Error adding to allowlist:', error);
       toast({
