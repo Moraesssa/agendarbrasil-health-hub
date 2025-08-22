@@ -157,7 +157,9 @@ class AdvancedLogger {
         
         // Log to advanced logger
         if (this.isEnabled) {
-          this.captureLog(method as AdvancedLogLevel, args);
+          // Remap 'log' to 'info' to align with standard log levels
+          const level = method === 'log' ? 'info' : method;
+          this.captureLog(level as AdvancedLogLevel, args);
         }
       };
     });
