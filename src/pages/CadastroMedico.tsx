@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, ArrowLeft, Stethoscope, User, Mail, Phone, MapPin, FileText, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import React from 'react';
+import { medicoService } from '@/services/medicoService';
 
 const CadastroMedico = () => {
   const [formData, setFormData] = useState({
@@ -45,15 +46,41 @@ const CadastroMedico = () => {
       return;
     }
 
-    // Simulação de cadastro
-    setTimeout(() => {
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo ao AgendarBrasil, Dr(a). " + formData.nome,
-      });
-      navigate("/login");
-      setIsLoading(false);
-    }, 1500);
+    try {
+        // Aqui usamos o método existente no serviço de médicos
+        const success = await medicoService.saveMedicoData({
+            nome: formData.nome,
+            email: formData.email,
+            senha: formData.senha, // se o serviço cuida da criação de auth
+            telefone: formData.telefone,
+            crm: formData.crm,
+            especialidade: formData.especialidade,
+            formacao: formData.formacao,
+            biografia: formData.biografia,
+            endereco_consultorio: formData.endereco,
+            cidade: formData.cidade,
+            estado: formData.estado,
+            cep: formData.cep
+        });
+
+        if (!success) {
+          throw new Error('Não foi possível salvar os dados do médico.');
+        }
+
+        toast({
+            title: "Cadastro de médico realizado com sucesso!",
+            description: `Bem-vindo(a), Dr(a). ${formData.nome}`,
+        });
+        navigate("/login");
+    } catch (error) {
+        toast({
+            title: "Erro no cadastro",
+            description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {

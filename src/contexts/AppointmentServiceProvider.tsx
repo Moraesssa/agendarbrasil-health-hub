@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { IAppointmentService, AppointmentServiceEnvironment } from '@/types/appointmentService';
 import { RealAppointmentService } from '@/services/realAppointmentService';
-// Mock services removed for production
 
 interface AppointmentServiceContextValue {
   appointmentService: IAppointmentService;
@@ -31,9 +30,11 @@ function determineEnvironment(forceEnvironment?: AppointmentServiceEnvironment):
 
 /**
  * Creates the appropriate service instance based on environment
+ * NOTE: Mocks removed — sempre retorna o serviço real.
  */
 function createAppointmentService(environment: AppointmentServiceEnvironment): IAppointmentService {
-  console.log('🏥 AppointmentServiceProvider: Using real service');
+  console.log(`🏥 AppointmentServiceProvider: instantiating RealAppointmentService (env=${environment})`);
+  // Instancia a implementação real exportada como RealAppointmentService
   return new RealAppointmentService();
 }
 
@@ -44,7 +45,7 @@ export const AppointmentServiceProvider: React.FC<AppointmentServiceProviderProp
   const contextValue = useMemo(() => {
     const environment = determineEnvironment(forceEnvironment);
     const appointmentService = createAppointmentService(environment);
-    const isMockEnabled = false; // Mocks disabled in production
+    const isMockEnabled = false; // Mocks removidos — sempre false
 
     console.log(`🔧 AppointmentServiceProvider initialized:`, {
       environment,

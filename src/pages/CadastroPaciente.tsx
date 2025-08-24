@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, ArrowLeft, UserCheck, User, Mail, Phone, MapPin, Heart, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
 const CadastroPaciente = () => {
   const [formData, setFormData] = useState({
@@ -49,15 +49,61 @@ const CadastroPaciente = () => {
       return;
     }
 
-    // Simulação de cadastro
-    setTimeout(() => {
+    try {
+      // Cria usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.senha,
+        options: {
+          data: {
+            full_name: formData.nome,
+            user_type: 'paciente'
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Não foi possível criar o usuário.');
+
+      // Salva perfil na tabela 'pacientes'
+      const { error: profileError } = await supabase
+        .from('pacientes')
+        .insert({
+          id: authData.user.id,
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+          cpf: formData.cpf,
+          data_nascimento: formData.dataNascimento,
+          genero: formData.genero,
+          endereco: formData.endereco,
+          cidade: formData.cidade,
+          estado: formData.estado,
+          cep: formData.cep,
+          contato_emergencia_nome: formData.contatoEmergencia,
+          contato_emergencia_telefone: formData.telefoneEmergencia,
+          historico_medico: formData.historicoMedico,
+          alergias: formData.alergias,
+          medicamentos_em_uso: formData.medicamentos,
+          user_id: authData.user.id
+        });
+
+      if (profileError) throw profileError;
+
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo ao AgendarBrasil, " + formData.nome,
+        description: "Bem-vindo ao AgendarBrasil. Faça o login para continuar.",
       });
       navigate("/login");
+    } catch (err) {
+      toast({
+        title: "Erro no cadastro",
+        description: err instanceof Error ? err.message : "Não foi possível realizar o cadastro.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
