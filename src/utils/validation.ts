@@ -142,3 +142,80 @@ export const createSecureErrorResponse = (error: any, isDevelopment: boolean = f
   
   return genericMessages.default;
 };
+
+// ============= Enhanced Validation for Normalized Schema =============
+
+export const validateAppointmentData = (data: any): ValidationResult => {
+  const errors: string[] = [];
+  
+  if (!data.patient_id) errors.push('Patient ID is required');
+  if (!data.doctor_id) errors.push('Doctor ID is required');
+  if (!data.scheduled_datetime) errors.push('Scheduled datetime is required');
+  if (!data.appointment_type) errors.push('Appointment type is required');
+  
+  // Validate datetime format
+  if (data.scheduled_datetime && !validateDate(data.scheduled_datetime)) {
+    errors.push('Invalid scheduled datetime format');
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
+export const validatePaymentData = (data: any): ValidationResult => {
+  const errors: string[] = [];
+  
+  if (!data.amount || data.amount <= 0) errors.push('Valid amount is required');
+  if (!data.currency) errors.push('Currency is required');
+  if (!data.status) errors.push('Payment status is required');
+  
+  // Validate amount range
+  if (data.amount && !validateNumericRange(data.amount, 0.01, 999999.99)) {
+    errors.push('Amount must be between 0.01 and 999,999.99');
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
+export const validateProfileData = (data: any): ValidationResult => {
+  const errors: string[] = [];
+  
+  if (!data.user_id) errors.push('User ID is required');
+  if (!data.full_name || data.full_name.trim().length < 2) {
+    errors.push('Full name must be at least 2 characters');
+  }
+  if (!data.email || !validateEmail(data.email)) {
+    errors.push('Valid email is required');
+  }
+  if (!data.role || !['patient', 'doctor', 'admin', 'family_member'].includes(data.role)) {
+    errors.push('Valid role is required');
+  }
+  
+  // Additional validations for specific roles
+  if (data.role === 'doctor' && !data.crm) {
+    errors.push('CRM is required for doctors');
+  }
+  
+  if (data.phone && !validatePhone(data.phone)) {
+    errors.push('Invalid phone number format');
+  }
+  
+  if (data.cpf && !validateCPF(data.cpf)) {
+    errors.push('Invalid CPF format');
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}

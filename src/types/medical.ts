@@ -114,7 +114,7 @@ export interface CreateExamData {
   urgent: boolean;
 }
 
-// Appointment-related types
+// ============= Legacy Appointment Types (for backward compatibility) =============
 export interface Specialty {
   id?: string;
   name: string;
@@ -156,4 +156,56 @@ export interface Local {
     cep: string;
   };
   horarios: Horario[];
+}
+
+// ============= Enhanced Medical Types for v2 Schema =============
+
+export interface MedicalLocation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  postal_code?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  facilities?: string[];
+  operating_hours?: {
+    [day: string]: {
+      open: string;
+      close: string;
+    };
+  };
+  is_active: boolean;
+}
+
+export interface MedicalSpecialty {
+  id: string;
+  name: string;
+  code?: string;
+  description?: string;
+  is_active: boolean;
+}
+
+export interface DoctorProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  crm: string;
+  specialties: MedicalSpecialty[];
+  locations: MedicalLocation[];
+  professional_data: {
+    registration_number: string;
+    experience_years?: number;
+    education?: string[];
+    certifications?: string[];
+  };
+  verification_status: {
+    crm_verified: boolean;
+    documents_submitted: boolean;
+    approved: boolean;
+  };
+  is_active: boolean;
 }

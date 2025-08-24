@@ -1,3 +1,7 @@
+import { ProfileV2, PatientProfile, DoctorProfile, FamilyMemberProfile } from '@/types/profiles';
+import { Tables } from '@/integrations/supabase/types';
+
+// ============= Legacy User Types (for backward compatibility) =============
 export type UserType = 'paciente' | 'medico';
 
 export interface UserPreferences {
@@ -20,6 +24,51 @@ export interface BaseUser {
   // Doctor specific fields
   especialidades?: string[];
   crm?: string;
+}
+
+// ============= Enhanced User Types for v2 Schema =============
+
+export interface UserAuth {
+  id: string;
+  email: string;
+  phone?: string;
+  role?: 'patient' | 'doctor' | 'admin' | 'family_member';
+  email_confirmed_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserSession {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  user: UserAuth;
+}
+
+export interface UserProfile extends ProfileV2 {
+  // Enhanced user profile that extends the base ProfileV2
+  preferences?: {
+    notifications: boolean;
+    theme: 'light' | 'dark';
+    language: 'pt-BR' | 'en-US';
+    timezone?: string;
+  };
+  last_login?: string;
+  is_active: boolean;
+}
+
+// Union types for transition period
+export type LegacyUser = BaseUser;
+export type ModernUser = UserProfile;
+export type UnifiedUser = LegacyUser | ModernUser;
+
+// Type guards for user types
+export function isLegacyUser(user: UnifiedUser): user is LegacyUser {
+  return 'uid' in user && 'userType' in user;
+}
+
+export function isModernUser(user: UnifiedUser): user is ModernUser {
+  return 'user_id' in user && 'role' in user && 'full_name' in user;
 }
 
 export interface OnboardingStatus {

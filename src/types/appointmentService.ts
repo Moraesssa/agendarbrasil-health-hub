@@ -1,7 +1,9 @@
 import { Medico, LocalComHorarios } from '@/services/newAppointmentService';
+import { AppointmentV2, AppointmentType, AppointmentStatus } from '@/types/appointments';
+import { UnifiedAppointment } from '@/types/appointments';
 
 /**
- * Unified contract for appointment services
+ * Unified contract for appointment services (v2 with backward compatibility)
  * This interface ensures both real and mock services implement the same methods
  */
 export interface IAppointmentService {
@@ -51,7 +53,7 @@ export interface IAppointmentService {
   extendReservation(sessionId: string): Promise<{ expiresAt: Date } | null>;
 
   /**
-   * Schedules a final appointment
+   * Schedules a final appointment (legacy format for backward compatibility)
    */
   scheduleAppointment(appointmentData: {
     paciente_id: string;
@@ -61,6 +63,18 @@ export interface IAppointmentService {
     local_consulta_texto: string;
     local_id?: string;
   }): Promise<any>;
+
+  /**
+   * Schedules a final appointment (v2 format)
+   */
+  scheduleAppointmentV2?(appointmentData: {
+    patient_id: string;
+    doctor_id: string;
+    scheduled_datetime: string;
+    appointment_type: AppointmentType;
+    location_id?: string;
+    notes?: string;
+  }): Promise<AppointmentV2>;
 }
 
 /**
