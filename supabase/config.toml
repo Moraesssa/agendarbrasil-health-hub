@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.send-appointment-reminder]
 verify_jwt = false
+
+[functions.purge-auth-users]
+verify_jwt = false
