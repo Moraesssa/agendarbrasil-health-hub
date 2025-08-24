@@ -7,9 +7,26 @@ import { useAuth } from '@/contexts/AuthContext';
 // Type for appointment status
 type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
 
-// Type for appointments with doctor info from profiles table - made optional to handle missing data
+// Fase 3: Types for dual-read between appointments and consultas
 type AppointmentWithDoctor = Tables<'consultas'> & {
   doctor_profile: {
+    display_name: string | null;
+  } | null;
+};
+
+// New normalized appointment type from appointments table
+type NormalizedAppointment = {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  scheduled_datetime: string;
+  appointment_type: string;
+  status: string;
+  payment_status: string;
+  amount?: number;
+  created_at: string;
+  updated_at: string;
+  doctor_profile?: {
     display_name: string | null;
   } | null;
 };
@@ -28,6 +45,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fase 3: Melhorado para preparar dual-read (appointments table será criada futuramente)
   const fetchConsultas = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -38,7 +56,9 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     setError(null);
 
     try {
-      // Use explicit JOIN with proper alias
+      console.log('useConsultas: Buscando consultas com melhorias da Fase 3');
+      
+      // Por enquanto, apenas consultas legacy (appointments será implementado futuramente)
       let query = supabase
         .from('consultas')
         .select(`
@@ -87,10 +107,11 @@ export const useConsultas = (filters?: ConsultasFilters) => {
         doctor_profile: item.doctor_profile || { display_name: null }
       }));
 
+      console.log(`useConsultas: Total de ${processedData.length} consultas carregadas`);
       setConsultas(processedData);
 
     } catch (err) {
-      console.error('Erro ao buscar consultas:', err);
+      console.error('useConsultas: Erro ao buscar consultas:', err);
       setError('Erro ao carregar consultas');
     } finally {
       setLoading(false);

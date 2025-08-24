@@ -208,36 +208,69 @@ export const usePayment = () => {
     try {
       console.log("usePayment: Verificando pagamento para consulta:", consultaId);
       
-      const { data, error } = await supabase.functions.invoke('verify-payment', {
-        body: { consulta_id: consultaId }
-      });
-
-      console.log("usePayment: Resposta do verify-payment:", data);
-
-      if (error) {
-        console.error("usePayment: Erro na função verify-payment:", error);
-        throw error;
+      // Fase 3: Dual-read - consultar payments primeiro, depois verify-payment edge function
+      let paymentFound = false;
+      let paymentData = null;
+      
+      try {
+        // Tentar buscar na nova tabela payments primeiro
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('consultation_id', consultaId)
+          .single();
+          
+        if (!paymentsError && paymentsData) {
+          console.log("usePayment: Pagamento encontrado na tabela payments:", paymentsData);
+          paymentFound = true;
+          paymentData = paymentsData;
+          
+          if (paymentsData.status === 'paid') {
+            console.log("usePayment: Pagamento confirmado na tabela payments!");
+            toast({
+              title: "Pagamento confirmado!",
+              description: "Sua consulta foi agendada com sucesso.",
+            });
+            
+            window.dispatchEvent(new CustomEvent('consultaUpdated'));
+            return { success: true, paid: true, data: paymentData };
+          }
+        }
+      } catch (e) {
+        console.log("usePayment: Erro ao consultar payments, usando fallback:", e);
       }
+      
+      // Fallback: usar edge function verify-payment (que consulta ambas as tabelas)
+      if (!paymentFound) {
+        const { data, error } = await supabase.functions.invoke('verify-payment', {
+          body: { consulta_id: consultaId }
+        });
 
-      if (data.success && data.payment_status === 'paid') {
-        console.log("usePayment: Pagamento confirmado!");
-        toast({
-          title: "Pagamento confirmado!",
-          description: "Sua consulta foi agendada com sucesso.",
-        });
-        
-        // Disparar evento para atualizar interfaces
-        window.dispatchEvent(new CustomEvent('consultaUpdated'));
-        
-        return { success: true, paid: true, data: data.consulta };
-      } else if (data.success) {
-        console.log("usePayment: Pagamento ainda não processado");
-        toast({
-          title: "Pagamento em processamento",
-          description: "O pagamento ainda está sendo processado. Tente novamente em alguns minutos.",
-          variant: "default"
-        });
-        return { success: true, paid: false };
+        console.log("usePayment: Resposta do verify-payment:", data);
+
+        if (error) {
+          console.error("usePayment: Erro na função verify-payment:", error);
+          throw error;
+        }
+
+        if (data.success && data.payment_status === 'paid') {
+          console.log("usePayment: Pagamento confirmado via edge function!");
+          toast({
+            title: "Pagamento confirmado!",
+            description: "Sua consulta foi agendada com sucesso.",
+          });
+          
+          window.dispatchEvent(new CustomEvent('consultaUpdated'));
+          return { success: true, paid: true, data: data.consulta };
+        } else if (data.success) {
+          console.log("usePayment: Pagamento ainda não processado");
+          toast({
+            title: "Pagamento em processamento",
+            description: "O pagamento ainda está sendo processado. Tente novamente em alguns minutos.",
+            variant: "default"
+          });
+          return { success: true, paid: false };
+        }
       }
       
       return { success: false, paid: false };
@@ -252,20 +285,20 @@ export const usePayment = () => {
     }
   };
 
-  // Nova função para verificação automática de consultas pendentes
+  // Fase 3: Função para verificação automática de consultas pendentes com dual-read
   const checkPendingPayments = async () => {
     if (!user) return;
 
     try {
       console.log("Verificando consultas com pagamento pendente...");
       
-      // Buscar consultas com pagamento pendente
+      // Buscar na tabela legacy consultas (appointments table não existe ainda)
       const { data: consultas, error } = await supabase
         .from('consultas')
         .select('id, status_pagamento, created_at')
         .eq('paciente_id', user.id)
         .eq('status_pagamento', 'pendente')
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Últimas 24h
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (error) {
         console.error("Erro ao buscar consultas pendentes:", error);
@@ -273,7 +306,7 @@ export const usePayment = () => {
       }
 
       if (consultas && consultas.length > 0) {
-        console.log(`Encontradas ${consultas.length} consultas com pagamento pendente`);
+        console.log(`Encontradas ${consultas.length} consultas pendentes na tabela consultas`);
         
         // Verificar cada consulta
         for (const consulta of consultas) {
