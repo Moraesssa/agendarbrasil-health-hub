@@ -10,6 +10,7 @@ import HealthSummary from "@/components/HealthSummary";
 import MedicationReminders from "@/components/MedicationReminders";
 import { DocumentList } from "@/components/health/DocumentList";
 import { DocumentUpload } from "@/components/health/DocumentUpload";
+import { TopDoctorsCarousel } from "@/components/homepage/TopDoctorsCarousel";
 import { useDocuments } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -223,11 +224,15 @@ const Index = () => {
             <div className="relative z-10 bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-12 border border-blue-100/50">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-green-500/5 to-blue-500/5 rounded-3xl"></div>
               <div className="relative z-10">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-                  <span className="bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
-                    {user ? "Bem-vindo, Residencial Moraes!" : "AgendarBrasil"}
-                  </span>
-                </h1>
+                {user ? (
+                  <TopDoctorsCarousel />
+                ) : (
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                    <span className="bg-gradient-to-r from-blue-800 via-blue-600 to-green-600 bg-clip-text text-transparent">
+                      AgendarBrasil
+                    </span>
+                  </h1>
+                )}
                 <div className="text-lg sm:text-xl text-gray-600 mb-6 capitalize font-medium">
                   {currentDate}
                 </div>
