@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { IAppointmentService, AppointmentServiceEnvironment } from '@/types/appointmentService';
 import { RealAppointmentService } from '@/services/realAppointmentService';
-import { PureMockAppointmentService } from '@/services/pureUserMockService';
-import { mockDataService } from '@/services/mockDataService';
+// Mock services removed for production
 
 interface AppointmentServiceContextValue {
   appointmentService: IAppointmentService;
@@ -26,35 +25,16 @@ function determineEnvironment(forceEnvironment?: AppointmentServiceEnvironment):
     return forceEnvironment;
   }
 
-  // In production, never use mocks regardless of localStorage
-  if (import.meta.env.PROD) {
-    return 'production';
-  }
-
-  // In development, check if mocks are enabled
-  if (mockDataService.isEnabled()) {
-    return 'mock';
-  }
-
-  // Default to development (real services but not production)
-  return 'development';
+  // Always use real services in production mode
+  return import.meta.env.PROD ? 'production' : 'development';
 }
 
 /**
  * Creates the appropriate service instance based on environment
  */
 function createAppointmentService(environment: AppointmentServiceEnvironment): IAppointmentService {
-  switch (environment) {
-    case 'mock':
-      console.log('🎭 AppointmentServiceProvider: Using mock service');
-      return new PureMockAppointmentService();
-    
-    case 'production':
-    case 'development':
-    default:
-      console.log('🏥 AppointmentServiceProvider: Using real service');
-      return new RealAppointmentService();
-  }
+  console.log('🏥 AppointmentServiceProvider: Using real service');
+  return new RealAppointmentService();
 }
 
 export const AppointmentServiceProvider: React.FC<AppointmentServiceProviderProps> = ({ 
@@ -64,7 +44,7 @@ export const AppointmentServiceProvider: React.FC<AppointmentServiceProviderProp
   const contextValue = useMemo(() => {
     const environment = determineEnvironment(forceEnvironment);
     const appointmentService = createAppointmentService(environment);
-    const isMockEnabled = environment === 'mock';
+    const isMockEnabled = false; // Mocks disabled in production
 
     console.log(`🔧 AppointmentServiceProvider initialized:`, {
       environment,

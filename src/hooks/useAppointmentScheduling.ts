@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAppointmentServiceInstance } from '@/contexts/AppointmentServiceProvider';
-import { LocalComHorarios } from "@/services/mockDataService";
+import { LocalComHorarios } from "@/services/newAppointmentService";
 import { Medico } from "@/services/newAppointmentService";
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";

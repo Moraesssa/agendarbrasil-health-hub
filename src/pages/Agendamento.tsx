@@ -28,7 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getSupabaseConfig, checkSupabaseConnection } from '@/utils/supabaseCheck';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { LocalComHorarios } from '@/services/mockDataService';
+import { LocalComHorarios } from '@/services/newAppointmentService';
 import { useSearchParams } from 'react-router-dom';
 
 const TOTAL_STEPS = 7;

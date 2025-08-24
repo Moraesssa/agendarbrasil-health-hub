@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin, Calendar, Users, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LocalComHorarios } from '@/services/mockDataService';
+import { LocalComHorarios } from '@/services/newAppointmentService';
 import { TimeSlot } from '@/utils/timeSlotUtils';
 import { useAdvancedScheduling } from '@/hooks/useAdvancedScheduling';
 

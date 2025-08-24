@@ -4,12 +4,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { BaseUser, OnboardingStatus } from '@/types/user';
 import { authService } from '@/services/authService';
-import { mockDataService } from '@/services/mockDataService';
-import { useMockAuth } from '@/hooks/useMockAuth';
+// Mock services removed for production
 
 export const useAuthState = () => {
-  // Usar mock auth se os mocks estiverem habilitados
-  const mockAuth = useMockAuth();
   
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -18,27 +15,6 @@ export const useAuthState = () => {
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
 
   const loadingUserRef = useRef<string | null>(null);
-  
-  // Se mocks estão habilitados, retornar dados do mock
-  if (mockDataService.isEnabled()) {
-    return {
-      user: mockAuth.user,
-      session: mockAuth.session,
-      userData: mockAuth.userData,
-      loading: mockAuth.loading,
-      onboardingStatus: mockAuth.onboardingStatus,
-      setUserData: mockAuth.setUserData,
-      setOnboardingStatus: mockAuth.setOnboardingStatus,
-      // Incluir funções extras do mock para desenvolvimento
-      ...(process.env.NODE_ENV === 'development' && {
-        switchPatient: mockAuth.switchPatient,
-        nextPatient: mockAuth.nextPatient,
-        mockSignOut: mockAuth.mockSignOut,
-        mockSignIn: mockAuth.mockSignIn,
-        currentPatient: mockAuth.currentPatient
-      })
-    };
-  }
 
   const loadUserData = async (uid: string, retryCount = 0) => {
     // Validação crítica: verificar se uid é válido
