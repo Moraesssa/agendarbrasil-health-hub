@@ -175,52 +175,77 @@ export const appointmentService = {
   }) {
     try {
       await checkAuthentication();
+      logger.info("Scheduling appointment via v2 RPC", "AppointmentService");
 
-      // Verificação final de disponibilidade antes do agendamento
-      const isAvailable = await checkAvailabilityBeforeScheduling(
-        appointmentData.medico_id, 
-        appointmentData.consultation_date
-      );
+      // Try v2 RPC first
+      try {
+        const { data, error } = await supabase.rpc('reserve_appointment_v2', {
+          p_doctor_id: appointmentData.medico_id,
+          p_appointment_datetime: appointmentData.consultation_date,
+          p_specialty: appointmentData.consultation_type,
+          p_family_member_id: null
+        });
 
-      if (!isAvailable) {
-        throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
-      }
-
-      // Create appointment with future date validation
-      const appointmentDate = new Date(appointmentData.consultation_date);
-      const now = new Date();
-      
-      if (appointmentDate <= now) {
-        throw new Error("Não é possível agendar consultas para horários passados.");
-      }
-
-      const { error } = await supabase.from('consultas').insert({
-        paciente_id: appointmentData.paciente_id,
-        medico_id: appointmentData.medico_id,
-        consultation_date: appointmentData.consultation_date,
-        consultation_type: appointmentData.consultation_type,
-        notes: appointmentData.notes,
-        status: 'agendada',
-        status_pagamento: 'pendente',
-        patient_name: 'Paciente', // Placeholder
-        patient_email: 'paciente@email.com' // Placeholder
-      });
-
-      if (error) {
-        // Verificar se é erro de constraint violation (agendamento duplicado)
-        if (error.code === '23505' && error.message?.includes('idx_consultas_unique_slot')) {
-          logger.warn("Attempt to schedule duplicate appointment", "AppointmentService", { 
-            doctorId: appointmentData.medico_id, 
-            dateTime: appointmentData.consultation_date 
-          });
-          throw new Error("Este horário já foi ocupado por outro paciente. Por favor, escolha outro horário disponível.");
+        if (error) {
+          logger.warn("V2 RPC failed, falling back to legacy", "AppointmentService", error);
+          throw error;
         }
-        
-        logger.error("Error scheduling appointment", "AppointmentService", error);
-        throw error;
-      }
 
-      return { success: true };
+        if (data && data.length > 0 && data[0].success) {
+          logger.info("Appointment scheduled via v2 RPC", "AppointmentService");
+          return { success: true, appointmentId: data[0].appointment_id };
+        } else {
+          const message = data?.[0]?.message || "Falha ao agendar";
+          throw new Error(message);
+        }
+      } catch (v2Error) {
+        logger.warn("V2 RPC failed, using legacy approach", "AppointmentService", v2Error);
+        
+        // Fallback to legacy method
+        const isAvailable = await checkAvailabilityBeforeScheduling(
+          appointmentData.medico_id, 
+          appointmentData.consultation_date
+        );
+
+        if (!isAvailable) {
+          throw new Error("Este horário não está mais disponível. Por favor, selecione outro horário.");
+        }
+
+        const appointmentDate = new Date(appointmentData.consultation_date);
+        const now = new Date();
+        
+        if (appointmentDate <= now) {
+          throw new Error("Não é possível agendar consultas para horários passados.");
+        }
+
+        const { error } = await supabase.from('consultas').insert({
+          paciente_id: appointmentData.paciente_id,
+          medico_id: appointmentData.medico_id,
+          consultation_date: appointmentData.consultation_date,
+          consultation_type: appointmentData.consultation_type,
+          notes: appointmentData.notes,
+          status: 'agendada',
+          status_pagamento: 'pendente',
+          patient_name: 'Paciente', // Placeholder
+          patient_email: 'paciente@email.com' // Placeholder
+        });
+
+        if (error) {
+          if (error.code === '23505' && error.message?.includes('idx_consultas_unique_slot')) {
+            logger.warn("Attempt to schedule duplicate appointment", "AppointmentService", { 
+              doctorId: appointmentData.medico_id, 
+              dateTime: appointmentData.consultation_date 
+            });
+            throw new Error("Este horário já foi ocupado por outro paciente. Por favor, escolha outro horário disponível.");
+          }
+          
+          logger.error("Error scheduling appointment (legacy)", "AppointmentService", error);
+          throw error;
+        }
+
+        logger.info("Appointment scheduled via legacy method", "AppointmentService");
+        return { success: true };
+      }
     } catch (error) {
       logger.error("Failed to schedule appointment", "AppointmentService", error);
       throw error;
