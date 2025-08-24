@@ -108,21 +108,37 @@ serve(async (req) => {
       console.log("Buscando session_id pela consulta...");
       const { data: consultaData } = await supabaseClient
         .from('consultas')
-        .select('*')
+        .select('id')
         .eq('id', consulta_id)
         .single();
       
       if (consultaData) {
-        // Buscar session_id nos pagamentos
-        const { data: pagamentoData } = await supabaseClient
-          .from('pagamentos')
-          .select('gateway_id')
-          .eq('consulta_id', consulta_id)
+        // 1) Buscar na nova tabela payments
+        const { data: paymentV2 } = await supabaseClient
+          .from('payments')
+          .select('stripe_session_id')
+          .eq('consultation_id', consulta_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .single();
-        
-        if (pagamentoData?.gateway_id) {
-          finalSessionId = pagamentoData.gateway_id;
-          console.log("Session ID encontrado nos pagamentos");
+
+        if (paymentV2?.stripe_session_id) {
+          finalSessionId = paymentV2.stripe_session_id;
+          console.log("Session ID encontrado em payments (v2)");
+        } else {
+          // 2) Fallback: Buscar session_id na tabela legacy pagamentos
+          const { data: pagamentoData } = await supabaseClient
+            .from('pagamentos')
+            .select('gateway_id')
+            .eq('consulta_id', consulta_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (pagamentoData?.gateway_id) {
+            finalSessionId = pagamentoData.gateway_id;
+            console.log("Session ID encontrado nos pagamentos (legacy)");
+          }
         }
       }
     }
@@ -146,8 +162,45 @@ serve(async (req) => {
 
     if (session.payment_status === 'paid') {
       console.log("Pagamento confirmado, atualizando banco...");
-      
-      // Verificar se já existe pagamento registrado
+
+      const targetConsultaId = (session.metadata?.consulta_id || consulta_id) as string;
+
+      // 1) Dual-write: inserir/garantir registro na nova tabela payments
+      try {
+        const { data: existingV2 } = await supabaseClient
+          .from('payments')
+          .select('id')
+          .eq('stripe_session_id', finalSessionId)
+          .limit(1)
+          .single();
+
+        if (!existingV2) {
+          const { error: insertV2Error } = await supabaseClient
+            .from('payments')
+            .insert({
+              consultation_id: targetConsultaId,
+              amount: session.amount_total || 0,
+              currency: session.currency || 'brl',
+              status: 'succeeded',
+              stripe_session_id: finalSessionId,
+              stripe_payment_intent_id: (session.payment_intent as string) || null,
+              customer_email: session.customer_details?.email || session.customer_email || null,
+              customer_name: session.customer_details?.name || null,
+              metadata: session.metadata || null,
+            });
+          if (insertV2Error) {
+            console.warn('Falha ao inserir em payments (v2):', insertV2Error);
+          } else {
+            console.log('Registro criado em payments (v2)');
+          }
+        } else {
+          console.log('Registro já existe em payments (v2)');
+        }
+      } catch (e) {
+        console.warn('Erro não crítico no dual-write para payments (v2):', e);
+      }
+
+      // 2) Manter compatibilidade: registrar em pagamentos (legacy) se não existir
       const { data: existingPayment } = await supabaseClient
         .from('pagamentos')
         .select('*')
@@ -155,65 +208,58 @@ serve(async (req) => {
         .single();
 
       if (!existingPayment) {
-        console.log("Registrando novo pagamento no banco...");
-        
+        console.log("Registrando novo pagamento (legacy)...");
         // Buscar dados da consulta para obter IDs necessários
-        const { data: consultaData } = await supabaseClient
+        const { data: consultaIds } = await supabaseClient
           .from('consultas')
           .select('paciente_id, medico_id')
-          .eq('id', session.metadata?.consulta_id || consulta_id)
+          .eq('id', targetConsultaId)
           .single();
         
-        // Registrar pagamento
-        const { data: newPayment, error: paymentError } = await supabaseClient
+        const { error: paymentError } = await supabaseClient
           .from('pagamentos')
           .insert({
-            consulta_id: session.metadata?.consulta_id || consulta_id,
-            paciente_id: session.metadata?.paciente_id || consultaData?.paciente_id,
-            medico_id: session.metadata?.medico_id || consultaData?.medico_id,
-            valor: session.amount_total / 100,
+            consulta_id: targetConsultaId,
+            paciente_id: session.metadata?.paciente_id || consultaIds?.paciente_id,
+            medico_id: session.metadata?.medico_id || consultaIds?.medico_id,
+            valor: (session.amount_total || 0) / 100,
             metodo_pagamento: 'credit_card',
             gateway_id: finalSessionId,
             status: 'succeeded',
             dados_gateway: session
-          })
-          .select()
-          .single();
+          });
 
-        if (paymentError) {
-          console.error("Erro ao registrar pagamento:", paymentError);
-          // Se for erro de duplicação, não é crítico
-          if (paymentError.code !== '23505') {
-            throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
-          } else {
-            console.log("Pagamento já existe - OK");
-          }
-        } else {
-          console.log("Pagamento registrado com sucesso:", newPayment);
+        if (paymentError && paymentError.code !== '23505') {
+          console.error("Erro ao registrar pagamento (legacy):", paymentError);
+          throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
         }
       } else {
-        console.log("Pagamento já existe no banco:", existingPayment);
+        console.log("Pagamento (legacy) já existe no banco");
       }
 
-      // Atualizar consulta
-      console.log("Atualizando status da consulta...");
-      const { data: consultaData, error: consultaError } = await supabaseClient
+      // 3) Atualizar consulta via RPC confirm_appointment_v2
+      console.log("Confirmando consulta via RPC confirm_appointment_v2...");
+      const { data: rpcResult, error: rpcError } = await supabaseClient
+        .rpc('confirm_appointment_v2', {
+          p_appointment_id: targetConsultaId,
+          p_payment_intent_id: (session.payment_intent as string) || ''
+        });
+
+      if (rpcError) {
+        console.error('Erro na RPC confirm_appointment_v2:', rpcError);
+        throw new Error(`Erro ao confirmar consulta: ${rpcError.message}`);
+      }
+      console.log('RPC confirm_appointment_v2 retorno:', rpcResult);
+
+      // Buscar consulta atualizada para retornar ao cliente
+      const { data: consultaData, error: consultaFetchError } = await supabaseClient
         .from('consultas')
-        .update({ 
-          status_pagamento: 'pago',
-          status: 'agendada',
-          valor: session.amount_total / 100,
-          expires_at: null // Limpar expiração já que foi pago
-        })
-        .eq('id', session.metadata?.consulta_id || consulta_id)
-        .select()
+        .select('*')
+        .eq('id', targetConsultaId)
         .single();
 
-      if (consultaError) {
-        console.error("Erro ao atualizar consulta:", consultaError);
-        throw new Error(`Erro ao atualizar consulta: ${consultaError.message}`);
-      } else {
-        console.log("Consulta atualizada com sucesso:", consultaData);
+      if (consultaFetchError) {
+        console.warn('Consulta confirmada, mas falhou ao recuperar dados:', consultaFetchError);
       }
 
       console.log("=== VERIFICAÇÃO CONCLUÍDA COM SUCESSO ===");

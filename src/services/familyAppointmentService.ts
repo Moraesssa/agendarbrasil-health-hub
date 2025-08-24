@@ -28,21 +28,37 @@ export const familyAppointmentService = {
         throw new Error("Você não tem permissão para agendar consultas para este familiar");
       }
 
-      const { data: appointment, error } = await supabase.from('consultas').insert({
-        paciente_id: appointmentData.paciente_id,
-        medico_id: appointmentData.medico_id,
-        consultation_date: appointmentData.consultation_date,
-        consultation_type: appointmentData.consultation_type,
-        notes: appointmentData.notes,
-        status: 'agendada',
-        patient_name: 'Familiar', // Placeholder
-        patient_email: 'familiar@email.com' // Placeholder
-      });
+      // Reservar horário via RPC v2 com p_family_member_id
+      const { data: reserveResult, error: reserveError } = await supabase
+        .rpc('reserve_appointment_v2', {
+          p_doctor_id: appointmentData.medico_id,
+          p_appointment_datetime: appointmentData.consultation_date,
+          p_specialty: appointmentData.consultation_type,
+          p_family_member_id: appointmentData.paciente_id,
+        })
+        .single();
 
-      if (error) {
-        logger.error("Error scheduling family appointment", "FamilyAppointmentService", error);
-        throw error;
+      if (reserveError) {
+        logger.error("Error reserving appointment via RPC", "FamilyAppointmentService", reserveError);
+        throw reserveError;
       }
+
+      if (!reserveResult?.success) {
+        throw new Error(reserveResult?.message || "Não foi possível reservar o horário");
+      }
+
+      // Buscar a consulta criada para retornar
+      const { data: appointment, error: fetchError } = await supabase
+        .from('consultas')
+        .select('*')
+        .eq('id', reserveResult.appointment_id)
+        .single();
+
+      if (fetchError) {
+        logger.error("Error fetching created appointment", "FamilyAppointmentService", fetchError);
+        throw fetchError;
+      }
+
 
       return { success: true, appointment };
     } catch (error) {

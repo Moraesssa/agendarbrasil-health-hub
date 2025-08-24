@@ -101,7 +101,6 @@ serve(async (req) => {
           throw new Error("Consulta ID não encontrado no metadata");
         }
 
-        // Verificar se o pagamento foi realmente processado
         if (session.payment_status !== 'paid') {
           console.log("Pagamento ainda não foi processado, status:", session.payment_status);
           return new Response(JSON.stringify({ received: true, status: 'pending' }), {
@@ -110,54 +109,95 @@ serve(async (req) => {
           });
         }
 
-        // Registrar pagamento no banco
-        console.log("Registrando pagamento...");
-        const { data: paymentData, error: paymentError } = await supabaseClient
+        const targetConsultaId = session.metadata.consulta_id as string;
+
+        // 1) Dual-write em payments (v2)
+        try {
+          const { data: existingV2 } = await supabaseClient
+            .from('payments')
+            .select('id')
+            .eq('stripe_session_id', session.id)
+            .limit(1)
+            .single();
+
+          if (!existingV2) {
+            const { error: insertV2Error } = await supabaseClient
+              .from('payments')
+              .insert({
+                consultation_id: targetConsultaId,
+                amount: session.amount_total || 0,
+                currency: session.currency || 'brl',
+                status: 'succeeded',
+                stripe_session_id: session.id,
+                stripe_payment_intent_id: (session.payment_intent as string) || null,
+                customer_email: session.customer_details?.email || session.customer_email || null,
+                customer_name: session.customer_details?.name || null,
+                metadata: session.metadata || null,
+              });
+            if (insertV2Error) {
+              console.warn('Falha ao inserir em payments (v2):', insertV2Error);
+            } else {
+              console.log('Registro criado em payments (v2)');
+            }
+          } else {
+            console.log('Registro já existe em payments (v2)');
+          }
+        } catch (e) {
+          console.warn('Erro não crítico no dual-write para payments (v2):', e);
+        }
+
+        // 2) Registrar no legacy pagamentos se necessário
+        const { data: existingLegacy } = await supabaseClient
           .from('pagamentos')
-          .insert({
-            consulta_id: session.metadata.consulta_id,
-            paciente_id: session.metadata.paciente_id,
-            medico_id: session.metadata.medico_id,
-            valor: session.amount_total / 100, // Converter de centavos
-            metodo_pagamento: 'credit_card',
-            gateway_id: session.id,
-            status: 'succeeded',
-            dados_gateway: session
-          })
-          .select()
+          .select('id')
+          .eq('gateway_id', session.id)
+          .limit(1)
           .single();
 
-        if (paymentError) {
-          console.error("Erro ao registrar pagamento:", paymentError);
-          // Se for erro de duplicação, não é um problema crítico
-          if (paymentError.code !== '23505') {
-            throw new Error(`Erro ao registrar pagamento: ${paymentError.message}`);
-          } else {
-            console.log("Pagamento já existe no banco - OK");
+        if (!existingLegacy) {
+          console.log("Registrando pagamento na tabela legacy pagamentos...");
+          // Buscar dados mínimos da consulta
+          const { data: consultaIds } = await supabaseClient
+            .from('consultas')
+            .select('paciente_id, medico_id')
+            .eq('id', targetConsultaId)
+            .single();
+
+          const { error: legacyError } = await supabaseClient
+            .from('pagamentos')
+            .insert({
+              consulta_id: targetConsultaId,
+              paciente_id: session.metadata?.paciente_id || consultaIds?.paciente_id,
+              medico_id: session.metadata?.medico_id || consultaIds?.medico_id,
+              valor: (session.amount_total || 0) / 100,
+              metodo_pagamento: 'credit_card',
+              gateway_id: session.id,
+              status: 'succeeded',
+              dados_gateway: session
+            });
+
+          if (legacyError && legacyError.code !== '23505') {
+            console.error("Erro ao registrar pagamento (legacy):", legacyError);
+            throw new Error(`Erro ao registrar pagamento: ${legacyError.message}`);
           }
         } else {
-          console.log("Pagamento registrado:", paymentData);
+          console.log("Pagamento legacy já registrado");
         }
 
-        // Atualizar status da consulta
-        console.log("Atualizando status da consulta...");
-        const { data: consultaData, error: consultaError } = await supabaseClient
-          .from('consultas')
-          .update({ 
-            status_pagamento: 'pago',
-            status: 'agendada',
-            valor: session.amount_total / 100, // Converter de centavos para reais
-            expires_at: null // Limpar expiração já que foi pago
-          })
-          .eq('id', session.metadata.consulta_id)
-          .select()
-          .single();
+        // 3) Confirmar consulta via RPC
+        console.log("Confirmando consulta via RPC confirm_appointment_v2...");
+        const { data: rpcResult, error: rpcError } = await supabaseClient
+          .rpc('confirm_appointment_v2', {
+            p_appointment_id: targetConsultaId,
+            p_payment_intent_id: (session.payment_intent as string) || ''
+          });
 
-        if (consultaError) {
-          console.error("Erro ao atualizar consulta:", consultaError);
-          throw new Error(`Erro ao atualizar consulta: ${consultaError.message}`);
+        if (rpcError) {
+          console.error('Erro na RPC confirm_appointment_v2:', rpcError);
+          throw new Error(`Erro ao confirmar consulta: ${rpcError.message}`);
         }
-        console.log("Consulta atualizada:", consultaData);
+        console.log('RPC confirm_appointment_v2 retorno:', rpcResult);
+
         console.log("=== PAGAMENTO PROCESSADO COM SUCESSO ===");
 
         break;
