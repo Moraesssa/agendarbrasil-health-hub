@@ -1386,6 +1386,7 @@ export type Database = {
           customer_name: string | null
           id: string
           metadata: Json | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           status: string | null
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
@@ -1400,6 +1401,7 @@ export type Database = {
           customer_name?: string | null
           id?: string
           metadata?: Json | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           status?: string | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
@@ -1414,12 +1416,20 @@ export type Database = {
           customer_name?: string | null
           id?: string
           metadata?: Json | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           status?: string | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_consultation_fk"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "consultas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_consultation_id_fkey"
             columns: ["consultation_id"]
@@ -1864,6 +1874,13 @@ export type Database = {
           success: boolean
         }[]
       }
+      confirm_appointment_v2: {
+        Args: { p_appointment_id: string; p_payment_intent_id?: string }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
       convert_health_metric_to_fhir: {
         Args: { metric_id: string }
         Returns: Json
@@ -1914,6 +1931,13 @@ export type Database = {
         }[]
       }
       get_doctor_schedule_data: {
+        Args: { p_doctor_id: string }
+        Returns: {
+          doctor_config: Json
+          locations: Json
+        }[]
+      }
+      get_doctor_schedule_v2: {
         Args: { p_doctor_id: string }
         Returns: {
           doctor_config: Json
@@ -2095,6 +2119,19 @@ export type Database = {
           success: boolean
         }[]
       }
+      reserve_appointment_v2: {
+        Args: {
+          p_appointment_datetime: string
+          p_doctor_id: string
+          p_family_member_id?: string
+          p_specialty?: string
+        }
+        Returns: {
+          appointment_id: string
+          message: string
+          success: boolean
+        }[]
+      }
       search_locations: {
         Args: {
           filter_bairro?: string
@@ -2149,6 +2186,7 @@ export type Database = {
         | "cancelada"
         | "realizada"
         | "pendente"
+      payment_method: "credit" | "pix"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2283,6 +2321,7 @@ export const Constants = {
         "realizada",
         "pendente",
       ],
+      payment_method: ["credit", "pix"],
     },
   },
 } as const
