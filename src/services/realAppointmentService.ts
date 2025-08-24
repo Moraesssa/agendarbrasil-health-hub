@@ -54,15 +54,28 @@ export class RealAppointmentService implements IAppointmentService {
     city: string, 
     state: string
   ): Promise<Medico[]> {
+    // Validar parâmetros
+    const validSpecialty = specialty && specialty !== 'undefined' ? specialty : null;
+    const validCity = city && city !== 'undefined' ? city : null;
+    const validState = state && state !== 'undefined' ? state : null;
+
+    if (!validSpecialty || !validCity || !validState) {
+      logger.warn("Invalid parameters for doctor search", "RealAppointmentService", {
+        original: { specialty, city, state },
+        validated: { validSpecialty, validCity, validState }
+      });
+      return [];
+    }
+
     logger.info("Fetching doctors by location and specialty", "RealAppointmentService", {
-      specialty, city, state
+      specialty: validSpecialty, city: validCity, state: validState
     });
 
     try {
       const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
-        p_specialty: specialty,
-        p_city: city,
-        p_state: state
+        p_specialty: validSpecialty,
+        p_city: validCity,
+        p_state: validState
       });
 
       if (error) {
@@ -71,11 +84,11 @@ export class RealAppointmentService implements IAppointmentService {
       }
 
       const doctors: Medico[] = (data || []).map((d: any) => ({
-        id: d.id,
-        display_name: d.display_name
-      }));
+        id: d.id?.toString() || '',
+        display_name: d.display_name || 'Nome não informado'
+      })).filter(doctor => doctor.id && doctor.id !== 'undefined');
       
-      logger.info(`Found ${doctors.length} doctors`, "RealAppointmentService");
+      logger.info(`Found ${doctors.length} valid doctors`, "RealAppointmentService");
       return doctors;
     } catch (error) {
       logger.error("Failed to fetch doctors", "RealAppointmentService", error);
@@ -84,6 +97,12 @@ export class RealAppointmentService implements IAppointmentService {
   }
 
   async getAvailableSlotsByDoctor(doctorId: string, date: string): Promise<LocalComHorarios[]> {
+    // Validar parâmetros
+    if (!doctorId || doctorId === 'undefined' || !date || date === 'undefined') {
+      logger.warn("Invalid parameters for slot search", "RealAppointmentService", { doctorId, date });
+      return [];
+    }
+
     logger.info("Fetching available slots by doctor via v2 RPC", "RealAppointmentService", {
       doctorId, date
     });
@@ -109,23 +128,25 @@ export class RealAppointmentService implements IAppointmentService {
                 loc && 
                 typeof loc === 'object' && 
                 loc.status === 'ativo' && 
-                loc.ativo === true
+                loc.ativo === true &&
+                loc.id && loc.id !== 'undefined'
               )
               .map((loc: any) => ({
-                id: loc.id,
-                nome_local: loc.nome_local,
+                id: loc.id?.toString() || '',
+                nome_local: loc.nome_local || 'Local não informado',
                 endereco: {
-                  logradouro: loc.endereco_completo || loc.endereco,
-                  cidade: loc.cidade,
-                  estado: loc.estado
+                  logradouro: loc.endereco_completo || loc.endereco || '',
+                  cidade: loc.cidade || '',
+                  estado: loc.estado || ''
                 },
                 horarios_disponiveis: [
                   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
                   "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
                 ] as any
-              }));
+              }))
+              .filter(local => local.id && local.id !== 'undefined');
 
-            logger.info(`Found ${locaisComHorarios.length} locations via v2 RPC`, "RealAppointmentService");
+            logger.info(`Found ${locaisComHorarios.length} valid locations via v2 RPC`, "RealAppointmentService");
             return locaisComHorarios;
           }
         }

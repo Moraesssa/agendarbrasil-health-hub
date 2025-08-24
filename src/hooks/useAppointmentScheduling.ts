@@ -204,24 +204,58 @@ export const useAppointmentScheduling = () => {
   }, [selectedDoctor, selectedDate, toast]);
 
   const handleAgendamento = useCallback(async () => {
-    if (!user || !selectedDoctor || !selectedDate || !selectedTime || !selectedLocal) return;
+    // Validar UUIDs antes de prosseguir
+    if (!user?.id || user.id === 'undefined') {
+      toast({ title: "Erro", description: "Usuário não identificado", variant: "destructive" });
+      return;
+    }
+    
+    if (!selectedDoctor || selectedDoctor === 'undefined') {
+      toast({ title: "Erro", description: "Médico não selecionado", variant: "destructive" });
+      return;
+    }
+    
+    if (!selectedDate || !selectedTime) {
+      toast({ title: "Erro", description: "Data e horário devem ser selecionados", variant: "destructive" });
+      return;
+    }
+    
+    if (!selectedLocal?.id || selectedLocal.id === 'undefined') {
+      toast({ title: "Erro", description: "Local não selecionado", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
-      const localTexto = `${selectedLocal.nome_local} - ${selectedLocal.endereco.logradouro}, ${selectedLocal.endereco.numero}`;
+      const localTexto = `${selectedLocal.nome_local} - ${selectedLocal.endereco.logradouro}, ${selectedLocal.endereco.numero || ''}`;
+
+      console.log('🔍 [handleAgendamento] Dados do agendamento:', {
+        paciente_id: user.id,
+        medico_id: selectedDoctor,
+        consultation_date: appointmentDateTime,
+        consultation_type: selectedSpecialty,
+        local_consulta_texto: localTexto
+      });
 
       await appointmentService.scheduleAppointment({
         paciente_id: user.id,
         medico_id: selectedDoctor,
         consultation_date: appointmentDateTime,
-        consultation_type: selectedSpecialty,
+        consultation_type: selectedSpecialty || 'Consulta Médica',
         local_consulta_texto: localTexto,
+        local_id: selectedLocal.id
       });
 
       toast({ title: "Consulta agendada com sucesso!" });
       navigate("/agenda-paciente");
     } catch (error) {
-      toast({ title: "Erro ao agendar", description: (error as Error).message, variant: "destructive" });
+      console.error('❌ [handleAgendamento] Erro:', error);
+      toast({ 
+        title: "Erro ao agendar", 
+        description: (error as Error).message, 
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
     }

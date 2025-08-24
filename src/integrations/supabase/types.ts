@@ -2132,6 +2132,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      safe_uuid_check: {
+        Args: { input_text: string }
+        Returns: boolean
+      }
       search_locations: {
         Args: {
           filter_bairro?: string

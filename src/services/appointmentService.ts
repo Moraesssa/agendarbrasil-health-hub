@@ -101,18 +101,30 @@ export const getMedicos = async (
   state: string,
   city: string
 ): Promise<Medico[]> => {
-  if (!specialty || !state || !city) {
-    console.warn('⚠️ [getMedicos] Parâmetros faltando:', { specialty, state, city });
+  // Validar parâmetros para evitar undefined
+  const validSpecialty = specialty && specialty !== 'undefined' ? specialty : null;
+  const validState = state && state !== 'undefined' ? state : null;
+  const validCity = city && city !== 'undefined' ? city : null;
+
+  if (!validSpecialty || !validState || !validCity) {
+    console.warn('⚠️ [getMedicos] Parâmetros inválidos:', { 
+      original: { specialty, state, city },
+      validated: { validSpecialty, validState, validCity }
+    });
     return [];
   }
 
   try {
-    console.log('🔍 [getMedicos] Buscando médicos com parâmetros:', { specialty, state, city });
+    console.log('🔍 [getMedicos] Buscando médicos com parâmetros validados:', { 
+      specialty: validSpecialty, 
+      state: validState, 
+      city: validCity 
+    });
     
     const { data, error } = await supabase.rpc('get_doctors_by_location_and_specialty', {
-      p_specialty: specialty,
-      p_city: city,
-      p_state: state
+      p_specialty: validSpecialty,
+      p_city: validCity,
+      p_state: validState
     });
 
     if (error) {
@@ -122,13 +134,13 @@ export const getMedicos = async (
 
     console.log('✅ [getMedicos] Dados retornados:', data);
     
-    // Convert to Medico format if needed
+    // Convert to Medico format with UUID validation
     const doctors: Medico[] = (data || []).map((doctor: any) => ({
-      id: doctor.id,
-      display_name: doctor.display_name,
-      especialidades: doctor.especialidades,
-      crm: doctor.crm
-    }));
+      id: doctor.id?.toString() || '',
+      display_name: doctor.display_name || 'Nome não informado',
+      especialidades: Array.isArray(doctor.especialidades) ? doctor.especialidades : [],
+      crm: doctor.crm || ''
+    })).filter(doctor => doctor.id && doctor.id !== 'undefined');
 
     console.log('📋 [getMedicos] Médicos formatados:', doctors);
     return doctors;
@@ -147,17 +159,25 @@ export const getMedicos = async (
  * @returns Uma lista de locais com seus respectivos horários disponíveis.
  */
 export const getHorarios = async (doctorId: string, date: string): Promise<LocalComHorarios[]> => {
-  if (!doctorId || !date) return [];
+  // Validar parâmetros
+  if (!doctorId || doctorId === 'undefined' || !date || date === 'undefined') {
+    console.warn('⚠️ [getHorarios] Parâmetros inválidos:', { doctorId, date });
+    return [];
+  }
 
   try {
+    console.log('🔍 [getHorarios] Buscando horários para:', { doctorId, date });
+    
     const { data, error } = await supabase.rpc('get_doctor_schedule_data', {
       p_doctor_id: doctorId,
     });
 
     if (error) {
-      console.error('Erro ao buscar horários:', error.message);
+      console.error('❌ [getHorarios] Erro na RPC:', error.message);
       throw new Error('Não foi possível carregar os horários.');
     }
+
+    console.log('✅ [getHorarios] Dados retornados:', data);
 
     // Handle the data response correctly
     const responseData = Array.isArray(data) ? data[0] : data;
@@ -174,9 +194,9 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
       ];
 
       return {
-        id: location.id,
-        nome_local: location.nome_local,
-        endereco_completo: location.endereco_completo,
+        id: location.id?.toString() || '',
+        nome_local: location.nome_local || 'Local não informado',
+        endereco_completo: location.endereco_completo || '',
         endereco: location.endereco || {
           logradouro: '',
           numero: '',
@@ -188,11 +208,12 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
         horarios,
         horarios_disponiveis: horarios.filter(h => h.disponivel)
       };
-    });
+    }).filter(local => local.id && local.id !== 'undefined');
 
+    console.log('📋 [getHorarios] Locais formatados:', mockLocals);
     return mockLocals;
   } catch (error) {
-    console.error(`Ocorreu um erro inesperado ao buscar horários para o médico ${doctorId} na data ${date}:`, error);
+    console.error(`🚨 [getHorarios] Erro inesperado para médico ${doctorId} na data ${date}:`, error);
     return [];
   }
 };
