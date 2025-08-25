@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { usePayment } from "@/hooks/usePayment";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from '@/utils/logger';
 
 interface PaymentStatusCheckerProps {
   consultaId?: string;
@@ -23,16 +24,25 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
     const success = urlParams.get('success');
     const payment = urlParams.get('payment');
     
-    console.log('PaymentStatusChecker: Verificando parâmetros da URL', {
+  logger.debug('PaymentStatusChecker: Verificando parâmetros da URL', 'PaymentStatusChecker', {
       sessionId: sessionId ? 'presente' : 'ausente',
       success,
       payment,
       consultaId
     });
+    // Se não há parâmetros relevantes na URL, marcar como verificado para
+    // evitar re-execuções contínuas (que podem ocorrer se as funções em
+    // usePayment mudarem de identidade entre renders).
+    if (!sessionId && !payment) {
+      // Marcar como verificado para evitar re-execuções desnecessárias
+      hasChecked.current = true;
+      logger.debug('PaymentStatusChecker: Sem parâmetros de pagamento na URL — abortando checagem automática', 'PaymentStatusChecker');
+      return;
+    }
     
     if ((sessionId && success === 'true') || payment === 'success') {
       hasChecked.current = true;
-      console.log('PaymentStatusChecker: Detectado retorno do Stripe, verificando pagamentos...');
+  logger.info('PaymentStatusChecker: Detectado retorno do Stripe, verificando pagamentos...', 'PaymentStatusChecker');
       
       toast({
         title: "Verificando pagamento...",
@@ -43,9 +53,9 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
         try {
           // Se temos consultaId específica, verificar apenas ela
           if (consultaId) {
-            console.log('PaymentStatusChecker: Verificando consulta específica:', consultaId);
+            logger.debug('PaymentStatusChecker: Verificando consulta específica:', 'PaymentStatusChecker', { consultaId });
             const result = await verifyPayment(consultaId);
-            console.log('PaymentStatusChecker: Resultado da verificação:', result);
+            logger.debug('PaymentStatusChecker: Resultado da verificação:', 'PaymentStatusChecker', result);
             
             if (result && result.paid) {
               toast({
@@ -57,8 +67,8 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
               window.dispatchEvent(new CustomEvent('consultaUpdated'));
             }
           } else {
-            // Verificar todas as consultas pendentes
-            console.log('PaymentStatusChecker: Verificando todas as consultas pendentes...');
+            // Verificar todas as consultas pendentes (uma vez)
+            logger.debug('PaymentStatusChecker: Verificando todas as consultas pendentes...', 'PaymentStatusChecker');
             await checkPendingPayments();
           }
           
@@ -72,7 +82,7 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
           }, 2000); // Aumentar o tempo para garantir que a atualização seja processada
           
         } catch (error) {
-          console.error('PaymentStatusChecker: Erro ao verificar pagamento:', error);
+          logger.error('PaymentStatusChecker: Erro ao verificar pagamento:', 'PaymentStatusChecker', error);
           toast({
             title: "Erro na verificação",
             description: "Não foi possível verificar o pagamento automaticamente. Tente o botão 'Verificar Pagamento'.",
@@ -85,13 +95,29 @@ export const PaymentStatusChecker = ({ consultaId, onSuccess }: PaymentStatusChe
     }
   }, [consultaId, verifyPayment, checkPendingPayments, onSuccess, toast]);
 
-  // Verificação automática periódica para consultas pendentes
+  // Event-driven: ouvir por evento 'consultaUpdated' para re-checar pagamentos quando necessário.
   useEffect(() => {
-    const interval = setInterval(() => {
+    const handler = () => {
+      // Só re-checar se ainda não marcamos hasChecked
+      if (hasChecked.current) return;
+      hasChecked.current = true;
+      logger.debug('PaymentStatusChecker: Evento consultaUpdated recebido — acionando checkPendingPayments', 'PaymentStatusChecker');
       checkPendingPayments();
-    }, 30000); // Verificar a cada 30 segundos
+    };
 
-    return () => clearInterval(interval);
+    window.addEventListener('consultaUpdated', handler as EventListener);
+
+    // Expor um evento para permitir verificação manual por other UI
+    const manualHandler = () => {
+      logger.debug('PaymentStatusChecker: Evento manual checkPaymentRequested recebido', 'PaymentStatusChecker');
+      checkPendingPayments();
+    };
+    window.addEventListener('checkPaymentRequested', manualHandler as EventListener);
+
+    return () => {
+      window.removeEventListener('consultaUpdated', handler as EventListener);
+      window.removeEventListener('checkPaymentRequested', manualHandler as EventListener);
+    };
   }, [checkPendingPayments]);
 
   return null; // Componente invisível

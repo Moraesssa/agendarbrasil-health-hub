@@ -4,6 +4,7 @@ import { RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isValidUUID, logUUIDError } from "@/utils/uuidValidation";
+import { logger } from '@/utils/logger';
 
 interface PaymentVerificationButtonProps {
   consultaId: string;
@@ -28,7 +29,7 @@ export const PaymentVerificationButton = ({ consultaId, onSuccess }: PaymentVeri
         return;
       }
 
-      console.log("Verificando pagamento para consulta:", consultaId);
+  logger.debug('Verificando pagamento para consulta', 'PaymentVerificationButton', { consultaId });
       
       const { data, error } = await supabase.functions.invoke('verify-payment', {
         body: { consulta_id: consultaId }
@@ -50,7 +51,7 @@ export const PaymentVerificationButton = ({ consultaId, onSuccess }: PaymentVeri
         });
       }
     } catch (error) {
-      console.error('Erro ao verificar pagamento:', error);
+      logger.error('Erro ao verificar pagamento', 'PaymentVerificationButton', error);
       toast({
         title: "Erro na verificação",
         description: "Não foi possível verificar o pagamento. Tente novamente.",

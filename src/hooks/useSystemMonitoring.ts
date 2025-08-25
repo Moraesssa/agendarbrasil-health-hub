@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 interface SystemHealth {
   component: string;
@@ -25,12 +26,12 @@ export const useSystemMonitoring = () => {
     
     setIsChecking(true);
     try {
-      console.log('🔍 Verificando saúde do sistema...');
+      logger.debug('Verificando saúde do sistema', 'useSystemMonitoring');
       
       const { data, error } = await supabase.rpc('system_health_check');
       
       if (error) {
-        console.error('Erro ao verificar sistema:', error);
+        logger.error('Erro ao verificar sistema', 'useSystemMonitoring', error);
         toast({
           title: "Erro de monitoramento",
           description: "Não foi possível verificar o status do sistema",
@@ -49,10 +50,10 @@ export const useSystemMonitoring = () => {
         lastCheck: new Date()
       });
 
-      console.log('✅ Status do sistema atualizado:', { isHealthy, components: data?.length });
+      logger.info('Status do sistema atualizado', 'useSystemMonitoring', { isHealthy, components: data?.length });
       
     } catch (error) {
-      console.error('Erro inesperado ao verificar sistema:', error);
+      logger.error('Erro inesperado ao verificar sistema', 'useSystemMonitoring', error);
     } finally {
       setIsChecking(false);
     }

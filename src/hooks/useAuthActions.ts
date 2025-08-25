@@ -2,6 +2,7 @@
 import { UserType } from '@/types/user';
 import { authService } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 export const useAuthActions = (
   user: any,
@@ -14,22 +15,22 @@ export const useAuthActions = (
 
   const signInWithGoogle = async () => {
     try {
-      console.log('🔐 [useAuthActions] Iniciando login com Google...');
+  logger.debug('Iniciando login com Google...', 'useAuthActions');
       
       const { error } = await authService.signInWithGoogle();
 
       if (error) {
-        console.error('🔐 [useAuthActions] Erro no login:', error);
+        logger.error('Erro no login', 'useAuthActions', error);
         toast({
           title: "Erro no login",
           description: error.message,
           variant: "destructive",
         });
       } else {
-        console.log('🔐 [useAuthActions] Login Google iniciado com sucesso');
+        logger.info('Login Google iniciado com sucesso', 'useAuthActions');
       }
     } catch (error) {
-      console.error('🔐 [useAuthActions] Erro no login:', error);
+      logger.error('Erro no login', 'useAuthActions', error);
       toast({
         title: "Erro no login",
         description: "Tente novamente",
@@ -42,7 +43,7 @@ export const useAuthActions = (
     try {
       await authService.logout();
     } catch (error) {
-      console.error('Erro no logout:', error);
+      logger.error('Erro no logout', 'useAuthActions', error);
     }
   };
 
@@ -53,7 +54,7 @@ export const useAuthActions = (
       }
 
       try {
-        console.log('Setting user type:', type);
+  logger.debug('Setting user type', 'useAuthActions', { type });
 
         // 1. Atualiza o tipo de usuário no banco de dados
         const { error: updateError } = await authService.updateUserType(user.id, type);
@@ -84,7 +85,7 @@ export const useAuthActions = (
         resolve();
 
       } catch (error) {
-        console.error('Erro ao definir tipo de usuário:', error);
+        logger.error('Erro ao definir tipo de usuário', 'useAuthActions', error);
         toast({
           title: "Erro ao Salvar",
           description: "Não foi possível salvar sua escolha. Tente novamente.",
@@ -117,8 +118,8 @@ export const useAuthActions = (
     try {
       const { error } = await authService.completeOnboarding(user.id);
 
-      if (error) {
-        console.error('Erro ao completar onboarding:', error);
+    if (error) {
+      logger.error('Erro ao completar onboarding', 'useAuthActions', error);
         return;
       }
 
@@ -133,7 +134,7 @@ export const useAuthActions = (
       }
       setOnboardingStatus(null);
     } catch (error) {
-      console.error('Erro ao completar onboarding:', error);
+      logger.error('Erro ao completar onboarding', 'useAuthActions', error);
     }
   };
 

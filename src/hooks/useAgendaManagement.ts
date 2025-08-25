@@ -5,6 +5,7 @@ import { agendaSchema, AgendaFormData, diasDaSemana } from "@/types/agenda";
 import { useAgendaValidation } from "./agenda/useAgendaValidation";
 import { useAgendaData } from "./agenda/useAgendaData";
 import { useAgendaSubmit } from "./agenda/useAgendaSubmit";
+import { logger } from '@/utils/logger';
 
 export const useAgendaManagement = () => {
     const form = useForm<AgendaFormData>({
@@ -24,7 +25,7 @@ export const useAgendaManagement = () => {
     const canSave = hasAnyFilledBlocks();
     const hasCompleteBlocks = hasValidCompleteBlocks();
     
-    console.log("🚀 Estado atual da agenda:", { 
+    logger.debug('Estado atual da agenda', 'useAgendaManagement', { 
         canSave, 
         hasCompleteBlocks, 
         isDirty, 

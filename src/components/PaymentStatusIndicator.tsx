@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, CreditCard, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { usePayment } from "@/hooks/usePayment";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from '@/utils/logger';
 
 interface PaymentStatusIndicatorProps {
   consultaId: string;
@@ -25,7 +26,7 @@ export const PaymentStatusIndicator = ({
   const handleVerifyPayment = async () => {
     setVerifying(true);
     try {
-      console.log("PaymentStatusIndicator: Verificando pagamento para consulta:", consultaId);
+      logger.debug('PaymentStatusIndicator: Verificando pagamento para consulta', 'PaymentStatusIndicator', { consultaId });
       
       const result = await verifyPayment(consultaId);
       
@@ -49,7 +50,7 @@ export const PaymentStatusIndicator = ({
         });
       }
     } catch (error) {
-      console.error('PaymentStatusIndicator: Erro ao verificar pagamento:', error);
+      logger.error('PaymentStatusIndicator: Erro ao verificar pagamento', 'PaymentStatusIndicator', error);
       toast({
         title: "Erro na verificação",
         description: "Não foi possível verificar o pagamento. Tente novamente.",

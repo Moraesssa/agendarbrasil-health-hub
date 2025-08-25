@@ -1,8 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 export const usePayment = () => {
   const [processing, setProcessing] = useState(false);
@@ -26,7 +27,7 @@ export const usePayment = () => {
 
     setProcessing(true);
     try {
-      console.log("Iniciando processamento de pagamento:", paymentData);
+      logger.debug("Iniciando processamento de pagamento:", 'usePayment.processPayment', paymentData);
       
       // Chamar a Edge Function do Stripe para criar checkout
       const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
@@ -42,16 +43,16 @@ export const usePayment = () => {
       });
 
       if (error) {
-        console.error("Erro na Edge Function:", error);
+        logger.error("Erro na Edge Function:", 'usePayment.processPayment', error);
         throw new Error(error.message || "Erro ao criar sessão de pagamento");
       }
 
       if (data?.url) {
-        console.log("URL de checkout recebida:", data.url);
+  logger.debug("URL de checkout recebida:", 'usePayment.processPayment', { url: data.url });
         
         // Tentar abrir em nova aba com detecção melhorada de popup bloqueado
-        try {
-          console.log("Tentando abrir Stripe em nova aba...");
+          try {
+            logger.debug("Tentando abrir Stripe em nova aba...", 'usePayment.processPayment');
           const newWindow = window.open(data.url, '_blank', 'noopener,noreferrer');
           
           // Aguardar antes de verificar se foi bloqueado
@@ -75,7 +76,7 @@ export const usePayment = () => {
             }
             
             if (popupBlocked) {
-              console.log("Pop-up foi bloqueado - oferecendo alternativa manual");
+              logger.info("Pop-up foi bloqueado - oferecendo alternativa manual", 'usePayment.processPayment');
               toast({
                 title: "Pop-up bloqueado",
                 description: "Seu navegador bloqueou a abertura da nova aba. Clique em 'Abrir Pagamento' para continuar.",
@@ -99,12 +100,12 @@ export const usePayment = () => {
                 }
               }, 30000);
             } else {
-              console.log("Nova aba aberta com sucesso - redirecionando página original");
+              logger.debug("Nova aba aberta com sucesso - redirecionando página original", 'usePayment.processPayment');
               
               // Monitorar fechamento da aba
               const checkClosed = setInterval(() => {
                 if (newWindow.closed) {
-                  console.log("Aba do Stripe foi fechada");
+                  logger.debug("Aba do Stripe foi fechada", 'usePayment.processPayment');
                   clearInterval(checkClosed);
                 }
               }, 1000);
@@ -119,8 +120,8 @@ export const usePayment = () => {
             }
           }, 1000); // Aguardar 1 segundo para verificação mais confiável
           
-        } catch (popupError) {
-          console.error("Erro ao abrir popup:", popupError);
+          } catch (popupError) {
+          logger.error("Erro ao abrir popup:", 'usePayment.processPayment', popupError);
           toast({
             title: "Erro ao abrir pagamento",
             description: "Não foi possível abrir a nova aba. Redirecionando na mesma página...",
@@ -139,7 +140,7 @@ export const usePayment = () => {
         throw new Error('URL de checkout não foi retornada');
       }
     } catch (error) {
-      console.error('Erro no pagamento:', error);
+      logger.error('Erro no pagamento:', 'usePayment.processPayment', error);
       toast({
         title: "Erro no pagamento",
         description: error instanceof Error ? error.message : "Não foi possível processar o pagamento. Tente novamente.",
@@ -150,6 +151,9 @@ export const usePayment = () => {
       setProcessing(false);
     }
   };
+
+  // Stable wrapped functions
+  const processPaymentCb = useCallback(processPayment, [user, toast]);
 
   const createCustomerPortalSession = async () => {
     if (!user) {
@@ -162,7 +166,7 @@ export const usePayment = () => {
     }
 
     try {
-      console.log("Criando sessão do portal do cliente");
+  logger.debug("Criando sessão do portal do cliente", 'usePayment.createCustomerPortalSession');
       
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         body: {
@@ -171,7 +175,7 @@ export const usePayment = () => {
       });
 
       if (error) {
-        console.error("Erro na Edge Function:", error);
+        logger.error("Erro na Edge Function:", 'usePayment.createCustomerPortalSession', error);
         
         // Mensagens de erro mais específicas
         let errorMessage = "Erro ao criar portal do cliente";
@@ -187,14 +191,14 @@ export const usePayment = () => {
       }
 
       if (data?.url) {
-        console.log("URL do portal recebida:", data.url);
+        logger.debug("URL do portal recebida:", 'usePayment.createCustomerPortalSession', { url: data.url });
         window.open(data.url, '_blank');
         return { success: true };
       } else {
         throw new Error('URL do portal não foi retornada');
       }
     } catch (error) {
-      console.error('Erro ao abrir portal do cliente:', error);
+      logger.error('Erro ao abrir portal do cliente:', 'usePayment.createCustomerPortalSession', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Não foi possível abrir o portal do cliente.",
@@ -204,9 +208,11 @@ export const usePayment = () => {
     }
   };
 
+  const createCustomerPortalSessionCb = useCallback(createCustomerPortalSession, [user, toast]);
+
   const verifyPayment = async (consultaId: string) => {
     try {
-      console.log("usePayment: Verificando pagamento para consulta:", consultaId);
+      logger.debug("usePayment: Verificando pagamento para consulta:", 'usePayment.verifyPayment', { consultaId });
       
       // Fase 3: Dual-read - consultar payments primeiro, depois verify-payment edge function
       let paymentFound = false;
@@ -221,12 +227,12 @@ export const usePayment = () => {
           .single();
           
         if (!paymentsError && paymentsData) {
-          console.log("usePayment: Pagamento encontrado na tabela payments:", paymentsData);
+          logger.debug("usePayment: Pagamento encontrado na tabela payments:", 'usePayment.verifyPayment', paymentsData);
           paymentFound = true;
           paymentData = paymentsData;
           
           if (paymentsData.status === 'paid') {
-            console.log("usePayment: Pagamento confirmado na tabela payments!");
+            logger.info("usePayment: Pagamento confirmado na tabela payments!", 'usePayment.verifyPayment');
             toast({
               title: "Pagamento confirmado!",
               description: "Sua consulta foi agendada com sucesso.",
@@ -237,7 +243,7 @@ export const usePayment = () => {
           }
         }
       } catch (e) {
-        console.log("usePayment: Erro ao consultar payments, usando fallback:", e);
+          logger.warn("usePayment: Erro ao consultar payments, usando fallback:", 'usePayment.verifyPayment', e);
       }
       
       // Fallback: usar edge function verify-payment (que consulta ambas as tabelas)
@@ -246,15 +252,15 @@ export const usePayment = () => {
           body: { consulta_id: consultaId }
         });
 
-        console.log("usePayment: Resposta do verify-payment:", data);
+        logger.debug("usePayment: Resposta do verify-payment:", 'usePayment.verifyPayment', data);
 
         if (error) {
-          console.error("usePayment: Erro na função verify-payment:", error);
+          logger.error("usePayment: Erro na função verify-payment:", 'usePayment.verifyPayment', error);
           throw error;
         }
 
         if (data.success && data.payment_status === 'paid') {
-          console.log("usePayment: Pagamento confirmado via edge function!");
+          logger.info("usePayment: Pagamento confirmado via edge function!", 'usePayment.verifyPayment');
           toast({
             title: "Pagamento confirmado!",
             description: "Sua consulta foi agendada com sucesso.",
@@ -263,7 +269,7 @@ export const usePayment = () => {
           window.dispatchEvent(new CustomEvent('consultaUpdated'));
           return { success: true, paid: true, data: data.consulta };
         } else if (data.success) {
-          console.log("usePayment: Pagamento ainda não processado");
+          logger.debug("usePayment: Pagamento ainda não processado", 'usePayment.verifyPayment');
           toast({
             title: "Pagamento em processamento",
             description: "O pagamento ainda está sendo processado. Tente novamente em alguns minutos.",
@@ -275,7 +281,7 @@ export const usePayment = () => {
       
       return { success: false, paid: false };
     } catch (error) {
-      console.error('usePayment: Erro ao verificar pagamento:', error);
+      logger.error('usePayment: Erro ao verificar pagamento:', 'usePayment.verifyPayment', error);
       toast({
         title: "Erro na verificação",
         description: "Não foi possível verificar o pagamento. Tente novamente.",
@@ -285,12 +291,14 @@ export const usePayment = () => {
     }
   };
 
+  const verifyPaymentCb = useCallback(verifyPayment, [toast]);
+
   // Fase 3: Função para verificação automática de consultas pendentes com dual-read
   const checkPendingPayments = async () => {
     if (!user) return;
 
     try {
-      console.log("Verificando consultas com pagamento pendente...");
+      logger.debug("Verificando consultas com pagamento pendente...", 'usePayment.checkPendingPayments');
       
       // Buscar na tabela legacy consultas (appointments table não existe ainda)
       const { data: consultas, error } = await supabase
@@ -301,32 +309,34 @@ export const usePayment = () => {
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (error) {
-        console.error("Erro ao buscar consultas pendentes:", error);
+        logger.error('Erro ao buscar consultas pendentes', 'usePayment.checkPendingPayments', error);
         return;
       }
 
       if (consultas && consultas.length > 0) {
-        console.log(`Encontradas ${consultas.length} consultas pendentes na tabela consultas`);
+        logger.info(`Encontradas ${consultas.length} consultas pendentes na tabela consultas`, 'usePayment.checkPendingPayments');
         
         // Verificar cada consulta
-        for (const consulta of consultas) {
+          for (const consulta of consultas) {
           try {
             await verifyPayment(consulta.id);
           } catch (e) {
-            console.error(`Erro ao verificar consulta ${consulta.id}:`, e);
+            logger.error(`Erro ao verificar consulta ${consulta.id}:`, 'usePayment.checkPendingPayments', e);
           }
         }
       }
     } catch (error) {
-      console.error("Erro ao verificar pagamentos pendentes:", error);
+      logger.error("Erro ao verificar pagamentos pendentes:", 'usePayment.checkPendingPayments', error);
     }
   };
 
+  const checkPendingPaymentsCb = useCallback(checkPendingPayments, [user]);
+
   return {
     processing,
-    processPayment,
-    createCustomerPortalSession,
-    verifyPayment,
-    checkPendingPayments
+    processPayment: processPaymentCb,
+    createCustomerPortalSession: createCustomerPortalSessionCb,
+    verifyPayment: verifyPaymentCb,
+    checkPendingPayments: checkPendingPaymentsCb
   };
 };

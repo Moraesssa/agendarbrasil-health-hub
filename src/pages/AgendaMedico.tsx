@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from '@/utils/logger';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,7 +68,7 @@ const AgendaMedico = () => {
         
         setAppointments(processedData);
       } catch (error) {
-        console.error("Erro ao buscar agenda do médico:", error);
+        logger.error('Erro ao buscar agenda do médico', 'AgendaMedico', error);
         toast({ title: "Erro", description: "Não foi possível carregar a agenda.", variant: "destructive" });
       } finally {
         setLoading(false);

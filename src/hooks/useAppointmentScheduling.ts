@@ -83,8 +83,7 @@ export const useAppointmentScheduling = () => {
         setSpecialties(Array.isArray(specialtiesData) ? specialtiesData : []);
         setStates(Array.isArray(statesData) ? statesData as StateInfo[] : []);
       } catch (e) {
-        console.error("Erro ao carregar dados iniciais:", e);
-        logger.error("Erro ao carregar dados iniciais", "useAppointmentScheduling", e);
+        logger.error('Erro ao carregar dados iniciais', 'useAppointmentScheduling', e);
         
         toast({ 
           title: "Erro ao Carregar Dados", 
@@ -112,8 +111,7 @@ export const useAppointmentScheduling = () => {
         const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
         setCities(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Erro ao carregar cidades:", error);
-        logger.error("Erro ao carregar cidades", "useAppointmentScheduling", error);
+        logger.error('Erro ao carregar cidades', 'useAppointmentScheduling', error);
         setCities([]);
         toast({ 
           title: "Erro ao Carregar Cidades", 
@@ -129,36 +127,35 @@ export const useAppointmentScheduling = () => {
   }, [selectedState, toast]);
 
   useEffect(() => {
-    if (!selectedSpecialty || !selectedCity || !selectedState) {
-        console.log('🔄 [useAppointmentScheduling] Limpando médicos - filtros incompletos:', { selectedSpecialty, selectedCity, selectedState });
+  if (!selectedSpecialty || !selectedCity || !selectedState) {
+    logger.debug('Limpando médicos - filtros incompletos', 'useAppointmentScheduling', { selectedSpecialty, selectedCity, selectedState });
         setDoctors([]);
         return;
     }
     
     const loadDoctors = async () => {
-      console.log('🚀 [useAppointmentScheduling] Iniciando busca de médicos:', { selectedSpecialty, selectedCity, selectedState });
+  logger.debug('Iniciando busca de médicos', 'useAppointmentScheduling', { selectedSpecialty, selectedCity, selectedState });
       setIsLoading(true);
       
       try {
         const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
-        console.log('📊 [useAppointmentScheduling] Médicos recebidos:', doctorsData);
+  logger.debug('Médicos recebidos', 'useAppointmentScheduling', doctorsData);
         
         const validDoctors = Array.isArray(doctorsData) ? doctorsData : [];
         setDoctors(validDoctors);
         
         if (validDoctors.length === 0) {
-          console.warn('⚠️ [useAppointmentScheduling] Nenhum médico encontrado para os filtros selecionados');
+          logger.warn('Nenhum médico encontrado para os filtros selecionados', 'useAppointmentScheduling');
           toast({
             title: "Nenhum médico encontrado",
             description: `Não há médicos de ${selectedSpecialty} disponíveis em ${selectedCity}/${selectedState}.`,
             variant: "default"
           });
         } else {
-          console.log(`✅ [useAppointmentScheduling] ${validDoctors.length} médico(s) encontrado(s)`);
+          logger.info(`${validDoctors.length} médicos encontrados`, 'useAppointmentScheduling');
         }
       } catch (error) {
-        console.error("❌ [useAppointmentScheduling] Erro ao carregar médicos:", error);
-        logger.error("Erro ao carregar médicos", "useAppointmentScheduling", error);
+        logger.error('Erro ao carregar médicos', 'useAppointmentScheduling', error);
         setDoctors([]);
         toast({ 
           title: "Erro ao Carregar Médicos", 
@@ -230,7 +227,7 @@ export const useAppointmentScheduling = () => {
       const appointmentDateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
       const localTexto = `${selectedLocal.nome_local} - ${selectedLocal.endereco.logradouro}, ${selectedLocal.endereco.numero || ''}`;
 
-      console.log('🔍 [handleAgendamento] Dados do agendamento:', {
+  logger.debug('Dados do agendamento', 'useAppointmentScheduling.handleAgendamento', {
         paciente_id: user.id,
         medico_id: selectedDoctor,
         consultation_date: appointmentDateTime,
@@ -250,7 +247,7 @@ export const useAppointmentScheduling = () => {
       toast({ title: "Consulta agendada com sucesso!" });
       navigate("/agenda-paciente");
     } catch (error) {
-      console.error('❌ [handleAgendamento] Erro:', error);
+      logger.error('[handleAgendamento] Erro', 'useAppointmentScheduling', error);
       toast({ 
         title: "Erro ao agendar", 
         description: (error as Error).message, 

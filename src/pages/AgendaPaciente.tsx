@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Calendar, Clock, MapPin, User, Filter } from 'lucide-react';
 import { useConsultas } from '@/hooks/useConsultas';
+import { usePayment } from '@/hooks/usePayment';
 import { useAuth } from '@/contexts/AuthContext';
 import AppointmentCard from '@/components/appointments/AppointmentCard';
 import AppointmentSkeleton from '@/components/appointments/AppointmentSkeleton';
@@ -28,6 +29,7 @@ const AgendaPaciente = () => {
   };
 
   const { consultas, loading, error, refetch } = useConsultas(filters);
+  const { checkPendingPayments } = usePayment();
 
   if (!user) {
     return (
@@ -84,6 +86,21 @@ const AgendaPaciente = () => {
           >
             <Filter className="h-4 w-4 mr-2" />
             {showPastAppointments ? 'Ocultar Antigas' : 'Mostrar Antigas'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              // Disparar evento global para verificação (PaymentStatusChecker escuta isso)
+              window.dispatchEvent(new Event('checkPaymentRequested'));
+              try {
+                await checkPendingPayments();
+              } catch (e) {
+                // ignore - usePayment já loga/mostra toast
+              }
+            }}
+            size="sm"
+          >
+            Verificar Pagamento
           </Button>
         </div>
       </div>

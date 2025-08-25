@@ -78,31 +78,31 @@ export const useNewAppointmentScheduling = () => {
   // Safe setter functions for each data type
   const safeSetSpecialties = useCallback((data: string[] | undefined | null) => {
     const safeData = safeArrayAccess(data);
-    console.log("🔒 Safe setting specialties:", safeData.length, "items");
+  logger.debug('Safe setting specialties', 'useNewAppointmentScheduling', { count: safeData.length });
     setSpecialties(safeData);
   }, []);
 
   const safeSetStates = useCallback((data: StateInfo[] | undefined | null) => {
     const safeData = safeArrayAccess(data);
-    console.log("🔒 Safe setting states:", safeData.length, "items");
+  logger.debug('Safe setting states', 'useNewAppointmentScheduling', { count: safeData.length });
     setStates(safeData);
   }, []);
 
   const safeSetCities = useCallback((data: CityInfo[] | undefined | null) => {
     const safeData = safeArrayAccess(data);
-    console.log("🔒 Safe setting cities:", safeData.length, "items");
+  logger.debug('Safe setting cities', 'useNewAppointmentScheduling', { count: safeData.length });
     setCities(safeData);
   }, []);
 
   const safeSetDoctors = useCallback((data: Medico[] | undefined | null) => {
     const safeData = safeArrayAccess(data);
-    console.log("🔒 Safe setting doctors:", safeData.length, "items");
+  logger.debug('Safe setting doctors', 'useNewAppointmentScheduling', { count: safeData.length });
     setDoctors(safeData);
   }, []);
 
   const safeSetLocaisComHorarios = useCallback((data: LocalComHorarios[] | undefined | null) => {
     const safeData = safeArrayAccess(data);
-    console.log("🔒 Safe setting locais com horarios:", safeData.length, "items");
+  logger.debug('Safe setting locais com horarios', 'useNewAppointmentScheduling', { count: safeData.length });
     setLocaisComHorarios(safeData);
   }, []);
 
@@ -112,12 +112,11 @@ export const useNewAppointmentScheduling = () => {
     if (currentCount < MAX_RETRIES) {
       setRetryCounters(prev => ({ ...prev, [dataType]: prev[dataType] + 1 }));
       setTimeout(() => {
-        console.log(`🔄 Retrying ${dataType} (attempt ${currentCount + 1}/${MAX_RETRIES})`);
+  logger.debug('Retrying data fetch', 'useNewAppointmentScheduling', { dataType, attempt: currentCount + 1, max: MAX_RETRIES });
         retryFunction();
       }, RETRY_DELAY * (currentCount + 1)); // Exponential backoff
     } else {
-      console.error(`❌ Max retries reached for ${dataType}`);
-      logger.error(`Max retries reached for ${dataType}`, "useNewAppointmentScheduling");
+  logger.error('Max retries reached', 'useNewAppointmentScheduling', { dataType });
     }
   }, [retryCounters]);
 
@@ -152,15 +151,15 @@ export const useNewAppointmentScheduling = () => {
       try {
         // Load specialties with defensive checks
         const specialtiesData = await appointmentService.getSpecialties();
-        console.log("✅ Especialidades carregadas:", specialtiesData?.length || 0);
-        safeSetSpecialties(specialtiesData);
+  logger.info('Especialidades carregadas', 'useNewAppointmentScheduling', { count: specialtiesData?.length || 0 });
+  safeSetSpecialties(specialtiesData);
         setLoadingState('specialties', false);
         
         // Load states with defensive checks
         const statesResponse = await supabase.rpc('get_available_states');
         const statesData = statesResponse.data;
-        console.log("✅ Estados carregados:", statesData?.length || 0);
-        safeSetStates(statesData as StateInfo[]);
+  logger.info('Estados carregados', 'useNewAppointmentScheduling', { count: statesData?.length || 0 });
+  safeSetStates(statesData as StateInfo[]);
         setLoadingState('states', false);
         
         // Reset retry counter on success
@@ -174,8 +173,7 @@ export const useNewAppointmentScheduling = () => {
           });
         }
       } catch (e) {
-        console.error("❌ Erro ao carregar dados iniciais:", e);
-        logger.error("Erro ao carregar dados iniciais", "useNewAppointmentScheduling", e);
+  logger.error('Erro ao carregar dados iniciais', 'useNewAppointmentScheduling', e);
         
         // Reset loading states on error
         setLoadingState('specialties', false);
@@ -212,14 +210,13 @@ export const useNewAppointmentScheduling = () => {
       try {
         const { data, error } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
         if (error) throw error;
-        console.log("✅ Cidades carregadas para", selectedState, ":", data?.length || 0);
-        safeSetCities(data);
+  logger.info('Cidades carregadas', 'useNewAppointmentScheduling', { state: selectedState, count: data?.length || 0 });
+  safeSetCities(data);
         
         // Reset retry counter on success
         setRetryCounters(prev => ({ ...prev, cities: 0 }));
       } catch (e) {
-        console.error("❌ Erro ao carregar cidades:", e);
-        logger.error("Erro ao carregar cidades", "useNewAppointmentScheduling", e);
+  logger.error('Erro ao carregar cidades', 'useNewAppointmentScheduling', e);
         
         // Attempt retry for cities
         handleRetry('cities', loadCities);
@@ -256,8 +253,8 @@ export const useNewAppointmentScheduling = () => {
           selectedCity, 
           selectedState
         );
-        console.log("✅ Médicos encontrados:", doctorsData?.length || 0);
-        safeSetDoctors(doctorsData);
+  logger.info('Médicos encontrados', 'useNewAppointmentScheduling', { count: doctorsData?.length || 0 });
+  safeSetDoctors(doctorsData);
         
         // Reset retry counter on success
         setRetryCounters(prev => ({ ...prev, doctors: 0 }));
@@ -270,8 +267,7 @@ export const useNewAppointmentScheduling = () => {
           });
         }
       } catch (e) {
-        console.error("❌ Erro ao carregar médicos:", e);
-        logger.error("Erro ao carregar médicos", "useNewAppointmentScheduling", e);
+  logger.error('Erro ao carregar médicos', 'useNewAppointmentScheduling', e);
         
         // Attempt retry for doctors
         handleRetry('doctors', loadDoctors);
@@ -304,8 +300,8 @@ export const useNewAppointmentScheduling = () => {
       
       try {
         const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
-        console.log("✅ Slots encontrados:", slots?.length || 0);
-        safeSetLocaisComHorarios(slots);
+  logger.info('Slots encontrados', 'useNewAppointmentScheduling', { count: slots?.length || 0 });
+  safeSetLocaisComHorarios(slots);
         
         // Reset retry counter on success
         setRetryCounters(prev => ({ ...prev, timeSlots: 0 }));
@@ -318,8 +314,7 @@ export const useNewAppointmentScheduling = () => {
           });
         }
       } catch (e) {
-        console.error("❌ Erro ao carregar horários:", e);
-        logger.error("Erro ao carregar horários", "useNewAppointmentScheduling", e);
+  logger.error('Erro ao carregar horários', 'useNewAppointmentScheduling', e);
         
         // Attempt retry for time slots
         handleRetry('timeSlots', loadSlots);

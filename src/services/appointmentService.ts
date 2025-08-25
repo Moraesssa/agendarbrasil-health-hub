@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Doctor, Specialty, State, City, Horario, Local } from '@/types/medical';
+import { logger } from '@/utils/logger';
 
 // Service interfaces - Aligned with RPC function return
 export interface Medico {
@@ -35,13 +36,13 @@ export const getSpecialties = async (): Promise<string[]> => {
     const { data, error } = await supabase.rpc('get_specialties');
 
     if (error) {
-      console.error('Erro ao buscar especialidades:', error);
+      logger.error('Erro ao buscar especialidades', 'appointmentService.getSpecialties', error);
       throw new Error('Não foi possível carregar as especialidades.');
     }
 
     return data || [];
   } catch (error) {
-    console.error('Ocorreu um erro inesperado ao buscar especialidades:', error);
+    logger.error('Ocorreu um erro inesperado ao buscar especialidades', 'appointmentService.getSpecialties', error);
     return [];
   }
 };
@@ -55,13 +56,13 @@ export const getStates = async (): Promise<State[]> => {
     const { data, error } = await supabase.rpc('get_available_states');
 
     if (error) {
-      console.error('Erro ao buscar estados:', error);
+      logger.error('Erro ao buscar estados', 'appointmentService.getStates', error);
       throw new Error('Não foi possível carregar os estados.');
     }
 
     return data || [];
   } catch (error) {
-    console.error('Ocorreu um erro inesperado ao buscar estados:', error);
+    logger.error('Ocorreu um erro inesperado ao buscar estados', 'appointmentService.getStates', error);
     return [];
   }
 };
@@ -78,13 +79,13 @@ export const getCities = async (uf: string): Promise<City[]> => {
     const { data, error } = await supabase.rpc('get_available_cities', { state_uf: uf });
 
     if (error) {
-      console.error('Erro ao buscar cidades:', error);
+      logger.error('Erro ao buscar cidades', 'appointmentService.getCities', error);
       throw new Error('Não foi possível carregar as cidades.');
     }
     
     return data || [];
   } catch (error) {
-    console.error('Ocorreu um erro inesperado ao buscar cidades:', error);
+    logger.error('Ocorreu um erro inesperado ao buscar cidades', 'appointmentService.getCities', error);
     return [];
   }
 };
@@ -115,7 +116,7 @@ export const getMedicos = async (
   }
 
   try {
-    console.log('🔍 [getMedicos] Buscando médicos com parâmetros validados:', { 
+    logger.debug('[getMedicos] Buscando médicos com parâmetros validados', 'appointmentService.getMedicos', { 
       specialty: validSpecialty, 
       state: validState, 
       city: validCity 
@@ -128,11 +129,11 @@ export const getMedicos = async (
     });
 
     if (error) {
-      console.error('❌ [getMedicos] Erro na RPC:', error);
+      logger.error('[getMedicos] Erro na RPC', 'appointmentService.getMedicos', error);
       throw error;
     }
 
-    console.log('✅ [getMedicos] Dados retornados:', data);
+  logger.debug('[getMedicos] Dados retornados', 'appointmentService.getMedicos', data);
     
     // Convert to Medico format with UUID validation
     const doctors: Medico[] = (data || []).map((doctor: any) => ({
@@ -142,11 +143,11 @@ export const getMedicos = async (
       crm: doctor.crm || ''
     })).filter(doctor => doctor.id && doctor.id !== 'undefined');
 
-    console.log('📋 [getMedicos] Médicos formatados:', doctors);
-    return doctors;
+  logger.debug('[getMedicos] Médicos formatados', 'appointmentService.getMedicos', doctors);
+  return doctors;
 
   } catch (error) {
-    console.error('🚨 [getMedicos] Erro inesperado:', error);
+    logger.error('[getMedicos] Erro inesperado', 'appointmentService.getMedicos', error);
     return [];
   }
 };
@@ -166,18 +167,18 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
   }
 
   try {
-    console.log('🔍 [getHorarios] Buscando horários para:', { doctorId, date });
+  logger.debug('[getHorarios] Buscando horários para', 'appointmentService.getHorarios', { doctorId, date });
     
     const { data, error } = await supabase.rpc('get_doctor_schedule_data', {
       p_doctor_id: doctorId,
     });
 
     if (error) {
-      console.error('❌ [getHorarios] Erro na RPC:', error.message);
+      logger.error('[getHorarios] Erro na RPC', 'appointmentService.getHorarios', error);
       throw new Error('Não foi possível carregar os horários.');
     }
 
-    console.log('✅ [getHorarios] Dados retornados:', data);
+  logger.debug('[getHorarios] Dados retornados', 'appointmentService.getHorarios', data);
 
     // Handle the data response correctly
     const responseData = Array.isArray(data) ? data[0] : data;
@@ -210,10 +211,10 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
       };
     }).filter(local => local.id && local.id !== 'undefined');
 
-    console.log('📋 [getHorarios] Locais formatados:', mockLocals);
+  logger.debug('[getHorarios] Locais formatados', 'appointmentService.getHorarios', mockLocals);
     return mockLocals;
   } catch (error) {
-    console.error(`🚨 [getHorarios] Erro inesperado para médico ${doctorId} na data ${date}:`, error);
+  logger.error('[getHorarios] Erro inesperado', 'appointmentService.getHorarios', { doctorId, date, error });
     return [];
   }
 };
@@ -244,7 +245,7 @@ export const appointmentService = {
 
       return data;
     } catch (error) {
-      console.error('Erro ao agendar consulta:', error);
+      logger.error('Erro ao agendar consulta', 'appointmentService.scheduleAppointment', error);
       throw error;
     }
   }

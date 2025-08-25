@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/utils/logger';
 
 // Type for appointment status
 type AppointmentStatus = 'agendada' | 'confirmada' | 'cancelada' | 'realizada' | 'pendente';
@@ -56,7 +57,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     setError(null);
 
     try {
-      console.log('useConsultas: Buscando consultas com melhorias da Fase 3');
+  // Log mais estruturado
+  logger.debug('useConsultas: Buscando consultas com melhorias da Fase 3', 'useConsultas');
       
       // Por enquanto, apenas consultas legacy (appointments será implementado futuramente)
       let query = supabase
@@ -107,11 +109,11 @@ export const useConsultas = (filters?: ConsultasFilters) => {
         doctor_profile: item.doctor_profile || { display_name: null }
       }));
 
-      console.log(`useConsultas: Total de ${processedData.length} consultas carregadas`);
+  logger.info(`useConsultas: Total de ${processedData.length} consultas carregadas`, 'useConsultas');
       setConsultas(processedData);
 
     } catch (err) {
-      console.error('useConsultas: Erro ao buscar consultas:', err);
+      logger.error('useConsultas: Erro ao buscar consultas', 'useConsultas', err);
       setError('Erro ao carregar consultas');
     } finally {
       setLoading(false);
@@ -136,7 +138,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
 
       return { success: true };
     } catch (err) {
-      console.error('Erro ao atualizar status da consulta:', err);
+      logger.error('Erro ao atualizar status da consulta', 'useConsultas.updateConsultaStatus', err);
       return { success: false, error: err };
     }
   };

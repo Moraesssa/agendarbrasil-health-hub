@@ -27,7 +27,7 @@ const DebugPage = () => {
   const checkLoggingStatus = async () => {
     setIsLoading(true);
     setDiagnostics(null);
-    logger.debug('Debug: Checking logging status...');
+    logger.debug('Debug: Checking logging status...', 'DebugPage');
     try {
       const isEnabled = await advancedLogger.isAdvancedLoggingEnabled();
       const traceId = advancedLogger.getTraceId();
@@ -54,9 +54,9 @@ const DebugPage = () => {
   
   const handleSendTestLogs = () => {
     setIsSending(true);
-    logger.info('Este é um log de teste de INFORMAÇÃO da página de depuração.');
-    logger.warn('Este é um log de teste de AVISO.');
-    console.log('Este é um console.log de teste que será mapeado para "info".');
+    logger.info('Este é um log de teste de INFORMAÇÃO da página de depuração.', 'DebugPage');
+    logger.warn('Este é um log de teste de AVISO.', 'DebugPage');
+    logger.info('Este é um console.log de teste que será mapeado para "info".');
     try {
       throw new Error('Este é um erro de teste para o Advanced Logger.');
     } catch (error) {

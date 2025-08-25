@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export const useSecurityConfig = () => {
   useEffect(() => {
@@ -13,7 +14,7 @@ export const useSecurityConfig = () => {
           const timeout = 24 * 60 * 60 * 1000; // 24 hours
           
           if (now - sessionTime > timeout) {
-            console.log('Session expired, signing out...');
+            logger.info('Session expired, signing out', 'useSecurityConfig');
             supabase.auth.signOut();
           }
         }
