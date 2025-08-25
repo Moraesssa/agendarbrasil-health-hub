@@ -290,7 +290,21 @@ const Index = () => {
                 Histórico
               </Button>
               <Button 
-                onClick={() => handleNavigation("/perfil", "Meu Perfil")}
+                onClick={() => {
+                  requireAuth(() => {
+                    // Se o usuário não completou o onboarding, encaminha para onboarding
+                    if (userData && !userData.onboardingCompleted) {
+                      toast({
+                        title: "Complete seu onboarding",
+                        description: "Para acessar o perfil, por favor finalize o onboarding primeiro",
+                      });
+                      sessionStorage.setItem('navigation-intent', 'true');
+                      navigate('/onboarding');
+                      return;
+                    }
+                    handleNavigation("/perfil", "Meu Perfil");
+                  }, "acessar perfil");
+                }}
                 variant="outline"
                 className="text-sm sm:text-base border-purple-200 hover:bg-purple-50 hover:border-purple-300 text-purple-700 hover:text-purple-800 transition-all"
                 size="sm"
@@ -300,7 +314,20 @@ const Index = () => {
                 Perfil
               </Button>
               <Button 
-                onClick={() => handleNavigation("/gerenciar-conexoes", "Conexões")}
+                onClick={() => {
+                  requireAuth(() => {
+                    if (userData && !userData.onboardingCompleted) {
+                      toast({
+                        title: "Complete seu onboarding",
+                        description: "Para gerenciar conexões, finalize o onboarding primeiro",
+                      });
+                      sessionStorage.setItem('navigation-intent', 'true');
+                      navigate('/onboarding');
+                      return;
+                    }
+                    handleNavigation("/gerenciar-conexoes", "Conexões");
+                  }, "gerenciar conexões");
+                }}
                 variant="outline"
                 className="text-sm sm:text-base border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 text-indigo-700 hover:text-indigo-800 transition-all"
                 size="sm"
@@ -552,7 +579,26 @@ const Index = () => {
                   key={item.id}
                   onClick={() => {
                     setActiveTab(item.id);
-                    if (item.route) handleNavigation(item.route, item.label);
+                    if (!item.route) return;
+
+                    // Se rota for /perfil, aplicar checagem adicional de onboarding
+                    if (item.route === '/perfil') {
+                      requireAuth(() => {
+                        if (userData && !userData.onboardingCompleted) {
+                          toast({
+                            title: "Complete seu onboarding",
+                            description: "Finalize seu onboarding para acessar o perfil",
+                          });
+                          sessionStorage.setItem('navigation-intent', 'true');
+                          navigate('/onboarding');
+                          return;
+                        }
+                        handleNavigation(item.route, item.label);
+                      }, item.label || 'acessar');
+                      return;
+                    }
+
+                    handleNavigation(item.route, item.label);
                   }}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                     item.isMain
