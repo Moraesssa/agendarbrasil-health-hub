@@ -70,6 +70,13 @@ const settingsItems = [
     icon: User,
     description: "Configurações do perfil"
   }
+  ,
+  {
+    title: "Conexões",
+    url: "/gerenciar-conexoes",
+    icon: Users,
+    description: "Gerenciar integrações e fontes de dados"
+  }
 ];
 
 export function PatientSidebar() {
@@ -133,10 +140,10 @@ export function PatientSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {patientMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
-                    isActive={location.pathname === item.url}
+                    isActive={location.pathname.startsWith(item.url)}
                     className="hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-800 data-[active=true]:font-semibold"
                     title={item.description}
                   >
@@ -163,10 +170,10 @@ export function PatientSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
-                    isActive={location.pathname === item.url}
+                    isActive={location.pathname.startsWith(item.url)}
                     className="hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-800"
                     title={item.description}
                   >
