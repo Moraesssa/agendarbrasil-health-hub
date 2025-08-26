@@ -50,37 +50,17 @@ export const TelemedicineNotifications: React.FC<TelemedicineNotificationsProps>
 
   const loadNotifications = async () => {
     try {
-      // Mock notifications - in real app, load from database
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          type: 'reminder',
-          title: 'Consulta em 30 minutos',
-          message: 'Sua videochamada com Dr. Silva começará em 30 minutos. Prepare-se!',
-          appointment_id: 'apt_123',
-          scheduled_time: new Date(Date.now() + 30 * 60000).toISOString(),
-          read: false,
-          action_required: true
-        },
-        {
-          id: '2',
-          type: 'tech_check',
-          title: 'Teste seus dispositivos',
-          message: 'Recomendamos testar câmera e microfone antes da consulta.',
-          scheduled_time: new Date().toISOString(),
-          read: false,
-          action_required: true
-        }
-      ];
+      // TODO: Load actual notifications from database
+      const actualNotifications: Notification[] = [];
       
-      setNotifications(mockNotifications);
+      setNotifications(actualNotifications);
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
     }
   };
 
   const checkConnectionQuality = () => {
-    // Mock connection quality check
+    // TODO: Implement actual connection quality check
     const connection = (navigator as any).connection;
     if (connection) {
       const effectiveType = connection.effectiveType;

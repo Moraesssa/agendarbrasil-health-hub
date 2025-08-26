@@ -76,24 +76,33 @@ export class ErrorLogger {
   }
 
   private logUndefinedPropertyError(logEntry: ErrorLogEntry) {
-    console.group('🚨 Undefined Property Error Logged');
-    console.error('Error ID:', logEntry.id);
-    console.error('Timestamp:', logEntry.timestamp);
-    console.error('Message:', logEntry.errorMessage);
-    console.error('URL:', logEntry.url);
-    console.error('Session:', logEntry.sessionId);
-    
-    if (logEntry.context) {
-      console.error('Context:', logEntry.context);
-    }
+    // Only show detailed error logs in development
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🚨 Undefined Property Error Logged');
+      console.error('Error ID:', logEntry.id);
+      console.error('Timestamp:', logEntry.timestamp);
+      console.error('Message:', logEntry.errorMessage);
+      console.error('URL:', logEntry.url);
+      console.error('Session:', logEntry.sessionId);
+      
+      if (logEntry.context) {
+        console.error('Context:', logEntry.context);
+      }
 
-    // Analyze error patterns
-    this.analyzeErrorPatterns(logEntry.errorMessage);
-    
-    console.groupEnd();
+      // Analyze error patterns
+      this.analyzeErrorPatterns(logEntry.errorMessage);
+      
+      console.groupEnd();
+    } else {
+      // In production, just log a simple error message
+      console.error('Application Error:', logEntry.errorMessage);
+    }
   }
 
   private analyzeErrorPatterns(errorMessage: string) {
+    // Only analyze patterns in development
+    if (process.env.NODE_ENV !== 'development') return;
+    
     const patterns = [
       {
         pattern: /Cannot read properties of undefined \(reading '(\w+)'\)/,
@@ -124,6 +133,9 @@ export class ErrorLogger {
   }
 
   private suggestFixes(propertyName: string) {
+    // Only show suggestions in development
+    if (process.env.NODE_ENV !== 'development') return;
+    
     const commonFixes = {
       'length': 'Use: array?.length || 0 or Array.isArray(array) ? array.length : 0',
       'map': 'Use: array?.map(...) || [] or (array || []).map(...)',

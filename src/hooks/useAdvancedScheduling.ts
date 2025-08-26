@@ -263,15 +263,15 @@ export const useAdvancedScheduling = () => {
       
       for (const doctor of (doctors as any[]) || []) {
         try {
-          const slots = await generateAdvancedTimeSlots(doctor.user_id, selectedDate);
-          const availableSlots = slots.filter(slot => slot.available);
+          const slots = await generateAdvancedTimeSlots(doctor?.user_id, selectedDate);
+          const availableSlots = slots.filter(slot => slot?.available);
           
           if (availableSlots.length > 0) {
             // Group slots by location
-            const locais = doctor.locais_atendimento.map((local: any) => ({
-              id: local.id,
-              nome_local: local.nome_local,
-              endereco: local.endereco,
+            const locais = (doctor?.locais_atendimento || []).map((local: any) => ({
+              id: local?.id,
+              nome_local: local?.nome_local,
+              endereco: local?.endereco,
               slots: availableSlots // For simplicity, showing all slots for each location
             }));
 

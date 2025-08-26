@@ -11,7 +11,9 @@ export interface LogEntry {
 
 class Logger {
   private isDevelopment = import.meta.env.DEV;
+  private isProduction = import.meta.env.PROD;
   private logs: LogEntry[] = [];
+  private silentModeEnabled = this.isProduction; // Silence logs in production
 
   private formatMessage(level: LogLevel, message: string, context?: string, data?: any): LogEntry {
     return {
@@ -34,7 +36,9 @@ class Logger {
   }
 
   private logToConsole(entry: LogEntry) {
-    if (!this.isDevelopment) return;
+    // Only log to console in development or for errors in production
+    if (this.silentModeEnabled && entry.level !== 'error') return;
+    if (!this.isDevelopment && entry.level === 'debug') return;
 
     const prefix = `[${entry.level.toUpperCase()}] ${entry.timestamp}`;
     const contextStr = entry.context ? ` [${entry.context}]` : '';
@@ -102,6 +106,16 @@ class Logger {
   // Method to clear logs
   clearLogs() {
     this.logs = [];
+  }
+
+  // Method to enable/disable silent mode
+  setSilentMode(enabled: boolean) {
+    this.silentModeEnabled = enabled;
+  }
+
+  // Method to check if silent mode is enabled
+  isSilentModeEnabled(): boolean {
+    return this.silentModeEnabled;
   }
 }
 

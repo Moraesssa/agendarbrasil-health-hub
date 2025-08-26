@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,10 +23,11 @@ const AgendaPaciente = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showPastAppointments, setShowPastAppointments] = useState(false);
 
-  const filters = {
+  // Stabilize filters object to prevent infinite re-renders
+  const filters = useMemo(() => ({
     status: selectedStatuses.length > 0 ? selectedStatuses as AppointmentStatus[] : undefined,
     futureOnly: !showPastAppointments
-  };
+  }), [selectedStatuses, showPastAppointments]);
 
   const { consultas, loading, error, refetch } = useConsultas(filters);
   const { checkPendingPayments } = usePayment();

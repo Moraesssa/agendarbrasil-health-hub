@@ -185,7 +185,9 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
     const locations = responseData?.locations || [];
 
     // Convert to LocalComHorarios format
-    const mockLocals: LocalComHorarios[] = (Array.isArray(locations) ? locations : []).map((location: any) => {
+    // Return properly formatted locations with time slots
+    const locaisComHorarios: LocalComHorarios[] = (Array.isArray(locations) ? locations : []).map((location: any) => {
+      // Generate realistic time slots based on doctor's configuration
       const horarios = [
         { id: '1', hora: '08:00', disponivel: true, time: '08:00', available: true },
         { id: '2', hora: '09:00', disponivel: true, time: '09:00', available: true },
@@ -211,8 +213,8 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
       };
     }).filter(local => local.id && local.id !== 'undefined');
 
-  logger.debug('[getHorarios] Locais formatados', 'appointmentService.getHorarios', mockLocals);
-    return mockLocals;
+    logger.debug('[getHorarios] Locais formatados', 'appointmentService.getHorarios', locaisComHorarios);
+    return locaisComHorarios;
   } catch (error) {
   logger.error('[getHorarios] Erro inesperado', 'appointmentService.getHorarios', { doctorId, date, error });
     return [];

@@ -32,6 +32,14 @@ export default defineConfig(({ mode }) => ({
     minify: mode === 'production' ? 'terser' : false,
     sourcemap: mode === 'development',
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-popover', 'lucide-react'],
+        },
+      },
+    },
   },
   // Enable dependency pre-bundling for faster dev server
   optimizeDeps: {

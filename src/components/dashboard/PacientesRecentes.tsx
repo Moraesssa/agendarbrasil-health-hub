@@ -53,12 +53,12 @@ export function PacientesRecentes() {
         
         // Process data and handle cases where profile might be missing
         const processedData: RecentAppointment[] = (data || []).map(item => ({
-          id: item.id,
-          status: item.status,
-          consultation_date: item.consultation_date,
-          patient_profile: Array.isArray(item.patient_profile) 
+          id: item?.id,
+          status: item?.status,
+          consultation_date: item?.consultation_date,
+          patient_profile: Array.isArray(item?.patient_profile) 
             ? item.patient_profile[0] || { display_name: null }
-            : item.patient_profile || { display_name: null }
+            : item?.patient_profile || { display_name: null }
         }));
         
         logger.info("Recent appointments fetched successfully", "PacientesRecentes", { 

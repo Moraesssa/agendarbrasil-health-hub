@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useConsultas } from "@/hooks/useConsultas";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 import AppointmentSkeleton from "./appointments/AppointmentSkeleton";
@@ -22,11 +22,14 @@ const UpcomingAppointments = () => {
   const { toast } = useToast();
   const { user, userData } = useAuth();
   
-  // Busca consultas recentes e futuras
-  const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas({
+  // Stabilize filters to prevent infinite re-renders
+  const consultasFilters = useMemo(() => ({
     futureOnly: true,
     limit: 10
-  });
+  }), []);
+  
+  // Busca consultas recentes e futuras
+  const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas(consultasFilters);
 
   const [videoCallModal, setVideoCallModal] = useState<{
     isOpen: boolean;

@@ -292,9 +292,8 @@ const Agendamento = () => {
     setHasUnsavedChanges(true);
   }, [selectedSpecialty, selectedState, selectedCity, selectedDoctor, selectedDate, selectedTime, selectedFamilyMember]);
 
-  // The handleAppointmentConfirm function was removed because its logic is now correctly
-  // handled by the handleAgendamento function from the useAppointmentScheduling hook,
-  // which properly uses the mock service proxy. The button's onClick now calls handleAgendamento directly.
+  // Appointment confirmation is handled by the handleAgendamento function
+  // from the useAppointmentScheduling hook
 
   const renderStep = () => {
     switch (step) {

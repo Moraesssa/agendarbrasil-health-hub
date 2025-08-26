@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
-import Autoplay from "embla-carousel-autoplay";
+import { type CarouselApi } from '@/components/ui/carousel';
 
 const topDoctors = [
   {
@@ -50,9 +50,25 @@ const topDoctors = [
 ];
 
 export function TopDoctorsCarousel() {
-  const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
-  );
+  const [api, setApi] = React.useState<CarouselApi>();
+  const [isAutoplay, setIsAutoplay] = React.useState(true);
+
+  const nextSlide = useCallback(() => {
+    if (api && isAutoplay) {
+      api.scrollNext();
+    }
+  }, [api, isAutoplay]);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const interval = setInterval(nextSlide, 4000);
+    
+    return () => clearInterval(interval);
+  }, [nextSlide]);
+
+  const handleMouseEnter = () => setIsAutoplay(false);
+  const handleMouseLeave = () => setIsAutoplay(true);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4">
@@ -66,10 +82,10 @@ export function TopDoctorsCarousel() {
       </div>
       
       <Carousel
-        plugins={[plugin.current]}
+        setApi={setApi}
         className="w-full"
-        onMouseEnter={plugin.current.stop}
-        onMouseLeave={plugin.current.reset}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         opts={{
           align: "start",
           loop: true,

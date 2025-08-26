@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,10 @@ import { usePayment } from "@/hooks/usePayment";
 
 export const PaymentStatusDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
-  const { consultas, loading, refetch } = useConsultas();
+  
+  // Use empty filters (no specific filtering needed for payment dashboard)
+  const emptyFilters = useMemo(() => ({}), []);
+  const { consultas, loading, refetch } = useConsultas(emptyFilters);
   const { verifyPayment } = usePayment();
   const { toast } = useToast();
 
@@ -143,14 +146,14 @@ export const PaymentStatusDashboard = () => {
             <h4 className="font-medium text-gray-900 mb-3">Consultas que precisam de atenção:</h4>
             <div className="space-y-2">
               {[...consultasPendentes, ...consultasAguardandoPagamento].map((consulta) => (
-                <div key={consulta.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={consulta?.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium">
-                      {consulta.doctor_profile?.display_name || 'Médico não especificado'}
+                      {consulta?.doctor_profile?.display_name || 'Médico não especificado'}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {new Date(consulta.consultation_date).toLocaleDateString('pt-BR')} às{' '}
-                      {new Date(consulta.consultation_date).toLocaleTimeString('pt-BR', { 
+                      {new Date(consulta?.consultation_date || '').toLocaleDateString('pt-BR')} às{' '}
+                      {new Date(consulta?.consultation_date || '').toLocaleTimeString('pt-BR', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
                       })}
