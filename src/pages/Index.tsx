@@ -32,11 +32,11 @@ const Index = () => {
   useEffect(() => {
     if (!isSystemHealthy && !loading && user) {
       console.warn('⚠️ Sistema com problemas detectados');
-      toast({
-        title: "Monitoramento do sistema",
-        description: "Sistema funcionando - todas as funcionalidades disponíveis",
-        variant: "default"
-      });
+        toast({
+          title: "Monitoramento do sistema",
+          description: "O sistema está apresentando problemas. Algumas funcionalidades podem não estar disponíveis.",
+          variant: "destructive" // Changed variant to destructive for error indication
+        });
     }
   }, [isSystemHealthy, loading, user, toast]);
 

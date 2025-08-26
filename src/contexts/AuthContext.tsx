@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { AuthContextType, AuthProviderProps } from '@/types/auth';
 import { useAuthState } from '@/hooks/useAuthState';
 import { useAuthActions } from '@/hooks/useAuthActions';
@@ -43,14 +43,25 @@ const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
   useSecurityConfig();
 
   // Create context value
-  const contextValue: AuthContextType = {
+  const contextValue = useMemo(() => ({
     user,
     session,
     userData,
     loading,
     onboardingStatus,
     ...authActions
-  };
+  }), [
+    user,
+    session,
+    userData,
+    loading,
+    onboardingStatus,
+    authActions.signInWithGoogle,
+    authActions.logout,
+    authActions.setUserType,
+    authActions.updateOnboardingStep,
+    authActions.completeOnboarding
+  ]);
 
   return (
     <AuthContext.Provider value={contextValue}>
