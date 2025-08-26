@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Correção do Erro de Snippet</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .error-box { background: #fee; border: 1px solid #f88; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .solution-box { background: #efe; border: 1px solid #8f8; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .step { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #007bff; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .code { background: #f4f4f4; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Correção do Erro de Snippet</h1>
+    
+    <div class="error-box">
+        <h3>❌ Erro Identificado:</h3>
+        <code>Unable to find snippet with ID e73de85e-16e7-45a6-bfda-32cf37505df1</code>
+        <p>Este erro indica uma referência quebrada no sistema.</p>
+    </div>
+
+    <h2>🎯 Soluções Rápidas (Teste uma por vez):</h2>
+
+    <div class="step">
+        <h3>1️⃣ Limpar Cache do Navegador</h3>
+        <p><strong>Mais provável de resolver o problema</strong></p>
+        <div class="code">
+            • Pressione <strong>Ctrl + Shift + R</strong> (Windows/Linux)<br>
+            • Ou <strong>Cmd + Shift + R</strong> (Mac)<br>
+            • Ou F12 → aba Network → botão "Disable cache"
+        </div>
+        <button class="btn" onclick="forceReload()">🔄 Forçar Reload da Página</button>
+    </div>
+
+    <div class="step">
+        <h3>2️⃣ Limpar Dados do Site</h3>
+        <p>Se o cache não resolver:</p>
+        <div class="code">
+            • F12 → Application → Storage → Clear site data<br>
+            • Ou Settings → Privacy → Clear browsing data<br>
+            • Ou no Chrome: chrome://settings/clearBrowserData
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>3️⃣ Verificar Extensões do VS Code</h3>
+        <p>Se você está usando VS Code:</p>
+        <div class="code">
+            • Desative extensões relacionadas a snippets<br>
+            • Extensões que podem causar conflito:<br>
+            &nbsp;&nbsp;- JavaScript (ES6) code snippets<br>
+            &nbsp;&nbsp;- React snippets<br>
+            &nbsp;&nbsp;- TypeScript snippets
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>4️⃣ Testar em Modo Anônimo</h3>
+        <div class="code">
+            • Abra uma aba anônima/privada<br>
+            • Acesse: https://agendarbrasil-health-hub.lovable.app/agendamento<br>
+            • Se funcionar, o problema é cache/extensões
+        </div>
+        <button class="btn" onclick="openIncognito()">🕵️ Abrir em Modo Anônimo</button>
+    </div>
+
+    <h2>🔍 Verificação do Sistema</h2>
+    
+    <div class="step">
+        <h3>5️⃣ Executar Script de Diagnóstico</h3>
+        <p>Execute no Supabase SQL Editor:</p>
+        <div class="code">CORRIGIR_ERRO_SNIPPET.sql</div>
+        <p>Este script vai verificar se o banco está funcionando corretamente.</p>
+    </div>
+
+    <div class="solution-box">
+        <h3>✅ Sistema de Agendamento Status:</h3>
+        <p>Independente do erro de snippet, o sistema deve estar funcionando. Teste as 7 etapas:</p>
+        <ol>
+            <li>Especialidades</li>
+            <li>Estados</li>
+            <li>Cidades</li>
+            <li>Médicos</li>
+            <li>Data</li>
+            <li>Horário</li>
+            <li>Confirmação</li>
+        </ol>
+        <button class="btn" onclick="testAgendamento()">🧪 Testar Agendamento</button>
+    </div>
+
+    <h2>🆘 Se Nada Funcionar</h2>
+    
+    <div class="step warning">
+        <h3>⚠️ Último Recurso</h3>
+        <p>Se o erro persistir:</p>
+        <div class="code">
+            1. Use outro navegador (Chrome, Firefox, Edge)<br>
+            2. Teste em outro computador/celular<br>
+            3. O erro pode ser específico do ambiente de desenvolvimento
+        </div>
+    </div>
+
+    <div class="success">
+        <h3>🎯 Resultado Esperado</h3>
+        <p>Após aplicar as soluções, você deve conseguir acessar o agendamento sem erros.</p>
+        <p><strong>URL de teste:</strong> <a href="https://agendarbrasil-health-hub.lovable.app/agendamento" target="_blank">https://agendarbrasil-health-hub.lovable.app/agendamento</a></p>
+    </div>
+
+    <script>
+        function forceReload() {
+            location.reload(true);
+        }
+
+        function openIncognito() {
+            alert('Abra uma aba anônima manualmente e acesse:\nhttps://agendarbrasil-health-hub.lovable.app/agendamento');
+        }
+
+        function testAgendamento() {
+            window.open('https://agendarbrasil-health-hub.lovable.app/agendamento', '_blank');
+        }
+
+        // Auto-diagnóstico
+        console.log('🔍 Diagnóstico automático:');
+        console.log('Navigator:', navigator.userAgent);
+        console.log('Cache enabled:', !navigator.serviceWorker);
+        console.log('Local storage:', typeof localStorage !== 'undefined');
+        
+        // Verificar se há dados antigos no localStorage
+        if (typeof localStorage !== 'undefined') {
+            const keys = Object.keys(localStorage);
+            const snippetKeys = keys.filter(k => k.includes('snippet'));
+            if (snippetKeys.length > 0) {
+                console.log('⚠️ Encontrados dados de snippet no localStorage:', snippetKeys);
+                console.log('💡 Recomendação: Limpe o localStorage');
+            }
+        }
+    </script>
+</body>
+</html>

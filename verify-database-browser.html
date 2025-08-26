@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação do Banco de Dados - AgendarBrasil</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .config-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .config-section h3 {
+            margin-top: 0;
+            color: #374151;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #dcfce7;
+            border: 1px solid #16a34a;
+            color: #15803d;
+        }
+        .error {
+            background-color: #fef2f2;
+            border: 1px solid #dc2626;
+            color: #dc2626;
+        }
+        .info {
+            background-color: #eff6ff;
+            border: 1px solid #2563eb;
+            color: #2563eb;
+        }
+        .warning {
+            background-color: #fffbeb;
+            border: 1px solid #d97706;
+            color: #d97706;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #2563eb;
+            background: #f8fafc;
+        }
+        .section h4 {
+            margin: 0 0 10px 0;
+            color: #374151;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .status-item {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+        .status-item.success {
+            border-color: #16a34a;
+            background: #f0fdf4;
+        }
+        .status-item.error {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+        .status-item.warning {
+            border-color: #d97706;
+            background: #fffbeb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificação da Estrutura do Banco de Dados</h1>
+        
+        <div class="config-section">
+            <h3>Configuração do Supabase</h3>
+            <p>Insira suas credenciais do Supabase para verificar a estrutura do banco:</p>
+            <input type="url" id="supabaseUrl" placeholder="URL do Supabase (https://xxx.supabase.co)" />
+            <input type="text" id="supabaseKey" placeholder="Chave Anônima do Supabase" />
+            <button onclick="verificarBanco()">🔍 Verificar Banco de Dados</button>
+        </div>
+
+        <div id="resultados"></div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        let supabase = null;
+        let resultados = {};
+
+        function log(tipo, mensagem) {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefixos = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            
+            console.log(`[${timestamp}] ${prefixos[tipo]} ${mensagem}`);
+            
+            if (!resultados[tipo]) resultados[tipo] = [];
+            resultados[tipo].push(`[${timestamp}] ${mensagem}`);
+        }
+
+        function mostrarCarregando() {
+            document.getElementById('resultados').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Verificando banco de dados...</p>
+                </div>
+            `;
+        }
+
+        function mostrarResultados() {
+            const container = document.getElementById('resultados');
+            let html = '<div class="section"><h4>📊 Resultados da Verificação</h4>';
+
+            // Contadores
+            const sucessos = resultados.success?.length || 0;
+            const erros = resultados.error?.length || 0;
+            const avisos = resultados.warning?.length || 0;
+            const infos = resultados.info?.length || 0;
+
+            html += `
+                <div class="status-grid">
+                    <div class="status-item success">
+                        <strong>✅ Sucessos: ${sucessos}</strong>
+                    </div>
+                    <div class="status-item error">
+                        <strong>❌ Erros: ${erros}</strong>
+                    </div>
+                    <div class="status-item warning">
+                        <strong>⚠️ Avisos: ${avisos}</strong>
+                    </div>
+                    <div class="status-item">
+                        <strong>ℹ️ Informações: ${infos}</strong>
+                    </div>
+                </div>
+            `;
+
+            // Mostrar detalhes
+            for (const [tipo, mensagens] of Object.entries(resultados)) {
+                if (mensagens && mensagens.length > 0) {
+                    html += `
+                        <div class="result ${tipo}">
+                            <strong>${tipo.toUpperCase()}:</strong>\n${mensagens.join('\n')}
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function verificarTabela(nomeTabela) {
+            try {
+                const { data, error } = await supabase
+                    .from(nomeTabela)
+                    .select('*')
+                    .limit(1);
+                
+                if (error && error.code === 'PGRST116') {
+                    log('error', `Tabela '${nomeTabela}' não existe`);
+                    return false;
+                } else if (error) {
+                    log('error', `Erro ao verificar tabela '${nomeTabela}': ${error.message}`);
+                    return false;
+                }
+                
+                log('success', `Tabela '${nomeTabela}' existe e é acessível`);
+                return true;
+            } catch (err) {
+                log('error', `Erro inesperado ao verificar tabela '${nomeTabela}': ${err.message}`);
+                return false;
+            }
+        }
+
+        async function verificarDados() {
+            log('info', '=== VERIFICANDO DADOS EXISTENTES ===');
+            
+            try {
+                // Verificar perfis
+                const { data: profiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('*');
+                
+                if (profilesError) {
+                    log('error', `Erro ao buscar perfis: ${profilesError.message}`);
+                } else {
+                    log('success', `Encontrados ${profiles.length} perfis no banco`);
+                    
+                    const pacientes = profiles.filter(p => p.user_type === 'paciente');
+                    const medicos = profiles.filter(p => p.user_type === 'medico');
+                    
+                    log('info', `Pacientes: ${pacientes.length}, Médicos: ${medicos.length}`);
+                }
+
+                // Verificar médicos
+                const { data: medicos, error: medicosError } = await supabase
+                    .from('medicos')
+                    .select('*');
+                
+                if (medicosError) {
+                    log('error', `Erro ao buscar médicos: ${medicosError.message}`);
+                } else {
+                    log('success', `Encontrados ${medicos.length} registros de médicos`);
+                    
+                    if (medicos.length > 0) {
+                        const comCRM = medicos.filter(m => m.crm).length;
+                        const comEspecialidades = medicos.filter(m => m.especialidades && m.especialidades.length > 0).length;
+                        log('info', `Médicos com CRM: ${comCRM}, com especialidades: ${comEspecialidades}`);
+                    }
+                }
+
+                // Verificar pacientes
+                const { data: pacientes, error: pacientesError } = await supabase
+                    .from('pacientes')
+                    .select('*');
+                
+                if (pacientesError) {
+                    log('error', `Erro ao buscar pacientes: ${pacientesError.message}`);
+                } else {
+                    log('success', `Encontrados ${pacientes.length} registros de pacientes`);
+                }
+
+                // Verificar consultas
+                const { data: consultas, error: consultasError } = await supabase
+                    .from('consultas')
+                    .select('*');
+                
+                if (consultasError) {
+                    log('error', `Erro ao buscar consultas: ${consultasError.message}`);
+                } else {
+                    log('success', `Encontradas ${consultas.length} consultas agendadas`);
+                    
+                    if (consultas.length > 0) {
+                        const agendadas = consultas.filter(c => c.status === 'scheduled').length;
+                        const confirmadas = consultas.filter(c => c.status === 'confirmed').length;
+                        const pendentes = consultas.filter(c => c.status === 'pending_payment').length;
+                        log('info', `Consultas - Agendadas: ${agendadas}, Confirmadas: ${confirmadas}, Pendentes: ${pendentes}`);
+                    }
+                }
+
+                // Verificar locais de atendimento
+                const { data: locais, error: locaisError } = await supabase
+                    .from('locais_atendimento')
+                    .select('*');
+                
+                if (locaisError) {
+                    log('error', `Erro ao buscar locais de atendimento: ${locaisError.message}`);
+                } else {
+                    log('success', `Encontrados ${locais.length} locais de atendimento`);
+                    
+                    if (locais.length > 0) {
+                        const comCidade = locais.filter(l => l.cidade).length;
+                        const comEstado = locais.filter(l => l.estado).length;
+                        log('info', `Locais com cidade: ${comCidade}, com estado: ${comEstado}`);
+                    }
+                }
+
+            } catch (err) {
+                log('error', `Erro geral na verificação de dados: ${err.message}`);
+            }
+        }
+
+        async function verificarCamposEspecificos() {
+            log('info', '=== VERIFICAÇÃO DOS CAMPOS SOLICITADOS ===');
+            
+            try {
+                // Verificar se perfis estão sendo criados com tipos corretos
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('user_type')
+                    .in('user_type', ['paciente', 'medico']);
+                
+                if (profiles && profiles.length > 0) {
+                    log('success', '✓ Perfis de usuário (paciente/médico) estão sendo criados');
+                } else {
+                    log('warning', '⚠ Nenhum perfil com tipo paciente/médico encontrado');
+                }
+
+                // Verificar especialidades
+                const { data: medicosEspec } = await supabase
+                    .from('medicos')
+                    .select('especialidades')
+                    .not('especialidades', 'is', null);
+                
+                if (medicosEspec && medicosEspec.length > 0) {
+                    log('success', '✓ Especialidades médicas estão sendo cadastradas');
+                } else {
+                    log('warning', '⚠ Nenhuma especialidade médica encontrada');
+                }
+
+                // Verificar estados e cidades
+                const { data: locaisGeo } = await supabase
+                    .from('locais_atendimento')
+                    .select('cidade, estado')
+                    .not('cidade', 'is', null)
+                    .not('estado', 'is', null);
+                
+                if (locaisGeo && locaisGeo.length > 0) {
+                    log('success', '✓ Estados e cidades estão sendo cadastrados nos locais');
+                    
+                    const estados = [...new Set(locaisGeo.map(l => l.estado))];
+                    const cidades = [...new Set(locaisGeo.map(l => l.cidade))];
+                    log('info', `Estados únicos: ${estados.length}, Cidades únicas: ${cidades.length}`);
+                } else {
+                    log('warning', '⚠ Nenhum local com cidade/estado encontrado');
+                }
+
+                // Verificar agendamentos com dados completos
+                const { data: consultasCompletas } = await supabase
+                    .from('consultas')
+                    .select('medico_id, data_consulta, status')
+                    .not('medico_id', 'is', null)
+                    .not('data_consulta', 'is', null);
+                
+                if (consultasCompletas && consultasCompletas.length > 0) {
+                    log('success', '✓ Agendamentos com médico, data e horário estão sendo criados');
+                } else {
+                    log('warning', '⚠ Nenhum agendamento completo encontrado');
+                }
+
+                // Verificar sistema de confirmação
+                const { data: consultasStatus } = await supabase
+                    .from('consultas')
+                    .select('status')
+                    .in('status', ['scheduled', 'confirmed', 'pending_payment']);
+                
+                if (consultasStatus && consultasStatus.length > 0) {
+                    log('success', '✓ Sistema de confirmação de agendamentos está funcionando');
+                } else {
+                    log('warning', '⚠ Nenhuma consulta com status de confirmação encontrada');
+                }
+
+            } catch (err) {
+                log('error', `Erro na verificação de campos específicos: ${err.message}`);
+            }
+        }
+
+        async function verificarBanco() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                alert('Por favor, preencha a URL e a chave do Supabase');
+                return;
+            }
+
+            // Limpar resultados anteriores
+            resultados = {};
+            mostrarCarregando();
+
+            try {
+                // Conectar ao Supabase
+                supabase = window.supabase.createClient(url, key);
+                log('success', 'Conectado ao Supabase com sucesso');
+
+                log('info', '=== VERIFICANDO TABELAS PRINCIPAIS ===');
+                
+                // Verificar tabelas principais
+                const tabelasPrincipais = [
+                    'profiles',
+                    'medicos',
+                    'pacientes', 
+                    'consultas',
+                    'locais_atendimento'
+                ];
+
+                for (const tabela of tabelasPrincipais) {
+                    await verificarTabela(tabela);
+                }
+
+                // Verificar dados existentes
+                await verificarDados();
+
+                // Verificar campos específicos solicitados
+                await verificarCamposEspecificos();
+
+                log('info', '🎯 Verificação completa finalizada!');
+
+            } catch (error) {
+                log('error', `Erro geral: ${error.message}`);
+            }
+
+            mostrarResultados();
+        }
+
+        // Carregar valores salvos no localStorage
+        window.addEventListener('load', () => {
+            const savedUrl = localStorage.getItem('supabaseUrl');
+            const savedKey = localStorage.getItem('supabaseKey');
+            
+            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+        });
+
+        // Salvar valores no localStorage quando alterados
+        document.getElementById('supabaseUrl').addEventListener('change', (e) => {
+            localStorage.setItem('supabaseUrl', e.target.value);
+        });
+
+        document.getElementById('supabaseKey').addEventListener('change', (e) => {
+            localStorage.setItem('supabaseKey', e.target.value);
+        });
+    </script>
+</body>
+</html>
