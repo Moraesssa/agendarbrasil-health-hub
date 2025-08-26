@@ -56,9 +56,16 @@ export const authService = {
     }
 
     if (!profile) {
-      // Profile doesn't exist yet - this can happen immediately after signup
-      // The trigger should create it, so we can retry a few times
-      logger.warn("Profile not found, will retry", "AuthService", { uid });
+      // Profile doesn't exist yet - try to create it manually as fallback
+      logger.warn("Profile not found, attempting to create", "AuthService", { uid });
+      
+      const createResult = await this.createUserProfile(uid);
+      if (createResult.profile) {
+        logger.info("Profile created successfully as fallback", "AuthService", { uid });
+        return { profile: createResult.profile, shouldRetry: false };
+      }
+      
+      // If creation failed, allow retry
       return { profile: null, shouldRetry: true };
     }
 
@@ -68,6 +75,51 @@ export const authService = {
       onboardingCompleted: profile.onboarding_completed 
     });
     return { profile, shouldRetry: false };
+  },
+
+  async createUserProfile(uid: string) {
+    logger.info("Creating user profile manually", "AuthService", { uid });
+    
+    try {
+      // Get the authenticated user data first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        logger.error("Cannot create profile - user not authenticated", "AuthService", { uid, authError });
+        return { profile: null, error: authError || new Error('User not authenticated') };
+      }
+      
+      // Create profile with data from auth user
+      const profileData = {
+        id: uid,
+        email: user.email || '',
+        display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email || '',
+        photo_url: user.user_metadata?.avatar_url || null,
+        user_type: null, // Will be set during onboarding
+        onboarding_completed: false,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'id' })
+        .select()
+        .single();
+      
+      if (createError) {
+        logger.error("Failed to create user profile", "AuthService", { uid, createError });
+        return { profile: null, error: createError };
+      }
+      
+      logger.info("User profile created successfully", "AuthService", { uid, profile: newProfile });
+      return { profile: newProfile, error: null };
+      
+    } catch (error) {
+      logger.error("Unexpected error creating profile", "AuthService", { uid, error });
+      return { profile: null, error };
+    }
   },
 
   async updateUserType(userId: string, type: UserType) {

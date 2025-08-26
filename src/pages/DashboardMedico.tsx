@@ -101,7 +101,7 @@ const DashboardMedico = () => {
 
       const processedConsultas = (consultasData || []).map(consulta => ({
         ...consulta,
-        patient_name: (consulta as any).patient_profiles?.display_name || consulta.patient_name || 'Paciente'
+        patient_name: (consulta as any)?.patient_profiles?.display_name || consulta?.patient_name || 'Paciente'
       })) as ConsultaData[];
 
       if (isMounted.current) {

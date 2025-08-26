@@ -4,7 +4,7 @@ import { UnifiedAppointment } from '@/types/appointments';
 
 /**
  * Unified contract for appointment services (v2 with backward compatibility)
- * This interface ensures both real and mock services implement the same methods
+ * This interface ensures all services implement the same methods
  */
 export interface IAppointmentService {
   /**
@@ -80,4 +80,4 @@ export interface IAppointmentService {
 /**
  * Environment types for service selection
  */
-export type AppointmentServiceEnvironment = 'production' | 'development' | 'mock';
+export type AppointmentServiceEnvironment = 'production' | 'development';

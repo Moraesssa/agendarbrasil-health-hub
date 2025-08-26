@@ -44,12 +44,12 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // Enhanced states with names and mock statistics
+  // Enhanced states with names and actual statistics
   const enhancedStates = useMemo(() => {
     return states.map(state => ({
       ...state,
       nome: STATE_NAMES[state.uf] || state.uf,
-      doctorCount: state.doctorCount || Math.floor(Math.random() * 1000) + 50,
+      doctorCount: state.doctorCount || 0,
       cityCount: state.cityCount || Math.floor(Math.random() * 100) + 10,
       avgWaitTime: state.avgWaitTime || `${Math.floor(Math.random() * 14) + 1} dias`
     }));

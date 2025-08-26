@@ -60,7 +60,7 @@ export const useNotifications = () => {
 
       // Process consultation notifications with safe profile access
       const consultationNotifications: Notification[] = (consultations || []).map(consultation => {
-        const doctorName = consultation.medico_profiles?.display_name || 'Médico';
+        const doctorName = consultation?.medico_profiles?.display_name || 'Médico';
           
         const consultationDate = new Date(consultation.consultation_date);
         const now = new Date();

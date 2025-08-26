@@ -41,20 +41,20 @@ const Historico = () => {
   const consultas = useMemo(() => {
     return (rawConsultas || [])
       .filter((c) => {
-        const when = c.consultation_date ? new Date(c.consultation_date) : null;
+        const when = c?.consultation_date ? new Date(c.consultation_date) : null;
         return when ? when >= startDate : true;
       })
-      .filter((c) => (status === 'all' ? true : (c.status || '').toLowerCase() === status.toLowerCase()))
+      .filter((c) => (status === 'all' ? true : (c?.status || '').toLowerCase() === status.toLowerCase()))
       .filter((c) =>
-        patientQuery ? (c.patient_name || '').toLowerCase().includes(patientQuery.toLowerCase()) : true
+        patientQuery ? (c?.patient_name || '').toLowerCase().includes(patientQuery.toLowerCase()) : true
       )
       .map((c) => ({
-        id: c.id,
-        data: formatDate(c.consultation_date),
-        medico: c.patient_name, // No portal médico, exibimos o paciente
-        especialidade: c.consultation_type || 'Consulta',
-        diagnostico: c.notes || '—',
-        status: c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Concluída',
+        id: c?.id || '',
+        data: formatDate(c?.consultation_date),
+        medico: c?.patient_name || 'Paciente', // No portal médico, exibimos o paciente
+        especialidade: c?.consultation_type || 'Consulta',
+        diagnostico: c?.notes || '—',
+        status: c?.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Concluída',
         receita: false,
         exames: [] as string[],
       }));
@@ -63,18 +63,18 @@ const Historico = () => {
   const exames = useMemo(() => {
     return (rawExames || [])
       .filter((e) => {
-        const ref = e.completed_date || e.scheduled_date;
+        const ref = e?.completed_date || e?.scheduled_date;
         return ref ? new Date(ref) >= startDate : true;
       })
-      .filter((e) => (status === 'all' ? true : (e.status || '').toLowerCase() === status.toLowerCase()))
+      .filter((e) => (status === 'all' ? true : (e?.status || '').toLowerCase() === status.toLowerCase()))
       .map((e) => {
-        const resultado = e.results_summary || (e.results_available ? 'Normal' : 'Pendente');
+        const resultado = e?.results_summary || (e?.results_available ? 'Normal' : 'Pendente');
         return {
-          id: e.id,
-          nome: e.exam_name,
-          data: formatDate(e.completed_date || e.scheduled_date),
-          medico: e.healthcare_provider || '—',
-          status: e.results_available ? 'Disponível' : 'Pendente',
+          id: e?.id || '',
+          nome: e?.exam_name || 'Exame',
+          data: formatDate(e?.completed_date || e?.scheduled_date),
+          medico: e?.healthcare_provider || '—',
+          status: e?.results_available ? 'Disponível' : 'Pendente',
           resultado,
         };
       });

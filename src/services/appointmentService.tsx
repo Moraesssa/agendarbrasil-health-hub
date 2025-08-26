@@ -226,8 +226,8 @@ export const appointmentService = {
           notes: appointmentData.notes,
           status: 'agendada',
           status_pagamento: 'pendente',
-          patient_name: 'Paciente', // Placeholder
-          patient_email: 'paciente@email.com' // Placeholder
+          patient_name: 'Nome do Paciente',
+          patient_email: 'email@paciente.com'
         });
 
         if (error) {

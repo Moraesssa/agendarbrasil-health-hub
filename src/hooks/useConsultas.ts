@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,6 +46,13 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Create stable filter values to prevent infinite loops
+  const statusFilter = useMemo(() => filters?.status, [filters?.status ? filters.status.join(',') : undefined]);
+  const futureOnlyFilter = useMemo(() => filters?.futureOnly, [filters?.futureOnly]);
+  const monthFilter = useMemo(() => filters?.month, [filters?.month]);
+  const yearFilter = useMemo(() => filters?.year, [filters?.year]);
+  const limitFilter = useMemo(() => filters?.limit, [filters?.limit]);
+
   // Fase 3: Melhorado para preparar dual-read (appointments table será criada futuramente)
   const fetchConsultas = useCallback(async () => {
     if (!user) {
@@ -57,8 +64,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     setError(null);
 
     try {
-  // Log mais estruturado
-  logger.debug('useConsultas: Buscando consultas com melhorias da Fase 3', 'useConsultas');
+      // Log mais estruturado
+      logger.debug('useConsultas: Buscando consultas com melhorias da Fase 3', 'useConsultas');
       
       // Por enquanto, apenas consultas legacy (appointments será implementado futuramente)
       let query = supabase
@@ -70,12 +77,12 @@ export const useConsultas = (filters?: ConsultasFilters) => {
         .eq('paciente_id', user.id);
 
       // Apply status filter
-      if (filters?.status && filters.status.length > 0) {
-        query = query.in('status', filters.status);
+      if (statusFilter && statusFilter.length > 0) {
+        query = query.in('status', statusFilter);
       }
 
       // Apply future only filter
-      if (filters?.futureOnly) {
+      if (futureOnlyFilter) {
         query = query.gte('consultation_date', new Date().toISOString());
       }
 
@@ -83,17 +90,17 @@ export const useConsultas = (filters?: ConsultasFilters) => {
       query = query.in('status_pagamento', ['pago', 'pendente', 'pending_payment']);
 
       // Apply month/year filter
-      if (filters?.month !== undefined && filters?.year !== undefined) {
-        const startOfMonth = new Date(filters.year, filters.month - 1, 1);
-        const endOfMonth = new Date(filters.year, filters.month, 0, 23, 59, 59);
+      if (monthFilter !== undefined && yearFilter !== undefined) {
+        const startOfMonth = new Date(yearFilter, monthFilter - 1, 1);
+        const endOfMonth = new Date(yearFilter, monthFilter, 0, 23, 59, 59);
         query = query
           .gte('consultation_date', startOfMonth.toISOString())
           .lte('consultation_date', endOfMonth.toISOString());
       }
 
       // Apply limit
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (limitFilter) {
+        query = query.limit(limitFilter);
       }
 
       // Order by date
@@ -106,10 +113,10 @@ export const useConsultas = (filters?: ConsultasFilters) => {
       // Safely process the data and handle missing profile information
       const processedData: AppointmentWithDoctor[] = (data || []).map(item => ({
         ...item,
-        doctor_profile: item.doctor_profile || { display_name: null }
+        doctor_profile: item?.doctor_profile || { display_name: null }
       }));
 
-  logger.info(`useConsultas: Total de ${processedData.length} consultas carregadas`, 'useConsultas');
+      logger.info(`useConsultas: Total de ${processedData.length} consultas carregadas`, 'useConsultas');
       setConsultas(processedData);
 
     } catch (err) {
@@ -118,7 +125,7 @@ export const useConsultas = (filters?: ConsultasFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [user, filters?.status, filters?.futureOnly, filters?.month, filters?.year, filters?.limit]);
+  }, [user, statusFilter, futureOnlyFilter, monthFilter, yearFilter, limitFilter]);
 
   const updateConsultaStatus = async (consultaId: string, newStatus: AppointmentStatus) => {
     try {
@@ -130,8 +137,8 @@ export const useConsultas = (filters?: ConsultasFilters) => {
       if (error) throw error;
 
       // Update local state
-      setConsultas(prev => prev.map(consulta =>
-        consulta.id === consultaId
+      setConsultas(prev => (prev || []).map(consulta =>
+        consulta?.id === consultaId
           ? { ...consulta, status: newStatus }
           : consulta
       ));
@@ -144,15 +151,31 @@ export const useConsultas = (filters?: ConsultasFilters) => {
   };
 
   useEffect(() => {
+    // Only fetch if we have a user and haven't loaded yet, or if critical filters changed
     fetchConsultas();
 
-    // Listen for consultation updates
+    // Listen for consultation updates with enhanced debouncing
+    let timeoutId: NodeJS.Timeout;
+    let isSubscribed = true;
+    
     const handleConsultaUpdate = () => {
-      fetchConsultas();
+      if (!isSubscribed) return;
+      
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (isSubscribed) {
+          fetchConsultas();
+        }
+      }, 200); // Increased debounce to 200ms
     };
 
     window.addEventListener('consultaUpdated', handleConsultaUpdate);
-    return () => window.removeEventListener('consultaUpdated', handleConsultaUpdate);
+    
+    return () => {
+      isSubscribed = false;
+      window.removeEventListener('consultaUpdated', handleConsultaUpdate);
+      clearTimeout(timeoutId);
+    };
   }, [fetchConsultas]);
 
   return {

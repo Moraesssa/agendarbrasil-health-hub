@@ -34,13 +34,13 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // Enhanced cities with mock statistics
+  // Enhanced cities with actual data or defaults
   const enhancedCities = useMemo(() => {
     return cities.map(city => ({
       ...city,
-      doctorCount: city.doctorCount || Math.floor(Math.random() * 200) + 10,
-      specialtyCount: city.specialtyCount || Math.floor(Math.random() * 25) + 5,
-      rating: city.rating || Number((4.0 + Math.random() * 1.0).toFixed(1)),
+      doctorCount: city.doctorCount || 0,
+      specialtyCount: city.specialtyCount || 0,
+      rating: city.rating || 4.0,
       isCapital: city.isCapital || isCapitalCity(city.cidade, selectedState)
     }));
   }, [cities, selectedState]);

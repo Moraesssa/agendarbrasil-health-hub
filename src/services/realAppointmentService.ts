@@ -115,7 +115,7 @@ export class RealAppointmentService implements IAppointmentService {
         });
 
         if (error) {
-          logger.warn("V2 schedule RPC failed, falling back to mock", "RealAppointmentService", error);
+          logger.warn("V2 schedule RPC failed", "RealAppointmentService", error);
           throw error;
         }
 
@@ -153,26 +153,8 @@ export class RealAppointmentService implements IAppointmentService {
 
         throw new Error("No location data found");
       } catch (v2Error) {
-        logger.warn("V2 RPC failed, using fallback mock data", "RealAppointmentService", v2Error);
-        
-        // Fallback to mock data
-        const mockLocation: LocalComHorarios = {
-          id: 'loc-001',
-          nome_local: 'Clínica Central',
-          endereco: {
-            logradouro: 'Rua Principal',
-            numero: '123',
-            cidade: 'São Paulo',
-            estado: 'SP'
-          },
-          horarios_disponiveis: [
-            "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-            "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
-          ] as any
-        };
-
-        logger.info("Generated fallback mock slots", "RealAppointmentService");
-        return [mockLocation];
+        logger.error("Failed to fetch available slots via RPC", "RealAppointmentService", v2Error);
+        throw new Error(`Erro ao buscar horários disponíveis: ${v2Error.message || 'Erro desconhecido'}`);
       }
     } catch (error) {
       logger.error("Failed to fetch available slots", "RealAppointmentService", error);
@@ -328,11 +310,8 @@ export class RealAppointmentService implements IAppointmentService {
           throw new Error(message);
         }
       } catch (v2Error) {
-        logger.warn("V2 RPC failed, using fallback", "RealAppointmentService", v2Error);
-        
-        // Fallback - return mock success for now
-        logger.info("Appointment scheduled via fallback (mock)", "RealAppointmentService");
-        return { success: true, data: { id: 'fallback-appointment-id' } };
+        logger.error("Failed to schedule appointment via RPC", "RealAppointmentService", v2Error);
+        throw new Error(`Erro ao agendar consulta: ${v2Error.message || 'Erro desconhecido'}`);
       }
     } catch (error) {
       logger.error("Failed to schedule appointment", "RealAppointmentService", error);

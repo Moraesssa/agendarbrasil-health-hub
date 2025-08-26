@@ -50,83 +50,15 @@ export const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({
   const generateRecommendations = () => {
     setIsLoading(true);
     
-    // Simulated smart recommendations based on multiple factors
+    // Generate recommendations based on actual data
     setTimeout(() => {
-      const mockRecommendations: Doctor[] = [
-        {
-          id: 'doc-1',
-          display_name: 'Ana Silva',
-          rating: 4.9,
-          nextAvailableSlot: '09:00',
-          location: 'Clínica Central',
-          distance: '0.8 km',
-          specialties: [specialty, 'Medicina Preventiva'],
-          reason: 'Altamente recomendada por pacientes similares',
-          priority: 'high'
-        },
-        {
-          id: 'doc-2', 
-          display_name: 'Carlos Santos',
-          rating: 4.7,
-          nextAvailableSlot: '14:30',
-          location: 'Hospital São José',
-          distance: '1.2 km',
-          specialties: [specialty, 'Medicina Geral'],
-          reason: 'Médico com mais disponibilidade hoje',
-          priority: 'high'
-        },
-        {
-          id: 'doc-3',
-          display_name: 'Marina Costa',
-          rating: 4.8,
-          nextAvailableSlot: '16:00',
-          location: 'Clínica Vida',
-          distance: '2.1 km',
-          specialties: [specialty],
-          reason: 'Especialista com 15 anos de experiência',
-          priority: 'medium'
-        },
-        {
-          id: 'doc-4',
-          display_name: 'Roberto Lima',
-          rating: 4.6,
-          nextAvailableSlot: '10:30',
-          location: 'Centro Médico Norte',
-          distance: '1.8 km',
-          specialties: [specialty, 'Medicina Integrativa'],
-          reason: 'Ótima avaliação em atendimento humanizado',
-          priority: 'medium'
-        },
-        {
-          id: 'doc-5',
-          display_name: 'Patricia Oliveira',
-          rating: 4.5,
-          nextAvailableSlot: '15:00',
-          location: 'Clínica Premium',
-          distance: '3.2 km',
-          specialties: [specialty],
-          reason: 'Consultório moderno com equipamentos de última geração',
-          priority: 'low'
-        }
-      ];
+      // TODO: Replace with actual API call to get smart recommendations
+      const actualRecommendations: Doctor[] = [];
 
-      // Add favorites boost
-      const boostedRecommendations = mockRecommendations.map(doc => ({
-        ...doc,
-        priority: favorites.includes(doc.id) ? 'high' : doc.priority
-      }));
-
-      // Sort by priority and rating
-      const sorted = boostedRecommendations.sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-        if (priorityDiff !== 0) return priorityDiff;
-        return b.rating - a.rating;
-      });
-
-      setRecommendations(sorted);
+      // For now, return empty array until actual recommendation API is implemented
+      setRecommendations(actualRecommendations);
       setIsLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   const getPriorityIcon = (priority: string) => {

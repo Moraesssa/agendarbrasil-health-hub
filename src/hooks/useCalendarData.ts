@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConsultas } from '@/hooks/useConsultas';
 
@@ -17,11 +17,16 @@ export const useCalendarData = () => {
   const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const currentDate = new Date();
-  const { consultas: consultasDoMes, loading: consultasLoading } = useConsultas({
+  // Memoize current date to prevent infinite re-renders
+  const currentDate = useMemo(() => new Date(), []);
+  
+  // Stabilize the consultas filters to prevent infinite loops
+  const consultasFilters = useMemo(() => ({
     month: currentDate.getMonth() + 1,
     year: currentDate.getFullYear()
-  });
+  }), [currentDate]);
+  
+  const { consultas: consultasDoMes, loading: consultasLoading } = useConsultas(consultasFilters);
 
   useEffect(() => {
     const loadCalendarData = async () => {
@@ -102,17 +107,7 @@ export const useCalendarData = () => {
     if (!consultasLoading) {
       loadCalendarData();
     }
-
-    // Listen for consultation updates
-    const handleConsultaUpdate = () => {
-      if (!consultasLoading) {
-        loadCalendarData();
-      }
-    };
-
-    window.addEventListener('consultaUpdated', handleConsultaUpdate);
-    return () => window.removeEventListener('consultaUpdated', handleConsultaUpdate);
-  }, [user, consultasDoMes, consultasLoading, currentDate]);
+  }, [user, consultasLoading, consultasDoMes, currentDate]); // Added consultasDoMes back as stable dependency
 
   return {
     calendarData,

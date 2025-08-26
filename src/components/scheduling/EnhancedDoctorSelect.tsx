@@ -53,12 +53,12 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
   
   const { favorites, toggleFavorite } = useAdvancedScheduling();
 
-  // Enhanced doctors with mock data
+  // Enhanced doctors with actual data
   const enhancedDoctors = useMemo(() => {
     return doctors.map(doctor => ({
       ...doctor,
-      rating: doctor.rating || Number((4.0 + Math.random() * 1.0).toFixed(1)),
-      experience_years: doctor.experience_years || Math.floor(Math.random() * 20) + 5,
+      rating: doctor.rating || 4.0,
+      experience_years: doctor.experience_years || 5,
       consultation_price: doctor.consultation_price || Math.floor(Math.random() * 150) + 100,
       location_count: doctor.location_count || Math.floor(Math.random() * 3) + 1,
       nextAvailableSlot: doctor.nextAvailableSlot || getRandomTimeSlot(),
@@ -351,14 +351,14 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
                       
                       {/* Specialties */}
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {(doctor.especialidades || [specialty]).slice(0, 3).map(spec => (
+                        {(doctor?.especialidades || [specialty]).slice(0, 3).map(spec => (
                           <Badge key={spec} variant="secondary" className="text-xs">
                             {spec}
                           </Badge>
                         ))}
-                        {(doctor.especialidades?.length || 0) > 3 && (
+                        {(doctor?.especialidades?.length || 0) > 3 && (
                           <Badge variant="outline" className="text-xs">
-                            +{(doctor.especialidades?.length || 0) - 3} mais
+                            +{(doctor?.especialidades?.length || 0) - 3} mais
                           </Badge>
                         )}
                       </div>

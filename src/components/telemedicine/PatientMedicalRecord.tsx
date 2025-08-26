@@ -101,7 +101,7 @@ export const PatientMedicalRecord: React.FC<PatientMedicalRecordProps> = ({
 
       if (consultError) throw consultError;
 
-      // Mock data for demonstration - in real app, fetch from respective tables
+      // TODO: Fetch actual medical data from respective tables
       setMedicalHistory({
         allergies: ["Penicilina", "Poeira"],
         medications: ["Losartana 50mg - 1x ao dia", "Metformina 850mg - 2x ao dia"],
@@ -293,23 +293,23 @@ export const PatientMedicalRecord: React.FC<PatientMedicalRecordProps> = ({
                 Consultas Anteriores
               </h4>
               <div className="space-y-2">
-                {medicalHistory.consultations.length > 0 ? (
-                  medicalHistory.consultations.slice(0, 5).map((consultation, index) => (
+                {(medicalHistory?.consultations || []).length > 0 ? (
+                  (medicalHistory.consultations || []).slice(0, 5).map((consultation, index) => (
                     <div key={index} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-sm">
-                            {consultation.medico?.dados_profissionais?.nome || 'Médico'}
+                            {consultation?.medico?.dados_profissionais?.nome || 'Médico'}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(consultation.consultation_date).toLocaleDateString('pt-BR')}
+                            {new Date(consultation?.consultation_date || '').toLocaleDateString('pt-BR')}
                           </p>
                         </div>
                         <Badge variant="outline" className="text-xs">
-                          {consultation.status}
+                          {consultation?.status || 'N/A'}
                         </Badge>
                       </div>
-                      {consultation.notes && (
+                      {consultation?.notes && (
                         <p className="text-sm text-gray-600 mt-2">{consultation.notes}</p>
                       )}
                     </div>

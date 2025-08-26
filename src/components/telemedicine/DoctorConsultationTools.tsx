@@ -93,7 +93,7 @@ export const DoctorConsultationTools: React.FC<DoctorConsultationToolsProps> = (
 
       if (consultError) throw consultError;
 
-      // Save prescriptions (mock - in real app, save to prescriptions table)
+      // TODO: Save prescriptions to prescriptions table
       if (prescriptions.length > 0) {
         console.log('Prescriptions to save:', prescriptions);
         // TODO: Implement prescription saving to database
@@ -125,7 +125,7 @@ export const DoctorConsultationTools: React.FC<DoctorConsultationToolsProps> = (
       return;
     }
 
-    // Mock prescription generation - in real app, generate PDF
+    // TODO: Generate PDF prescription
     const prescriptionText = prescriptions.map(p => 
       `${p.medication} ${p.dosage} - ${p.frequency} por ${p.duration}\n${p.instructions ? 'Obs: ' + p.instructions : ''}`
     ).join('\n\n');
