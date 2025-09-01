@@ -183,33 +183,58 @@ export type Database = {
           valor_pago?: number | null
           webhook_received_at?: string | null
         }
+        Relationships: []
+      }
+      Consultas: {
+        Row: {
+          data_hora_agendamento: string
+          duracao_minutos: number | null
+          id: string
+          link_sala_virtual: string | null
+          medico_id: string
+          paciente_id: string
+          pagamento_id: string | null
+          status: Database["public"]["Enums"]["status_consulta"]
+          tipo: Database["public"]["Enums"]["tipo_consulta"]
+          valor_consulta: number | null
+        }
+        Insert: {
+          data_hora_agendamento: string
+          duracao_minutos?: number | null
+          id?: string
+          link_sala_virtual?: string | null
+          medico_id: string
+          paciente_id: string
+          pagamento_id?: string | null
+          status?: Database["public"]["Enums"]["status_consulta"]
+          tipo: Database["public"]["Enums"]["tipo_consulta"]
+          valor_consulta?: number | null
+        }
+        Update: {
+          data_hora_agendamento?: string
+          duracao_minutos?: number | null
+          id?: string
+          link_sala_virtual?: string | null
+          medico_id?: string
+          paciente_id?: string
+          pagamento_id?: string | null
+          status?: Database["public"]["Enums"]["status_consulta"]
+          tipo?: Database["public"]["Enums"]["tipo_consulta"]
+          valor_consulta?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "consultas_medico_id_fkey"
+            foreignKeyName: "Consultas_medico_id_fkey"
             columns: ["medico_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "Medicos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consultas_paciente_familiar_id_fkey"
-            columns: ["paciente_familiar_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_paciente_id_fkey"
+            foreignKeyName: "Consultas_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consultas_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "Pacientes"
             referencedColumns: ["id"]
           },
         ]
@@ -838,57 +863,64 @@ export type Database = {
       }
       medical_prescriptions: {
         Row: {
-          created_at: string
-          doctor_id: string
-          dosage: string
-          duration_days: number | null
-          frequency: string
+          consulta_id: string
+          conteudo_hash: string
+          data_emissao: string | null
+          doctor_id: string | null
           id: string
-          instructions: string | null
-          is_active: boolean
-          medication_name: string
-          patient_id: string
-          prescribed_date: string
-          prescription_number: string | null
-          updated_at: string
-          valid_until: string | null
-          validation_hash: string | null
+          is_active: boolean | null
+          patient_id: string | null
+          prescribed_date: string | null
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+          url_documento_assinado: string
         }
         Insert: {
-          created_at?: string
-          doctor_id: string
-          dosage: string
-          duration_days?: number | null
-          frequency: string
+          consulta_id: string
+          conteudo_hash: string
+          data_emissao?: string | null
+          doctor_id?: string | null
           id?: string
-          instructions?: string | null
-          is_active?: boolean
-          medication_name: string
-          patient_id: string
-          prescribed_date?: string
-          prescription_number?: string | null
-          updated_at?: string
-          valid_until?: string | null
-          validation_hash?: string | null
+          is_active?: boolean | null
+          patient_id?: string | null
+          prescribed_date?: string | null
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+          url_documento_assinado: string
         }
         Update: {
-          created_at?: string
-          doctor_id?: string
-          dosage?: string
-          duration_days?: number | null
-          frequency?: string
+          consulta_id?: string
+          conteudo_hash?: string
+          data_emissao?: string | null
+          doctor_id?: string | null
           id?: string
-          instructions?: string | null
-          is_active?: boolean
-          medication_name?: string
-          patient_id?: string
-          prescribed_date?: string
-          prescription_number?: string | null
-          updated_at?: string
-          valid_until?: string | null
-          validation_hash?: string | null
+          is_active?: boolean | null
+          patient_id?: string | null
+          prescribed_date?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_documento"]
+          url_documento_assinado?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "DocumentosDigitais_consulta_id_fkey"
+            columns: ["consulta_id"]
+            isOneToOne: false
+            referencedRelation: "Consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_documentos_medico"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "Medicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_documentos_paciente"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "Pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       medical_services: {
         Row: {
@@ -1103,12 +1135,55 @@ export type Database = {
           verificacao?: Json
           whatsapp?: string | null
         }
+        Relationships: []
+      }
+      Medicos: {
+        Row: {
+          bio_perfil: string | null
+          chave_assinatura_digital: string | null
+          crm: string
+          especialidade_id: string | null
+          foto_perfil_url: string | null
+          id: string
+          is_active: boolean
+          uf_crm: string
+          usuario_id: string
+        }
+        Insert: {
+          bio_perfil?: string | null
+          chave_assinatura_digital?: string | null
+          crm: string
+          especialidade_id?: string | null
+          foto_perfil_url?: string | null
+          id?: string
+          is_active?: boolean
+          uf_crm: string
+          usuario_id: string
+        }
+        Update: {
+          bio_perfil?: string | null
+          chave_assinatura_digital?: string | null
+          crm?: string
+          especialidade_id?: string | null
+          foto_perfil_url?: string | null
+          id?: string
+          is_active?: boolean
+          uf_crm?: string
+          usuario_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "medicos_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "Medicos_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Medicos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "Usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -1184,6 +1259,48 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      Pacientes: {
+        Row: {
+          data_nascimento: string
+          endereco: string | null
+          genero: string | null
+          id: string
+          is_active: boolean
+          usuario_id: string
+        }
+        Insert: {
+          data_nascimento: string
+          endereco?: string | null
+          genero?: string | null
+          id?: string
+          is_active?: boolean
+          usuario_id: string
+        }
+        Update: {
+          data_nascimento?: string
+          endereco?: string | null
+          genero?: string | null
+          id?: string
+          is_active?: boolean
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Pacientes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Pacientes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "Usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pagamentos: {
         Row: {
@@ -1482,53 +1599,6 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "prescription_renewals_prescription_id_fkey"
-            columns: ["prescription_id"]
-            isOneToOne: false
-            referencedRelation: "medical_prescriptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          display_name: string | null
-          email: string | null
-          id: string
-          is_active: boolean
-          last_login: string | null
-          onboarding_completed: boolean
-          updated_at: string | null
-          user_type: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          email?: string | null
-          id: string
-          is_active?: boolean
-          last_login?: string | null
-          onboarding_completed?: boolean
-          updated_at?: string | null
-          user_type?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean
-          last_login?: string | null
-          onboarding_completed?: boolean
-          updated_at?: string | null
-          user_type?: string | null
-        }
         Relationships: []
       }
       security_audit_log: {
@@ -1645,27 +1715,6 @@ export type Database = {
             referencedRelation: "locais_atendimento"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "temporary_reservations_medico_id_fkey"
-            columns: ["medico_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "temporary_reservations_paciente_familiar_id_fkey"
-            columns: ["paciente_familiar_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "temporary_reservations_paciente_id_fkey"
-            columns: ["paciente_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       user_consents: {
@@ -1717,6 +1766,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      Usuarios: {
+        Row: {
+          cpf: string
+          data_criacao: string | null
+          email: string
+          id: string
+          is_active: boolean
+          nome: string
+          senha_hash: string
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["tipo_usuario"]
+          ultimo_login: string | null
+        }
+        Insert: {
+          cpf: string
+          data_criacao?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          nome: string
+          senha_hash: string
+          telefone?: string | null
+          tipo: Database["public"]["Enums"]["tipo_usuario"]
+          ultimo_login?: string | null
+        }
+        Update: {
+          cpf?: string
+          data_criacao?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          nome?: string
+          senha_hash?: string
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_usuario"]
+          ultimo_login?: string | null
+        }
+        Relationships: []
       }
       vaccination_records: {
         Row: {
@@ -1852,7 +1940,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          crm: string | null
+          data_nascimento: string | null
+          display_name: string | null
+          email: string | null
+          genero: string | null
+          id: string | null
+          is_active: boolean | null
+          uf_crm: string | null
+          user_type: Database["public"]["Enums"]["tipo_usuario"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_payment_access: {
@@ -2182,6 +2283,14 @@ export type Database = {
           status: string
         }[]
       }
+      validate_table_rls: {
+        Args: { table_name: string }
+        Returns: {
+          check_name: string
+          message: string
+          status: string
+        }[]
+      }
     }
     Enums: {
       appointment_status:
@@ -2191,6 +2300,15 @@ export type Database = {
         | "realizada"
         | "pendente"
       payment_method: "credit" | "pix"
+      status_consulta:
+        | "agendada"
+        | "confirmada"
+        | "realizada"
+        | "cancelada"
+        | "nao_compareceu"
+      tipo_consulta: "presencial" | "teleconsulta"
+      tipo_documento: "prescricao" | "atestado" | "pedido_exame"
+      tipo_usuario: "paciente" | "medico" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2326,6 +2444,16 @@ export const Constants = {
         "pendente",
       ],
       payment_method: ["credit", "pix"],
+      status_consulta: [
+        "agendada",
+        "confirmada",
+        "realizada",
+        "cancelada",
+        "nao_compareceu",
+      ],
+      tipo_consulta: ["presencial", "teleconsulta"],
+      tipo_documento: ["prescricao", "atestado", "pedido_exame"],
+      tipo_usuario: ["paciente", "medico", "admin"],
     },
   },
 } as const
