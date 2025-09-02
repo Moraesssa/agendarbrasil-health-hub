@@ -70,120 +70,64 @@ export type Database = {
       }
       consultas: {
         Row: {
-          amount: number | null
-          consultation_date: string | null
+          consultation_date: string
           consultation_type: string | null
           created_at: string | null
-          currency: string | null
-          customer_id: string | null
-          data_agendamento: string | null
-          data_confirmacao: string | null
-          data_pagamento: string | null
           expires_at: string | null
-          forma_pagamento: string | null
-          gateway_pagamento: string | null
-          id: string
-          medico_id: string | null
-          metadata: Json | null
+          id: number
+          medico_id: string
           notes: string | null
           paciente_familiar_id: string | null
-          paciente_id: string | null
-          patient_email: string
-          patient_name: string
-          patient_phone: string | null
-          payment_confirmed: boolean | null
-          payment_data: Json | null
-          payment_intent_id: string | null
-          payment_status: string | null
-          profile_id: string | null
-          session_id: string | null
+          paciente_id: string
           status: string | null
-          status_pagamento: string | null
-          stripe_payment_intent_id: string | null
-          stripe_session_id: string | null
-          transaction_id: string | null
-          updated_at: string | null
-          valor: number | null
-          valor_pago: number | null
-          webhook_received_at: string | null
         }
         Insert: {
-          amount?: number | null
-          consultation_date?: string | null
+          consultation_date: string
           consultation_type?: string | null
           created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          data_agendamento?: string | null
-          data_confirmacao?: string | null
-          data_pagamento?: string | null
           expires_at?: string | null
-          forma_pagamento?: string | null
-          gateway_pagamento?: string | null
-          id?: string
-          medico_id?: string | null
-          metadata?: Json | null
+          id?: number
+          medico_id: string
           notes?: string | null
           paciente_familiar_id?: string | null
-          paciente_id?: string | null
-          patient_email: string
-          patient_name: string
-          patient_phone?: string | null
-          payment_confirmed?: boolean | null
-          payment_data?: Json | null
-          payment_intent_id?: string | null
-          payment_status?: string | null
-          profile_id?: string | null
-          session_id?: string | null
+          paciente_id: string
           status?: string | null
-          status_pagamento?: string | null
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string | null
-          transaction_id?: string | null
-          updated_at?: string | null
-          valor?: number | null
-          valor_pago?: number | null
-          webhook_received_at?: string | null
         }
         Update: {
-          amount?: number | null
-          consultation_date?: string | null
+          consultation_date?: string
           consultation_type?: string | null
           created_at?: string | null
-          currency?: string | null
-          customer_id?: string | null
-          data_agendamento?: string | null
-          data_confirmacao?: string | null
-          data_pagamento?: string | null
           expires_at?: string | null
-          forma_pagamento?: string | null
-          gateway_pagamento?: string | null
-          id?: string
-          medico_id?: string | null
-          metadata?: Json | null
+          id?: number
+          medico_id?: string
           notes?: string | null
           paciente_familiar_id?: string | null
-          paciente_id?: string | null
-          patient_email?: string
-          patient_name?: string
-          patient_phone?: string | null
-          payment_confirmed?: boolean | null
-          payment_data?: Json | null
-          payment_intent_id?: string | null
-          payment_status?: string | null
-          profile_id?: string | null
-          session_id?: string | null
+          paciente_id?: string
           status?: string | null
-          status_pagamento?: string | null
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string | null
-          transaction_id?: string | null
-          updated_at?: string | null
-          valor?: number | null
-          valor_pago?: number | null
-          webhook_received_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "consultas_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_paciente_familiar_id_fkey"
+            columns: ["paciente_familiar_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Consultas: {
         Row: {
@@ -308,6 +252,101 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_availability: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: number
+          is_active: boolean
+          location_id: number | null
+          medico_id: string
+          slot_duration_minutes: number
+          start_time: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+          weekday: number
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: number
+          is_active?: boolean
+          location_id?: number | null
+          medico_id: string
+          slot_duration_minutes?: number
+          start_time: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          weekday: number
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: number
+          is_active?: boolean
+          location_id?: number | null
+          medico_id?: string
+          slot_duration_minutes?: number
+          start_time?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_availability_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locais_atendimento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_availability_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_time_off: {
+        Row: {
+          created_at: string | null
+          end_at: string
+          id: number
+          medico_id: string
+          reason: string | null
+          start_at: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_at: string
+          id?: number
+          medico_id: string
+          reason?: string | null
+          start_at: string
+        }
+        Update: {
+          created_at?: string | null
+          end_at?: string
+          id?: number
+          medico_id?: string
+          reason?: string | null
+          start_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_time_off_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_validations: {
         Row: {
           accessed_at: string
@@ -389,30 +428,18 @@ export type Database = {
       especialidades_medicas: {
         Row: {
           ativa: boolean | null
-          codigo: string | null
-          created_at: string | null
-          descricao: string | null
-          id: string
+          id: number
           nome: string
-          updated_at: string | null
         }
         Insert: {
           ativa?: boolean | null
-          codigo?: string | null
-          created_at?: string | null
-          descricao?: string | null
-          id?: string
+          id?: number
           nome: string
-          updated_at?: string | null
         }
         Update: {
           ativa?: boolean | null
-          codigo?: string | null
-          created_at?: string | null
-          descricao?: string | null
-          id?: string
+          id?: number
           nome?: string
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -574,178 +601,103 @@ export type Database = {
       }
       health_metrics: {
         Row: {
-          appointment_id: string | null
-          created_at: string
-          id: string
-          metric_type: string
+          id: number
           patient_id: string
-          recorded_at: string
-          unit: string
-          value: Json
+          registrado_em: string | null
+          tipo: string
+          unidade: string | null
+          valor: number | null
         }
         Insert: {
-          appointment_id?: string | null
-          created_at?: string
-          id?: string
-          metric_type: string
+          id?: number
           patient_id: string
-          recorded_at?: string
-          unit: string
-          value: Json
+          registrado_em?: string | null
+          tipo: string
+          unidade?: string | null
+          valor?: number | null
         }
         Update: {
-          appointment_id?: string | null
-          created_at?: string
-          id?: string
-          metric_type?: string
+          id?: number
           patient_id?: string
-          recorded_at?: string
-          unit?: string
-          value?: Json
-        }
-        Relationships: []
-      }
-      integration_logs: {
-        Row: {
-          action: string
-          created_at: string
-          error_message: string | null
-          id: string
-          ip_address: unknown | null
-          patient_id: string | null
-          payload: Json | null
-          source_id: string
-          status: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          ip_address?: unknown | null
-          patient_id?: string | null
-          payload?: Json | null
-          source_id: string
-          status: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          ip_address?: unknown | null
-          patient_id?: string | null
-          payload?: Json | null
-          source_id?: string
-          status?: string
+          registrado_em?: string | null
+          tipo?: string
+          unidade?: string | null
+          valor?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "integration_logs_source_id_fkey"
-            columns: ["source_id"]
+            foreignKeyName: "health_metrics_patient_id_fkey"
+            columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "external_data_sources"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      locais_atendimento: {
+      integration_logs: {
         Row: {
-          ativo: boolean
-          bairro: string | null
-          cep: string | null
-          cidade: string | null
-          coordenadas: Json | null
-          created_at: string
-          descricao: string | null
-          email: string | null
-          endereco: Json
-          endereco_completo: string | null
-          estado: string | null
-          facilidades: Json | null
-          fonte_dados: string | null
-          horario_funcionamento: Json | null
-          id: string
-          instrucoes_acesso: string | null
-          is_active: boolean | null
-          medico_id: string
-          motivo_fechamento: string | null
-          nome_local: string
-          observacoes_especiais: string | null
-          previsao_reabertura: string | null
-          status: string | null
-          telefone: string | null
-          ultima_atualizacao: string | null
-          verificado_em: string | null
-          website: string | null
-          whatsapp: string | null
+          created_at: string | null
+          id: number
+          payload: Json | null
+          source: string | null
         }
         Insert: {
-          ativo?: boolean
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
-          coordenadas?: Json | null
-          created_at?: string
-          descricao?: string | null
-          email?: string | null
-          endereco: Json
-          endereco_completo?: string | null
-          estado?: string | null
-          facilidades?: Json | null
-          fonte_dados?: string | null
-          horario_funcionamento?: Json | null
-          id?: string
-          instrucoes_acesso?: string | null
-          is_active?: boolean | null
-          medico_id: string
-          motivo_fechamento?: string | null
-          nome_local: string
-          observacoes_especiais?: string | null
-          previsao_reabertura?: string | null
-          status?: string | null
-          telefone?: string | null
-          ultima_atualizacao?: string | null
-          verificado_em?: string | null
-          website?: string | null
-          whatsapp?: string | null
+          created_at?: string | null
+          id?: number
+          payload?: Json | null
+          source?: string | null
         }
         Update: {
-          ativo?: boolean
-          bairro?: string | null
-          cep?: string | null
+          created_at?: string | null
+          id?: number
+          payload?: Json | null
+          source?: string | null
+        }
+        Relationships: []
+      }
+      locais_atendimento: {
+        Row: {
+          ativo: boolean | null
+          cidade: string | null
+          coordenadas: Json | null
+          created_at: string | null
+          endereco: Json | null
+          estado: string | null
+          horario_funcionamento: Json | null
+          id: number
+          medico_id: string
+          nome_local: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
           cidade?: string | null
           coordenadas?: Json | null
-          created_at?: string
-          descricao?: string | null
-          email?: string | null
-          endereco?: Json
-          endereco_completo?: string | null
+          created_at?: string | null
+          endereco?: Json | null
           estado?: string | null
-          facilidades?: Json | null
-          fonte_dados?: string | null
           horario_funcionamento?: Json | null
-          id?: string
-          instrucoes_acesso?: string | null
-          is_active?: boolean | null
+          id?: number
+          medico_id: string
+          nome_local?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cidade?: string | null
+          coordenadas?: Json | null
+          created_at?: string | null
+          endereco?: Json | null
+          estado?: string | null
+          horario_funcionamento?: Json | null
+          id?: number
           medico_id?: string
-          motivo_fechamento?: string | null
-          nome_local?: string
-          observacoes_especiais?: string | null
-          previsao_reabertura?: string | null
-          status?: string | null
-          telefone?: string | null
-          ultima_atualizacao?: string | null
-          verificado_em?: string | null
-          website?: string | null
-          whatsapp?: string | null
+          nome_local?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "locais_atendimento_medico_id_fkey"
             columns: ["medico_id"]
             isOneToOne: false
-            referencedRelation: "medicos"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1089,53 +1041,49 @@ export type Database = {
       medicos: {
         Row: {
           cidade: string | null
-          configuracoes: Json
-          created_at: string
-          crm: string
-          dados_profissionais: Json
-          especialidades: Json
+          configuracoes: Json | null
+          created_at: string | null
+          crm: string | null
+          especialidades: Json | null
           estado: string | null
-          id: string
-          registro_especialista: string | null
-          telefone: string
-          updated_at: string
+          id: number
+          telefone: string | null
+          updated_at: string | null
           user_id: string
-          verificacao: Json
-          whatsapp: string | null
         }
         Insert: {
           cidade?: string | null
-          configuracoes?: Json
-          created_at?: string
-          crm: string
-          dados_profissionais?: Json
-          especialidades?: Json
+          configuracoes?: Json | null
+          created_at?: string | null
+          crm?: string | null
+          especialidades?: Json | null
           estado?: string | null
-          id?: string
-          registro_especialista?: string | null
-          telefone: string
-          updated_at?: string
+          id?: number
+          telefone?: string | null
+          updated_at?: string | null
           user_id: string
-          verificacao?: Json
-          whatsapp?: string | null
         }
         Update: {
           cidade?: string | null
-          configuracoes?: Json
-          created_at?: string
-          crm?: string
-          dados_profissionais?: Json
-          especialidades?: Json
+          configuracoes?: Json | null
+          created_at?: string | null
+          crm?: string | null
+          especialidades?: Json | null
           estado?: string | null
-          id?: string
-          registro_especialista?: string | null
-          telefone?: string
-          updated_at?: string
+          id?: number
+          telefone?: string | null
+          updated_at?: string | null
           user_id?: string
-          verificacao?: Json
-          whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "medicos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Medicos: {
         Row: {
@@ -1172,13 +1120,6 @@ export type Database = {
           usuario_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "Medicos_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "Medicos_usuario_id_fkey"
             columns: ["usuario_id"]
@@ -1226,39 +1167,41 @@ export type Database = {
       }
       pacientes: {
         Row: {
-          contato: Json
-          convenio: Json
-          created_at: string
-          dados_medicos: Json
-          dados_pessoais: Json
-          endereco: Json
-          id: string
-          updated_at: string
+          convenio: Json | null
+          created_at: string | null
+          dados_medicos: Json | null
+          dados_pessoais: Json | null
+          endereco: Json | null
+          id: number
           user_id: string
         }
         Insert: {
-          contato?: Json
-          convenio?: Json
-          created_at?: string
-          dados_medicos?: Json
-          dados_pessoais?: Json
-          endereco?: Json
-          id?: string
-          updated_at?: string
+          convenio?: Json | null
+          created_at?: string | null
+          dados_medicos?: Json | null
+          dados_pessoais?: Json | null
+          endereco?: Json | null
+          id?: number
           user_id: string
         }
         Update: {
-          contato?: Json
-          convenio?: Json
-          created_at?: string
-          dados_medicos?: Json
-          dados_pessoais?: Json
-          endereco?: Json
-          id?: string
-          updated_at?: string
+          convenio?: Json | null
+          created_at?: string | null
+          dados_medicos?: Json | null
+          dados_pessoais?: Json | null
+          endereco?: Json | null
+          id?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pacientes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Pacientes: {
         Row: {
@@ -1290,13 +1233,6 @@ export type Database = {
             foreignKeyName: "Pacientes_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Pacientes_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
             referencedRelation: "Usuarios"
             referencedColumns: ["id"]
           },
@@ -1304,157 +1240,43 @@ export type Database = {
       }
       pagamentos: {
         Row: {
-          acrescimo: number | null
-          amount: number | null
-          bandeira_cartao: string | null
-          codigo_autorizacao: string | null
-          consulta_id: string | null
+          consulta_id: number
           created_at: string | null
-          currency: string | null
-          customer_email: string | null
-          customer_name: string | null
-          dados_gateway: Json | null
-          data_pagamento: string | null
-          data_vencimento: string | null
-          desconto: number | null
-          descricao: string | null
-          documento_cliente: string | null
-          email_cliente: string | null
-          endereco_cliente: Json | null
-          gateway_id: string | null
-          gateway_response: Json | null
-          gateway_transaction_id: string | null
-          id: string
-          medico_id: string | null
-          metadata: Json | null
-          metodo_pagamento: string | null
+          id: number
+          medico_id: string
+          metodo: string | null
           moeda: string | null
-          nome_portador: string | null
-          nsu: string | null
-          numero_parcelas: number | null
-          observacoes: string | null
-          paciente_id: string | null
-          parcela_atual: number | null
-          payment_date: string | null
-          payment_method: string | null
-          processed_at: string | null
+          paciente_id: string
           status: string | null
-          stripe_payment_intent_id: string | null
-          stripe_session_id: string | null
-          taxa_gateway: number | null
-          telefone_cliente: string | null
-          tid: string | null
-          tipo_consulta: string | null
-          transaction_id: string | null
-          ultimos_digitos: string | null
-          updated_at: string | null
-          usuario_id: string | null
-          valor: number | null
-          valor_liquido: number | null
-          valor_original: number | null
-          webhook_data: Json | null
+          transacao_gateway: Json | null
+          usuario_id: string
+          valor: number
         }
         Insert: {
-          acrescimo?: number | null
-          amount?: number | null
-          bandeira_cartao?: string | null
-          codigo_autorizacao?: string | null
-          consulta_id?: string | null
+          consulta_id: number
           created_at?: string | null
-          currency?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
-          dados_gateway?: Json | null
-          data_pagamento?: string | null
-          data_vencimento?: string | null
-          desconto?: number | null
-          descricao?: string | null
-          documento_cliente?: string | null
-          email_cliente?: string | null
-          endereco_cliente?: Json | null
-          gateway_id?: string | null
-          gateway_response?: Json | null
-          gateway_transaction_id?: string | null
-          id?: string
-          medico_id?: string | null
-          metadata?: Json | null
-          metodo_pagamento?: string | null
+          id?: number
+          medico_id: string
+          metodo?: string | null
           moeda?: string | null
-          nome_portador?: string | null
-          nsu?: string | null
-          numero_parcelas?: number | null
-          observacoes?: string | null
-          paciente_id?: string | null
-          parcela_atual?: number | null
-          payment_date?: string | null
-          payment_method?: string | null
-          processed_at?: string | null
+          paciente_id: string
           status?: string | null
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string | null
-          taxa_gateway?: number | null
-          telefone_cliente?: string | null
-          tid?: string | null
-          tipo_consulta?: string | null
-          transaction_id?: string | null
-          ultimos_digitos?: string | null
-          updated_at?: string | null
-          usuario_id?: string | null
-          valor?: number | null
-          valor_liquido?: number | null
-          valor_original?: number | null
-          webhook_data?: Json | null
+          transacao_gateway?: Json | null
+          usuario_id: string
+          valor: number
         }
         Update: {
-          acrescimo?: number | null
-          amount?: number | null
-          bandeira_cartao?: string | null
-          codigo_autorizacao?: string | null
-          consulta_id?: string | null
+          consulta_id?: number
           created_at?: string | null
-          currency?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
-          dados_gateway?: Json | null
-          data_pagamento?: string | null
-          data_vencimento?: string | null
-          desconto?: number | null
-          descricao?: string | null
-          documento_cliente?: string | null
-          email_cliente?: string | null
-          endereco_cliente?: Json | null
-          gateway_id?: string | null
-          gateway_response?: Json | null
-          gateway_transaction_id?: string | null
-          id?: string
-          medico_id?: string | null
-          metadata?: Json | null
-          metodo_pagamento?: string | null
+          id?: number
+          medico_id?: string
+          metodo?: string | null
           moeda?: string | null
-          nome_portador?: string | null
-          nsu?: string | null
-          numero_parcelas?: number | null
-          observacoes?: string | null
-          paciente_id?: string | null
-          parcela_atual?: number | null
-          payment_date?: string | null
-          payment_method?: string | null
-          processed_at?: string | null
+          paciente_id?: string
           status?: string | null
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string | null
-          taxa_gateway?: number | null
-          telefone_cliente?: string | null
-          tid?: string | null
-          tipo_consulta?: string | null
-          transaction_id?: string | null
-          ultimos_digitos?: string | null
-          updated_at?: string | null
-          usuario_id?: string | null
-          valor?: number | null
-          valor_liquido?: number | null
-          valor_original?: number | null
-          webhook_data?: Json | null
+          transacao_gateway?: Json | null
+          usuario_id?: string
+          valor?: number
         }
         Relationships: [
           {
@@ -1462,6 +1284,27 @@ export type Database = {
             columns: ["consulta_id"]
             isOneToOne: false
             referencedRelation: "consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1541,13 +1384,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "payments_consultation_fk"
-            columns: ["consultation_id"]
-            isOneToOne: false
-            referencedRelation: "consultas"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "payments_consultation_id_fkey"
             columns: ["consultation_id"]
             isOneToOne: false
@@ -1598,6 +1434,36 @@ export type Database = {
           requested_duration_days?: number | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          photo_url: string | null
+          user_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          photo_url?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          photo_url?: string | null
+          user_type?: string | null
         }
         Relationships: []
       }
@@ -1707,15 +1573,7 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "temporary_reservations_local_id_fkey"
-            columns: ["local_id"]
-            isOneToOne: false
-            referencedRelation: "locais_atendimento"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_consents: {
         Row: {
@@ -1940,20 +1798,7 @@ export type Database = {
       }
     }
     Views: {
-      profiles: {
-        Row: {
-          crm: string | null
-          data_nascimento: string | null
-          display_name: string | null
-          email: string | null
-          genero: string | null
-          id: string | null
-          is_active: boolean | null
-          uf_crm: string | null
-          user_type: Database["public"]["Enums"]["tipo_usuario"] | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_payment_access: {
@@ -2151,39 +1996,6 @@ export type Database = {
           display_name: string
           especialidade: string
           id: string
-        }[]
-      }
-      get_my_locations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          ativo: boolean
-          bairro: string | null
-          cep: string | null
-          cidade: string | null
-          coordenadas: Json | null
-          created_at: string
-          descricao: string | null
-          email: string | null
-          endereco: Json
-          endereco_completo: string | null
-          estado: string | null
-          facilidades: Json | null
-          fonte_dados: string | null
-          horario_funcionamento: Json | null
-          id: string
-          instrucoes_acesso: string | null
-          is_active: boolean | null
-          medico_id: string
-          motivo_fechamento: string | null
-          nome_local: string
-          observacoes_especiais: string | null
-          previsao_reabertura: string | null
-          status: string | null
-          telefone: string | null
-          ultima_atualizacao: string | null
-          verificado_em: string | null
-          website: string | null
-          whatsapp: string | null
         }[]
       }
       get_specialties: {
