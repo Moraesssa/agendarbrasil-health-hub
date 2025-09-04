@@ -30,6 +30,7 @@ import { getSupabaseConfig, checkSupabaseConnection } from '@/utils/supabaseChec
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { LocalComHorarios } from '@/services/newAppointmentService';
 import { useSearchParams } from 'react-router-dom';
+import { safeArrayAccess, safeArrayLength } from '@/utils/arrayUtils';
 
 const TOTAL_STEPS = 7;
 
@@ -147,8 +148,8 @@ const Agendamento = () => {
 
   const checkupSuggestionsBase = ['Clínica Geral','Cardiologia','Ginecologia','Urologia'];
   const checkupSuggestions = useMemo(() => {
-    const list = (specialties || []) as string[];
-    return checkupSuggestionsBase.filter((s) => list.includes(s));
+    const safeSpecialties = safeArrayAccess(specialties);
+    return checkupSuggestionsBase.filter((s) => safeSpecialties.includes(s));
   }, [specialties]);
 
   const selectedPatientName = selectedFamilyMember 
@@ -308,8 +309,8 @@ const Agendamento = () => {
                 <AlertDescription>
                   <p className="mb-3">Escolha uma especialidade para iniciar seu check-up:</p>
                   <div className="flex flex-wrap gap-2">
-                    {checkupSuggestions.length > 0 ? (
-                      checkupSuggestions.map((s) => (
+                    {safeArrayLength(checkupSuggestions) > 0 ? (
+                      safeArrayAccess(checkupSuggestions).map((s) => (
                         <Button
                           key={s}
                           variant="outline"
@@ -422,8 +423,10 @@ const Agendamento = () => {
         // Processar horários removendo duplicatas e agrupando por horário
         const processedTimeSlots = new Map<string, { time: string; available: boolean; locations: string[] }>();
         
-        locaisComHorarios?.forEach(local => {
-          (local.horarios_disponiveis || []).forEach(slot => {
+        const safeLocais = safeArrayAccess(locaisComHorarios);
+        safeLocais.forEach(local => {
+          const horariosDisponiveis = safeArrayAccess(local.horarios_disponiveis);
+          horariosDisponiveis.forEach(slot => {
             const existing = processedTimeSlots.get(slot.time);
             if (existing) {
               // Se já existe, adiciona o local e mantém disponibilidade se pelo menos um estiver disponível
@@ -465,19 +468,19 @@ const Agendamento = () => {
               />
             )}
             {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
                 <h4 className="font-bold text-sm text-yellow-800 mb-2">🐛 Debug Info</h4>
                 <div className="text-xs text-yellow-700">
-                  <p><strong>Locais com horários:</strong> {locaisComHorarios?.length || 0}</p>
+                  <p><strong>Locais com horários:</strong> {safeArrayLength(locaisComHorarios)}</p>
                   <p><strong>Total de slots:</strong> {timeSlots.length}</p>
                   <p><strong>Médico selecionado:</strong> {selectedDoctor}</p>
                   <p><strong>Data selecionada:</strong> {selectedDate}</p>
-                  {locaisComHorarios && locaisComHorarios.length > 0 && (
+                  {safeArrayLength(locaisComHorarios) > 0 && (
                     <div className="mt-2">
                       <p><strong>Detalhes dos locais:</strong></p>
-                      {locaisComHorarios.map((local, index) => (
+                      {safeArrayAccess(locaisComHorarios).map((local, index) => (
                         <div key={local.id} className="ml-2">
-                          <p>• {local.nome_local}: {local.horarios_disponiveis?.length || 0} horários</p>
+                          <p>• {local.nome_local}: {safeArrayLength(local.horarios_disponiveis) || 0} horários</p>
                         </div>
                       ))}
                     </div>
@@ -508,15 +511,15 @@ const Agendamento = () => {
             {/* Appointment Summary */}
             <AppointmentSummary
               selectedSpecialty={selectedSpecialty}
-              selectedDoctorName={doctors?.find(d => d.id === selectedDoctor)?.display_name || selectedDoctor}
+              selectedDoctorName={safeArrayAccess(doctors)?.find(d => d.id === selectedDoctor)?.display_name || selectedDoctor}
               selectedState={selectedState}
               selectedCity={selectedCity}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
-              selectedLocal={selectedTime && locaisComHorarios && locaisComHorarios.length > 0 ? 
-                locaisComHorarios.find(local => 
-                  local.horarios_disponiveis?.some(slot => slot.time === selectedTime)
-                ) || locaisComHorarios[0] : null}
+              selectedLocal={selectedTime && safeArrayLength(locaisComHorarios) > 0 ? 
+                safeArrayAccess(locaisComHorarios).find(local => 
+                  safeArrayAccess(local.horarios_disponiveis)?.some(slot => slot.time === selectedTime)
+                ) || safeArrayAccess(locaisComHorarios)[0] : null}
               selectedPatientName={selectedPatientName}
             />
             

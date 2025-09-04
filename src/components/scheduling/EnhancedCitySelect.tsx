@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Search, Users, MapPin, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { safeArrayAccess, safeArrayLength, safeArrayMap } from '@/utils/arrayUtils';
 
 interface CityInfo {
   cidade: string;
@@ -36,7 +37,8 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
 
   // Enhanced cities with actual data or defaults
   const enhancedCities = useMemo(() => {
-    return cities.map(city => ({
+    const safeCities = safeArrayAccess(cities);
+    return safeArrayMap(safeCities, (city) => ({
       ...city,
       doctorCount: city.doctorCount || 0,
       specialtyCount: city.specialtyCount || 0,
@@ -47,19 +49,21 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
 
   // Filter cities based on search
   const filteredCities = useMemo(() => {
-    if (!searchTerm) return enhancedCities;
+    const safeEnhanced = safeArrayAccess(enhancedCities);
+    if (!searchTerm) return safeEnhanced;
     
     const term = searchTerm.toLowerCase();
-    return enhancedCities.filter(city => 
+    return safeEnhanced.filter(city => 
       city.cidade.toLowerCase().includes(term)
     );
   }, [enhancedCities, searchTerm]);
 
   // Organize cities: capitals and major cities first
   const organizedCities = useMemo(() => {
-    const capitals = filteredCities.filter(city => city.isCapital);
-    const major = filteredCities.filter(city => !city.isCapital && city.doctorCount! > 50);
-    const others = filteredCities.filter(city => !city.isCapital && city.doctorCount! <= 50);
+    const safeFiltered = safeArrayAccess(filteredCities);
+    const capitals = safeFiltered.filter(city => city.isCapital);
+    const major = safeFiltered.filter(city => !city.isCapital && city.doctorCount! > 50);
+    const others = safeFiltered.filter(city => !city.isCapital && city.doctorCount! <= 50);
     
     // Sort each group
     capitals.sort((a, b) => b.doctorCount! - a.doctorCount!);
@@ -152,7 +156,7 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
       
       <CardContent className="space-y-4">
         {/* Quick access for capitals */}
-        {!searchTerm && organizedCities.capitals.length > 0 && (
+        {!searchTerm && safeArrayLength(organizedCities.capitals) > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
               Capital e Principais Cidades
@@ -178,7 +182,7 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
         <div>
           {searchTerm && (
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
-              Resultados da busca ({filteredCities.length})
+              Resultados da busca ({safeArrayLength(filteredCities)})
             </h4>
           )}
           
@@ -258,7 +262,7 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
             </div>
           )}
           
-          {filteredCities.length === 0 && searchTerm && (
+          {safeArrayLength(filteredCities) === 0 && searchTerm && (
             <div className="text-center py-8 text-muted-foreground">
               <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma cidade encontrada para "{searchTerm}"</p>
@@ -279,7 +283,7 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
               <span className="text-muted-foreground">Selecionado:</span>
               <Badge variant="default" className="flex items-center gap-1">
                 {selectedCity}
-                {enhancedCities.find(c => c.cidade === selectedCity)?.isCapital && (
+                {safeArrayAccess(enhancedCities).find(c => c.cidade === selectedCity)?.isCapital && (
                   <Star className="w-3 h-3" />
                 )}
               </Badge>

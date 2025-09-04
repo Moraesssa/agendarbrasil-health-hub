@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Search, Users, Building2, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { safeArrayAccess, safeArrayLength, safeArrayMap } from '@/utils/arrayUtils';
 
 interface StateInfo {
   uf: string;
@@ -46,7 +47,8 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
 
   // Enhanced states with names and actual statistics
   const enhancedStates = useMemo(() => {
-    return states.map(state => ({
+    const safeStates = safeArrayAccess(states);
+    return safeArrayMap(safeStates, (state) => ({
       ...state,
       nome: STATE_NAMES[state.uf] || state.uf,
       doctorCount: state.doctorCount || 0,
@@ -57,10 +59,11 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
 
   // Filter states based on search
   const filteredStates = useMemo(() => {
-    if (!searchTerm) return enhancedStates;
+    const safeEnhanced = safeArrayAccess(enhancedStates);
+    if (!searchTerm) return safeEnhanced;
     
     const term = searchTerm.toLowerCase();
-    return enhancedStates.filter(state => 
+    return safeEnhanced.filter(state => 
       state.uf.toLowerCase().includes(term) ||
       state.nome.toLowerCase().includes(term)
     );
@@ -68,8 +71,9 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
 
   // Organize states: popular first, then others
   const organizedStates = useMemo(() => {
-    const popular = filteredStates.filter(state => POPULAR_STATES.includes(state.uf));
-    const others = filteredStates.filter(state => !POPULAR_STATES.includes(state.uf));
+    const safeFiltered = safeArrayAccess(filteredStates);
+    const popular = safeFiltered.filter(state => POPULAR_STATES.includes(state.uf));
+    const others = safeFiltered.filter(state => !POPULAR_STATES.includes(state.uf));
     
     popular.sort((a, b) => a.nome.localeCompare(b.nome));
     others.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -130,7 +134,7 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
       
       <CardContent className="space-y-4">
         {/* Quick popular states */}
-        {!searchTerm && organizedStates.popular.length > 0 && (
+        {!searchTerm && safeArrayLength(organizedStates.popular) > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
               Estados Populares
@@ -155,7 +159,7 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
         <div>
           {searchTerm && (
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
-              Resultados da busca ({filteredStates.length})
+              Resultados da busca ({safeArrayLength(filteredStates)})
             </h4>
           )}
           
@@ -215,7 +219,7 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
             </div>
           )}
           
-          {filteredStates.length === 0 && searchTerm && (
+          {safeArrayLength(filteredStates) === 0 && searchTerm && (
             <div className="text-center py-8 text-muted-foreground">
               <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhum estado encontrado para "{searchTerm}"</p>

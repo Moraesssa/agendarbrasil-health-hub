@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LocalComHorarios } from '@/services/newAppointmentService';
 import { TimeSlot } from '@/utils/timeSlotUtils';
 import { useAdvancedScheduling } from '@/hooks/useAdvancedScheduling';
+import { safeArrayAccess, safeArrayLength, safeArrayMap } from '@/utils/arrayUtils';
 
 interface EnhancedTimeSlotGridProps {
   selectedTime: string;
@@ -54,9 +55,11 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
   // Enhanced time slots with location info
   const enhancedTimeSlots = useMemo((): TimeSlotWithLocation[] => {
     const slotsMap = new Map<string, TimeSlotWithLocation>();
+    const safeTimeSlots = safeArrayAccess(timeSlots);
+    const safeLocaisInfo = safeArrayAccess(locaisInfo);
 
     // Group slots by time
-    timeSlots.forEach(slot => {
+    safeTimeSlots.forEach(slot => {
       if (!slotsMap.has(slot.time)) {
         slotsMap.set(slot.time, {
           ...slot,
@@ -66,8 +69,9 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
     });
 
     // Add location information
-    locaisInfo.forEach(local => {
-      local.horarios_disponiveis?.forEach(slot => {
+    safeLocaisInfo.forEach(local => {
+      const horariosDisponiveis = safeArrayAccess(local.horarios_disponiveis);
+      horariosDisponiveis.forEach(slot => {
         const enhancedSlot = slotsMap.get(slot.time);
         if (enhancedSlot && slot.available) {
           enhancedSlot.locations.push({
@@ -84,7 +88,7 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
 
   // Filter slots by period and location
   const filteredSlots = useMemo(() => {
-    let filtered = enhancedTimeSlots;
+    let filtered = safeArrayAccess(enhancedTimeSlots);
 
     // Filter by time period
     if (selectedPeriod !== 'all') {
@@ -118,7 +122,8 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
       evening: []
     };
 
-    filteredSlots.forEach(slot => {
+    const safeFiltered = safeArrayAccess(filteredSlots);
+    safeFiltered.forEach(slot => {
       const hour = parseInt(slot.time.split(':')[0]);
       if (hour >= 6 && hour < 12) groups.morning.push(slot);
       else if (hour >= 12 && hour < 18) groups.afternoon.push(slot);
@@ -237,7 +242,7 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
             ))}
           </div>
 
-          {locaisInfo.length > 1 && (
+          {safeArrayLength(locaisInfo) > 1 && (
             <div className="flex flex-wrap gap-2">
               <Button
                 variant={selectedLocation === 'all' ? 'default' : 'outline'}
@@ -246,7 +251,7 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
               >
                 Todos os locais
               </Button>
-              {locaisInfo.map(local => (
+              {safeArrayAccess(locaisInfo).map(local => (
                 <Button
                   key={local.id}
                   variant={selectedLocation === local.id ? 'default' : 'outline'}
@@ -262,7 +267,7 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
           )}
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{filteredSlots.length} horários encontrados</span>
+            <span>{safeArrayLength(filteredSlots)} horários encontrados</span>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -290,7 +295,7 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
           </div>
         )}
 
-        {filteredSlots.length === 0 ? (
+        {safeArrayLength(filteredSlots) === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-semibold mb-2">Nenhum horário disponível</h3>

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, Search, Star, MapPin, Clock, Filter, User } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdvancedScheduling } from '@/hooks/useAdvancedScheduling';
+import { safeArrayAccess, safeArrayLength, safeArrayMap } from '@/utils/arrayUtils';
 
 interface Doctor {
   id: string;
@@ -55,7 +56,8 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
 
   // Enhanced doctors with actual data
   const enhancedDoctors = useMemo(() => {
-    return doctors.map(doctor => ({
+    const safeDoctors = safeArrayAccess(doctors);
+    return safeArrayMap(safeDoctors, (doctor) => ({
       ...doctor,
       rating: doctor.rating || 4.0,
       experience_years: doctor.experience_years || 5,
@@ -68,7 +70,7 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
 
   // Filter doctors
   const filteredDoctors = useMemo(() => {
-    let filtered = enhancedDoctors;
+    let filtered = safeArrayAccess(enhancedDoctors);
 
     // Text search
     if (searchTerm) {
@@ -97,7 +99,8 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
 
   // Sort doctors
   const sortedDoctors = useMemo(() => {
-    const sorted = [...filteredDoctors];
+    const safeFiltered = safeArrayAccess(filteredDoctors);
+    const sorted = [...safeFiltered];
     
     switch (sortBy) {
       case 'availability':
@@ -238,13 +241,13 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
 
           {/* Quick stats */}
           <div className="flex gap-4 text-sm text-muted-foreground">
-            <span>{sortedDoctors.length} médicos encontrados</span>
+            <span>{safeArrayLength(sortedDoctors)} médicos encontrados</span>
             <span>•</span>
-            <span>{sortedDoctors.filter(d => d.totalSlots! > 0).length} com horários disponíveis</span>
+            <span>{safeArrayAccess(sortedDoctors).filter(d => d.totalSlots! > 0).length} com horários disponíveis</span>
             {favorites.length > 0 && (
               <>
                 <span>•</span>
-                <span>{sortedDoctors.filter(d => favorites.includes(d.id)).length} favoritos</span>
+                <span>{safeArrayAccess(sortedDoctors).filter(d => favorites.includes(d.id)).length} favoritos</span>
               </>
             )}
           </div>
@@ -252,7 +255,7 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {sortedDoctors.length === 0 ? (
+        {safeArrayLength(sortedDoctors) === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-semibold mb-2">Nenhum médico encontrado</h3>
@@ -276,7 +279,7 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {sortedDoctors.map(doctor => (
+            {safeArrayAccess(sortedDoctors).map(doctor => (
               <Card
                 key={doctor.id}
                 className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
@@ -351,14 +354,14 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
                       
                       {/* Specialties */}
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {(doctor?.especialidades || [specialty]).slice(0, 3).map(spec => (
+                        {safeArrayAccess(doctor?.especialidades || [specialty]).slice(0, 3).map(spec => (
                           <Badge key={spec} variant="secondary" className="text-xs">
                             {spec}
                           </Badge>
                         ))}
-                        {(doctor?.especialidades?.length || 0) > 3 && (
+                        {safeArrayLength(doctor?.especialidades || []) > 3 && (
                           <Badge variant="outline" className="text-xs">
-                            +{(doctor?.especialidades?.length || 0) - 3} mais
+                            +{safeArrayLength(doctor?.especialidades || []) - 3} mais
                           </Badge>
                         )}
                       </div>
@@ -423,7 +426,7 @@ export const EnhancedDoctorSelect: React.FC<EnhancedDoctorSelectProps> = ({
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Selecionado:</span>
               <Badge variant="default">
-                Dr. {sortedDoctors.find(d => d.id === selectedDoctor)?.display_name || 'Médico'}
+                Dr. {safeArrayAccess(sortedDoctors).find(d => d.id === selectedDoctor)?.display_name || 'Médico'}
               </Badge>
             </div>
           </div>

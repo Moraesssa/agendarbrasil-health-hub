@@ -9,6 +9,7 @@ import { LocalComHorarios } from "@/services/newAppointmentService";
 import { Medico } from "@/services/newAppointmentService";
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
+import { safeArrayAccess, safeArrayLength } from "@/utils/arrayUtils";
 
 interface StateInfo { uf: string; }
 interface CityInfo { cidade: string; }
@@ -78,10 +79,13 @@ export const useAppointmentScheduling = () => {
       try {
         const [specialtiesData, statesData] = await Promise.all([
           appointmentService.getSpecialties(),
-          supabase.rpc('get_available_states').then(res => res.data || [])
+          supabase.rpc('get_available_states').then(res => safeArrayAccess(res.data))
         ]);
-        setSpecialties(Array.isArray(specialtiesData) ? specialtiesData : []);
-        setStates(Array.isArray(statesData) ? statesData as StateInfo[] : []);
+        const safeSpecialties = safeArrayAccess(specialtiesData);
+        const safeStatesData = safeArrayAccess(statesData);
+        
+        setSpecialties(safeSpecialties);
+        setStates(safeStatesData as StateInfo[]);
       } catch (e) {
         logger.error('Erro ao carregar dados iniciais', 'useAppointmentScheduling', e);
         
@@ -109,7 +113,8 @@ export const useAppointmentScheduling = () => {
       
       try {
         const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
-        setCities(Array.isArray(data) ? data : []);
+        const safeCities = safeArrayAccess(data);
+        setCities(safeCities);
       } catch (error) {
         logger.error('Erro ao carregar cidades', 'useAppointmentScheduling', error);
         setCities([]);
@@ -141,10 +146,10 @@ export const useAppointmentScheduling = () => {
         const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
   logger.debug('Médicos recebidos', 'useAppointmentScheduling', doctorsData);
         
-        const validDoctors = Array.isArray(doctorsData) ? doctorsData : [];
+        const validDoctors = safeArrayAccess(doctorsData);
         setDoctors(validDoctors);
         
-        if (validDoctors.length === 0) {
+        if (safeArrayLength(validDoctors) === 0) {
           logger.warn('Nenhum médico encontrado para os filtros selecionados', 'useAppointmentScheduling');
           toast({
             title: "Nenhum médico encontrado",
@@ -152,7 +157,7 @@ export const useAppointmentScheduling = () => {
             variant: "default"
           });
         } else {
-          logger.info(`${validDoctors.length} médicos encontrados`, 'useAppointmentScheduling');
+          logger.info(`${safeArrayLength(validDoctors)} médicos encontrados`, 'useAppointmentScheduling');
         }
       } catch (error) {
         logger.error('Erro ao carregar médicos', 'useAppointmentScheduling', error);
@@ -181,7 +186,8 @@ export const useAppointmentScheduling = () => {
       
       try {
         const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
-        setLocaisComHorarios(Array.isArray(slots) ? slots : []);
+        const safeSlots = safeArrayAccess(slots);
+        setLocaisComHorarios(safeSlots);
       } catch (error) {
         console.error("Erro ao carregar horários:", error);
         logger.error("Erro ao carregar horários", "useAppointmentScheduling", error);
