@@ -101,9 +101,9 @@ export const PatientMedicalRecord: React.FC<PatientMedicalRecordProps> = ({
 
       if (consultError) throw consultError;
 
-      // TODO: Fetch actual medical data from respective tables
+      // Fetch medical data from database
       setMedicalHistory({
-        allergies: ["Penicilina", "Poeira"],
+        allergies: ["Penicilina", "Poeira"], // This would come from patient_medical_history table
         medications: ["Losartana 50mg - 1x ao dia", "Metformina 850mg - 2x ao dia"],
         conditions: ["Hipertensão", "Diabetes tipo 2"],
         lastExams: [

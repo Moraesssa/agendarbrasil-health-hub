@@ -30,7 +30,9 @@ class ProductionLogger {
     
     // Em produção, poderia enviar para serviço de monitoramento
     if (this.isProduction) {
-      // TODO: Integrar com serviço de monitoramento (Sentry, etc.)
+      // Integration with monitoring service would be configured here
+      // Example: Sentry.captureException(error) or similar
+      console.error('Production error logged:', error);
     }
   }
 

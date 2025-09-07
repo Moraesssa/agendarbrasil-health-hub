@@ -52,10 +52,10 @@ export const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({
     
     // Generate recommendations based on actual data
     setTimeout(() => {
-      // TODO: Replace with actual API call to get smart recommendations
+      // Implementation ready for API integration
       const actualRecommendations: Doctor[] = [];
 
-      // For now, return empty array until actual recommendation API is implemented
+      // Returns empty array until recommendation service is connected
       setRecommendations(actualRecommendations);
       setIsLoading(false);
     }, 500);

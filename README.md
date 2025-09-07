@@ -76,6 +76,30 @@ Para funcionalidades complexas, a arquitetura prevê a integração com serviço
 -   **Serviço de Vídeo (WebRTC):** Em vez de construir uma solução do zero, a plataforma deve se integrar com um provedor de API de vídeo como **Twilio Video**, **Vonage (TokBox)** ou **Agora.io**. O backend orquestrará a criação de salas e a geração de tokens de acesso, enquanto o frontend se conectará diretamente ao serviço para otimizar a performance. Um placeholder (`backend/src/services/videoService.js`) foi criado.
 -   **Assinatura Digital:** Para a emissão de documentos com validade legal (prescrições, atestados), é essencial integrar uma plataforma de assinatura digital que siga o padrão **ICP-Brasil**. O backend enviará os dados do documento para o serviço e armazenará o link seguro para o PDF assinado.
 
+## Dependências
+
+### Frontend
+- **React**: ^18.3.1 - Framework principal
+- **TypeScript**: ^5.5.3 - Tipagem estática
+- **Vite**: ^5.4.1 - Build tool e dev server
+- **Tailwind CSS**: ^3.4.11 - Framework CSS
+- **Radix UI**: Componentes acessíveis
+- **TanStack Query**: ^5.56.2 - Gerenciamento de estado servidor
+- **React Router DOM**: ^6.26.2 - Roteamento
+- **React Hook Form**: ^7.53.0 - Gerenciamento de formulários
+- **Zod**: ^3.23.8 - Validação de esquemas
+
+### Backend & Database
+- **Supabase**: ^2.50.0 - Backend-as-a-Service
+- **PostgreSQL** - Banco de dados relacional
+- **Node.js** - Runtime do servidor
+
+### Testing & Quality
+- **Vitest**: ^3.2.4 - Framework de testes
+- **Cypress**: ^14.5.4 - Testes E2E
+- **ESLint**: ^9.9.0 - Linting
+- **Testing Library**: Testes de componentes React
+
 ### Próximos Passos
 
 1.  **Configurar o Ambiente:** Adicionar um arquivo `.env` em `backend/` com as credenciais do banco de dados e segredos da aplicação.
