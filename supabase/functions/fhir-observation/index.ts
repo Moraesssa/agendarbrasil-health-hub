@@ -50,7 +50,7 @@ serve(async (req) => {
       }
 
       // Get health metrics for the patient
-      let query = supabaseClient
+      const query = supabaseClient
         .from('health_metrics')
         .select('*')
         .eq('patient_id', patientId)

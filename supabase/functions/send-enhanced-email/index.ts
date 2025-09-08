@@ -299,7 +299,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate email content based on type
     let subject = '';
     let patientHTML = '';
-    let doctorHTML = '';
+    const doctorHTML = '';
 
     if (emailType === 'confirmation') {
       subject = `✅ Consulta Confirmada - ${formattedDate} às ${formattedTime}`;

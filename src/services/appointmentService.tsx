@@ -10,6 +10,7 @@ import {
   getDayName
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
+import { checkAuthentication } from '@/utils/authUtils';
 
 export interface Medico {
   id: string;
@@ -28,15 +29,6 @@ export interface LocalAtendimento {
 
 const isValidConfiguration = (config: any): config is { horarioAtendimento?: WorkingHours; duracaoConsulta?: number } => {
   return config && typeof config === 'object';
-};
-
-const checkAuthentication = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    logger.error("User not authenticated", "AppointmentService");
-    throw new Error("Você precisa estar logado para realizar esta ação");
-  }
-  return user;
 };
 
 // Função para verificar se um horário específico ainda está disponível

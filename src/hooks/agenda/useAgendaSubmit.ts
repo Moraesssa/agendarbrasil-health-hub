@@ -22,7 +22,7 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
         
         // Custom validation for active blocks only
         let hasValidActiveBlocks = false;
-        let incompleteBlocks = [];
+        const incompleteBlocks = [];
         
         for (const dia of diasDaSemana) {
             const blocosDoDia = data.horarios[dia.key];

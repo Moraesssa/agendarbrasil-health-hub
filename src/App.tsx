@@ -23,13 +23,16 @@ import DashboardMedico from '@/pages/DashboardMedico';
 import Perfil from '@/pages/Perfil';
 import PerfilMedico from '@/pages/PerfilMedico';
 import AgendaMedico from '@/pages/AgendaMedico';
+import AgendaMedicoIntegrada from '@/pages/AgendaMedicoIntegrada';
 import GerenciarAgenda from '@/pages/GerenciarAgenda';
 import GerenciarLocais from '@/pages/GerenciarLocais';
 import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
 import Financeiro from '@/pages/Financeiro';
 import Agendamento from '@/pages/Agendamento';
+import AgendamentoIntegrado from '@/pages/AgendamentoIntegrado';
 import AgendaPaciente from '@/pages/AgendaPaciente';
+import AgendaPacienteIntegrada from '@/pages/AgendaPacienteIntegrada';
 import Historico from '@/pages/Historico';
 import NotFound from '@/pages/NotFound';
 import GerenciarFamilia from '@/pages/GerenciarFamilia';
@@ -37,6 +40,9 @@ import DashboardFamiliar from '@/pages/DashboardFamiliar';
 import GerenciarConexoes from '@/pages/GerenciarConexoes';
 import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
 import Debug from '@/pages/Debug';
+import SchedulerDemo from '@/pages/SchedulerDemo';
+import AgendamentoCompleto from '@/pages/AgendamentoCompleto';
+
 
 const queryClient = new QueryClient();
 
@@ -150,20 +156,25 @@ function App() {
                     <Route path="/dashboard-medico" element={<DashboardMedico />} />
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="/perfil-medico" element={<PerfilMedico />} />
-                    <Route path="/agenda-medico" element={<AgendaMedico />} />
+                    <Route path="/agenda-medico" element={<AgendaMedicoIntegrada />} />
+                    <Route path="/agenda-medico-legacy" element={<AgendaMedico />} />
                     <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
                     <Route path="/gerenciar-locais" element={<GerenciarLocais />} />
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
                     <Route path="/financeiro" element={<Financeiro />} />
-                    <Route path="/agendamento" element={<Agendamento />} />
-                    <Route path="/agenda-paciente" element={<AgendaPaciente />} />
+                    <Route path="/agendamento" element={<AgendamentoIntegrado />} />
+                    <Route path="/agendamento-legacy" element={<Agendamento />} />
+                    <Route path="/agenda-paciente" element={<AgendaPacienteIntegrada />} />
+                    <Route path="/agenda-paciente-legacy" element={<AgendaPaciente />} />
                     <Route path="/historico" element={<Historico />} />
                     <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                     <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
                     <Route path="/debug" element={<Debug />} />
+                    <Route path="/scheduler-demo" element={<SchedulerDemo />} />
+                    <Route path="/agendamento-completo" element={<AgendamentoCompleto />} />
                       <Route path="*" element={<NotFound />} />
                       </Routes>
                       </AuthRedirectController>

@@ -174,7 +174,7 @@ export const ScheduleManagement: React.FC = () => {
 
     const updatedSchedule = schedule.map(day => {
       if (day.dia === editingDay) {
-        let newBlocos = [...day.blocos];
+        const newBlocos = [...day.blocos];
         
         if (editingBlock) {
           // Editing existing block

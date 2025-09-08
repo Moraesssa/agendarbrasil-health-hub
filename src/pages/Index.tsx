@@ -349,6 +349,8 @@ const Index = () => {
             </div>
           </div>
 
+
+
           {/* Quick Actions */}
           <ErrorBoundary context="Quick Actions">
             <QuickActions onAction={handleQuickAction} />

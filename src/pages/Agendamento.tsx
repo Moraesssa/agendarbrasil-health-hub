@@ -8,7 +8,7 @@ import { EnhancedCitySelect } from '@/components/scheduling/EnhancedCitySelect';
 import { EnhancedDoctorSelect } from '@/components/scheduling/EnhancedDoctorSelect';
 import { DateSelect } from '@/components/scheduling/DateSelect';
 import { EnhancedTimeSlotGrid } from '@/components/scheduling/EnhancedTimeSlotGrid';
-import { SmartRecommendations } from '@/components/scheduling/SmartRecommendations';
+// import { SmartRecommendations } from '@/components/scheduling/SmartRecommendations'; // Desabilitado para novo algoritmo
 import { AppointmentSummary } from '@/components/scheduling/AppointmentSummary';
 import { FamilyMemberSelect } from '@/components/scheduling/FamilyMemberSelect';
 import { NavigationHeader } from '@/components/scheduling/NavigationHeader';
@@ -339,21 +339,7 @@ const Agendamento = () => {
                 }}
                 disabled={isLoading}
               />
-              {selectedSpecialty && selectedState && selectedCity && (
-                <SmartRecommendations
-                  specialty={selectedSpecialty}
-                  city={selectedCity}
-                  state={selectedState}
-                  selectedDate={selectedDate}
-                  onDoctorSelect={(doctorId) => {
-                    setSelectedDoctor(doctorId);
-                    if (step < 4) setStep(4);
-                  }}
-                  onLocationSelect={(location) => {
-                    // Handle location selection if needed
-                  }}
-                />
-              )}
+              {/* SmartRecommendations desabilitado - novo algoritmo de otimização em tempo real será implementado */}
             </div>
           </>
         );

@@ -8,6 +8,7 @@ import {
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 import { specialtyService } from '@/services/specialtyService';
+import { checkAuthentication } from '@/utils/authUtils';
 
 // Interfaces corrigidas
 export interface Medico {
@@ -43,15 +44,6 @@ export interface MedicoConfig {
   duracaoConsulta: number;
   horarioAtendimento: Record<string, HorarioConfig[]>;
 }
-
-const checkAuthentication = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    logger.error("User not authenticated", "NewAppointmentService");
-    throw new Error("Você precisa estar logado para realizar esta ação");
-  }
-  return user;
-};
 
 // Função para verificar se um horário específico ainda está disponível
 const checkAvailabilityBeforeScheduling = async (
