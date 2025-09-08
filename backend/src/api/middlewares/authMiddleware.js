@@ -23,13 +23,29 @@ module.exports = (req, res, next) => {
         return res.status(401).send({ error: 'Token mal formatado' });
     }
 
-    // TODO:
-    // 1. Verificar o token usando o segredo (process.env.JWT_SECRET)
-    // 2. Se o token for válido, adicionar o ID do usuário ao objeto `req`
-    // 3. Chamar `next()` para continuar o fluxo da requisição
-    // 4. Se for inválido, retornar um erro 401.
-
-    console.log('Middleware de autenticação alcançado. Lógica de verificação do JWT a ser implementada.');
-    req.userId = '12345'; // Exemplo de ID de usuário decodificado
-    next();
+    try {
+        // Verify token using JWT secret
+        const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+        const decoded = jwt.verify(token, jwtSecret);
+        
+        // Add user ID to request object
+        req.userId = decoded.sub || decoded.id;
+        req.userRole = decoded.role;
+        
+        console.log(`Usuário autenticado: ${req.userId}`);
+        next();
+        
+    } catch (error) {
+        console.error('Erro na verificação do token:', error.message);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: 'Token expirado' });
+        }
+        
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Token inválido' });
+        }
+        
+        return res.status(401).json({ error: 'Falha na autenticação' });
+    }
 };
