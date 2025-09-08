@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
 import { Calendar, FileText, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
@@ -39,10 +40,7 @@ const Perfil = () => {
     setCurrentPhotoUrl(userData.photoURL || "");
   }, [user, userData, loading, navigate]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
+  const handleLogout = () => utilHandleLogout(navigate, logout);
 
   const handlePhotoUpdate = (newPhotoUrl: string) => {
     setCurrentPhotoUrl(newPhotoUrl);

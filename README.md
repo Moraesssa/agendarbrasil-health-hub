@@ -78,27 +78,44 @@ Para funcionalidades complexas, a arquitetura prevê a integração com serviço
 
 ## Dependências
 
-### Frontend
+### Frontend Core
 - **React**: ^18.3.1 - Framework principal
 - **TypeScript**: ^5.5.3 - Tipagem estática
 - **Vite**: ^5.4.1 - Build tool e dev server
-- **Tailwind CSS**: ^3.4.11 - Framework CSS
-- **Radix UI**: Componentes acessíveis
+- **React Router DOM**: ^6.26.2 - Roteamento SPA
+
+### UI & Styling
+- **Tailwind CSS**: ^3.4.11 - Framework CSS utilitário
+- **Radix UI**: Componentes acessíveis (Dialog, Select, etc.)
+- **Lucide React**: ^0.462.0 - Ícones SVG
+- **Class Variance Authority**: ^0.7.1 - Variantes de componentes
+- **Tailwind Merge**: ^2.5.2 - Merge de classes CSS
+
+### State Management & Forms
 - **TanStack Query**: ^5.56.2 - Gerenciamento de estado servidor
-- **React Router DOM**: ^6.26.2 - Roteamento
 - **React Hook Form**: ^7.53.0 - Gerenciamento de formulários
 - **Zod**: ^3.23.8 - Validação de esquemas
+- **@hookform/resolvers**: ^3.9.0 - Resolvers para validação
 
 ### Backend & Database
-- **Supabase**: ^2.50.0 - Backend-as-a-Service
-- **PostgreSQL** - Banco de dados relacional
+- **Supabase**: ^2.50.0 - Backend-as-a-Service completo
+- **PostgreSQL** - Banco de dados relacional (via Supabase)
 - **Node.js** - Runtime do servidor
+- **Express.js** - Framework web para APIs
+
+### Utilities & Tools
+- **Date-fns**: ^3.6.0 - Manipulação de datas
+- **UUID**: ^10.0.0 - Geração de identificadores únicos
+- **Dotenv**: ^17.2.1 - Gerenciamento de variáveis de ambiente
+- **CMDK**: ^1.0.0 - Command palette
+- **Sonner**: ^1.5.0 - Toast notifications
 
 ### Testing & Quality
-- **Vitest**: ^3.2.4 - Framework de testes
+- **Vitest**: ^3.2.4 - Framework de testes unitários
 - **Cypress**: ^14.5.4 - Testes E2E
-- **ESLint**: ^9.9.0 - Linting
+- **ESLint**: ^9.9.0 - Linting e análise de código
 - **Testing Library**: Testes de componentes React
+- **JSDOM**: ^26.1.0 - DOM virtual para testes
 
 ### Próximos Passos
 

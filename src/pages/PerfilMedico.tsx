@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
 import { Calendar, Users, BarChart3, Settings } from "lucide-react";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
@@ -37,10 +38,7 @@ const PerfilMedico = () => {
     }
   }, [user, userData, loading, navigate]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
+  const handleLogout = () => utilHandleLogout(navigate, logout);
 
   const handleProfileUpdate = () => {
     // Force re-render to update displayed data

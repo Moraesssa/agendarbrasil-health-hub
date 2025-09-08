@@ -29,3 +29,18 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return null;
   }
 };
+
+/**
+ * Realiza logout e navega para a página de login
+ * @param navigate - Função de navegação do React Router
+ * @param logout - Função de logout do contexto de autenticação
+ */
+export const handleLogout = async (navigate: (path: string) => void, logout: () => Promise<void>): Promise<void> => {
+  try {
+    await logout();
+    navigate("/login");
+  } catch (error) {
+    logger.error("Error during logout", "AuthUtils", error);
+    throw error;
+  }
+};

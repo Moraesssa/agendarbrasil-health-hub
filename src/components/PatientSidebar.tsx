@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
 
 const patientMenuItems = [
   {
@@ -95,12 +96,11 @@ export function PatientSidebar() {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await utilHandleLogout(navigate, logout);
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso",
       });
-      navigate("/login");
     } catch (error) {
       toast({
         title: "Erro ao fazer logout",

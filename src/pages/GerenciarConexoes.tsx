@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -45,10 +46,7 @@ const GerenciarConexoes = () => {
     }
   }, [user, userData, authLoading, navigate]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
+  const handleLogout = () => utilHandleLogout(navigate, logout);
 
   const handleGoBack = () => {
     navigate("/");
