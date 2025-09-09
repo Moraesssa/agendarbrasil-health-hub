@@ -216,7 +216,13 @@ BEGIN
         CASE 
             WHEN la.horario_funcionamento IS NULL THEN true
             WHEN la.status != 'ativo' THEN false
-            ELSE true -- TODO: Implement proper time-based logic
+            ELSE (
+                CASE 
+                    WHEN la.horario_funcionamento ? 'abertura' AND la.horario_funcionamento ? 'fechamento' THEN
+                        CURRENT_TIME BETWEEN (la.horario_funcionamento->>'abertura')::TIME AND (la.horario_funcionamento->>'fechamento')::TIME
+                    ELSE true
+                END
+            )
         END as is_open_now,
         -- Computed field: has coordinates
         (la.coordenadas IS NOT NULL AND la.coordenadas ? 'lat' AND la.coordenadas ? 'lng') as has_coordinates,

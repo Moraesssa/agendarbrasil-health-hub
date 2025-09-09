@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigationTransition } from "@/hooks/useNavigationTransition";
 import UserTypeNavigation from "@/components/usertype/UserTypeNavigation";
 import UserTypeHeader from "@/components/usertype/UserTypeHeader";
 import UserTypeCards from "@/components/usertype/UserTypeCards";
@@ -12,27 +13,31 @@ const UserTypeSelection = () => {
   const navigate = useNavigate();
   const { setUserType } = useAuth();
   const { toast } = useToast();
+  const { isTransitioning, navigateWithTransition } = useNavigationTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleUserTypeSelection = async (type: 'paciente' | 'medico') => {
     setIsSubmitting(true);
     
     try {
-      // Await the promise from setUserType. Navigation will only happen if it resolves.
-      await setUserType(type);
-      
       toast({
-        title: `Tipo de usuário definido!`,
-        description: `Você foi cadastrado como ${type}. Vamos completar seu perfil.`,
+        title: `Definindo tipo de usuário...`,
+        description: `Configurando seu perfil como ${type}`,
       });
-      
-      // This navigation is now safe because the user state is guaranteed to be updated.
-      navigate("/onboarding");
+
+      // Use the navigation transition hook for smoother experience
+      await navigateWithTransition("/onboarding", 400, async () => {
+        // This will be executed before navigation
+        await setUserType(type);
+        
+        toast({
+          title: `Tipo de usuário definido!`,
+          description: `Você foi cadastrado como ${type}. Completando configuração...`,
+        });
+      });
 
     } catch (error) {
-      // The error toast is now handled inside setUserType, so we just need to log it here.
       console.error('Erro no fluxo de seleção de tipo de usuário:', error);
-    } finally {
       setIsSubmitting(false);
     }
   };

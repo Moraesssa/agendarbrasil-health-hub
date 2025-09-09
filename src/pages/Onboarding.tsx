@@ -19,21 +19,26 @@ const Onboarding = () => {
       return;
     }
 
-    // Se não tem tipo de usuário, redirecionar para seleção
-    if (!userData.userType) {
-      navigate("/user-type");
-      return;
-    }
-
-    if (userData.onboardingCompleted) {
-      // Usuário já completou onboarding, redirecionar para perfil
-      if (userData.userType === 'medico') {
-        navigate("/perfil-medico");
-      } else {
-        navigate("/perfil");
+    // Aguardar um pouco mais antes de redirecionar para evitar condições de corrida
+    const checkUserType = setTimeout(() => {
+      // Se não tem tipo de usuário após o timeout, redirecionar para seleção
+      if (!userData.userType) {
+        navigate("/user-type");
+        return;
       }
-      return;
-    }
+
+      if (userData.onboardingCompleted) {
+        // Usuário já completou onboarding, redirecionar para perfil
+        if (userData.userType === 'medico') {
+          navigate("/perfil-medico");
+        } else {
+          navigate("/perfil");
+        }
+        return;
+      }
+    }, 200); // Aguarda 200ms para o estado se estabilizar
+
+    return () => clearTimeout(checkUserType);
   }, [userData, loading, navigate]);
 
   if (loading || !userData) {
