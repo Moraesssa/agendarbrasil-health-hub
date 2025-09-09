@@ -31,13 +31,13 @@ const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
     setOnboardingStatus
   } = authState;
 
-  const authActions = useAuthActions(
+  const authActions = useAuthActions({
     user,
     userData,
     onboardingStatus,
     setUserData,
     setOnboardingStatus
-  );
+  });
 
   // Initialize security configuration
   useSecurityConfig();
