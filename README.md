@@ -86,15 +86,16 @@ Para funcionalidades complexas, a arquitetura prevê a integração com serviço
 
 ### UI & Styling
 - **Tailwind CSS**: ^3.4.11 - Framework CSS utilitário
-- **Radix UI**: Componentes acessíveis (Dialog, Select, etc.)
-- **Lucide React**: ^0.462.0 - Ícones SVG
+- **Radix UI**: Componentes acessíveis completos (Dialog, Select, Toast, etc.)
+- **Lucide React**: ^0.462.0 - Ícones SVG modernos
 - **Class Variance Authority**: ^0.7.1 - Variantes de componentes
-- **Tailwind Merge**: ^2.5.2 - Merge de classes CSS
+- **Tailwind Merge**: ^2.5.2 - Merge inteligente de classes CSS
+- **Next Themes**: ^0.3.0 - Gerenciamento de temas dark/light
 
 ### State Management & Forms
 - **TanStack Query**: ^5.56.2 - Gerenciamento de estado servidor
-- **React Hook Form**: ^7.53.0 - Gerenciamento de formulários
-- **Zod**: ^3.23.8 - Validação de esquemas
+- **React Hook Form**: ^7.53.0 - Gerenciamento de formulários performático
+- **Zod**: ^3.23.8 - Validação de esquemas TypeScript-first
 - **@hookform/resolvers**: ^3.9.0 - Resolvers para validação
 
 ### Backend & Database
@@ -104,18 +105,25 @@ Para funcionalidades complexas, a arquitetura prevê a integração com serviço
 - **Express.js** - Framework web para APIs
 
 ### Utilities & Tools
-- **Date-fns**: ^3.6.0 - Manipulação de datas
+- **Date-fns**: ^3.6.0 - Manipulação de datas moderna
 - **UUID**: ^10.0.0 - Geração de identificadores únicos
 - **Dotenv**: ^17.2.1 - Gerenciamento de variáveis de ambiente
-- **CMDK**: ^1.0.0 - Command palette
-- **Sonner**: ^1.5.0 - Toast notifications
+- **CMDK**: ^1.0.0 - Command palette acessível
+- **Sonner**: ^1.5.0 - Toast notifications elegantes
+- **Input OTP**: ^1.2.4 - Componente de entrada OTP
+- **Embla Carousel**: ^8.3.0 - Carousel responsivo
+- **React Day Picker**: ^8.10.1 - Seletor de datas
+- **React Resizable Panels**: ^2.1.3 - Painéis redimensionáveis
+- **Recharts**: ^2.12.7 - Gráficos e visualizações
+- **Vaul**: ^0.9.3 - Drawer component
 
 ### Testing & Quality
-- **Vitest**: ^3.2.4 - Framework de testes unitários
-- **Cypress**: ^14.5.4 - Testes E2E
+- **Vitest**: ^3.2.4 - Framework de testes unitários rápido
+- **Cypress**: ^14.5.4 - Testes E2E completos
 - **ESLint**: ^9.9.0 - Linting e análise de código
 - **Testing Library**: Testes de componentes React
 - **JSDOM**: ^26.1.0 - DOM virtual para testes
+- **Terser**: ^5.43.1 - Minificação de JavaScript
 
 ### Próximos Passos
 

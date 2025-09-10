@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,6 +33,7 @@ export const SpecialtyMultiSelect = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [customSpecialty, setCustomSpecialty] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Carregar especialidades padronizadas
@@ -40,10 +41,20 @@ export const SpecialtyMultiSelect = ({
     loadAvailableSpecialties();
   }, []);
 
-  // Notificar mudanças para o componente pai
+  // Initialize component
   useEffect(() => {
-    onChange(selectedSpecialties);
-  }, [selectedSpecialties, onChange]);
+    if (!isInitialized) {
+      setIsInitialized(true);
+      return;
+    }
+  }, [isInitialized]);
+
+  // Notificar mudanças para o componente pai (skip initial render)
+  useEffect(() => {
+    if (isInitialized) {
+      onChange(selectedSpecialties);
+    }
+  }, [selectedSpecialties, isInitialized]); // Removed onChange from dependencies to prevent infinite loop
 
   const loadAvailableSpecialties = async () => {
     try {

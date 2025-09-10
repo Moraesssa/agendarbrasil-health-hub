@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:enhanced": "node development-scripts/enhanced-dev.js",
+    "dev:monitor": "node development-scripts/dev-monitor.js",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:clean": "rmdir /s /q dist 2>nul & rmdir /s /q node_modules\\.vite 2>nul & vite build",
