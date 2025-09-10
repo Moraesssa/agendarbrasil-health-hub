@@ -21,6 +21,12 @@ const Onboarding = () => {
 
     // Aguardar um pouco mais antes de redirecionar para evitar condições de corrida
     const checkUserType = setTimeout(() => {
+      // Verificar se userData ainda existe após o timeout
+      if (!userData) {
+        navigate("/login");
+        return;
+      }
+
       // Se não tem tipo de usuário após o timeout, redirecionar para seleção
       if (!userData.userType) {
         navigate("/user-type");
@@ -47,6 +53,18 @@ const Onboarding = () => {
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Additional safety check for userData and userType
+  if (!userData || !userData.userType) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Configurando perfil...</p>
         </div>
       </div>
     );

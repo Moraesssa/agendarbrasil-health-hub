@@ -1,15 +1,16 @@
 
-import { UserType } from '@/types/user';
+import { UserType, BaseUser, OnboardingStatus } from '@/types/user';
+import { User } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
 interface UseAuthActionsProps {
-  user: any; // TODO: Replace with proper User type when available
-  userData: any; // TODO: Replace with proper UserData type when available
-  onboardingStatus: any; // TODO: Replace with proper OnboardingStatus type when available
-  setUserData: (data: any) => void;
-  setOnboardingStatus: (status: any) => void;
+  user: User | null;
+  userData: BaseUser | null;
+  onboardingStatus: OnboardingStatus | null;
+  setUserData: (data: BaseUser | null) => void;
+  setOnboardingStatus: (status: OnboardingStatus | null) => void;
 }
 
 export const useAuthActions = ({

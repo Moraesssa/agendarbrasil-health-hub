@@ -689,6 +689,46 @@ The application uses shadcn/ui components as the foundation for consistent styli
 - `AlertTitle`: Styled title for alert messages
 - `AlertDescription`: Content area for detailed alert information
 
+### Loading Components
+
+#### LoadingSpinner
+
+A reusable loading spinner component that provides consistent loading states across the application.
+
+**Purpose:**
+- Standardize loading UI patterns
+- Reduce code duplication
+- Provide consistent user experience during async operations
+
+**Props:**
+```typescript
+interface LoadingSpinnerProps {
+  message?: string;        // Custom loading message (default: "Carregando...")
+  className?: string;      // Additional CSS classes
+  size?: 'sm' | 'md' | 'lg'; // Spinner size (default: 'md')
+}
+```
+
+**Usage:**
+```tsx
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+// Basic usage
+<LoadingSpinner />
+
+// With custom message
+<LoadingSpinner message="Configurando perfil..." />
+
+// Different sizes
+<LoadingSpinner size="lg" message="Processando..." />
+```
+
+**Features:**
+- Responsive design with gradient background
+- Configurable spinner sizes (sm: 6x6, md: 8x8, lg: 12x12)
+- Smooth animations with CSS transitions
+- Consistent styling with application theme
+
 ### Common Variants
 - `default`: Standard informational alerts
 - `destructive`: Error and warning alerts (used by SupabaseConfigWarning)

@@ -60,16 +60,28 @@ export const useOnboarding = () => {
   };
   
   const savePacienteData = async (data: Partial<Paciente>) => {
-    if (!user) return false;
+    if (!user) {
+      console.error('❌ savePacienteData: User not authenticated');
+      return false;
+    }
 
     try {
       setIsSubmitting(true);
       
-      const { data: existing } = await supabase
+      console.log('🔍 savePacienteData: Starting save process for user:', user.id);
+      console.log('📝 savePacienteData: Input data:', data);
+      
+      const { data: existing, error: existingError } = await supabase
         .from('pacientes')
         .select('id')
         .eq('user_id', user.id)
         .single();
+
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error('❌ savePacienteData: Error checking existing record:', existingError);
+      } else {
+        console.log('ℹ️  savePacienteData: Existing record check:', existing ? 'Found' : 'Not found');
+      }
 
       const processConvenio = (convenio: any) => {
         if (!convenio) return { temConvenio: false };
@@ -93,20 +105,30 @@ export const useOnboarding = () => {
         convenio: processConvenio(data.convenio)
       };
 
+      console.log('📋 savePacienteData: Processed data to save:', pacienteData);
+
       let error;
       if (existing) {
+        console.log('🔄 savePacienteData: Updating existing record');
         ({ error } = await supabase
           .from('pacientes')
           .update(pacienteData)
           .eq('user_id', user.id));
       } else {
+        console.log('➕ savePacienteData: Inserting new record');
         ({ error } = await supabase
           .from('pacientes')
           .insert(pacienteData));
       }
 
       if (error) {
-        console.error('Erro ao salvar dados do paciente:', error);
+        console.error('❌ savePacienteData: Database operation failed:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         toast({
           title: "Erro ao salvar dados",
           description: error.message,
@@ -115,9 +137,11 @@ export const useOnboarding = () => {
         return false;
       }
 
+      console.log('✅ savePacienteData: Successfully saved patient data');
       return true;
     } catch (error) {
-      console.error('Erro ao salvar dados do paciente:', error);
+      console.error('❌ savePacienteData: Unexpected error:', error);
+      console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       toast({
         title: "Erro ao salvar dados",
         description: "Tente novamente",
