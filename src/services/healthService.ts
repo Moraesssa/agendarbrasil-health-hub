@@ -9,7 +9,7 @@ export const healthService = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      let query = supabase.from('health_metrics').select('*').order('recorded_at', { ascending: false });
+      let query = supabase.from('health_metrics').select('*').order('registrado_em', { ascending: false });
 
       query = query.eq('patient_id', patientId || user.id);
 
@@ -35,7 +35,7 @@ export const healthService = {
       const dataToInsert = {
         ...metricData,
         patient_id: user.id, // Garante que o ID do usuário logado seja sempre usado
-        recorded_at: metricData.recorded_at || new Date().toISOString()
+        registrado_em: metricData.recorded_at || new Date().toISOString()
       };
 
       const { error } = await supabase.from('health_metrics').insert(dataToInsert);
