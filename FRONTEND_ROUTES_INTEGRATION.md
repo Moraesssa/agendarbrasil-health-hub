@@ -23,7 +23,8 @@ A seguir, a lista de rotas e sua conexão com a arquitetura do sistema.
 
 | Rota | Componente da Página | Propósito | Integração com Backend |
 | :--- | :--- | :--- | :--- |
-| `/agendamento` | `Agendamento.tsx` | Fluxo principal de agendamento de consultas. | **Funções:** `get_specialties`, `get_available_states`, `get_available_cities`, `get_doctors_for_scheduling`, `reserve_appointment_slot`. **Tabelas:** Lê de `medicos`, `locais_atendimento`; escreve em `consultas`. |
+| `/agendamento` | `Agendamento.tsx` | Fluxo tradicional de agendamento em 7 passos. | **Funções:** `get_specialties`, `get_available_states`, `get_available_cities`, `get_doctors_for_scheduling`, `reserve_appointment_slot`. **Tabelas:** Lê de `medicos`, `locais_atendimento`; escreve em `consultas`. |
+| `/agendamento-inteligente` | `AgendamentoIntegrado.tsx` | Fluxo inteligente de agendamento mantido como rota alternativa para testes. | **Funções:** `get_specialties`, `get_available_states`, `get_available_cities`, `get_doctors_for_scheduling`, `reserve_appointment_slot`. **Tabelas:** Lê de `medicos`, `locais_atendimento`; escreve em `consultas`. |
 | `/agenda-paciente` | `AgendaPaciente.tsx` | Visualizar as consultas futuras e passadas do paciente. | **Tabelas:** Lê a tabela `public.consultas` filtrando pelo `paciente_id` do usuário logado (via RLS). |
 | `/historico` | `Historico.tsx` | Ver um histórico detalhado de saúde e consultas. | **Tabelas:** Lê `public.consultas`, `public.pagamentos` e possivelmente outras tabelas relacionadas à saúde. |
 | `/gerenciar-familia` | `GerenciarFamilia.tsx` | Adicionar ou remover membros da família para agendamento. | **Tabelas:** Lê e escreve na tabela `public.familiares` (tabela inferida). |

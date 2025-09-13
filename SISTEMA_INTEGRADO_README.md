@@ -2,7 +2,7 @@
 
 ## 🎯 Visão Geral
 
-Este documento descreve a implementação completa do novo sistema de agendamento integrado que substitui e otimiza os componentes existentes da plataforma de telemedicina.
+Este documento descreve a implementação completa do novo sistema de agendamento integrado, disponível em `/agendamento-inteligente`, que substitui e otimiza os componentes existentes da plataforma de telemedicina.
 
 ## 🚀 Principais Melhorias
 
@@ -85,16 +85,19 @@ database/
 ## 🔄 Migração do Sistema Antigo
 
 ### Rotas Atualizadas
-| Rota Antiga | Nova Rota | Rota Legacy |
-|-------------|-----------|-------------|
-| `/agendamento` | `AgendamentoIntegrado` | `/agendamento-legacy` |
+| Rota | Componente | Rota Alternativa |
+|------|------------|------------------|
+| `/agendamento` | `Agendamento` (fluxo em 7 passos) | `/agendamento-inteligente` |
 | `/agenda-paciente` | `AgendaPacienteIntegrada` | `/agenda-paciente-legacy` |
 | `/agenda-medico` | `AgendaMedicoIntegrada` | `/agenda-medico-legacy` |
 
+> A rota `/agendamento-inteligente` mantém o fluxo de agendamento integrado com busca inteligente e otimizações, indicada para testes e validação.
+
 ### Componentes Substituídos
-- ❌ `Agendamento.tsx` → ✅ `AgendamentoIntegrado.tsx`
-- ❌ `AgendaPaciente.tsx` → ✅ `AgendaPacienteIntegrada.tsx`
-- ❌ `AgendaMedico.tsx` → ✅ `AgendaMedicoIntegrada.tsx`
+- `Agendamento.tsx` permanece como fluxo padrão.
+- `AgendamentoIntegrado.tsx` disponível em `/agendamento-inteligente` como fluxo inteligente.
+- `AgendaPaciente.tsx` → `AgendaPacienteIntegrada.tsx`
+- `AgendaMedico.tsx` → `AgendaMedicoIntegrada.tsx`
 
 ### Serviços Consolidados
 - Múltiplos serviços de agendamento → `schedulingService.ts` unificado
@@ -123,8 +126,9 @@ node scripts/setup-enhanced-system.js
 # Iniciar servidor de desenvolvimento
 npm run dev
 
-# Acessar as novas rotas
-# http://localhost:8082/agendamento
+# Acessar as rotas
+# http://localhost:8082/agendamento (fluxo padrão)
+# http://localhost:8082/agendamento-inteligente (fluxo inteligente)
 # http://localhost:8082/agenda-paciente
 # http://localhost:8082/agenda-medico
 # http://localhost:8082/scheduler-demo

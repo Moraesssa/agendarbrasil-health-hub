@@ -163,8 +163,8 @@ function App() {
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
                     <Route path="/financeiro" element={<Financeiro />} />
-                    <Route path="/agendamento" element={<AgendamentoIntegrado />} />
-                    <Route path="/agendamento-legacy" element={<Agendamento />} />
+                    <Route path="/agendamento" element={<Agendamento />} />
+                    <Route path="/agendamento-inteligente" element={<AgendamentoIntegrado />} />
                     <Route path="/agenda-paciente" element={<AgendaPacienteIntegrada />} />
                     <Route path="/agenda-paciente-legacy" element={<AgendaPaciente />} />
                     <Route path="/historico" element={<Historico />} />
