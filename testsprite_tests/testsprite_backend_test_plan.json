@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "userauthenticationandprofilemanagement",
+    "description": "Test user registration, login, password reset, and role-based access control to ensure secure authentication and proper access restrictions."
+  },
+  {
+    "id": "TC002",
+    "title": "appointmentmanagementcreationandupdates",
+    "description": "Verify appointment creation, viewing, updating, rescheduling, and cancellation with real-time availability checks to prevent double-booking."
+  },
+  {
+    "id": "TC003",
+    "title": "patientmanagementsearchandprofileupdate",
+    "description": "Test patient database search functionality and profile management to ensure accurate retrieval and update of patient information."
+  },
+  {
+    "id": "TC004",
+    "title": "doctorandavailabilitymanagement",
+    "description": "Validate administrator capabilities to manage doctor profiles, working hours, and block off unavailable times effectively."
+  },
+  {
+    "id": "TC005",
+    "title": "automatednotificationsystem",
+    "description": "Test automated notifications for appointment confirmations, reminders 24 hours before appointments, and cancellations to reduce no-shows."
+  },
+  {
+    "id": "TC006",
+    "title": "securityfeaturesdataencryptionandauthorization",
+    "description": "Verify data encryption, strict authentication, and authorization controls to protect sensitive data and ensure compliance with privacy regulations."
+  },
+  {
+    "id": "TC007",
+    "title": "responsiveandaccessibleuserinterface",
+    "description": "Test the user interface responsiveness across multiple device types and compliance with WCAG accessibility standards."
+  },
+  {
+    "id": "TC008",
+    "title": "robusterrorhandlingandsystemreliability",
+    "description": "Validate error handling mechanisms, system uptime targets of 99.9%, and regular data backups to ensure system reliability."
+  },
+  {
+    "id": "TC009",
+    "title": "rolebasedaccesscontrolfeatures",
+    "description": "Test role-based access control restrictions for Administrator, Doctor, and Patient roles to ensure appropriate feature access."
+  },
+  {
+    "id": "TC010",
+    "title": "performanceandscalabilityunderload",
+    "description": "Verify API response times under 500ms for appointment booking, page load times under 3 seconds, and concurrency support without degradation."
+  }
+]

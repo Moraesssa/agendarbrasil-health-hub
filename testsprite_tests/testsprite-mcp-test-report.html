@@ -1,0 +1,394 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Markdown Preview</title>
+      <style>
+        body {
+          font-family: sans-serif;
+          padding: 40px;
+          line-height: 1.6;
+          background: #fdfdfd;
+          color: #333;
+        }
+        pre {
+          background: #f4f4f4;
+          padding: 10px;
+          border-radius: 5px;
+          overflow-x: auto;
+        }
+        code {
+          font-family: monospace;
+          background: #eee;
+          padding: 2px 4px;
+        }
+        table {
+          border-collapse: collapse;
+          width: 100%;
+          margin-top: 20px;
+        }
+        th, td {
+          border: 1px solid #ccc;
+          padding: 8px 12px;
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>TestSprite AI Testing Report(MCP)</h1>
+<hr>
+<h2>1️⃣ Document Metadata</h2>
+<ul>
+<li><strong>Project Name:</strong> agendarbrasil-health-hub</li>
+<li><strong>Version:</strong> N/A</li>
+<li><strong>Date:</strong> 2025-09-10</li>
+<li><strong>Prepared by:</strong> TestSprite AI Team</li>
+</ul>
+<hr>
+<h2>2️⃣ Requirement Validation Summary</h2>
+<h3>Requirement: User Authentication and Profile Management</h3>
+<ul>
+<li><strong>Description:</strong> Test user registration, login, password reset, and role-based access control to ensure secure authentication and proper access restrictions.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC001</li>
+<li><strong>Test Name:</strong> User Authentication and Profile Management</li>
+<li><strong>Test Code:</strong> <a href="./TC001_userauthenticationandprofilemanagement.py">TC001_userauthenticationandprofilemanagement.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 100, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 21, in test_userauthenticationandprofilemanagement
+AssertionError: Registration failed:</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/609084e0-ba58-4040-a85b-db6bb429c14f</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> The user registration process failed, causing the overall authentication and profile management test to fail. This indicates a functional issue with the registration endpoint or its validation logic, preventing new users from being successfully registered.</li>
+</ul>
+<hr>
+<h3>Requirement: Appointment Management</h3>
+<ul>
+<li><strong>Description:</strong> Verify appointment creation, viewing, updating, rescheduling, and cancellation with real-time availability checks to prevent double-booking.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC002</li>
+<li><strong>Test Name:</strong> Appointment Management Creation and Updates</li>
+<li><strong>Test Code:</strong> <a href="./TC002_appointmentmanagementcreationandupdates.py">TC002_appointmentmanagementcreationandupdates.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 156, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 33, in test_appointment_management_creation_and_updates
+AssertionError</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/ecd6c9b7-1cf4-448b-8acf-8d6fd77a5af4</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Appointment creation and update operations failed with an assertion error, indicating functional issues potentially involving appointment booking validation, double-booking prevention, or update logic failures.</li>
+</ul>
+<hr>
+<h3>Requirement: Patient Management</h3>
+<ul>
+<li><strong>Description:</strong> Test patient database search functionality and profile management to ensure accurate retrieval and update of patient information.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC003</li>
+<li><strong>Test Name:</strong> Patient Management Search and Profile Update</li>
+<li><strong>Test Code:</strong> <a href="./TC003_patientmanagementsearchandprofileupdate.py">TC003_patientmanagementsearchandprofileupdate.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 84, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 30, in test_patientmanagementsearchandprofileupdate
+AssertionError: Expected 201 Created but got 404</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/baca801c-3888-497a-ac3d-43a42898b185</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> The patient profile update failed with a 404 Not Found error instead of the expected 201 Created response, indicating the endpoint may be incorrect, missing, or the patient resource was not found during the update.</li>
+</ul>
+<hr>
+<h3>Requirement: Doctor and Availability Management</h3>
+<ul>
+<li><strong>Description:</strong> Validate administrator capabilities to manage doctor profiles, working hours, and block off unavailable times effectively.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC004</li>
+<li><strong>Test Name:</strong> Doctor and Availability Management</li>
+<li><strong>Test Code:</strong> <a href="./TC004_doctorandavailabilitymanagement.py">TC004_doctorandavailabilitymanagement.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;&lt;string&gt;&quot;, line 17, in get_auth_token
+File &quot;/var/task/requests/models.py&quot;, line 1024, in raise_for_status
+raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://localhost:8080/api/admin/login</li>
+</ul>
+<p>During handling of the above exception, another exception occurred:</p>
+<p>Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 133, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 25, in test_doctor_and_availability_management
+File &quot;&lt;string&gt;&quot;, line 22, in get_auth_token
+RuntimeError: Admin login failed: 404 Client Error: Not Found for url: http://localhost:8080/api/admin/login</p>
+<ul>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/864893a1-1fa5-47ae-a1e6-ea0b7b72b58a</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Admin login failed due to a 404 Not Found error on the admin login endpoint URL, preventing authentication and subsequent doctor profile and availability management testing.</li>
+</ul>
+<hr>
+<h3>Requirement: Automated Notification System</h3>
+<ul>
+<li><strong>Description:</strong> Test automated notifications for appointment confirmations, reminders 24 hours before appointments, and cancellations to reduce no-shows.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC005</li>
+<li><strong>Test Name:</strong> Automated Notification System</li>
+<li><strong>Test Code:</strong> <a href="./TC005_automatednotificationsystem.py">TC005_automatednotificationsystem.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 94, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 27, in test_automated_notification_system
+AssertionError: Patient creation failed:</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/c0cbd5e7-4802-41ce-aebb-70a8e772a9be</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Automated notification system test failed during patient creation, causing the notification workflows to be untested or broken due to missing patient data.</li>
+</ul>
+<hr>
+<h3>Requirement: Security Features</h3>
+<ul>
+<li><strong>Description:</strong> Verify data encryption, strict authentication, and authorization controls to protect sensitive data and ensure compliance with privacy regulations.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC006</li>
+<li><strong>Test Name:</strong> Security Features Data Encryption and Authorization</li>
+<li><strong>Test Code:</strong> <a href="./TC006_securityfeaturesdataencryptionandauthorization.py">TC006_securityfeaturesdataencryptionandauthorization.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;&lt;string&gt;&quot;, line 27, in test_security_features_data_encryption_and_authorization
+File &quot;&lt;string&gt;&quot;, line 19, in authenticate
+File &quot;/var/task/requests/models.py&quot;, line 1024, in raise_for_status
+raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://localhost:8080/api/auth/login</li>
+</ul>
+<p>During handling of the above exception, another exception occurred:</p>
+<p>Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 87, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 85, in test_security_features_data_encryption_and_authorization
+AssertionError: Request failed: 404 Client Error: Not Found for url: http://localhost:8080/api/auth/login</p>
+<ul>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/9acd17fa-3d4a-46d1-b69e-fc5084cc9116</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Authentication failed due to the login endpoint returning 404 Not Found, thus the security features related to data encryption and authorization cannot be tested.</li>
+</ul>
+<hr>
+<h3>Requirement: Responsive and Accessible User Interface</h3>
+<ul>
+<li><strong>Description:</strong> Test the user interface responsiveness across multiple device types and compliance with WCAG accessibility standards.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC007</li>
+<li><strong>Test Name:</strong> Responsive and Accessible User Interface</li>
+<li><strong>Test Code:</strong> <a href="./TC007_responsiveandaccessibleuserinterface.py">TC007_responsiveandaccessibleuserinterface.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 55, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 29, in test_responsive_and_accessible_user_interface
+AssertionError: Expected status code 200 but got 404 for device mobile and WCAG level A</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/c83e31a2-f04e-403d-b8e5-92101fcf11af</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> Medium</li>
+<li><strong>Analysis / Findings:</strong> Responsive UI test failed due to 404 Not Found errors on device-specific or accessibility-related endpoints, suggesting backend support for UI responsiveness and WCAG compliance testing is missing or misconfigured.</li>
+</ul>
+<hr>
+<h3>Requirement: Robust Error Handling and System Reliability</h3>
+<ul>
+<li><strong>Description:</strong> Validate error handling mechanisms, system uptime targets of 99.9%, and regular data backups to ensure system reliability.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC008</li>
+<li><strong>Test Name:</strong> Robust Error Handling and System Reliability</li>
+<li><strong>Test Code:</strong> <a href="./TC008_robusterrorhandlingandsystemreliability.py">TC008_robusterrorhandlingandsystemreliability.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 93, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 28, in test_robust_error_handling_and_system_reliability
+AssertionError</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/582dd8b4-3b77-4b56-b0a5-53bea52ba510</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> Medium</li>
+<li><strong>Analysis / Findings:</strong> Robust error handling and system reliability tests failed due to an assertion error without detailed error message, implying unexpected exceptions or failed error recovery flows during testing.</li>
+</ul>
+<hr>
+<h3>Requirement: Role-Based Access Control Features</h3>
+<ul>
+<li><strong>Description:</strong> Test role-based access control restrictions for Administrator, Doctor, and Patient roles to ensure appropriate feature access.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC009</li>
+<li><strong>Test Name:</strong> Role-Based Access Control Features</li>
+<li><strong>Test Code:</strong> <a href="./TC009_rolebasedaccesscontrolfeatures.py">TC009_rolebasedaccesscontrolfeatures.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;&lt;string&gt;&quot;, line 22, in login
+File &quot;/var/task/requests/models.py&quot;, line 1024, in raise_for_status
+raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://localhost:8080/api/auth/login</li>
+</ul>
+<p>During handling of the above exception, another exception occurred:</p>
+<p>Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 90, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 60, in test_rolebasedaccesscontrolfeatures
+File &quot;&lt;string&gt;&quot;, line 27, in login
+AssertionError: Login request failed for user admin_user: 404 Client Error: Not Found for url: http://localhost:8080/api/auth/login</p>
+<ul>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/04f3ae7a-fb34-429f-9f47-527e3c284f8e</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Role-based access control test failed because login for the admin user returned 404 Not Found, preventing verification of proper access restrictions and feature availability per role.</li>
+</ul>
+<hr>
+<h3>Requirement: Performance and Scalability Under Load</h3>
+<ul>
+<li><strong>Description:</strong> Verify API response times under 500ms for appointment booking, page load times under 3 seconds, and concurrency support without degradation.</li>
+</ul>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC010</li>
+<li><strong>Test Name:</strong> Performance and Scalability Under Load</li>
+<li><strong>Test Code:</strong> <a href="./TC010_performanceandscalabilityunderload.py">TC010_performanceandscalabilityunderload.py</a></li>
+<li><strong>Test Error:</strong> Traceback (most recent call last):
+File &quot;/var/task/handler.py&quot;, line 258, in run_with_retry
+exec(code, exec_env)
+File &quot;&lt;string&gt;&quot;, line 88, in &lt;module&gt;
+File &quot;&lt;string&gt;&quot;, line 35, in test_performance_and_scalability_under_load
+File &quot;&lt;string&gt;&quot;, line 21, in create_appointment
+File &quot;/var/task/requests/models.py&quot;, line 1024, in raise_for_status
+raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://localhost:8080/consultas</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/112b8373-e70f-473a-b9fc-50e4369f36e2/e15a3974-488f-48ec-a818-adc3e1c37619</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Performance and scalability under load failed due to a 404 Not Found response on the appointment creation endpoint (/consultas), indicating the endpoint is missing or misrouted.</li>
+</ul>
+<hr>
+<h2>3️⃣ Coverage &amp; Matching Metrics</h2>
+<ul>
+<li><strong>100% of product requirements tested</strong></li>
+<li><strong>0% of tests passed</strong></li>
+<li><strong>Key gaps / risks:</strong>
+<blockquote>
+<p>100% of product requirements had at least one test generated.<br>
+0% of tests passed fully.<br>
+Risks: Most endpoints return 404 Not Found errors, indicating API routes may not be implemented or are incorrectly configured. Core functionality like user registration, authentication, and appointment management is not working.</p>
+</blockquote>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Total Tests</th>
+<th>✅ Passed</th>
+<th>⚠️ Partial</th>
+<th>❌ Failed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User Authentication and Profile Management</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Appointment Management</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Patient Management</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Doctor and Availability Management</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Automated Notification System</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Security Features</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Responsive and Accessible User Interface</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Robust Error Handling and System Reliability</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Role-Based Access Control Features</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Performance and Scalability Under Load</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<hr>
+
+    </body>
+    </html>
+  

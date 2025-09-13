@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8080",
+  "backendAuthType": "basic token",
+  "backendUsername": "https://ulebotjrsgheybhpdnxd.supabase.co",
+  "backendPassword": "Alberteinstein@1981",
+  "executionArgs": {
+    "projectName": "agendarbrasil-health-hub",
+    "projectPath": "c:\\Users\\Daniel Palma\\Desktop\\TESTE_SERVIDOR\\teste\\agendarbrasil\\agendarbrasil-health-hub",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-X9-8ZedPm9lX6tWl3nbLaXVTim8q1Ia7oSAjC_0oNL0KfieTrPEtIal4tiT5CZRCAHLI7TiZ95iXdAhWCDfnUKgNVZuW2R64RijbmA1QcS8RxifGhazphVgMXq5tmIVnQJs"
+    }
+  },
+  "proxy": "http://96aa32f3-1a3f-4e0f-9310-7b28298c61fb:CgFuxPAFmhcjWec6JQrLKkKmwmFPuRgG@tun.testsprite.com:8080"
+}

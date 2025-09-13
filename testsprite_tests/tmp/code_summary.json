@@ -1,0 +1,109 @@
+{
+  "tech_stack": [
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Node.js",
+    "Express",
+    "Supabase (PostgreSQL)",
+    "Vite",
+    "Vitest",
+    "Cypress",
+    "Tailwind CSS"
+  ],
+  "features": [
+    {
+      "name": "Authentication",
+      "description": "Handles user login, registration, and session management.",
+      "files": [
+        "src/hooks/useAuthState.ts",
+        "src/pages/Login.tsx",
+        "src/utils/authUtils.ts"
+      ]
+    },
+    {
+      "name": "Appointments/Scheduling",
+      "description": "Manages appointment booking, viewing, and scheduling.",
+      "files": [
+        "src/pages/Agendamento.tsx",
+        "src/components/agenda/",
+        "src/hooks/useConsultas.ts",
+        "src/types/appointments.ts",
+        "src/utils/timeSlotUtils.ts"
+      ]
+    },
+    {
+      "name": "User Profiles",
+      "description": "Manages patient and doctor profiles, including creation and updates.",
+      "files": [
+        "src/components/doctor/",
+        "src/components/profile/",
+        "src/types/profiles.ts",
+        "src/types/user.ts",
+        "src/utils/typeValidation.ts"
+      ]
+    },
+    {
+      "name": "Financial/Payments",
+      "description": "Handles payment processing and financial transactions.",
+      "files": [
+        "src/pages/Financeiro.tsx",
+        "src/components/financial/",
+        "src/hooks/usePayment.ts",
+        "src/types/payments.ts",
+        "src/utils/financialUtils.ts"
+      ]
+    },
+    {
+      "name": "Health Records/Documents",
+      "description": "Manages health-related documents and records.",
+      "files": [
+        "src/hooks/useDocuments.ts",
+        "src/types/documents.ts",
+        "src/components/health/",
+        "src/components/fhir/"
+      ]
+    },
+    {
+      "name": "Location Management",
+      "description": "Manages location data, including caching and validation.",
+      "files": [
+        "src/components/location/",
+        "src/utils/locationUtils.ts",
+        "src/utils/locationCacheManager.ts",
+        "src/utils/locationValidation.ts"
+      ]
+    },
+    {
+      "name": "UI Components",
+      "description": "Reusable user interface components.",
+      "files": [
+        "src/components/ui/",
+        "src/App.js",
+        "src/index.js",
+        "src/main.tsx"
+      ]
+    },
+    {
+      "name": "API Integration",
+      "description": "Handles communication with the backend API and Supabase.",
+      "files": [
+        "backend/src/api/",
+        "backend/server.js",
+        "backend/src/app.js",
+        "src/integrations/supabase/"
+      ]
+    },
+    {
+      "name": "Utilities",
+      "description": "Various utility functions for common tasks.",
+      "files": [
+        "src/utils/arrayUtils.ts",
+        "src/utils/errorLogger.ts",
+        "src/utils/logger.ts",
+        "src/utils/safeUtils.ts",
+        "src/utils/validation.ts"
+      ]
+    }
+  ]
+}

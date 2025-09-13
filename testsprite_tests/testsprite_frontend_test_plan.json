@@ -1,0 +1,486 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration with Valid Data",
+    "description": "Verify that users can register successfully with valid data for each role (Patient, Doctor, Administrator).",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the registration page."
+      },
+      {
+        "type": "action",
+        "description": "Input valid registration details (name, email, password, role selection)."
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the account is created and user is redirected to the appropriate dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Registration with Invalid Email Format",
+    "description": "Verify that registration fails and appropriate error message is shown when email format is invalid.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the registration page."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid email format along with other valid registration data."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an email format validation error is displayed and registration is blocked."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login with Correct Credentials",
+    "description": "Verify users can log in successfully using valid credentials for each role.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid username/email and password for a registered user."
+      },
+      {
+        "type": "action",
+        "description": "Click on the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm login is successful and respective role dashboard is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "User Login with Incorrect Password",
+    "description": "Verify login fails with an incorrect password and error message is displayed.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid username/email but incorrect password."
+      },
+      {
+        "type": "action",
+        "description": "Click on the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is denied and an error message about incorrect credentials is shown."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Password Reset Workflow",
+    "description": "Verify that users can reset their password via the password reset feature.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the password reset page."
+      },
+      {
+        "type": "action",
+        "description": "Enter registered email address."
+      },
+      {
+        "type": "action",
+        "description": "Submit password reset request."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm password reset email is sent and contains valid reset link."
+      },
+      {
+        "type": "action",
+        "description": "Use the reset link to set a new password."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the password is updated and user can log in with the new password."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Role-Based Access Control Enforcement",
+    "description": "Verify that users only access features allowed by their roles (Patient, Doctor, Administrator).",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as a Patient and verify no access to admin or doctor management pages."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm restricted pages/features are inaccessible and appropriate message or redirect is shown."
+      },
+      {
+        "type": "action",
+        "description": "Log in as a Doctor and verify access only to doctor schedules and patient information, no admin patient management."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm permissions match role specifications."
+      },
+      {
+        "type": "action",
+        "description": "Log in as an Administrator and verify full access to all management functions."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm administrator can manage appointments, doctors, and patient records."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Appointment Booking with Available Time Slot",
+    "description": "Verify that patients can book an appointment in a time slot that is available and not double-booked.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Patient."
+      },
+      {
+        "type": "action",
+        "description": "Search for a doctor and view available appointment slots."
+      },
+      {
+        "type": "action",
+        "description": "Select an available time slot and confirm booking."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is successfully scheduled, and time slot becomes unavailable for others."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm booking API responds within 500ms."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Prevent Double-Booking for Appointment",
+    "description": "Verify system prevents booking an appointment in a time slot already booked for the same doctor.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Patient A and book an appointment with Doctor X for a specific time slot."
+      },
+      {
+        "type": "action",
+        "description": "Log in as Patient B and attempt to book the same time slot with Doctor X."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm Patient B receives a real-time availability error preventing double booking."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Appointment Rescheduling Workflow",
+    "description": "Verify patients and administrators can reschedule appointments to different valid time slots.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Patient who has an existing appointment."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to appointment details and select reschedule option."
+      },
+      {
+        "type": "action",
+        "description": "Choose a new valid available time slot and confirm the rescheduling."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appointment is updated successfully and new time slot is blocked."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Appointment Cancellation and Notification",
+    "description": "Verify that cancellations by patients or administrators update appointment status and trigger cancellation notifications.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Patient or Administrator."
+      },
+      {
+        "type": "action",
+        "description": "Select an existing appointment and cancel it."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment status is updated to cancelled."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that automated cancellation notifications are sent to patient and doctor."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Automated Appointment Reminder Sent 24 Hours Before",
+    "description": "Verify that system sends automated reminders exactly 24 hours before scheduled appointment.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Schedule an appointment at a known future date and time."
+      },
+      {
+        "type": "assertion",
+        "description": "Check notifications system sends reminder to patient 24 hours prior to appointment time."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the content and delivery of reminder notification."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Doctor Availability Management",
+    "description": "Verify administrators can add, update, and block off doctor working hours and unavailable times.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Administrator."
+      },
+      {
+        "type": "action",
+        "description": "Access doctor management section."
+      },
+      {
+        "type": "action",
+        "description": "Add or modify working hours and block off unavailable times for a doctor."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes are saved and reflected in appointment booking availability."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Patient Profile Search and Update",
+    "description": "Verify that administrators can search for patients by multiple criteria and update patient profile information.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as Administrator."
+      },
+      {
+        "type": "action",
+        "description": "Use search functionality to find patients by name, email, or other identification."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm search returns accurate and relevant results."
+      },
+      {
+        "type": "action",
+        "description": "Select a patient record and update profile fields like contact information."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile updates are saved successfully and reflected in the system."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Data Encryption for Sensitive Information",
+    "description": "Verify the system encrypts sensitive user and appointment data both in transit and at rest.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Inspect network traffic between client and server during login and data transactions."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm data is always transmitted over HTTPS and encrypted protocols."
+      },
+      {
+        "type": "action",
+        "description": "Check database storage for encryption of sensitive fields like passwords and personal patient info."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify encryption standards comply with LGPD and GDPR requirements."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Responsive UI on Various Devices",
+    "description": "Verify that the user interface renders and functions correctly on desktop, tablet, and mobile devices.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the application in multiple device simulators or real devices (desktop, tablet, mobile)."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm all UI components are visible, accessible, and user interactions function correctly."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify adherence to WCAG accessibility standards for color contrast, keyboard navigation, and screen readers."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "System Uptime and Error Handling during Heavy Load",
+    "description": "Verify system maintains 99.9% uptime and handles errors gracefully during high concurrency scenarios.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate high numbers of simultaneous users booking, updating, and cancelling appointments."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm response times remain within acceptable limits and no unhandled crashes occur."
+      },
+      {
+        "type": "assertion",
+        "description": "Check error messages are user-friendly and system recovers gracefully from failures."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Regular Data Backup and Restore",
+    "description": "Verify the system performs regular data backups and supports data restoration without loss.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger or wait for regular backup process."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm backup completes successfully and data is stored securely."
+      },
+      {
+        "type": "action",
+        "description": "Perform a data restore operation from backup."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify restored data integrity matches the state before backup."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "User Adoption Metrics Validation",
+    "description": "Verify that the system tracks and reports that at least 40% of appointments are booked directly by patients within one year.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Collect booking data from system logs and analytics over a simulated or real use period."
+      },
+      {
+        "type": "assertion",
+        "description": "Calculate percentage of appointments booked by patients and verify it meets or exceeds 40% target."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Performance Benchmark: Page Load Time",
+    "description": "Verify that all main pages load within 3 seconds under typical network conditions.",
+    "category": "performance",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Use performance testing tools to measure page load times for key pages (login, appointment booking, profile)."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm page load times consistently remain under 3 seconds."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "API Response Time for Real-Time Availability Check",
+    "description": "Verify that the API checks appointment availability with a response time under 500ms to prevent double-booking.",
+    "category": "performance",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger appointment availability check API call multiple times during booking flows."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate that responses are received within 500ms in at least 95% of requests."
+      }
+    ]
+  }
+]

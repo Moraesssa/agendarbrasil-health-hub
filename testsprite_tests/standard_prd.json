@@ -1,0 +1,150 @@
+{
+  "meta": {
+    "project": "Clinic Scheduling System",
+    "date": "2025-09-10",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "Clinic Scheduling System is a comprehensive web platform designed to streamline and automate the management of patient appointments, doctor schedules, and clinic operations, improving efficiency and user satisfaction across administrators, doctors, and patients.",
+  "core_goals": [
+    "Reduce patient no-shows by implementing automated appointment reminders.",
+    "Optimize administrative workflow through automated scheduling, rescheduling, and cancellations.",
+    "Improve patient experience with an intuitive portal for booking and managing appointments.",
+    "Enhance doctor productivity by providing clear schedules and easy access to patient information.",
+    "Ensure data security and compliance with privacy regulations such as LGPD and GDPR."
+  ],
+  "key_features": [
+    "User Authentication and Profile Management including secure login, registration, password reset, and role-based access control (RBAC).",
+    "Comprehensive Appointment Management supporting creation, viewing, updating, rescheduling, and cancellation with real-time availability checks.",
+    "Patient Management featuring searchable patient database and profile management.",
+    "Doctor and Availability Management allowing administrators to manage doctor profiles, working hours, and block off unavailable times.",
+    "Automated Notifications system for appointment confirmations, reminders, and cancellations.",
+    "Security features including data encryption, strict authentication, and authorization controls to protect sensitive data.",
+    "Responsive and accessible user interface supporting multiple device types.",
+    "Robust error handling and system reliability measures including regular backups and uptime targets."
+  ],
+  "user_flow_summary": [
+    "Patients register/login, search for doctors, view available appointment slots, book appointments, and receive automated reminders.",
+    "Administrators log in to manage appointments, patient records, and doctor schedules; they can create, update, or cancel appointments on behalf of patients.",
+    "Doctors log in to view their appointment schedules, update their availability, and access patient information for consultations.",
+    "Users manage their profile information and securely reset passwords as needed.",
+    "Automated notification workflows ensure patients and doctors receive timely confirmations, reminders, and cancellation alerts."
+  ],
+  "validation_criteria": [
+    "System must send automated appointment reminders 24 hours before appointments, reducing no-show rates by at least 15%.",
+    "Appointment booking system must prevent double-booking by enforcing real-time availability checks with API response times under 500ms.",
+    "Role-based access controls must restrict features appropriately based on user roles (Administrator, Doctor, Patient).",
+    "User interface must be responsive and meet WCAG accessibility standards.",
+    "System uptime should be maintained at 99.9% with robust error handling and regular data backups.",
+    "User adoption metrics must show at least 40% of appointments booked directly by patients within one year.",
+    "Performance benchmarks include page load times under 3 seconds and concurrency support without degradation."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "JavaScript",
+      "TypeScript",
+      "React",
+      "Node.js",
+      "Express",
+      "Supabase (PostgreSQL)",
+      "Vite",
+      "Vitest",
+      "Cypress",
+      "Tailwind CSS"
+    ],
+    "features": [
+      {
+        "name": "Authentication",
+        "description": "Handles user login, registration, and session management.",
+        "files": [
+          "src/hooks/useAuthState.ts",
+          "src/pages/Login.tsx",
+          "src/utils/authUtils.ts"
+        ]
+      },
+      {
+        "name": "Appointments/Scheduling",
+        "description": "Manages appointment booking, viewing, and scheduling.",
+        "files": [
+          "src/pages/Agendamento.tsx",
+          "src/components/agenda/",
+          "src/hooks/useConsultas.ts",
+          "src/types/appointments.ts",
+          "src/utils/timeSlotUtils.ts"
+        ]
+      },
+      {
+        "name": "User Profiles",
+        "description": "Manages patient and doctor profiles, including creation and updates.",
+        "files": [
+          "src/components/doctor/",
+          "src/components/profile/",
+          "src/types/profiles.ts",
+          "src/types/user.ts",
+          "src/utils/typeValidation.ts"
+        ]
+      },
+      {
+        "name": "Financial/Payments",
+        "description": "Handles payment processing and financial transactions.",
+        "files": [
+          "src/pages/Financeiro.tsx",
+          "src/components/financial/",
+          "src/hooks/usePayment.ts",
+          "src/types/payments.ts",
+          "src/utils/financialUtils.ts"
+        ]
+      },
+      {
+        "name": "Health Records/Documents",
+        "description": "Manages health-related documents and records.",
+        "files": [
+          "src/hooks/useDocuments.ts",
+          "src/types/documents.ts",
+          "src/components/health/",
+          "src/components/fhir/"
+        ]
+      },
+      {
+        "name": "Location Management",
+        "description": "Manages location data, including caching and validation.",
+        "files": [
+          "src/components/location/",
+          "src/utils/locationUtils.ts",
+          "src/utils/locationCacheManager.ts",
+          "src/utils/locationValidation.ts"
+        ]
+      },
+      {
+        "name": "UI Components",
+        "description": "Reusable user interface components.",
+        "files": [
+          "src/components/ui/",
+          "src/App.js",
+          "src/index.js",
+          "src/main.tsx"
+        ]
+      },
+      {
+        "name": "API Integration",
+        "description": "Handles communication with the backend API and Supabase.",
+        "files": [
+          "backend/src/api/",
+          "backend/server.js",
+          "backend/src/app.js",
+          "src/integrations/supabase/"
+        ]
+      },
+      {
+        "name": "Utilities",
+        "description": "Various utility functions for common tasks.",
+        "files": [
+          "src/utils/arrayUtils.ts",
+          "src/utils/errorLogger.ts",
+          "src/utils/logger.ts",
+          "src/utils/safeUtils.ts",
+          "src/utils/validation.ts"
+        ]
+      }
+    ]
+  }
+}

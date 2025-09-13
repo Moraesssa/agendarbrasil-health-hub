@@ -1,20 +1,24 @@
 // src/api/routes/consultas.js
 const express = require('express');
+const consultasController = require('../controllers/consultasController');
 const router = express.Router();
 
+// Endpoint: GET /api/consultas (Listar todas as consultas)
+router.get('/', consultasController.listAppointments);
+
 // Endpoint: POST /api/consultas (Agendar nova consulta)
-router.post('/', (req, res) => {
-    res.status(201).json({ message: "Endpoint para agendar nova consulta. Lógica a ser implementada." });
-});
+router.post('/', consultasController.createAppointment);
 
 // Endpoint: GET /api/consultas/{id} (Detalhes da consulta)
-router.get('/:id', (req, res) => {
-    res.status(200).json({ message: `Endpoint para ver detalhes da consulta ${req.params.id}. Lógica a ser implementada.` });
-});
+router.get('/:id', consultasController.getAppointment);
+
+// Endpoint: PUT /api/consultas/{id} (Atualizar consulta)
+router.put('/:id', consultasController.updateAppointment);
+
+// Endpoint: DELETE /api/consultas/{id} (Cancelar consulta)
+router.delete('/:id', consultasController.cancelAppointment);
 
 // Endpoint: POST /api/consultas/{id}/iniciar (Inicia a chamada)
-router.post('/:id/iniciar', (req, res) => {
-    res.status(200).json({ message: `Endpoint para iniciar a consulta ${req.params.id}. Lógica a ser implementada.` });
-});
+router.post('/:id/iniciar', consultasController.startAppointment);
 
 module.exports = router;

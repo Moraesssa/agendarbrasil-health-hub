@@ -16,17 +16,17 @@ O projeto está organizado na seguinte estrutura de diretórios:
 
 ---
 
-### 1. Banco de Dados (`database/`)
+### 1. Banco de Dados (Supabase)
 
-O cérebro do sistema, projetado para ser seguro e relacional.
+O cérebro do sistema, projetado para ser seguro e relacional, utilizando o Supabase como plataforma de banco de dados.
 
--   **Arquivo Principal:** `database/schema.sql`
--   **Tecnologia Sugerida:** PostgreSQL (devido à sua robustez, suporte a tipos complexos como JSONB e UUID, e confiabilidade).
+-   **Tecnologia:** PostgreSQL via Supabase (devido à sua robustez, suporte a tipos complexos como JSONB e UUID, e confiabilidade).
+-   **Inicialização:** Use o script `backend/src/scripts/init-database.js` para criar as tabelas necessárias.
 -   **Design:**
-    -   **Relacional:** As tabelas (`Usuarios`, `Medicos`, `Pacientes`, `Consultas`, etc.) são interligadas com chaves estrangeiras para garantir a integridade dos dados.
-    -   **Segurança:** O esquema inclui comentários para campos sensíveis (`anotacoes_clinicas`, `hipotese_diagnostica`) que **devem ser criptografados em repouso** na implementação final.
-    -   **Auditoria:** Uma tabela `AuditoriaLogs` foi incluída para rastrear ações críticas, essencial para conformidade com a LGPD.
-    -   **Performance:** Índices foram definidos em chaves estrangeiras e campos de busca frequente para otimizar a velocidade das consultas.
+    -   **Relacional:** As tabelas (`usuarios`, `medicos`, `pacientes`, `consultas`, etc.) são interligadas com chaves estrangeiras para garantir a integridade dos dados.
+    -   **Segurança:** O esquema inclui campos sensíveis que são protegidos pelas políticas de segurança do Supabase (Row Level Security).
+    -   **Auditoria:** O Supabase fornece logs de auditoria para rastrear ações críticas, essencial para conformidade com a LGPD.
+    -   **Performance:** Índices são definidos automaticamente em chaves primárias e podem ser adicionados em campos de busca frequente para otimizar a velocidade das consultas.
 
 ---
 
@@ -35,11 +35,27 @@ O cérebro do sistema, projetado para ser seguro e relacional.
 A engrenagem por trás de tudo, responsável pela lógica de negócio, segurança e comunicação.
 
 -   **Localização:** `backend/`
--   **Tecnologia Sugerida:** Node.js com Express.js.
+-   **Tecnologia:** Node.js com Express.js e Supabase.
 -   **Design da API:**
     -   **RESTful:** A API é estruturada em torno de recursos (ex: `/consultas`, `/medicos`) com verbos HTTP padrão.
-    -   **Autenticação:** A segurança dos endpoints será implementada usando **JWT (JSON Web Tokens)**. Um placeholder de middleware (`src/api/middlewares/authMiddleware.js`) já foi criado.
-    -   **Estrutura:** O código está organizado em `routes`, `controllers`, `middlewares`, `config` e `services` para manter a clareza e a manutenibilidade.
+    -   **Autenticação:** A segurança dos endpoints é implementada usando o Supabase Auth, que fornece autenticação baseada em JWT (JSON Web Tokens).
+    -   **Estrutura:** O código está organizado em `routes`, `controllers`, `middlewares`, `config` e `models` para manter a clareza e a manutenibilidade.
+-   **Configuração do Supabase:**
+    1. Crie uma conta no [Supabase](https://supabase.com/) e um novo projeto.
+    2. Copie o arquivo `.env.example` para `.env` e preencha com suas credenciais do Supabase:
+       ```
+       SUPABASE_URL=sua_url_do_supabase
+       SUPABASE_KEY=sua_chave_do_supabase
+       SUPABASE_SERVICE_KEY=sua_chave_de_servico_do_supabase
+       ```
+    3. Execute o script de inicialização do banco de dados:
+       ```bash
+       node src/scripts/init-database.js
+       ```
+    4. Teste a conexão com o Supabase:
+       ```bash
+       node src/test-supabase-connection.js
+       ```
 -   **Como Começar (Desenvolvimento):**
     ```bash
     cd backend
