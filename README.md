@@ -47,6 +47,7 @@ A engrenagem por trás de tudo, responsável pela lógica de negócio, seguranç
        SUPABASE_URL=sua_url_do_supabase
        SUPABASE_KEY=sua_chave_do_supabase
        SUPABASE_SERVICE_KEY=sua_chave_de_servico_do_supabase
+       VITE_FHIR_BASE_URL=https://sua_url_do_supabase/functions/v1
        ```
     3. Execute o script de inicialização do banco de dados:
        ```bash

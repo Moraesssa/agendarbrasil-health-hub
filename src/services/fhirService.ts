@@ -1,14 +1,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  FhirPatient, 
-  FhirObservation, 
-  FhirBundle, 
+import {
+  FhirPatient,
+  FhirObservation,
+  FhirBundle,
   FhirDocumentReference,
-  FhirOperationOutcome 
+  FhirOperationOutcome
 } from '@/types/fhir';
 
-const FHIR_BASE_URL = `https://ulebotjrsgheybhpdnxd.supabase.co/functions/v1`;
+const DEFAULT_FHIR_BASE_URL = 'https://ulebotjrsgheybhpdnxd.supabase.co/functions/v1';
+const FHIR_BASE_URL = import.meta.env.VITE_FHIR_BASE_URL || DEFAULT_FHIR_BASE_URL;
+
+try {
+  // Validate that the base URL is a proper URL
+  new URL(FHIR_BASE_URL);
+} catch {
+  throw new Error('Invalid FHIR base URL configuration');
+}
 
 class FhirService {
   private async getAuthHeaders() {
@@ -19,19 +27,38 @@ class FhirService {
     };
   }
 
-  async getPatient(patientId: string): Promise<FhirPatient> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const headers = await this.getAuthHeaders();
-    
-    const response = await fetch(`${FHIR_BASE_URL}/fhir-patient/${patientId}`, {
-      headers,
-    });
+    try {
+      const response = await fetch(`${FHIR_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          ...headers,
+          ...(options.headers || {})
+        }
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `HTTP ${response.status}`);
+      if (!response.ok) {
+        let body: any = {};
+        try {
+          body = await response.json();
+        } catch {
+          // Ignore JSON parsing errors
+        }
+        const status = response.status;
+        const message = body?.message || body?.error || response.statusText;
+        throw new Error(`HTTP ${status}: ${message}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Network error: ${message}`);
     }
+  }
 
-    return response.json();
+  async getPatient(patientId: string): Promise<FhirPatient> {
+    return this.request<FhirPatient>(`/fhir-patient/${patientId}`);
   }
 
   async searchObservations(params: {
@@ -40,42 +67,22 @@ class FhirService {
     code?: string;
     _count?: number;
   }): Promise<FhirBundle> {
-    const headers = await this.getAuthHeaders();
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
         searchParams.append(key, value.toString());
       }
     });
 
-    const response = await fetch(`${FHIR_BASE_URL}/fhir-observation?${searchParams}`, {
-      headers,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
+    return this.request<FhirBundle>(`/fhir-observation?${searchParams.toString()}`);
   }
 
   async createObservation(observation: FhirObservation): Promise<FhirObservation> {
-    const headers = await this.getAuthHeaders();
-
-    const response = await fetch(`${FHIR_BASE_URL}/fhir-observation`, {
+    return this.request<FhirObservation>(`/fhir-observation`, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(observation),
+      body: JSON.stringify(observation)
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
   }
 
   // Utility function to convert health metric to FHIR Observation
