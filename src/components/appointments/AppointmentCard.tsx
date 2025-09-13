@@ -95,7 +95,7 @@ const AppointmentCard = ({
       actions.unshift(
         <PaymentVerificationButton 
           key="verify-payment"
-          consultaId={appointment.id}
+          consultaId={appointment.id?.toString() || ''}
           onSuccess={() => {
             // Refresh local state instead of full page reload
             window.dispatchEvent(new CustomEvent('consultaUpdated'));
@@ -113,7 +113,7 @@ const AppointmentCard = ({
             size="sm"
             variant="outline"
             className="h-7 px-2 text-xs flex-1 sm:flex-none border-green-200 hover:bg-green-50"
-            onClick={() => onConfirm(appointment.id)}
+            onClick={() => onConfirm(appointment.id?.toString() || '')}
           >
             Confirmar
           </Button>
@@ -201,7 +201,7 @@ const AppointmentCard = ({
               {getStatusText(appointment.status)}
             </Badge>
             <PaymentStatusIndicator 
-              consultaId={appointment.id}
+              consultaId={appointment.id?.toString() || ''}
               statusPagamento={appointment.status_pagamento || 'pendente'}
               onStatusUpdate={() => {
                 // Disparar evento para atualizar a lista

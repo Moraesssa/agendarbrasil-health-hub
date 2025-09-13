@@ -55,7 +55,7 @@ export function AppointmentBooking() {
       const { data: existingPatient } = await supabase
         .from('pacientes')
         .select('id')
-        .eq('email', patientData.email)
+        .eq('user_id', '00000000-0000-0000-0000-000000000000') // Use user_id instead of email
         .single();
 
       let pacienteId = existingPatient?.id;
@@ -82,14 +82,14 @@ export function AppointmentBooking() {
       // Agendar consulta
       const appointment = await SchedulingService.scheduleAppointment({
         medico_id: selectedDoctor.id,
-        paciente_id: pacienteId,
+        paciente_id: String(pacienteId), // Convert to string
         local_id: selectedSlot.local_id,
         data_hora_agendada: selectedSlot.data_hora,
         duracao_estimada: selectedSlot.duracao_disponivel,
         tipo: selectedSlot.tipo_consulta,
         valor_consulta: selectedSlot.valor,
         motivo_consulta: patientData.motivo_consulta,
-        agendado_por: pacienteId
+        agendado_por: String(pacienteId) // Convert to string
       });
 
       setAppointmentId(appointment.id);

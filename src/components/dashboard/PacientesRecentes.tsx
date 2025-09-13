@@ -1,4 +1,5 @@
 
+import { safeStringId } from '@/utils/idUtils';
 import { useState, useEffect } from "react";
 import { Stethoscope, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,9 +54,9 @@ export function PacientesRecentes() {
         
         // Process data and handle cases where profile might be missing
         const processedData: RecentAppointment[] = (data || []).map(item => ({
-          id: item?.id,
-          status: item?.status,
-          consultation_date: item?.consultation_date,
+          id: safeStringId(item?.id),
+          status: item?.status || '',
+          consultation_date: item?.consultation_date || '',
           patient_profile: Array.isArray(item?.patient_profile) 
             ? item.patient_profile[0] || { display_name: null }
             : item?.patient_profile || { display_name: null }

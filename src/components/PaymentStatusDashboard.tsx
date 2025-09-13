@@ -17,10 +17,9 @@ export const PaymentStatusDashboard = () => {
   const { verifyPayment } = usePayment();
   const { toast } = useToast();
 
-  // Filtrar consultas por status de pagamento
-  const consultasPagas = consultas.filter(c => c.status_pagamento === 'pago');
-  const consultasPendentes = consultas.filter(c => c.status_pagamento === 'pendente');
-  const consultasAguardandoPagamento = consultas.filter(c => c.status_pagamento === 'pending_payment');
+  const consultasPagas = consultas?.filter(c => c.status_pagamento === 'pago' || c.status === 'paid') || [];
+  const consultasPendentes = consultas?.filter(c => c.status_pagamento === 'pendente' || c.status === 'pending' || c.status === 'pending_payment') || [];
+  const consultasAguardandoPagamento = consultas?.filter(c => c.status_pagamento === 'aguardando' || c.status === 'awaiting_payment') || [];
 
   const handleRefreshAll = async () => {
     setRefreshing(true);
@@ -41,7 +40,7 @@ export const PaymentStatusDashboard = () => {
       for (const consulta of consultasParaVerificar) {
         try {
           console.log('PaymentStatusDashboard: Verificando consulta:', consulta.id);
-          const result = await verifyPayment(consulta.id);
+          const result = await verifyPayment(consulta.id?.toString() || '');
           if (result.success && result.paid) {
             verificacoesBemSucedidas++;
           }
@@ -166,7 +165,7 @@ export const PaymentStatusDashboard = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => verifyPayment(consulta.id)}
+                      onClick={() => verifyPayment(consulta.id?.toString() || '')}
                     >
                       <RefreshCw className="h-3 w-3" />
                     </Button>
