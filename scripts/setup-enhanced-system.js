@@ -123,19 +123,19 @@ async function setupEnhancedSystem() {
     console.log('='.repeat(60));
     console.log('\n📋 Próximos passos:');
     console.log('1. ✅ Sistema de agendamento integrado configurado');
-    console.log('2. ✅ Novos componentes disponíveis em /agendamento');
+    console.log('2. ✅ Fluxo inteligente disponível em /agendamento-inteligente');
     console.log('3. ✅ Agenda do paciente atualizada em /agenda-paciente');
     console.log('4. ✅ Agenda do médico atualizada em /agenda-medico');
     console.log('5. 🔧 Versões antigas disponíveis com sufixo -legacy');
     
     console.log('\n🌐 URLs disponíveis:');
-    console.log('- /agendamento (novo sistema integrado)');
+    console.log('- /agendamento-inteligente (novo sistema integrado)');
     console.log('- /agenda-paciente (nova interface)');
     console.log('- /agenda-medico (nova interface)');
     console.log('- /scheduler-demo (demo realístico)');
     
-    console.log('\n🔧 URLs legacy (sistema antigo):');
-    console.log('- /agendamento-legacy');
+    console.log('\n🔧 URLs tradicionais (sistema antigo):');
+    console.log('- /agendamento');
     console.log('- /agenda-paciente-legacy');
     console.log('- /agenda-medico-legacy');
 
