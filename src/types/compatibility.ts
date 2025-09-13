@@ -121,9 +121,5 @@ export const toCompatibleLocation = (location: any): CompatibleLocation => ({
   ...location
 });
 
-// Re-export as commonly used types
-export type Doctor = CompatibleDoctor;
-export type Patient = CompatiblePatient;
-export type Appointment = CompatibleAppointment;
-export type SearchFilters = CompatibleSearchFilters;
-export type Location = CompatibleLocation;
+// Export compatibility functions without re-exporting main types
+// Main types are exported from database.ts to avoid conflicts

@@ -46,7 +46,7 @@ export function PendingAppointmentsAlert() {
       
       // Process data and handle cases where profile might be missing
       const processedData: PendingAppointment[] = (data || []).map(item => ({
-        id: item.id,
+        id: String(item.id), // Convert number to string
         consultation_date: item.consultation_date,
         consultation_type: item.consultation_type,
         status: item.status,

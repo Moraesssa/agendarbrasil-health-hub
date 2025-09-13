@@ -92,7 +92,12 @@ export const ScheduleManagement: React.FC = () => {
 
       if (locationsError) throw locationsError;
 
-      setLocations(locationsData || []);
+      // Convert number IDs to strings for type compatibility
+      const convertedLocations = (locationsData || []).map(loc => ({
+        ...loc,
+        id: String(loc.id)
+      }));
+      setLocations(convertedLocations);
 
       const config = (medicoData?.configuracoes as any) || {};
       setConsultationDuration(config.duracaoConsulta || 30);

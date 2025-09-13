@@ -171,7 +171,7 @@ export const LocationManagement: React.FC = () => {
         ({ error } = await supabase
           .from('locais_atendimento')
           .update(locationData)
-          .eq('id', editingLocation.id));
+          .eq('id', parseInt(editingLocation.id.toString())));
       } else {
         ({ error } = await supabase
           .from('locais_atendimento')
@@ -246,7 +246,7 @@ export const LocationManagement: React.FC = () => {
       const { error } = await supabase
         .from('locais_atendimento')
         .delete()
-        .eq('id', locationId);
+        .eq('id', parseInt(locationId.toString()));
 
       if (error) throw error;
 
