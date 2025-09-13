@@ -11,7 +11,7 @@ Script para validação de variáveis de ambiente e configuração do projeto.
 **Funcionalidades:**
 - Verifica se o arquivo `.env` existe no diretório raiz
 - Lista todas as variáveis de ambiente configuradas
-- Valida variáveis obrigatórias (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_ENV`)
+- Valida variáveis obrigatórias (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_ENV`, `VITE_FHIR_BASE_URL`)
 - Fornece feedback claro sobre configurações ausentes
 - Utiliza ES modules com resolução adequada de caminhos
 
@@ -27,6 +27,7 @@ node test-env-vars.js
    VITE_SUPABASE_URL=https://projeto.supabase.co
    VITE_SUPABASE_ANON_KEY=eyJ...
    VITE_APP_ENV=development
+   VITE_FHIR_BASE_URL=https://projeto.supabase.co/functions/v1
 ✅ Todas as variáveis obrigatórias estão configuradas
 ```
 
