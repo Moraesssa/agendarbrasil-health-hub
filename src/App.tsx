@@ -41,7 +41,6 @@ import GerenciarConexoes from '@/pages/GerenciarConexoes';
 import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
 import Debug from '@/pages/Debug';
 import SchedulerDemo from '@/pages/SchedulerDemo';
-import AgendamentoCompleto from '@/pages/AgendamentoCompleto';
 
 
 const queryClient = new QueryClient();
@@ -174,7 +173,6 @@ function App() {
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
                     <Route path="/debug" element={<Debug />} />
                     <Route path="/scheduler-demo" element={<SchedulerDemo />} />
-                    <Route path="/agendamento-completo" element={<AgendamentoCompleto />} />
                       <Route path="*" element={<NotFound />} />
                       </Routes>
                       </AuthRedirectController>
