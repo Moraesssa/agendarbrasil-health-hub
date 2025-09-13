@@ -30,7 +30,6 @@ import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
 import Financeiro from '@/pages/Financeiro';
 import Agendamento from '@/pages/Agendamento';
-import AgendamentoIntegrado from '@/pages/AgendamentoIntegrado';
 import AgendaPaciente from '@/pages/AgendaPaciente';
 import AgendaPacienteIntegrada from '@/pages/AgendaPacienteIntegrada';
 import Historico from '@/pages/Historico';
@@ -41,7 +40,6 @@ import GerenciarConexoes from '@/pages/GerenciarConexoes';
 import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
 import Debug from '@/pages/Debug';
 import SchedulerDemo from '@/pages/SchedulerDemo';
-import AgendamentoCompleto from '@/pages/AgendamentoCompleto';
 
 
 const queryClient = new QueryClient();
@@ -163,8 +161,7 @@ function App() {
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
                     <Route path="/financeiro" element={<Financeiro />} />
-                    <Route path="/agendamento" element={<AgendamentoIntegrado />} />
-                    <Route path="/agendamento-legacy" element={<Agendamento />} />
+                    <Route path="/agendamento" element={<Agendamento />} />
                     <Route path="/agenda-paciente" element={<AgendaPacienteIntegrada />} />
                     <Route path="/agenda-paciente-legacy" element={<AgendaPaciente />} />
                     <Route path="/historico" element={<Historico />} />
@@ -174,7 +171,6 @@ function App() {
                     <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
                     <Route path="/debug" element={<Debug />} />
                     <Route path="/scheduler-demo" element={<SchedulerDemo />} />
-                    <Route path="/agendamento-completo" element={<AgendamentoCompleto />} />
                       <Route path="*" element={<NotFound />} />
                       </Routes>
                       </AuthRedirectController>

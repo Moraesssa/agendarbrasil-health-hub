@@ -1,18 +1,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAppointmentServiceInstance } from '@/contexts/AppointmentServiceProvider';
-import { LocalComHorarios } from "@/services/newAppointmentService";
-import { Medico } from "@/services/newAppointmentService";
+import { schedulingSelectionService, StateInfo, CityInfo, Medico, LocalComHorarios } from '@/services/schedulingSelectionService';
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
 import { safeArrayAccess, safeArrayLength } from "@/utils/arrayUtils";
-
-interface StateInfo { uf: string; }
-interface CityInfo { cidade: string; }
 
 export const useAppointmentScheduling = () => {
   const { user } = useAuth();
@@ -78,14 +73,14 @@ export const useAppointmentScheduling = () => {
       
       try {
         const [specialtiesData, statesData] = await Promise.all([
-          appointmentService.getSpecialties(),
-          supabase.rpc('get_available_states').then(res => safeArrayAccess(res.data))
+          schedulingSelectionService.getSpecialties(),
+          schedulingSelectionService.getStates()
         ]);
         const safeSpecialties = safeArrayAccess(specialtiesData);
         const safeStatesData = safeArrayAccess(statesData);
-        
+
         setSpecialties(safeSpecialties);
-        setStates(safeStatesData as StateInfo[]);
+        setStates(safeStatesData);
       } catch (e) {
         logger.error('Erro ao carregar dados iniciais', 'useAppointmentScheduling', e);
         
@@ -112,8 +107,8 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
-        const safeCities = safeArrayAccess(data);
+        const citiesData = await schedulingSelectionService.getCities(selectedState);
+        const safeCities = safeArrayAccess(citiesData);
         setCities(safeCities);
       } catch (error) {
         logger.error('Erro ao carregar cidades', 'useAppointmentScheduling', error);
@@ -143,7 +138,7 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
+        const doctorsData = await schedulingSelectionService.getDoctors(selectedSpecialty, selectedCity, selectedState);
   logger.debug('Médicos recebidos', 'useAppointmentScheduling', doctorsData);
         
         const validDoctors = safeArrayAccess(doctorsData);
@@ -185,7 +180,7 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
+        const slots = await schedulingSelectionService.getAvailableSlots(selectedDoctor, selectedDate);
         const safeSlots = safeArrayAccess(slots);
         setLocaisComHorarios(safeSlots);
       } catch (error) {

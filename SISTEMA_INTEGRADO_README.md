@@ -1,8 +1,10 @@
 # Sistema de Agendamento Integrado - Versão 2.0
 
+> ⚠️ *Documento depreciado*: o fluxo oficial de agendamento agora utiliza `Agendamento.tsx` em 7 etapas. As páginas `AgendamentoIntegrado` e `AgendamentoCompleto` foram removidas.
+
 ## 🎯 Visão Geral
 
-Este documento descreve a implementação completa do novo sistema de agendamento integrado que substitui e otimiza os componentes existentes da plataforma de telemedicina.
+Este documento descreve a implementação do sistema de agendamento integrado que foi substituído pelo fluxo oficial de 7 etapas.
 
 ## 🚀 Principais Melhorias
 
@@ -30,7 +32,7 @@ Este documento descreve a implementação completa do novo sistema de agendament
 ### Páginas Principais
 ```
 src/pages/
-├── AgendamentoIntegrado.tsx          # Nova página de agendamento
+├── Agendamento.tsx                   # Fluxo oficial de agendamento (7 etapas)
 ├── AgendaPacienteIntegrada.tsx       # Nova agenda do paciente
 ├── AgendaMedicoIntegrada.tsx         # Nova agenda do médico
 └── SchedulerDemo.tsx                 # Demo realístico (atualizado)
@@ -39,9 +41,6 @@ src/pages/
 ### Componentes de Agendamento
 ```
 src/components/scheduling/
-├── DoctorSearch.tsx                  # Busca de médicos
-├── DoctorAvailability.tsx            # Disponibilidade e agendamento
-├── AppointmentConfirmation.tsx       # Confirmação de agendamento
 └── TelemedicineSchedulerDemo.tsx     # Demo realístico
 ```
 
@@ -87,12 +86,12 @@ database/
 ### Rotas Atualizadas
 | Rota Antiga | Nova Rota | Rota Legacy |
 |-------------|-----------|-------------|
-| `/agendamento` | `AgendamentoIntegrado` | `/agendamento-legacy` |
+| `/agendamento` | `Agendamento` | - |
 | `/agenda-paciente` | `AgendaPacienteIntegrada` | `/agenda-paciente-legacy` |
 | `/agenda-medico` | `AgendaMedicoIntegrada` | `/agenda-medico-legacy` |
 
 ### Componentes Substituídos
-- ❌ `Agendamento.tsx` → ✅ `AgendamentoIntegrado.tsx`
+- ❌ `AgendamentoIntegrado.tsx` → ✅ `Agendamento.tsx`
 - ❌ `AgendaPaciente.tsx` → ✅ `AgendaPacienteIntegrada.tsx`
 - ❌ `AgendaMedico.tsx` → ✅ `AgendaMedicoIntegrada.tsx`
 
