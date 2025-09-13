@@ -79,7 +79,10 @@ export type Database = {
           notes: string | null
           paciente_familiar_id: string | null
           paciente_id: string
+          patient_email: string | null
+          patient_name: string | null
           status: string | null
+          status_pagamento: string | null
         }
         Insert: {
           consultation_date: string
@@ -91,7 +94,10 @@ export type Database = {
           notes?: string | null
           paciente_familiar_id?: string | null
           paciente_id: string
+          patient_email?: string | null
+          patient_name?: string | null
           status?: string | null
+          status_pagamento?: string | null
         }
         Update: {
           consultation_date?: string
@@ -103,7 +109,10 @@ export type Database = {
           notes?: string | null
           paciente_familiar_id?: string | null
           paciente_id?: string
+          patient_email?: string | null
+          patient_name?: string | null
           status?: string | null
+          status_pagamento?: string | null
         }
         Relationships: [
           {
@@ -667,6 +676,7 @@ export type Database = {
           id: number
           medico_id: string
           nome_local: string | null
+          telefone: string | null
         }
         Insert: {
           ativo?: boolean | null
@@ -679,6 +689,7 @@ export type Database = {
           id?: number
           medico_id: string
           nome_local?: string | null
+          telefone?: string | null
         }
         Update: {
           ativo?: boolean | null
@@ -691,6 +702,7 @@ export type Database = {
           id?: number
           medico_id?: string
           nome_local?: string | null
+          telefone?: string | null
         }
         Relationships: [
           {
@@ -1040,40 +1052,88 @@ export type Database = {
       }
       medicos: {
         Row: {
+          aceita_consulta_presencial: boolean | null
+          aceita_teleconsulta: boolean | null
+          bio_perfil: string | null
           cidade: string | null
           configuracoes: Json | null
           created_at: string | null
           crm: string | null
+          dados_profissionais: Json
+          duracao_consulta_inicial: number | null
+          endereco: Json
           especialidades: Json | null
           estado: string | null
+          foto_perfil_url: string | null
           id: number
+          is_active: boolean | null
+          rating: number | null
+          registro_especialista: string | null
           telefone: string | null
+          total_avaliacoes: number | null
           updated_at: string | null
           user_id: string
+          usuario_id: string | null
+          valor_consulta_presencial: number | null
+          valor_consulta_teleconsulta: number | null
+          verificacao: Json
+          whatsapp: string | null
         }
         Insert: {
+          aceita_consulta_presencial?: boolean | null
+          aceita_teleconsulta?: boolean | null
+          bio_perfil?: string | null
           cidade?: string | null
           configuracoes?: Json | null
           created_at?: string | null
           crm?: string | null
+          dados_profissionais?: Json
+          duracao_consulta_inicial?: number | null
+          endereco?: Json
           especialidades?: Json | null
           estado?: string | null
+          foto_perfil_url?: string | null
           id?: number
+          is_active?: boolean | null
+          rating?: number | null
+          registro_especialista?: string | null
           telefone?: string | null
+          total_avaliacoes?: number | null
           updated_at?: string | null
           user_id: string
+          usuario_id?: string | null
+          valor_consulta_presencial?: number | null
+          valor_consulta_teleconsulta?: number | null
+          verificacao?: Json
+          whatsapp?: string | null
         }
         Update: {
+          aceita_consulta_presencial?: boolean | null
+          aceita_teleconsulta?: boolean | null
+          bio_perfil?: string | null
           cidade?: string | null
           configuracoes?: Json | null
           created_at?: string | null
           crm?: string | null
+          dados_profissionais?: Json
+          duracao_consulta_inicial?: number | null
+          endereco?: Json
           especialidades?: Json | null
           estado?: string | null
+          foto_perfil_url?: string | null
           id?: number
+          is_active?: boolean | null
+          rating?: number | null
+          registro_especialista?: string | null
           telefone?: string | null
+          total_avaliacoes?: number | null
           updated_at?: string | null
           user_id?: string
+          usuario_id?: string | null
+          valor_consulta_presencial?: number | null
+          valor_consulta_teleconsulta?: number | null
+          verificacao?: Json
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -1167,31 +1227,40 @@ export type Database = {
       }
       pacientes: {
         Row: {
+          contato: Json | null
           convenio: Json | null
           created_at: string | null
           dados_medicos: Json | null
           dados_pessoais: Json | null
           endereco: Json | null
           id: number
+          is_active: boolean | null
           user_id: string
+          usuario_id: string | null
         }
         Insert: {
+          contato?: Json | null
           convenio?: Json | null
           created_at?: string | null
           dados_medicos?: Json | null
           dados_pessoais?: Json | null
           endereco?: Json | null
           id?: number
+          is_active?: boolean | null
           user_id: string
+          usuario_id?: string | null
         }
         Update: {
+          contato?: Json | null
           convenio?: Json | null
           created_at?: string | null
           dados_medicos?: Json | null
           dados_pessoais?: Json | null
           endereco?: Json | null
           id?: number
+          is_active?: boolean | null
           user_id?: string
+          usuario_id?: string | null
         }
         Relationships: [
           {
@@ -1439,30 +1508,42 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
           display_name: string | null
           email: string
           id: string
           is_active: boolean | null
+          last_login: string | null
+          onboarding_completed: boolean
           photo_url: string | null
+          updated_at: string
           user_type: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
           email: string
           id?: string
           is_active?: boolean | null
+          last_login?: string | null
+          onboarding_completed?: boolean
           photo_url?: string | null
+          updated_at?: string
           user_type?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string
           id?: string
           is_active?: boolean | null
+          last_login?: string | null
+          onboarding_completed?: boolean
           photo_url?: string | null
+          updated_at?: string
           user_type?: string | null
         }
         Relationships: []
