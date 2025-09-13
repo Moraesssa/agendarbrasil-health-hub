@@ -149,6 +149,24 @@ export const useAuthState = () => {
 
     // Verificação da sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.expires_at) {
+            const expiresAtMs = session.expires_at * 1000;
+            const timeDiff = Math.abs(Date.now() - expiresAtMs);
+            if (timeDiff > 5 * 60 * 1000) {
+                const msg = '⚠️ Diferença de horário detectada. Ajuste o relógio do dispositivo e tente novamente.';
+                console.error(msg, {
+                  localTime: new Date(Date.now()).toISOString(),
+                  expiresAt: new Date(expiresAtMs).toISOString(),
+                  diffMs: timeDiff,
+                });
+                if (typeof window !== 'undefined') {
+                    alert(msg);
+                }
+                setLoading(false);
+                return;
+            }
+        }
+
         if (session?.user?.id) {
             console.log("🔑 Sessão inicial encontrada, User ID:", session.user.id);
             // Validação crítica de UUID
