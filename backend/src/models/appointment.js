@@ -1,6 +1,9 @@
 // src/models/appointment.js
 const { createServiceClient } = require('../config/supabase');
 
+// Nome canônico da tabela de consultas
+const TABLE_NAME = 'consultas';
+
 class Appointment {
   /**
    * Lista todas as consultas de um usuário
@@ -12,7 +15,7 @@ class Appointment {
     const supabase = createServiceClient();
     
     const query = supabase
-      .from('consultas')
+      .from(TABLE_NAME)
       .select(`
         *,
         paciente:paciente_id(*),
@@ -41,7 +44,7 @@ class Appointment {
     const supabase = createServiceClient();
     
     const { data, error } = await supabase
-      .from('consultas')
+      .from(TABLE_NAME)
       .select(`
         *,
         paciente:paciente_id(*),
@@ -63,7 +66,7 @@ class Appointment {
     const supabase = createServiceClient();
     
     const { data, error } = await supabase
-      .from('consultas')
+      .from(TABLE_NAME)
       .insert([
         {
           paciente_id: appointmentData.paciente_id,
@@ -90,7 +93,7 @@ class Appointment {
     const supabase = createServiceClient();
     
     const { data, error } = await supabase
-      .from('consultas')
+      .from(TABLE_NAME)
       .update(appointmentData)
       .eq('id', appointmentId)
       .select();
@@ -108,7 +111,7 @@ class Appointment {
     const supabase = createServiceClient();
     
     const { data, error } = await supabase
-      .from('consultas')
+      .from(TABLE_NAME)
       .update({ status: 'cancelada' })
       .eq('id', appointmentId)
       .select();
@@ -126,7 +129,7 @@ class Appointment {
     const supabase = createServiceClient();
     
     const { data, error } = await supabase
-      .from('consultas')
+      .from(TABLE_NAME)
       .update({ 
         status: 'em_andamento',
         inicio_real: new Date().toISOString()

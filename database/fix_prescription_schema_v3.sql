@@ -21,7 +21,7 @@ END$$;
 -- This step is crucial because the error indicates this table does not exist.
 CREATE TABLE IF NOT EXISTS "DocumentosDigitais" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    consulta_id UUID NOT NULL REFERENCES Consultas(id), -- Chave Estrangeira
+    consulta_id UUID NOT NULL REFERENCES consultas(id), -- Chave Estrangeira
     tipo tipo_documento NOT NULL,
     conteudo_hash VARCHAR(255) NOT NULL, -- Para verificar integridade do documento
     url_documento_assinado VARCHAR(255) NOT NULL, -- Link para o PDF seguro
@@ -35,7 +35,7 @@ ALTER TABLE "DocumentosDigitais" ADD COLUMN IF NOT EXISTS "patient_id" UUID;
 
 -- Step 4: Add foreign key constraints for doctor_id and patient_id
 -- Note: These FKs are added to DocumentosDigitais to align with frontend expectations.
--- In a real scenario, the relationship might be better managed via Consultas.
+-- In a real scenario, the relationship might be better managed via consultas.
 ALTER TABLE "DocumentosDigitais" ADD CONSTRAINT "fk_documentos_medico" FOREIGN KEY ("doctor_id") REFERENCES "Medicos" ("id");
 ALTER TABLE "DocumentosDigitais" ADD CONSTRAINT "fk_documentos_paciente" FOREIGN KEY ("patient_id") REFERENCES "Pacientes" ("id");
 
