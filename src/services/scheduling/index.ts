@@ -65,7 +65,8 @@ async function getAvailableSlots(
   }
   try {
     const { data, error } = await supabase.rpc('get_doctor_schedule_v2', {
-      p_doctor_id: doctorId
+      p_doctor_id: doctorId,
+      p_date: date
     });
     if (error) {
       logger.error('Erro ao buscar horários', 'schedulingService.getAvailableSlots', error);
@@ -73,26 +74,35 @@ async function getAvailableSlots(
     }
     const response = Array.isArray(data) ? data[0] : data;
     const locations = response?.locations || [];
-    return (locations || []).map((loc: any) => {
-      const horarios = Array.isArray(loc.horarios_disponiveis)
-        ? loc.horarios_disponiveis
-            .map((h: any) => {
-              if (typeof h === 'string') {
-                return { time: h, available: true };
-              }
-              const time = h?.time || h?.hora || '';
-              const available = h?.available ?? h?.disponivel ?? true;
-              return { time, available };
-            })
-            .filter((h: any) => h.time)
-        : [];
-      return {
-        id: loc.id?.toString() || '',
-        nome_local: loc.nome_local || 'Local não informado',
-        endereco: loc.endereco || loc.endereco_completo || {},
-        horarios_disponiveis: horarios
-      };
-    }).filter((l: LocalComHorarios) => l.id && l.id !== 'undefined');
+    const dateOnly = date.split('T')[0];
+    return (locations || [])
+      .map((loc: any) => {
+        const horarios = Array.isArray(loc.horarios_disponiveis)
+          ? loc.horarios_disponiveis
+              .map((h: any) => {
+                if (typeof h === 'string') {
+                  return { time: h, available: true };
+                }
+                const time = h?.time || h?.hora || '';
+                const available = h?.available ?? h?.disponivel ?? true;
+                return { time, available };
+              })
+              .filter((h: any) =>
+                h.time &&
+                (
+                  !h.time.includes('T') ||
+                  h.time.startsWith(dateOnly)
+                )
+              )
+          : [];
+        return {
+          id: loc.id?.toString() || '',
+          nome_local: loc.nome_local || 'Local não informado',
+          endereco: loc.endereco || loc.endereco_completo || {},
+          horarios_disponiveis: horarios
+        };
+      })
+      .filter((l: LocalComHorarios) => l.id && l.id !== 'undefined');
   } catch (err) {
     logger.error('Erro inesperado ao buscar horários', 'schedulingService.getAvailableSlots', err);
     return [];

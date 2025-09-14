@@ -111,7 +111,8 @@ export class RealAppointmentService implements IAppointmentService {
       // Try v2 RPC first
       try {
         const { data, error } = await supabase.rpc('get_doctor_schedule_v2', {
-          p_doctor_id: doctorId
+          p_doctor_id: doctorId,
+          p_date: date
         });
 
         if (error) {
