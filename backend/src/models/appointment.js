@@ -68,11 +68,10 @@ class Appointment {
         {
           paciente_id: appointmentData.paciente_id,
           medico_id: appointmentData.medico_id,
-          data_hora: appointmentData.data_hora,
-          tipo: appointmentData.tipo,
+          consultation_date: appointmentData.consultation_date,
+          consultation_type: appointmentData.consultation_type,
           status: 'agendada',
-          motivo: appointmentData.motivo,
-          observacoes: appointmentData.observacoes
+          notes: appointmentData.notes
         }
       ])
       .select();

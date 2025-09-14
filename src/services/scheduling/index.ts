@@ -116,6 +116,7 @@ async function createAppointment(params: {
   consultation_type: string;
   local_id?: string;
   local_consulta_texto?: string;
+  notes?: string;
 }): Promise<any> {
   try {
     const { data, error } = await supabase.rpc('reserve_appointment_v2', {
