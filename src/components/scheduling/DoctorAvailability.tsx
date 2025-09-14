@@ -34,10 +34,10 @@ interface Doctor {
 }
 
 interface AvailableSlot {
-  data_hora: string;
+  consultation_date: string;
   duracao_disponivel: number;
   local_id?: string;
-  tipo_consulta: 'presencial' | 'teleconsulta';
+  consultation_type: 'presencial' | 'teleconsulta';
   valor: number;
 }
 
@@ -93,10 +93,10 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
         locations.forEach(loc => {
           (loc.horarios_disponiveis || []).forEach(h => {
             slots.push({
-              data_hora: `${dateStr}T${h}`,
+              consultation_date: `${dateStr}T${h}`,
               duracao_disponivel: 30,
               local_id: loc.id,
-              tipo_consulta: consultationType,
+              consultation_type: consultationType,
               valor: consultationType === 'teleconsulta'
                 ? doctor.valor_consulta_teleconsulta || 0
                 : doctor.valor_consulta_presencial || 0
@@ -133,10 +133,11 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
       const result = await schedulingService.createAppointment({
         medico_id: doctor.id,
         paciente_id: patientId,
-        consultation_date: selectedSlot.data_hora,
-        consultation_type: selectedSlot.tipo_consulta,
+        consultation_date: selectedSlot.consultation_date,
+        consultation_type: selectedSlot.consultation_type,
         local_id: selectedSlot.local_id,
         local_consulta_texto: '',
+        notes: bookingData.motivo_consulta,
       });
 
       toast({
@@ -191,9 +192,9 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
 
   const groupSlotsByDay = (slots: AvailableSlot[]) => {
     const grouped: { [key: string]: AvailableSlot[] } = {};
-    
+
     slots.forEach(slot => {
-      const date = new Date(slot.data_hora).toDateString();
+      const date = new Date(slot.consultation_date).toDateString();
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -246,17 +247,17 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <p className="text-sm font-medium">Data e Horário</p>
-                <p className="text-sm">{formatDate(selectedSlot.data_hora)} às {formatTime(selectedSlot.data_hora)}</p>
+                <p className="text-sm">{formatDate(selectedSlot.consultation_date)} às {formatTime(selectedSlot.consultation_date)}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Tipo</p>
                 <div className="flex items-center gap-1">
-                  {selectedSlot.tipo_consulta === 'teleconsulta' ? (
+                  {selectedSlot.consultation_type === 'teleconsulta' ? (
                     <Video className="w-4 h-4" />
                   ) : (
                     <MapPin className="w-4 h-4" />
                   )}
-                  <span className="text-sm capitalize">{selectedSlot.tipo_consulta}</span>
+                  <span className="text-sm capitalize">{selectedSlot.consultation_type}</span>
                 </div>
               </div>
               <div>
@@ -453,7 +454,7 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
                       className="w-full justify-start text-left"
                     >
                       <Clock className="w-3 h-3 mr-2" />
-                      {formatTime(slot.data_hora)}
+                      {formatTime(slot.consultation_date)}
                       <span className="ml-auto text-xs">
                         {slot.duracao_disponivel}min
                       </span>

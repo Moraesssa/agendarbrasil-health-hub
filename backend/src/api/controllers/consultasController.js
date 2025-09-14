@@ -79,10 +79,16 @@ exports.createAppointment = async (req, res) => {
     const appointmentData = req.body;
     
     // Validação básica
-    if (!appointmentData.paciente_id || !appointmentData.medico_id || !appointmentData.data_hora) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Dados incompletos. ID do paciente, ID do médico e data/hora são obrigatórios.' 
+    if (
+      !appointmentData.paciente_id ||
+      !appointmentData.medico_id ||
+      !appointmentData.consultation_date ||
+      !appointmentData.consultation_type
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Dados incompletos. ID do paciente, ID do médico, data da consulta e tipo são obrigatórios.'
       });
     }
     
