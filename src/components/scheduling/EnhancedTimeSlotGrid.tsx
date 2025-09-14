@@ -70,7 +70,9 @@ export const EnhancedTimeSlotGrid: React.FC<EnhancedTimeSlotGridProps> = ({
 
     // Add location information
     safeLocaisInfo.forEach(local => {
-      const horariosDisponiveis = safeArrayAccess(local.horarios_disponiveis);
+      const horariosDisponiveis = safeArrayAccess<{ time: string; available: boolean }>(
+        local.horarios_disponiveis
+      );
       horariosDisponiveis.forEach(slot => {
         const enhancedSlot = slotsMap.get(slot.time);
         if (enhancedSlot && slot.available) {
