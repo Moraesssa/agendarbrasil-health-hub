@@ -3,18 +3,31 @@ const { createServiceClient } = require('../config/supabase');
 
 class Doctor {
   /**
-   * Lista todos os médicos
+   * Lista todos os médicos com filtros opcionais
+   * @param {Object} [filters] - Filtros opcionais
+   * @param {string} [filters.especialidade] - Especialidade para filtrar
+   * @param {string} [filters.nome] - Nome parcial para filtrar
    * @returns {Promise<Array>} - Lista de médicos
    */
-  static async listAll() {
+  static async listAll({ especialidade, nome } = {}) {
     const supabase = createServiceClient();
-    
-    const { data, error } = await supabase
+
+    let query = supabase
       .from('medicos')
       .select(`
         *,
         especialidades(*)
       `);
+
+    if (especialidade) {
+      query = query.eq('especialidade', especialidade);
+    }
+
+    if (nome) {
+      query = query.ilike('nome', `%${nome}%`);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data;
