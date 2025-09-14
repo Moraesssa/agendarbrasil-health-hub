@@ -90,8 +90,14 @@ database/
 | `/agendamento` | `Agendamento` (fluxo em 7 passos) | `/agendamento-inteligente` |
 | `/agenda-paciente` | `AgendaPacienteIntegrada` | `/agenda-paciente-legacy` |
 | `/agenda-medico` | `AgendaMedicoIntegrada` | `/agenda-medico-legacy` |
+| `/scheduler-demo` | `SchedulerDemo` (demonstração) | — |
 
 > A rota `/agendamento-inteligente` mantém o fluxo de agendamento integrado com busca inteligente e otimizações, indicada para testes e validação.
+
+### Recomendações de Uso
+- **Produção:** utilize o fluxo padrão `/agendamento` e as agendas integradas em `/agenda-paciente` e `/agenda-medico`.
+- **Testes:** use `/agendamento-inteligente` para validar o novo fluxo e `/agenda-paciente-legacy` e `/agenda-medico-legacy` para comparação com as versões antigas.
+- `/scheduler-demo` é destinado apenas a demonstrações em ambiente de desenvolvimento.
 
 ### Componentes Substituídos
 - `Agendamento.tsx` permanece como fluxo padrão.
