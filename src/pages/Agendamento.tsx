@@ -130,7 +130,7 @@ const Agendamento = () => {
   // If only medicoId provided, infer city/state from active locations
   useEffect(() => {
     const doc = selectedDoctor || (searchParams.get('medicoId') || searchParams.get('doctorId'));
-    if (!doc) return;
+    if (!doc || !supabase) return;
     if (selectedState && selectedCity) return;
     (async () => {
       const { data, error } = await supabase
