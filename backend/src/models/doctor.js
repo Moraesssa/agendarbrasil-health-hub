@@ -66,9 +66,10 @@ class Doctor {
    * Verifica a disponibilidade de um médico
    * @param {string} doctorId - ID do médico
    * @param {string} date - Data (YYYY-MM-DD)
-   * @returns {Promise<Array>} - Horários disponíveis
+   * @param {string} [hora] - Hora opcional (HH:MM)
+   * @returns {Promise<{disponivel: boolean, horarios_disponiveis: Array}>}
    */
-  static async checkAvailability(doctorId, date) {
+  static async checkAvailability(doctorId, date, hora) {
     const supabase = createServiceClient();
     
     // Busca a agenda do médico para a data especificada
@@ -83,16 +84,19 @@ class Doctor {
     // Busca as consultas já agendadas para o médico na data especificada
     const { data: appointments, error: appointmentsError } = await supabase
       .from('consultas')
-      .select('data_hora, duracao')
+      .select('consultation_date, duracao')
       .eq('medico_id', doctorId)
-      .like('data_hora', `${date}%`)
+      .like('consultation_date', `${date}%`)
       .not('status', 'eq', 'cancelada');
 
     if (appointmentsError) throw appointmentsError;
 
     // Se não houver agenda para esta data, retorna uma lista vazia
     if (!schedule || schedule.length === 0) {
-      return [];
+      return {
+        disponivel: false,
+        horarios_disponiveis: []
+      };
     }
 
     // Processa os horários disponíveis
@@ -109,7 +113,7 @@ class Doctor {
       
       // Verifica se o horário já está ocupado
       const isBooked = appointments.some(appointment => {
-        const appointmentStart = new Date(appointment.data_hora);
+        const appointmentStart = new Date(appointment.consultation_date);
         const appointmentEnd = new Date(appointmentStart.getTime() + (appointment.duracao || 30) * 60000);
         return currentTime >= appointmentStart && currentTime < appointmentEnd;
       });
@@ -125,7 +129,18 @@ class Doctor {
       currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
     }
     
-    return availableSlots;
+    let disponivel;
+    if (hora) {
+      const targetTime = new Date(`${date}T${hora}`);
+      disponivel = availableSlots.some(slot => new Date(slot.hora).getTime() === targetTime.getTime());
+    } else {
+      disponivel = availableSlots.length > 0;
+    }
+
+    return {
+      disponivel,
+      horarios_disponiveis: availableSlots
+    };
   }
 }
 

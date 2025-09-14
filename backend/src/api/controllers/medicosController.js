@@ -108,16 +108,16 @@ exports.checkDoctorAvailability = async (req, res) => {
   try {
     const doctorId = req.params.id;
     const { data, hora } = req.query;
-    
-    if (!doctorId || !data || !hora) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID do médico, data e hora são obrigatórios' 
+
+    if (!doctorId || !data) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID do médico e data são obrigatórios'
       });
     }
-    
+
     const availability = await Doctor.checkAvailability(doctorId, data, hora);
-    
+
     res.status(200).json({
       success: true,
       disponivel: availability.disponivel,
@@ -125,9 +125,9 @@ exports.checkDoctorAvailability = async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao verificar disponibilidade do médico:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erro ao verificar disponibilidade do médico', 
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar disponibilidade do médico',
       error: error.message 
     });
   }
