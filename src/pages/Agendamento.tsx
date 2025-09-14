@@ -31,6 +31,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { LocalComHorarios } from '@/services/scheduling';
 import { useSearchParams } from 'react-router-dom';
 import { safeArrayAccess, safeArrayLength } from '@/utils/arrayUtils';
+import { TimeSlot } from '@/utils/timeSlotUtils';
 
 const TOTAL_STEPS = 7;
 
@@ -407,7 +408,7 @@ const Agendamento = () => {
         );
       case 6:
         // Processar horários removendo duplicatas e agrupando por horário
-        const processedTimeSlots = new Map<string, { time: string; available: boolean; locations: string[] }>();
+        const processedTimeSlots = new Map<string, TimeSlot & { locations: string[] }>();
         
         const safeLocais = safeArrayAccess(locaisComHorarios);
         safeLocais.forEach(local => {
@@ -430,7 +431,7 @@ const Agendamento = () => {
         });
         
         // Converter para array e ordenar por horário
-        const timeSlots = Array.from(processedTimeSlots.values())
+        const timeSlots: TimeSlot[] = Array.from(processedTimeSlots.values())
           .map(slot => ({ time: slot.time, available: slot.available }))
           .sort((a, b) => a.time.localeCompare(b.time));
         

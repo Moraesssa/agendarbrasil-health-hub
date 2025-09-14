@@ -20,7 +20,7 @@ export interface LocalComHorarios {
   id: string;
   nome_local: string;
   endereco?: any;
-  horarios_disponiveis: string[];
+  horarios_disponiveis: Array<{ time: string; available: boolean }>;
 }
 
 async function searchDoctors(
@@ -73,14 +73,26 @@ async function getAvailableSlots(
     }
     const response = Array.isArray(data) ? data[0] : data;
     const locations = response?.locations || [];
-    return (locations || []).map((loc: any) => ({
-      id: loc.id?.toString() || '',
-      nome_local: loc.nome_local || 'Local não informado',
-      endereco: loc.endereco || loc.endereco_completo || {},
-      horarios_disponiveis: Array.isArray(loc.horarios_disponiveis)
+    return (locations || []).map((loc: any) => {
+      const horarios = Array.isArray(loc.horarios_disponiveis)
         ? loc.horarios_disponiveis
-        : []
-    })).filter((l: LocalComHorarios) => l.id && l.id !== 'undefined');
+            .map((h: any) => {
+              if (typeof h === 'string') {
+                return { time: h, available: true };
+              }
+              const time = h?.time || h?.hora || '';
+              const available = h?.available ?? h?.disponivel ?? true;
+              return { time, available };
+            })
+            .filter((h: any) => h.time)
+        : [];
+      return {
+        id: loc.id?.toString() || '',
+        nome_local: loc.nome_local || 'Local não informado',
+        endereco: loc.endereco || loc.endereco_completo || {},
+        horarios_disponiveis: horarios
+      };
+    }).filter((l: LocalComHorarios) => l.id && l.id !== 'undefined');
   } catch (err) {
     logger.error('Erro inesperado ao buscar horários', 'schedulingService.getAvailableSlots', err);
     return [];
