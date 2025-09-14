@@ -4,9 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useAppointmentServiceInstance } from '@/contexts/AppointmentServiceProvider';
-import { LocalComHorarios } from "@/services/newAppointmentService";
-import { Medico } from "@/services/newAppointmentService";
+import schedulingService, { LocalComHorarios, Medico } from "@/services/scheduling";
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
 import { safeArrayAccess, safeArrayLength } from "@/utils/arrayUtils";
@@ -18,7 +16,6 @@ export const useAppointmentScheduling = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const appointmentService = useAppointmentServiceInstance();
 
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedState, setSelectedState] = useState("");
@@ -78,7 +75,7 @@ export const useAppointmentScheduling = () => {
       
       try {
         const [specialtiesData, statesData] = await Promise.all([
-          appointmentService.getSpecialties(),
+          schedulingService.getSpecialties(),
           supabase.rpc('get_available_states').then(res => safeArrayAccess(res.data))
         ]);
         const safeSpecialties = safeArrayAccess(specialtiesData);
@@ -143,7 +140,7 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const doctorsData = await appointmentService.getDoctorsByLocationAndSpecialty(selectedSpecialty, selectedCity, selectedState);
+        const doctorsData = await schedulingService.searchDoctors(selectedSpecialty, selectedState, selectedCity);
   logger.debug('Médicos recebidos', 'useAppointmentScheduling', doctorsData);
         
         const validDoctors = safeArrayAccess(doctorsData);
@@ -185,7 +182,7 @@ export const useAppointmentScheduling = () => {
       setIsLoading(true);
       
       try {
-        const slots = await appointmentService.getAvailableSlotsByDoctor(selectedDoctor, selectedDate);
+        const slots = await schedulingService.getAvailableSlots(selectedDoctor, selectedDate);
         const safeSlots = safeArrayAccess(slots);
         setLocaisComHorarios(safeSlots);
       } catch (error) {
@@ -241,7 +238,7 @@ export const useAppointmentScheduling = () => {
         local_consulta_texto: localTexto
       });
 
-      await appointmentService.scheduleAppointment({
+      await schedulingService.createAppointment({
         paciente_id: user.id,
         medico_id: selectedDoctor,
         consultation_date: appointmentDateTime,

@@ -22,9 +22,24 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-import SchedulingService, { Doctor, AvailableSlot } from '@/services/schedulingService';
+import schedulingService from '@/services/scheduling';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
+
+interface Doctor {
+  id: string;
+  nome: string;
+  valor_consulta_presencial?: number;
+  valor_consulta_teleconsulta?: number;
+}
+
+interface AvailableSlot {
+  data_hora: string;
+  duracao_disponivel: number;
+  local_id?: string;
+  tipo_consulta: 'presencial' | 'teleconsulta';
+  valor: number;
+}
 
 interface DoctorAvailabilityProps {
   doctor: Doctor;
@@ -65,17 +80,31 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
       const startOfWeek = new Date(currentWeek);
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
-      
+
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
 
-      const slots = await SchedulingService.getDoctorAvailability(
-        doctor.id,
-        startOfWeek.toISOString(),
-        endOfWeek.toISOString(),
-        consultationType
-      );
+      const slots: AvailableSlot[] = [];
+      const day = new Date(startOfWeek);
+      while (day <= endOfWeek) {
+        const dateStr = day.toISOString().split('T')[0];
+        const locations = await schedulingService.getAvailableSlots(doctor.id, dateStr);
+        locations.forEach(loc => {
+          (loc.horarios_disponiveis || []).forEach(h => {
+            slots.push({
+              data_hora: `${dateStr}T${h}`,
+              duracao_disponivel: 30,
+              local_id: loc.id,
+              tipo_consulta: consultationType,
+              valor: consultationType === 'teleconsulta'
+                ? doctor.valor_consulta_teleconsulta || 0
+                : doctor.valor_consulta_presencial || 0
+            });
+          });
+        });
+        day.setDate(day.getDate() + 1);
+      }
 
       setAvailableSlots(slots);
     } catch (error) {
@@ -101,16 +130,13 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
     try {
       setLoading(true);
 
-      const appointment = await SchedulingService.createAppointment({
+      const result = await schedulingService.createAppointment({
         medico_id: doctor.id,
         paciente_id: patientId,
-        data_hora_agendada: selectedSlot.data_hora,
-        tipo: selectedSlot.tipo_consulta,
+        consultation_date: selectedSlot.data_hora,
+        consultation_type: selectedSlot.tipo_consulta,
         local_id: selectedSlot.local_id,
-        motivo_consulta: bookingData.motivo_consulta,
-        observacoes_paciente: bookingData.observacoes_paciente,
-        prioridade: bookingData.prioridade,
-        agendado_por: user.id
+        local_consulta_texto: '',
       });
 
       toast({
@@ -118,7 +144,10 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
         description: "Consulta agendada com sucesso.",
       });
 
-      onAppointmentCreated?.(appointment.id);
+      const appointmentId = (result && (result as any)[0]?.appointment_id) || (result as any)?.appointment_id;
+      if (appointmentId) {
+        onAppointmentCreated?.(appointmentId);
+      }
       
     } catch (error: any) {
       console.error('Erro ao agendar:', error);

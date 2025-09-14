@@ -1,5 +1,5 @@
 import { IAppointmentService } from '@/types/appointmentService';
-import { Medico, LocalComHorarios } from '@/services/newAppointmentService';
+import { Medico, LocalComHorarios } from '@/services/scheduling';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { specialtyService } from '@/services/specialtyService';
