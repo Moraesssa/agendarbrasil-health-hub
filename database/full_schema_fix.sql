@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS "Pacientes" (
     endereco TEXT
 );
 
--- Step 5: Create the Consultas table
-CREATE TABLE IF NOT EXISTS "Consultas" (
+-- Step 5: Create the consultas table
+CREATE TABLE IF NOT EXISTS consultas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     medico_id UUID NOT NULL REFERENCES "Medicos"(id), -- Chave Estrangeira
     paciente_id UUID NOT NULL REFERENCES "Pacientes"(id), -- Chave Estrangeira
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS "Consultas" (
 -- Step 6: Create the DocumentosDigitais table
 CREATE TABLE IF NOT EXISTS "DocumentosDigitais" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    consulta_id UUID NOT NULL REFERENCES "Consultas"(id), -- Chave Estrangeira
+    consulta_id UUID NOT NULL REFERENCES consultas(id), -- Chave Estrangeira
     tipo tipo_documento NOT NULL,
     conteudo_hash VARCHAR(255) NOT NULL, -- Para verificar integridade do documento
     url_documento_assinado VARCHAR(255) NOT NULL, -- Link para o PDF seguro

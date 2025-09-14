@@ -46,8 +46,8 @@ CREATE TABLE Pacientes (
     endereco TEXT
 );
 
--- Tabela de Consultas: Agenda e gerencia os atendimentos.
-CREATE TABLE Consultas (
+-- Tabela de consultas: agenda e gerencia os atendimentos.
+CREATE TABLE consultas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     medico_id UUID NOT NULL REFERENCES Medicos(id), -- Chave Estrangeira
     paciente_id UUID NOT NULL REFERENCES Pacientes(id), -- Chave Estrangeira
@@ -65,7 +65,7 @@ CREATE TABLE Prontuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     paciente_id UUID NOT NULL REFERENCES Pacientes(id), -- Chave Estrangeira
     medico_id UUID NOT NULL REFERENCES Medicos(id), -- Chave Estrangeira
-    consulta_id UUID REFERENCES Consultas(id), -- Opcional, mas recomendado
+    consulta_id UUID REFERENCES consultas(id), -- Opcional, mas recomendado
     data_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     anotacoes_clinicas TEXT, -- Criptografar em repouso
     hipotese_diagnostica TEXT -- Criptografar em repouso
@@ -74,7 +74,7 @@ CREATE TABLE Prontuarios (
 -- Tabela de Documentos Digitais: Armazena prescrições, atestados, etc.
 CREATE TABLE DocumentosDigitais (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    consulta_id UUID NOT NULL REFERENCES Consultas(id), -- Chave Estrangeira
+    consulta_id UUID NOT NULL REFERENCES consultas(id), -- Chave Estrangeira
     tipo tipo_documento NOT NULL,
     conteudo_hash VARCHAR(255) NOT NULL, -- Para verificar integridade do documento
     url_documento_assinado VARCHAR(255) NOT NULL, -- Link para o PDF seguro
@@ -104,11 +104,11 @@ CREATE INDEX idx_medicos_usuario_id ON Medicos(usuario_id);
 -- Tabela Pacientes
 CREATE INDEX idx_pacientes_usuario_id ON Pacientes(usuario_id);
 
--- Tabela Consultas
-CREATE INDEX idx_consultas_medico_id ON Consultas(medico_id);
-CREATE INDEX idx_consultas_paciente_id ON Consultas(paciente_id);
-CREATE INDEX idx_consultas_data_hora ON Consultas(data_hora_agendamento); -- Criar índice
-CREATE INDEX idx_consultas_status ON Consultas(status); -- Criar índice
+-- Tabela consultas
+CREATE INDEX idx_consultas_medico_id ON consultas(medico_id);
+CREATE INDEX idx_consultas_paciente_id ON consultas(paciente_id);
+CREATE INDEX idx_consultas_data_hora ON consultas(data_hora_agendamento); -- Criar índice
+CREATE INDEX idx_consultas_status ON consultas(status); -- Criar índice
 
 -- Tabela Prontuarios
 CREATE INDEX idx_prontuarios_paciente_id ON Prontuarios(paciente_id);

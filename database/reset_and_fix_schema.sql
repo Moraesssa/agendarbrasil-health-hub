@@ -3,7 +3,7 @@
 -- Step 1: Drop all existing tables to ensure a clean state
 DROP TABLE IF EXISTS "medical_prescriptions" CASCADE;
 DROP TABLE IF EXISTS "DocumentosDigitais" CASCADE;
-DROP TABLE IF EXISTS "Consultas" CASCADE;
+DROP TABLE IF EXISTS consultas CASCADE;
 DROP TABLE IF EXISTS "Pacientes" CASCADE;
 DROP TABLE IF EXISTS "Medicos" CASCADE;
 DROP TABLE IF EXISTS "Usuarios" CASCADE;
@@ -62,8 +62,8 @@ CREATE TABLE "Pacientes" (
     endereco TEXT
 );
 
--- Step 6: Create the Consultas table
-CREATE TABLE "Consultas" (
+-- Step 6: Create the consultas table
+CREATE TABLE consultas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     medico_id UUID NOT NULL REFERENCES "Medicos"(id), -- Chave Estrangeira
     paciente_id UUID NOT NULL REFERENCES "Pacientes"(id), -- Chave Estrangeira
@@ -79,7 +79,7 @@ CREATE TABLE "Consultas" (
 -- Step 7: Create the DocumentosDigitais table
 CREATE TABLE "DocumentosDigitais" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    consulta_id UUID NOT NULL REFERENCES "Consultas"(id), -- Chave Estrangeira
+    consulta_id UUID NOT NULL REFERENCES consultas(id), -- Chave Estrangeira
     tipo tipo_documento NOT NULL,
     conteudo_hash VARCHAR(255) NOT NULL, -- Para verificar integridade do documento
     url_documento_assinado VARCHAR(255) NOT NULL, -- Link para o PDF seguro

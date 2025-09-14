@@ -1,6 +1,9 @@
 // src/models/doctor.js
 const { createServiceClient } = require('../config/supabase');
 
+// Nome canônico da tabela de consultas
+const CONSULTA_TABLE = 'consultas';
+
 class Doctor {
   /**
    * Lista todos os médicos com filtros opcionais
@@ -96,7 +99,7 @@ class Doctor {
 
     // Busca as consultas já agendadas para o médico na data especificada
     const { data: appointments, error: appointmentsError } = await supabase
-      .from('consultas')
+      .from(CONSULTA_TABLE)
       .select('consultation_date, duracao')
       .eq('medico_id', doctorId)
       .like('consultation_date', `${date}%`)
