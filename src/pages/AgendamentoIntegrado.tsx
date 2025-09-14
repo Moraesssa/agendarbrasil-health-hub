@@ -17,7 +17,7 @@ import { IntelligentTimeSlots } from '@/components/scheduling/IntelligentTimeSlo
 import { AppointmentConfirmation } from '@/components/scheduling/AppointmentConfirmation';
 
 // Serviços
-import intelligentSchedulingService, { Doctor, TimeSlot } from '@/services/intelligentSchedulingService';
+import schedulingService, { Doctor, TimeSlot } from '@/services/scheduling';
 
 type Step = 'search' | 'availability' | 'confirmation';
 
@@ -69,26 +69,24 @@ const AgendamentoIntegrado: React.FC = () => {
 
     setLoading(true);
     try {
-      const result = await intelligentSchedulingService.createIntelligentAppointment({
-        doctor_id: selectedDoctor.id,
-        patient_id: patientId,
-        date_time: slot.time,
-        type: slot.type,
-        location_id: slot.location_id,
-        notes: 'Agendamento via sistema inteligente'
+      const result = await schedulingService.createAppointment({
+        medico_id: selectedDoctor.id,
+        paciente_id: patientId,
+        consultation_date: slot.time,
+        consultation_type: slot.type,
+        local_id: slot.location_id,
+        local_consulta_texto: ''
       });
 
-      if (result.success && result.appointment_id) {
-        setAppointmentId(result.appointment_id);
+      const appointmentIdResult = (result && (result as any)[0]?.appointment_id) || (result as any)?.appointment_id;
+      if (appointmentIdResult) {
+        setAppointmentId(appointmentIdResult);
         setCurrentStep('confirmation');
-        toast({
-          title: "Consulta agendada!",
-          description: result.message,
-        });
+        toast({ title: "Consulta agendada!" });
       } else {
         toast({
           title: "Erro no agendamento",
-          description: result.message,
+          description: 'Não foi possível agendar a consulta',
           variant: "destructive"
         });
       }

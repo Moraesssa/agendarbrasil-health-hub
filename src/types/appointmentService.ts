@@ -1,4 +1,4 @@
-import { Medico, LocalComHorarios } from '@/services/newAppointmentService';
+import { Medico, LocalComHorarios } from '@/services/scheduling';
 import { AppointmentV2, AppointmentType, AppointmentStatus } from '@/types/appointments';
 import { UnifiedAppointment } from '@/types/appointments';
 
