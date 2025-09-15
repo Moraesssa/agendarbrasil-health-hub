@@ -55,7 +55,7 @@ serve(async (req) => {
         .select('*')
         .eq('patient_id', patientId)
         .limit(parseInt(_count))
-        .order('recorded_at', { ascending: false })
+        .order('registrado_em', { ascending: false })
 
       const { data: metrics, error } = await query
 
