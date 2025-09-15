@@ -1,9 +1,39 @@
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import fs from "fs/promises";
 import path from "path";
+
+import react from "@vitejs/plugin-react-swc";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
+import { defineConfig } from "vite";
+
+const copyAccessibilityStyles = () => {
+  let outDir = "dist";
+
+  return {
+    name: "copy-accessibility-styles",
+    apply: "build",
+    configResolved(config) {
+      if (config.build?.outDir) {
+        outDir = config.build.outDir;
+      }
+    },
+    async closeBundle() {
+      const source = path.resolve(
+        __dirname,
+        "src/styles/accessibility.css",
+      );
+      const destination = path.resolve(
+        __dirname,
+        outDir,
+        "assets/styles/accessibility.css",
+      );
+
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.copyFile(source, destination);
+    },
+  } satisfies import("vite").Plugin;
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -21,6 +51,7 @@ export default defineConfig(({ mode }) => ({
       gzipSize: true,
       brotliSize: true,
     }),
+    copyAccessibilityStyles(),
   ].filter(Boolean),
   resolve: {
     alias: {
