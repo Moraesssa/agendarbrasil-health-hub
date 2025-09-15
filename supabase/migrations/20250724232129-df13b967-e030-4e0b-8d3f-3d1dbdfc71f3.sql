@@ -139,7 +139,7 @@ BEGIN
         'subject', jsonb_build_object(
             'reference', 'Patient/' || metric_record.patient_id::text
         ),
-        'effectiveDateTime', metric_record.recorded_at,
+        'effectiveDateTime', metric_record.registrado_em,
         'meta', jsonb_build_object(
             'lastUpdated', metric_record.created_at,
             'source', '#' || metric_record.id::text
