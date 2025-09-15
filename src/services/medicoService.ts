@@ -13,7 +13,7 @@ export const medicoService = {
       const { data: existing, error: fetchError } = await supabase
         .from('medicos')
         .select('configuracoes')
-        .eq('usuario_id', user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
@@ -25,6 +25,7 @@ export const medicoService = {
       const newConfiguracoes = (data.configuracoes as Record<string, any>) || {};
       
       const medicoData = {
+        user_id: user.id,
         usuario_id: user.id,
         crm: data.crm || '',
         especialidades: data.especialidades || [],
@@ -41,7 +42,7 @@ export const medicoService = {
         ({ error } = await supabase
           .from('medicos')
           .update(medicoData)
-          .eq('usuario_id', user.id));
+          .eq('user_id', user.id));
       } else {
         ({ error } = await supabase
           .from('medicos')
