@@ -6,6 +6,9 @@ import { BaseUser, OnboardingStatus } from '@/types/user';
 import { authService } from '@/services/authService';
 // Mock services removed for production
 
+// Temporarily increase clock drift tolerance while investigating Supabase time differences
+const CLOCK_DRIFT_TOLERANCE_MS = 10 * 60 * 1000; // 10 minutes
+
 export const useAuthState = () => {
   
   const [user, setUser] = useState<User | null>(null);
@@ -152,7 +155,7 @@ export const useAuthState = () => {
         if (session?.expires_at) {
             const expiresAtMs = session.expires_at * 1000;
             const timeDiff = Math.abs(Date.now() - expiresAtMs);
-            if (timeDiff > 5 * 60 * 1000) {
+            if (timeDiff > CLOCK_DRIFT_TOLERANCE_MS) {
                 const msg = '⚠️ Diferença de horário detectada. Ajuste o relógio do dispositivo e tente novamente.';
                 console.error(msg, {
                   localTime: new Date(Date.now()).toISOString(),
