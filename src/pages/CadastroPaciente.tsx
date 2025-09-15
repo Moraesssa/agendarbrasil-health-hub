@@ -69,9 +69,7 @@ const CadastroPaciente = () => {
       const { error: profileError } = await supabase
         .from('pacientes')
         .insert({
-          id: authData.user.id,
-          nome: formData.nome,
-          email: formData.email,
+          usuario_id: authData.user.id,
           telefone: formData.telefone,
           cpf: formData.cpf,
           data_nascimento: formData.dataNascimento,
@@ -84,8 +82,7 @@ const CadastroPaciente = () => {
           contato_emergencia_telefone: formData.telefoneEmergencia,
           historico_medico: formData.historicoMedico,
           alergias: formData.alergias,
-          medicamentos_em_uso: formData.medicamentos,
-          user_id: authData.user.id
+          medicamentos_em_uso: formData.medicamentos
         });
 
       if (profileError) throw profileError;
