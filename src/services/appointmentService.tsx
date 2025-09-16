@@ -163,6 +163,7 @@ export const appointmentService = {
     medico_id: string;
     consultation_date: string;
     consultation_type: string;
+    local_id?: string;
     notes?: string;
   }) {
     try {
@@ -175,7 +176,8 @@ export const appointmentService = {
           p_doctor_id: appointmentData.medico_id,
           p_appointment_datetime: appointmentData.consultation_date,
           p_specialty: appointmentData.consultation_type,
-          p_family_member_id: null
+          p_family_member_id: null,
+          p_local_id: appointmentData.local_id ?? null
         });
 
         if (error) {
