@@ -1,6 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Doctor, Specialty, State, City, Horario, Local } from '@/types/medical';
+import { Doctor, Specialty, State, City, Horario } from '@/types/medical';
 import { logger } from '@/utils/logger';
+import {
+  generateTimeSlots,
+  DoctorConfig,
+  WorkingHours,
+  DayWorkingHours,
+  ExistingAppointment
+} from '@/utils/timeSlotUtils';
 
 // Service interfaces - Aligned with RPC function return
 export interface Medico {
@@ -25,6 +32,145 @@ export interface LocalComHorarios {
   horarios: Horario[];
   horarios_disponiveis: Horario[];
 }
+
+const parseNumberField = (value: any): number | undefined => {
+  if (typeof value === 'number' && !Number.isNaN(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number.parseInt(trimmed, 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+
+  return undefined;
+};
+
+const normalizeTimeValue = (value: any): string | null => {
+  if (typeof value !== 'string') return null;
+
+  let timePart = value.trim();
+  if (!timePart) return null;
+
+  if (timePart.includes('T')) {
+    const [, extracted] = timePart.split('T');
+    timePart = extracted || '';
+  }
+
+  if (timePart.includes(' ')) {
+    const parts = timePart.split(' ');
+    timePart = parts[parts.length - 1] || '';
+  }
+
+  const [hours, minutes] = timePart.split(':');
+  if (hours === undefined || minutes === undefined) return null;
+
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+};
+
+const normalizeWorkingHours = (value: any): WorkingHours => {
+  const result: WorkingHours = {};
+
+  if (!value || typeof value !== 'object') {
+    return result;
+  }
+
+  Object.entries(value).forEach(([dayKey, blocks]) => {
+    if (!Array.isArray(blocks)) return;
+
+    const normalizedBlocks: DayWorkingHours[] = blocks
+      .map((block: any) => {
+        if (!block || typeof block !== 'object') return null;
+
+        const inicio = normalizeTimeValue(block.inicio ?? block.start ?? block.hora_inicio);
+        const fim = normalizeTimeValue(block.fim ?? block.end ?? block.hora_fim);
+        if (!inicio || !fim) return null;
+
+        const inicioAlmoco = normalizeTimeValue(block.inicioAlmoco ?? block.almoco_inicio ?? block.lunch_start);
+        const fimAlmoco = normalizeTimeValue(block.fimAlmoco ?? block.almoco_fim ?? block.lunch_end);
+        const localIdRaw = block.local_id ?? block.localId ?? block.location_id;
+        const ativo = block.ativo !== undefined
+          ? Boolean(block.ativo)
+          : block.active !== undefined
+            ? Boolean(block.active)
+            : true;
+
+        const normalized: DayWorkingHours = {
+          inicio,
+          fim,
+          ativo,
+          inicioAlmoco: inicioAlmoco || undefined,
+          fimAlmoco: fimAlmoco || undefined,
+          local_id: localIdRaw != null ? String(localIdRaw) : undefined
+        };
+
+        return normalized;
+      })
+      .filter((block): block is DayWorkingHours => Boolean(block));
+
+    if (normalizedBlocks.length > 0) {
+      result[dayKey] = normalizedBlocks;
+    }
+  });
+
+  return result;
+};
+
+const normalizeDoctorConfig = (value: any): DoctorConfig => {
+  let rawConfig = value;
+
+  if (typeof rawConfig === 'string') {
+    try {
+      rawConfig = JSON.parse(rawConfig);
+    } catch (error) {
+      logger.warn('[getHorarios] Falha ao converter doctor_config string para objeto', 'appointmentService.getHorarios', error);
+      rawConfig = null;
+    }
+  }
+
+  if (!rawConfig || typeof rawConfig !== 'object') {
+    return {
+      duracaoConsulta: 30,
+      bufferMinutos: 0,
+      horarioAtendimento: {}
+    };
+  }
+
+  const duracaoConsulta = parseNumberField(rawConfig.duracaoConsulta ?? rawConfig.duracao_consulta) ?? 30;
+  const bufferMinutos = parseNumberField(rawConfig.bufferMinutos ?? rawConfig.buffer_minutos) ?? 0;
+  const workingHours = normalizeWorkingHours(rawConfig.horarioAtendimento ?? rawConfig.horario_atendimento);
+
+  const normalizedConfig: DoctorConfig = {
+    duracaoConsulta,
+    bufferMinutos
+  };
+
+  if (Object.keys(workingHours).length > 0) {
+    normalizedConfig.horarioAtendimento = workingHours;
+  }
+
+  return normalizedConfig;
+};
+
+const extractAvailableTimes = (rawSlots: any): string[] => {
+  if (!Array.isArray(rawSlots)) return [];
+
+  return rawSlots
+    .map((slot: any) => {
+      if (typeof slot === 'string') {
+        return normalizeTimeValue(slot);
+      }
+
+      if (slot && typeof slot === 'object') {
+        return normalizeTimeValue(slot.time ?? slot.hora ?? slot.slot_time);
+      }
+
+      return null;
+    })
+    .filter((time): time is string => Boolean(time));
+};
 
 /**
  * Busca todas as especialidades médicas disponíveis.
@@ -133,7 +279,7 @@ export const getMedicos = async (
       throw error;
     }
 
-  logger.debug('[getMedicos] Dados retornados', 'appointmentService.getMedicos', data);
+    logger.debug('[getMedicos] Dados retornados', 'appointmentService.getMedicos', data);
     
     // Convert to Medico format with UUID validation
     const doctors: Medico[] = (data || []).map((doctor: any) => ({
@@ -143,8 +289,8 @@ export const getMedicos = async (
       crm: doctor.crm || ''
     })).filter(doctor => doctor.id && doctor.id !== 'undefined');
 
-  logger.debug('[getMedicos] Médicos formatados', 'appointmentService.getMedicos', doctors);
-  return doctors;
+    logger.debug('[getMedicos] Médicos formatados', 'appointmentService.getMedicos', doctors);
+    return doctors;
 
   } catch (error) {
     logger.error('[getMedicos] Erro inesperado', 'appointmentService.getMedicos', error);
@@ -167,7 +313,7 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
   }
 
   try {
-  logger.debug('[getHorarios] Buscando horários para', 'appointmentService.getHorarios', { doctorId, date });
+    logger.debug('[getHorarios] Buscando horários para', 'appointmentService.getHorarios', { doctorId, date });
 
     const normalizedDate = date.split('T')[0];
 
@@ -181,40 +327,137 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
       throw new Error('Não foi possível carregar os horários.');
     }
 
-  logger.debug('[getHorarios] Dados retornados', 'appointmentService.getHorarios', data);
+    logger.debug('[getHorarios] Dados retornados', 'appointmentService.getHorarios', data);
 
-    // Handle the data response correctly
     const responseData = Array.isArray(data) ? data[0] : data;
-    const locations = responseData?.locations || [];
+    const doctorConfig = normalizeDoctorConfig(responseData?.doctor_config);
+    const locations = Array.isArray(responseData?.locations) ? responseData.locations : [];
 
-    // Convert to LocalComHorarios format
-    // Return properly formatted locations with time slots
-    const locaisComHorarios: LocalComHorarios[] = (Array.isArray(locations) ? locations : []).map((location: any) => {
-      // Generate realistic time slots based on doctor's configuration
-      const horarios = [
-        { id: '1', hora: '08:00', disponivel: true, time: '08:00', available: true },
-        { id: '2', hora: '09:00', disponivel: true, time: '09:00', available: true },
-        { id: '3', hora: '10:00', disponivel: false, time: '10:00', available: false },
-        { id: '4', hora: '14:00', disponivel: true, time: '14:00', available: true },
-        { id: '5', hora: '15:00', disponivel: true, time: '15:00', available: true },
-      ];
+    logger.debug('[getHorarios] Dados normalizados', 'appointmentService.getHorarios', {
+      hasHorario: Boolean(doctorConfig.horarioAtendimento && Object.keys(doctorConfig.horarioAtendimento).length > 0),
+      duracaoConsulta: doctorConfig.duracaoConsulta,
+      bufferMinutos: doctorConfig.bufferMinutos,
+      totalLocations: locations.length
+    });
 
-      return {
-        id: location.id?.toString() || '',
-        nome_local: location.nome_local || 'Local não informado',
-        endereco_completo: location.endereco_completo || '',
-        endereco: location.endereco || {
-          logradouro: '',
-          numero: '',
-          bairro: '',
-          cidade: '',
-          uf: '',
-          cep: ''
-        },
-        horarios,
-        horarios_disponiveis: horarios.filter(h => h.disponivel)
-      };
-    }).filter(local => local.id && local.id !== 'undefined');
+    const scheduleDate = new Date(`${normalizedDate}T00:00:00`);
+    const startOfDay = new Date(`${normalizedDate}T00:00:00.000Z`);
+    const endOfDay = new Date(`${normalizedDate}T23:59:59.999Z`);
+
+    const { data: appointmentsData, error: appointmentsError } = await supabase
+      .from('consultas')
+      .select('consultation_date, local_id, status')
+      .eq('medico_id', doctorId)
+      .gte('consultation_date', startOfDay.toISOString())
+      .lte('consultation_date', endOfDay.toISOString())
+      .in('status', ['pending', 'agendada', 'confirmada', 'em_andamento', 'scheduled', 'confirmed']);
+
+    if (appointmentsError) {
+      logger.warn('[getHorarios] Falha ao buscar consultas existentes', 'appointmentService.getHorarios', appointmentsError);
+    }
+
+    const existingAppointmentsData = Array.isArray(appointmentsData) ? appointmentsData : [];
+
+    logger.debug('[getHorarios] Consultas existentes identificadas', 'appointmentService.getHorarios', {
+      total: existingAppointmentsData.length
+    });
+
+    const consultationDuration = doctorConfig.duracaoConsulta || 30;
+
+    const locaisComHorarios: LocalComHorarios[] = locations
+      .map((location: any) => {
+        const locationId = location?.id?.toString() || '';
+        if (!locationId || locationId === 'undefined') {
+          return null;
+        }
+
+        const availableTimes = extractAvailableTimes(location.horarios_disponiveis);
+        const availableTimeSet = new Set(availableTimes);
+        const hasExplicitAvailability = availableTimeSet.size > 0;
+
+        const locationAppointments: ExistingAppointment[] = existingAppointmentsData
+          .filter((appointment: any) => {
+            if (!appointment?.consultation_date) return false;
+            if (!appointment.local_id) return true;
+            return String(appointment.local_id) === locationId;
+          })
+          .map((appointment: any) => ({
+            data_consulta: appointment.consultation_date,
+            duracao_minutos: consultationDuration
+          }));
+
+        let generatedSlots = generateTimeSlots(
+          doctorConfig,
+          scheduleDate,
+          locationAppointments,
+          locationId
+        );
+
+        if ((!generatedSlots || generatedSlots.length === 0) && availableTimes.length > 0) {
+          generatedSlots = availableTimes.map(time => ({ time, available: true }));
+        }
+
+        const horariosMap = new Map<string, Horario>();
+
+        (generatedSlots || []).forEach((slot, index) => {
+          const normalizedTime = normalizeTimeValue(slot.time) ?? slot.time;
+          if (!normalizedTime) return;
+
+          const isAvailable = hasExplicitAvailability
+            ? availableTimeSet.has(normalizedTime)
+            : slot.available ?? true;
+
+          const horario: Horario = {
+            id: `${locationId}-${normalizedTime.replace(/:/g, '')}-${index}`,
+            hora: normalizedTime,
+            disponivel: isAvailable,
+            time: normalizedTime,
+            available: isAvailable
+          };
+
+          const existing = horariosMap.get(normalizedTime);
+          if (!existing || (!existing.available && isAvailable)) {
+            horariosMap.set(normalizedTime, horario);
+          }
+        });
+
+        if (horariosMap.size === 0 && availableTimes.length > 0) {
+          availableTimes.forEach((time, index) => {
+            if (!horariosMap.has(time)) {
+              horariosMap.set(time, {
+                id: `${locationId}-fallback-${time.replace(/:/g, '')}-${index}`,
+                hora: time,
+                disponivel: true,
+                time,
+                available: true
+              });
+            }
+          });
+        }
+
+        const horarios = Array.from(horariosMap.values()).sort((a, b) => a.time.localeCompare(b.time));
+        const horarios_disponiveis = horarios.filter(horario => horario.available);
+
+        const enderecoBase = (location.endereco && typeof location.endereco === 'object') ? location.endereco : {};
+        const endereco = {
+          logradouro: enderecoBase.logradouro || location.endereco_completo || location.logradouro || '',
+          numero: enderecoBase.numero || location.numero || '',
+          bairro: enderecoBase.bairro || location.bairro || '',
+          cidade: enderecoBase.cidade || location.cidade || '',
+          uf: enderecoBase.uf || location.uf || location.estado || '',
+          cep: enderecoBase.cep || location.cep || ''
+        };
+
+        return {
+          id: locationId,
+          nome_local: location.nome_local || location.name || 'Local não informado',
+          endereco_completo: location.endereco_completo || '',
+          endereco,
+          horarios,
+          horarios_disponiveis
+        } as LocalComHorarios;
+      })
+      .filter((local): local is LocalComHorarios => Boolean(local) && local.id && local.id !== 'undefined');
 
     logger.debug('[getHorarios] Locais formatados', 'appointmentService.getHorarios', locaisComHorarios);
     return locaisComHorarios;
