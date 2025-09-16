@@ -123,7 +123,8 @@ async function createAppointment(params: {
       p_doctor_id: params.medico_id,
       p_appointment_datetime: params.consultation_date,
       p_specialty: params.consultation_type,
-      p_family_member_id: null
+      p_family_member_id: null,
+      p_local_id: params.local_id
     });
     if (error) {
       logger.error('Erro ao agendar consulta', 'schedulingService.createAppointment', error);

@@ -2118,6 +2118,7 @@ export type Database = {
           p_appointment_datetime: string
           p_doctor_id: string
           p_family_member_id?: string
+          p_local_id?: string
           p_specialty?: string
         }
         Returns: {

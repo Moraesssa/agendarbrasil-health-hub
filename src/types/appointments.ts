@@ -14,6 +14,7 @@ export interface AppointmentV2 {
   appointment_type: AppointmentType;
   status: AppointmentStatus;
   location_id?: string;
+  local_id?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
