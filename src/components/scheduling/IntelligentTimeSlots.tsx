@@ -40,8 +40,11 @@ export const IntelligentTimeSlots: React.FC<IntelligentTimeSlotsProps> = ({
       const allSlots: TimeSlot[] = [];
       locations.forEach((loc: LocalComHorarios) => {
         (loc.horarios_disponiveis || []).forEach((h) => {
+          if (!h?.available) return;
+          const slotTime = h.time;
+          if (!slotTime) return;
           allSlots.push({
-            time: `${dateStr}T${h}`,
+            time: `${dateStr}T${slotTime}`,
             type: 'presencial',
             location_id: loc.id,
             estimated_duration: 30,
@@ -49,7 +52,7 @@ export const IntelligentTimeSlots: React.FC<IntelligentTimeSlotsProps> = ({
           });
         });
       });
-      setSlots(allSlots);
+      setSlots([...allSlots]);
     } catch (error) {
       toast({ title: 'Erro ao carregar horários', variant: 'destructive' });
       setSlots([]);
