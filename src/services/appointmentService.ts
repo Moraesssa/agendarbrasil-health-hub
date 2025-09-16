@@ -168,9 +168,12 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
 
   try {
   logger.debug('[getHorarios] Buscando horários para', 'appointmentService.getHorarios', { doctorId, date });
-    
+
+    const normalizedDate = date.split('T')[0];
+
     const { data, error } = await supabase.rpc('get_doctor_schedule_data', {
       p_doctor_id: doctorId,
+      p_date: normalizedDate
     });
 
     if (error) {

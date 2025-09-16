@@ -1,5 +1,7 @@
 -- Add date parameter to get_doctor_schedule_v2
-CREATE OR REPLACE FUNCTION public.get_doctor_schedule_v2(
+DROP FUNCTION IF EXISTS public.get_doctor_schedule_data(uuid);
+
+CREATE OR REPLACE FUNCTION public.get_doctor_schedule_data(
   p_doctor_id uuid,
   p_date date
 )
@@ -212,6 +214,24 @@ BEGIN
 
   RETURN QUERY SELECT v_config, v_locations;
 END;
+$function$;
+
+COMMENT ON FUNCTION public.get_doctor_schedule_data(uuid, date)
+IS 'Retorna configurações e locais com horários disponíveis para um médico em uma data específica.';
+
+GRANT EXECUTE ON FUNCTION public.get_doctor_schedule_data(uuid, date) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_doctor_schedule_data(uuid, date) TO anon;
+
+CREATE OR REPLACE FUNCTION public.get_doctor_schedule_v2(
+  p_doctor_id uuid,
+  p_date date
+)
+RETURNS TABLE(doctor_config jsonb, locations jsonb)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+  SELECT * FROM public.get_doctor_schedule_data(p_doctor_id, p_date);
 $function$;
 
 COMMENT ON FUNCTION public.get_doctor_schedule_v2(uuid, date)

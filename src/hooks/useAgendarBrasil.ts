@@ -30,15 +30,19 @@ export const useAgendarBrasil = () => {
   };
 
   // Função para buscar dados de agenda com validação UUID
-  const fetchDoctorSchedule = async (doctorId: string) => {
+  const fetchDoctorSchedule = async (doctorId: string, date?: string) => {
     const validDoctorId = sanitizeUUID(doctorId);
     if (!validDoctorId) {
       throw new Error('ID do médico inválido');
     }
 
+    const baseDate = date ?? new Date().toISOString();
+    const targetDate = baseDate.split('T')[0];
+
     return await errorHandler.handleAsyncOperation(async () => {
       const { data, error } = await supabase.rpc('get_doctor_schedule_data', {
-        p_doctor_id: validDoctorId
+        p_doctor_id: validDoctorId,
+        p_date: targetDate
       });
 
       if (error) throw error;
