@@ -171,7 +171,8 @@ export const useAdvancedScheduling = () => {
   const generateAdvancedTimeSlots = useCallback(async (
     doctorId: string,
     selectedDate: string,
-    excludeReserved: boolean = true
+    excludeReserved: boolean = true,
+    targetLocalId?: string
   ): Promise<TimeSlot[]> => {
     try {
       // Get doctor configuration
@@ -209,19 +210,26 @@ export const useAdvancedScheduling = () => {
       if (excludeReserved) {
         const { data: reservations } = await supabase
           .from('temporary_reservations')
-          .select('data_consulta')
+          .select('data_consulta, local_id')
           .eq('medico_id', doctorId)
           .gte('expires_at', new Date().toISOString())
           .gte('data_consulta', startOfDay.toISOString())
           .lte('data_consulta', endOfDay.toISOString());
 
-        reservedSlots = (reservations || []).map(res => 
-          new Date(res.data_consulta).toTimeString().substring(0, 5)
-        );
+        reservedSlots = (reservations || [])
+          .filter(reservation =>
+            !targetLocalId || reservation.local_id === targetLocalId
+          )
+          .map(res => new Date(res.data_consulta).toTimeString().substring(0, 5));
       }
 
       // Generate time slots
-      const slots = generateTimeSlots(config, new Date(selectedDate), existingAppointments);
+      const slots = generateTimeSlots(
+        config,
+        new Date(selectedDate),
+        existingAppointments,
+        targetLocalId
+      );
 
       // Filter out temporarily reserved slots
       return slots.map(slot => ({
@@ -263,24 +271,61 @@ export const useAdvancedScheduling = () => {
       
       for (const doctor of (doctors as any[]) || []) {
         try {
-          const slots = await generateAdvancedTimeSlots(doctor?.user_id, selectedDate);
-          const availableSlots = slots.filter(slot => slot?.available);
-          
-          if (availableSlots.length > 0) {
-            // Group slots by location
-            const locais = (doctor?.locais_atendimento || []).map((local: any) => ({
-              id: local?.id,
-              nome_local: local?.nome_local,
-              endereco: local?.endereco,
-              slots: availableSlots // For simplicity, showing all slots for each location
-            }));
+          const locais: DoctorWithAvailability['locais'] = [];
+          const locaisAtendimento = Array.isArray(doctor?.locais_atendimento)
+            ? doctor.locais_atendimento
+            : [];
+
+          if (locaisAtendimento.length === 0) {
+            const slots = await generateAdvancedTimeSlots(doctor?.user_id, selectedDate);
+            const availableSlots = slots.filter(slot => slot?.available);
+
+            if (availableSlots.length > 0) {
+              doctorsWithAvailability.push({
+                id: doctor.user_id,
+                display_name: (doctor as any).display_name || 'Dr. Médico',
+                especialidades: doctor.especialidades || [],
+                nextAvailableSlot: availableSlots[0]?.time,
+                totalSlots: availableSlots.length,
+                locais: []
+              });
+            }
+
+            continue;
+          }
+
+          for (const local of locaisAtendimento) {
+            if (!local?.id) continue;
+
+            const slots = await generateAdvancedTimeSlots(
+              doctor?.user_id,
+              selectedDate,
+              true,
+              local.id
+            );
+            const availableSlots = slots.filter(slot => slot?.available);
+
+            if (availableSlots.length > 0) {
+              locais.push({
+                id: local.id,
+                nome_local: local?.nome_local,
+                endereco: local?.endereco,
+                slots: availableSlots
+              });
+            }
+          }
+
+          const combinedSlots = locais.flatMap(local => local.slots);
+
+          if (combinedSlots.length > 0) {
+            const sortedSlots = [...combinedSlots].sort((a, b) => a.time.localeCompare(b.time));
 
             doctorsWithAvailability.push({
               id: doctor.user_id,
               display_name: (doctor as any).display_name || 'Dr. Médico',
               especialidades: doctor.especialidades || [],
-              nextAvailableSlot: availableSlots[0]?.time,
-              totalSlots: availableSlots.length,
+              nextAvailableSlot: sortedSlots[0]?.time,
+              totalSlots: combinedSlots.length,
               locais
             });
           }

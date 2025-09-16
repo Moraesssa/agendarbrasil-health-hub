@@ -11,6 +11,7 @@ export interface DayWorkingHours {
   ativo: boolean;
   inicioAlmoco?: string;
   fimAlmoco?: string;
+  local_id?: string;
 }
 
 export interface WorkingHours {
@@ -85,13 +86,18 @@ export const getDefaultWorkingHours = (): WorkingHours => ({
 export const generateTimeSlots = (
   doctorConfig: DoctorConfig,
   selectedDate: Date,
-  existingAppointments: ExistingAppointment[] = []
+  existingAppointments: ExistingAppointment[] = [],
+  targetLocalId?: string
 ): TimeSlot[] => {
   const dayName = getDayName(selectedDate);
-  const workingHoursBlocks = doctorConfig.horarioAtendimento?.[dayName] || [];
+  const dayWorkingHoursBlocks = doctorConfig.horarioAtendimento?.[dayName] || [];
+  const workingHoursBlocks = targetLocalId
+    ? dayWorkingHoursBlocks.filter((block) => block.local_id === targetLocalId)
+    : dayWorkingHoursBlocks;
 
   console.log("🔧 generateTimeSlots - Entrada:", {
     dayName,
+    targetLocalId,
     workingHoursBlocksCount: workingHoursBlocks.length,
     workingHoursBlocks,
     selectedDate: selectedDate.toISOString(),
