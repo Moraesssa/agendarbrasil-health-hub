@@ -180,16 +180,20 @@ export const ScheduleManagement: React.FC = () => {
     const updatedSchedule = schedule.map(day => {
       if (day.dia === editingDay) {
         const newBlocos = [...day.blocos];
-        
+        const blockToSave: WorkingHoursBlock = {
+          ...blockForm,
+          local_id: blockForm.local_id ?? editingBlock?.local_id ?? ''
+        };
+
         if (editingBlock) {
           // Editing existing block
           const blockIndex = parseInt(editingBlock.id!);
-          newBlocos[blockIndex] = { ...blockForm };
+          newBlocos[blockIndex] = { ...blockToSave };
         } else {
           // Adding new block
-          newBlocos.push({ ...blockForm });
+          newBlocos.push({ ...blockToSave });
         }
-        
+
         return { ...day, blocos: newBlocos };
       }
       return day;
