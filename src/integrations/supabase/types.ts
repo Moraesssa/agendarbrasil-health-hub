@@ -1958,7 +1958,7 @@ export type Database = {
         }[]
       }
       get_doctor_schedule_data: {
-        Args: { p_doctor_id: string }
+        Args: { p_doctor_id: string; p_date: string }
         Returns: {
           doctor_config: Json
           locations: Json

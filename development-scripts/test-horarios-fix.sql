@@ -10,7 +10,7 @@ WHERE routine_name = 'get_doctor_schedule_data'
 AND routine_schema = 'public';
 
 -- 2. Testar a função RPC com um médico real (substitua o UUID)
--- SELECT * FROM public.get_doctor_schedule_data('SUBSTITUA-POR-UUID-REAL');
+-- SELECT * FROM public.get_doctor_schedule_data('SUBSTITUA-POR-UUID-REAL', '2024-01-01');
 
 -- 3. Verificar as novas políticas RLS
 SELECT 
