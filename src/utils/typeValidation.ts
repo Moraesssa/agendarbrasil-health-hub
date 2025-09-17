@@ -143,21 +143,44 @@ export function validatePaymentType(payment: any): ValidationResult {
 
 export function convertLegacyToV2Payment(legacy: PaymentLegacy): PaymentConversionResult {
   try {
+    const rawAmount =
+      typeof legacy.valor === 'number' ? legacy.valor : Number(legacy.valor ?? 0);
+    const amount = Number.isFinite(rawAmount) ? rawAmount : 0;
+    const currency = (legacy.moeda || 'brl').toLowerCase();
+    const consultationId = legacy.consulta_id != null ? String(legacy.consulta_id) : undefined;
+    const gatewayData = legacy.transacao_gateway;
+    const metadata =
+      gatewayData && typeof gatewayData === 'object' && !Array.isArray(gatewayData)
+        ? (gatewayData as Record<string, any>)
+        : undefined;
+
     const v2: PaymentV2 = {
-      id: legacy.id,
-      amount: legacy.valor ? Number(legacy.valor) : (legacy.amount || 0),
-      currency: legacy.currency || legacy.moeda || 'brl',
+      id: legacy.id != null ? String(legacy.id) : '',
+      amount,
+      currency,
       status: normalizePaymentStatus(legacy.status || 'pending'),
-      payment_method: normalizePaymentMethod(legacy.metodo_pagamento),
-      stripe_session_id: legacy.stripe_session_id,
-      stripe_payment_intent_id: legacy.stripe_payment_intent_id,
-      customer_name: legacy.customer_name || legacy.nome_portador,
-      customer_email: legacy.customer_email || legacy.email_cliente,
-      metadata: legacy.metadata ? (typeof legacy.metadata === 'object' ? legacy.metadata as Record<string, any> : {}) : legacy.dados_gateway ? (typeof legacy.dados_gateway === 'object' ? legacy.dados_gateway as Record<string, any> : {}) : undefined,
-      consultation_id: legacy.consulta_id,
+      payment_method: normalizePaymentMethod(
+        typeof legacy.metodo === 'string' ? legacy.metodo : undefined
+      ),
+      consultation_id: consultationId,
       created_at: legacy.created_at || '',
       updated_at: legacy.created_at || ''
     };
+
+    if (metadata) {
+      v2.metadata = metadata;
+    }
+
+    if ('stripe_session_id' in legacy && typeof legacy.stripe_session_id === 'string') {
+      v2.stripe_session_id = legacy.stripe_session_id;
+    }
+
+    if (
+      'stripe_payment_intent_id' in legacy &&
+      typeof legacy.stripe_payment_intent_id === 'string'
+    ) {
+      v2.stripe_payment_intent_id = legacy.stripe_payment_intent_id;
+    }
 
     return {
       v2,
@@ -167,10 +190,12 @@ export function convertLegacyToV2Payment(legacy: PaymentLegacy): PaymentConversi
   } catch (error) {
     return {
       v2: {
-        id: legacy.id || '',
+        id: legacy.id != null ? String(legacy.id) : '',
         amount: 0,
         currency: 'brl',
         status: 'pending',
+        consultation_id:
+          legacy.consulta_id != null ? String(legacy.consulta_id) : undefined,
         created_at: legacy.created_at || '',
         updated_at: legacy.created_at || ''
       },
