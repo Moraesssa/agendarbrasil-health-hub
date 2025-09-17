@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,12 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { SpecialtyMultiSelect } from "@/components/specialty/SpecialtyMultiSelect";
-import { validateCRM, validatePhone, sanitizeInput } from "@/utils/validation";
+import { normalizeCRM, validateCRM, validatePhone, sanitizeInput } from "@/utils/validation";
+import { verifyCRMWithExternalService } from "@/services/crmValidationService";
 
 const dadosProfissionaisSchema = z.object({
   crm: z.string()
     .min(1, "CRM é obrigatório")
-    .refine(validateCRM, "CRM deve ter formato válido (ex: 123456/SP)"),
+    .refine(validateCRM, "CRM deve seguir o formato numérico/UF (ex: 12345/SP)"),
   especialidades: z.array(z.string())
     .min(1, "Pelo menos uma especialidade é obrigatória"),
   telefone: z.string()
@@ -47,10 +49,28 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
     }
   });
 
-  const onSubmit = (data: DadosProfissionaisFormData) => {
+  const [isVerifyingCRM, setIsVerifyingCRM] = useState(false);
+
+  const onSubmit = async (data: DadosProfissionaisFormData) => {
+    const normalizedCRM = normalizeCRM(data.crm);
     const especialidades = Array.isArray(data.especialidades) ? data.especialidades : [];
+    form.clearErrors("crm");
+    try {
+      setIsVerifyingCRM(true);
+      const verification = await verifyCRMWithExternalService(normalizedCRM);
+      if (verification && verification.status !== "valid") {
+        const message = verification.message || (verification.status === "invalid"
+          ? "CRM não encontrado na base oficial"
+          : "Não foi possível validar o CRM na base oficial");
+        form.setError("crm", { type: "manual", message });
+        return;
+      }
+    } finally {
+      setIsVerifyingCRM(false);
+    }
+
     onNext({
-      crm: sanitizeInput(data.crm),
+      crm: normalizedCRM,
       especialidades: especialidades.map(spec => sanitizeInput(spec)),
       telefone: sanitizeInput(data.telefone),
       whatsapp: data.whatsapp ? sanitizeInput(data.whatsapp) : null
@@ -74,8 +94,13 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
                   <FormControl>
                     <Input
                       placeholder="Ex: 123456/SP"
-                      {...field}
+                      className={form.formState.errors.crm ? "border-destructive" : undefined}
                       data-testid="crm-input"
+                      {...field}
+                      onChange={(event) => {
+                        form.clearErrors("crm");
+                        field.onChange(event);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -135,8 +160,13 @@ export const DadosProfissionaisForm = ({ onNext, initialData }: DadosProfissiona
               )}
             />
 
-            <Button type="submit" className="w-full" data-testid="form-step-1-next">
-              Próximo
+            <Button
+              type="submit"
+              className="w-full"
+              data-testid="form-step-1-next"
+              disabled={isVerifyingCRM}
+            >
+              {isVerifyingCRM ? "Validando CRM..." : "Próximo"}
             </Button>
           </form>
         </Form>
