@@ -54,7 +54,7 @@ const CadastroMedico = () => {
             senha: formData.senha, // se o serviço cuida da criação de auth
             telefone: formData.telefone,
             crm: formData.crm,
-            especialidade: formData.especialidade,
+            especialidades: [formData.especialidade].filter((value): value is string => Boolean(value)),
             formacao: formData.formacao,
             biografia: formData.biografia,
             endereco_consultorio: formData.endereco,

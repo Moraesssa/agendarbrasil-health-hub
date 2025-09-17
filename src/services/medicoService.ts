@@ -23,12 +23,24 @@ export const medicoService = {
 
       const existingConfig = (existing?.configuracoes as Record<string, any>) || {};
       const newConfiguracoes = (data.configuracoes as Record<string, any>) || {};
+
+      const rawEspecialidades = Array.isArray(data.especialidades)
+        ? data.especialidades
+        : typeof data.especialidades === 'string'
+          ? [data.especialidades]
+          : data.especialidade
+            ? [data.especialidade]
+            : [];
+
+      const especialidades = rawEspecialidades
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .map(value => value.trim());
       
       const medicoData = {
         user_id: user.id,
         usuario_id: user.id,
         crm: data.crm || '',
-        especialidades: data.especialidades || [],
+        especialidades,
         registro_especialista: data.registroEspecialista || null,
         telefone: data.telefone || '',
         whatsapp: data.whatsapp || null,
