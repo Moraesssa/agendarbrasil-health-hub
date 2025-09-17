@@ -107,7 +107,22 @@ export const useAgendaData = (reset: UseFormReset<AgendaFormData>) => {
                 }
             }
             
-            reset({ horarios: horarioAtendimento });
+            const normalizedHorarios = diasDaSemana.reduce((acc, dia) => {
+                const blocos = Array.isArray((horarioAtendimento as Record<string, unknown>)[dia.key])
+                    ? (horarioAtendimento as Record<string, any[]>)[dia.key]
+                    : [];
+
+                acc[dia.key] = blocos.map((bloco) => ({
+                    ...bloco,
+                    local_id: bloco?.local_id === null || bloco?.local_id === undefined || bloco?.local_id === ""
+                        ? bloco?.local_id ?? null
+                        : String(bloco.local_id),
+                }));
+
+                return acc;
+            }, {} as AgendaFormData["horarios"]);
+
+            reset({ horarios: normalizedHorarios });
             logger.info("Dados da agenda carregados com sucesso", "useAgendaData", {
                 locaisCount: locaisData.length,
                 hasHorarios: Object.keys(horarioAtendimento).length > 0

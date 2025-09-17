@@ -55,7 +55,7 @@ const locationService = {
     const locais = (data || []).map(item => {
       const endereco = item.endereco as any;
       return {
-        id: item.id,
+        id: item.id != null ? String(item.id) : '',
         medico_id: item.medico_id,
         nome_local: item.nome_local,
         endereco: {
