@@ -70,7 +70,7 @@ const Onboarding = () => {
     );
   }
 
-  const totalSteps = userData.userType === 'medico' ? 4 : 3;
+  const totalSteps = userData.userType === 'medico' ? 5 : 3;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">

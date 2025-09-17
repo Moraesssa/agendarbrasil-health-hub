@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DadosProfissionaisForm } from "./forms/DadosProfissionaisForm";
 import { EnderecoForm } from "./forms/EnderecoForm";
 import { ConfiguracoesForm } from "./forms/ConfiguracoesForm";
-import { Medico } from "@/types/user";
+import { LocalAtendimentoForm } from "./forms/LocalAtendimentoForm";
 
 interface MedicoOnboardingProps {
   currentStep: number;
@@ -74,12 +73,21 @@ export const MedicoOnboarding = ({
         );
       case 3:
         return (
+          <LocalAtendimentoForm
+            onNext={handleNext}
+            initialData={onboardingData.localAtendimento}
+            enderecoBase={onboardingData.endereco}
+            existingLocations={onboardingData.locaisAtendimento}
+          />
+        );
+      case 4:
+        return (
           <ConfiguracoesForm
             onNext={handleNext}
             initialData={onboardingData.configuracoes}
           />
         );
-      case 4:
+      case 5:
         return (
           <Card>
             <CardHeader>
@@ -89,6 +97,11 @@ export const MedicoOnboarding = ({
               <p className="text-gray-600">
                 Revise suas informações e finalize seu cadastro médico.
               </p>
+              {!onboardingData?.localAtendimento && (
+                <p className="text-sm text-red-500">
+                  Cadastre pelo menos um local de atendimento antes de finalizar.
+                </p>
+              )}
               <div className="flex gap-4">
                 <Button
                   type="button"
@@ -99,8 +112,8 @@ export const MedicoOnboarding = ({
                   Voltar
                 </Button>
                 <Button
-                  onClick={() => handleNext({})}
-                  disabled={isSubmitting}
+                  onClick={() => onboardingData?.localAtendimento && handleNext({})}
+                  disabled={isSubmitting || !onboardingData?.localAtendimento}
                   className="flex-1"
                   data-testid="finish-onboarding-button"
                 >
