@@ -17,7 +17,7 @@ export interface AppointmentV2 {
   local_id?: string;
   notes?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 // Legacy appointment type (from consultas table)

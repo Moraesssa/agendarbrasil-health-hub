@@ -55,16 +55,21 @@ export function validateAppointmentType(appointment: any): ValidationResult {
 
 export function convertLegacyToV2Appointment(legacy: AppointmentLegacy): AppointmentConversionResult {
   try {
+    const id = legacy.id != null ? String(legacy.id) : '';
+    const patientId = legacy.paciente_id != null ? String(legacy.paciente_id) : '';
+    const doctorId = legacy.medico_id != null ? String(legacy.medico_id) : '';
+    const createdAt = legacy.created_at || '';
+
     const v2: AppointmentV2 = {
-      id: legacy.id,
-      patient_id: legacy.paciente_id || '',
-      doctor_id: legacy.medico_id || '',
-      scheduled_datetime: legacy.consultation_date || legacy.created_at || '',
+      id,
+      patient_id: patientId,
+      doctor_id: doctorId,
+      scheduled_datetime: legacy.consultation_date || createdAt,
       appointment_type: (legacy.consultation_type as any) || 'consultation',
       status: normalizeAppointmentStatus(legacy.status || 'pending'),
       notes: legacy.notes,
-      created_at: legacy.created_at || '',
-      updated_at: legacy.updated_at || legacy.created_at || ''
+      created_at: createdAt,
+      ...(createdAt ? { updated_at: createdAt } : {})
     };
 
     return {
@@ -76,14 +81,14 @@ export function convertLegacyToV2Appointment(legacy: AppointmentLegacy): Appoint
     // Return a minimal valid v2 appointment on conversion failure
     return {
       v2: {
-        id: legacy.id || '',
-        patient_id: legacy.paciente_id || '',
-        doctor_id: legacy.medico_id || '',
+        id: legacy.id != null ? String(legacy.id) : '',
+        patient_id: legacy.paciente_id != null ? String(legacy.paciente_id) : '',
+        doctor_id: legacy.medico_id != null ? String(legacy.medico_id) : '',
         scheduled_datetime: legacy.created_at || '',
         appointment_type: 'consultation',
         status: 'scheduled',
         created_at: legacy.created_at || '',
-        updated_at: legacy.created_at || ''
+        ...(legacy.created_at ? { updated_at: legacy.created_at } : {})
       },
       source: 'legacy',
       converted: false
@@ -151,7 +156,7 @@ export function convertLegacyToV2Payment(legacy: PaymentLegacy): PaymentConversi
       metadata: legacy.metadata ? (typeof legacy.metadata === 'object' ? legacy.metadata as Record<string, any> : {}) : legacy.dados_gateway ? (typeof legacy.dados_gateway === 'object' ? legacy.dados_gateway as Record<string, any> : {}) : undefined,
       consultation_id: legacy.consulta_id,
       created_at: legacy.created_at || '',
-      updated_at: legacy.updated_at || legacy.created_at || ''
+      updated_at: legacy.created_at || ''
     };
 
     return {
@@ -259,7 +264,7 @@ export function convertLegacyToV2Profile(legacy: PatientLegacy | DoctorLegacy): 
         onboarding_completed: true, // Assume legacy users completed onboarding
         onboarding_status: 'completed',
         created_at: legacy.created_at || '',
-        updated_at: legacy.updated_at || legacy.created_at || ''
+        updated_at: legacy.created_at || ''
       };
       source = 'legacy_patient';
     } else {
@@ -276,7 +281,7 @@ export function convertLegacyToV2Profile(legacy: PatientLegacy | DoctorLegacy): 
         onboarding_completed: true,
         onboarding_status: 'completed',
         created_at: legacy.created_at || '',
-        updated_at: legacy.updated_at || legacy.created_at || ''
+        updated_at: legacy.created_at || ''
       };
       source = 'legacy_doctor';
     }
