@@ -36,8 +36,8 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
         const normalizedHorarios = normalizeHorarios(data.horarios);
 
         // Custom validation for active blocks only
-        let hasValidActiveBlocks = false;
         const incompleteBlocks = [];
+        let hasActiveBlocks = false;
 
         for (const dia of diasDaSemana) {
             const blocosDoDia = normalizedHorarios[dia.key];
@@ -45,11 +45,10 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
                 for (let i = 0; i < blocosDoDia.length; i++) {
                     const bloco = blocosDoDia[i];
                     if (bloco.ativo) {
+                        hasActiveBlocks = true;
                         if (!bloco.local_id || !bloco.inicio || !bloco.fim || bloco.inicio >= bloco.fim) {
                             console.log("❌ Bloco ativo inválido encontrado:", bloco);
                             incompleteBlocks.push(`${dia.label} - Bloco ${i + 1}`);
-                        } else {
-                            hasValidActiveBlocks = true;
                         }
                     }
                 }
@@ -66,15 +65,12 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
             return;
         }
 
-        if (!hasValidActiveBlocks) {
-            console.log("❌ Nenhum bloco ativo válido encontrado");
-            toast({ 
-                title: "Nenhum horário ativo configurado", 
-                description: "É necessário ter pelo menos um bloco ativo e completamente preenchido para salvar.",
-                variant: "destructive" 
-            });
-            return;
-        }
+        const emptyHorarios = diasDaSemana.reduce((acc, dia) => {
+            acc[dia.key] = [];
+            return acc;
+        }, {} as AgendaFormData["horarios"]);
+
+        const horariosToSave = hasActiveBlocks ? normalizedHorarios : emptyHorarios;
 
         console.log("✅ Validação passou, iniciando save...");
         setIsSubmitting(true);
@@ -94,16 +90,20 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
                 }
             }
 
+            if (!hasActiveBlocks) {
+                logger.info("Removendo todos os blocos da agenda", "GerenciarAgenda", { userId: user.id });
+            }
+
             const newConfiguracoes = {
                 ...existingConfig,
-                horarioAtendimento: normalizedHorarios
+                horarioAtendimento: horariosToSave
             };
 
             await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
 
             console.log("✅ Dados salvos com sucesso!");
             toast({ title: "Agenda atualizada com sucesso!" });
-            reset({ horarios: normalizedHorarios });
+            reset({ horarios: horariosToSave });
         } catch (error) {
             console.log("❌ Erro ao salvar:", error);
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);
