@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,29 +11,50 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const GerenciarLocais = () => {
     const [locais, setLocais] = useState<LocalAtendimento[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [isFetchingLocais, setIsFetchingLocais] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
+    const { user, loading: authLoading } = useAuth();
 
-    useEffect(() => {
-        fetchLocais();
-    }, []);
-
-    const fetchLocais = async () => {
+    const fetchLocais = useCallback(async () => {
+        setIsFetchingLocais(true);
         try {
-            setLoading(true);
             const data = await locationService.getLocations();
             setLocais(data);
         } catch (error) {
-            toast({ title: "Erro ao buscar locais", variant: "destructive" });
-        } finally {
-            setLoading(false);
+            const errorMessage = error instanceof Error ? error.message : "Erro ao buscar locais";
+
+            if (errorMessage.includes("Usuário não autenticado")) {
+                setTimeout(() => {
+                    void fetchLocais();
+                }, 500);
+                return;
+            }
+
+            toast({ title: "Erro ao buscar locais", description: errorMessage, variant: "destructive" });
         }
-    };
-    
+
+        setIsFetchingLocais(false);
+    }, [toast]);
+
+    useEffect(() => {
+        if (authLoading) {
+            return;
+        }
+
+        if (!user?.id) {
+            setLocais([]);
+            setIsFetchingLocais(false);
+            return;
+        }
+
+        void fetchLocais();
+    }, [authLoading, user?.id, fetchLocais]);
+
     const handleAddLocal = async (formData: any) => {
         try {
             await locationService.addLocation({
@@ -43,14 +64,14 @@ const GerenciarLocais = () => {
             });
             toast({ title: "Local adicionado com sucesso!" });
             setIsDialogOpen(false);
-            fetchLocais(); // Atualiza a lista
+            void fetchLocais(); // Atualiza a lista
         } catch (error) {
             toast({ title: "Erro ao adicionar local", description: (error as Error).message, variant: "destructive" });
         }
     };
 
 
-    if (loading) return <PageLoader message="Carregando locais..." />;
+    if (isFetchingLocais) return <PageLoader message="Carregando locais..." />;
 
     return (
         <SidebarProvider>
