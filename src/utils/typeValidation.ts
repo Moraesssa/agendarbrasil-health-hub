@@ -274,12 +274,12 @@ export function convertLegacyToV2Profile(legacy: PatientLegacy | DoctorLegacy): 
     let source: ProfileConversionResult['source'];
     
     if (isLegacyPatient(legacy)) {
-      const dadosPessoais = legacy.dados_pessoais as any || {};
-      const contato = legacy.contato as any || {};
-      
+      const dadosPessoais = (legacy.dados_pessoais as any) || {};
+      const contato = (legacy.contato as any) || {};
+
       v2 = {
-        id: legacy.id,
-        user_id: legacy.user_id,
+        id: legacy.id != null ? String(legacy.id) : '',
+        user_id: legacy.user_id != null ? String(legacy.user_id) : '',
         role: 'patient',
         full_name: dadosPessoais.nome || dadosPessoais.full_name || '',
         email: contato.email || '',
@@ -289,16 +289,16 @@ export function convertLegacyToV2Profile(legacy: PatientLegacy | DoctorLegacy): 
         onboarding_completed: true, // Assume legacy users completed onboarding
         onboarding_status: 'completed',
         created_at: legacy.created_at || '',
-        updated_at: legacy.created_at || ''
+        updated_at: legacy.updated_at || legacy.created_at || ''
       };
       source = 'legacy_patient';
     } else {
       // isLegacyDoctor
-      const dadosProfissionais = legacy.dados_profissionais as any || {};
-      
+      const dadosProfissionais = (legacy.dados_profissionais as any) || {};
+
       v2 = {
-        id: legacy.id,
-        user_id: legacy.user_id,
+        id: legacy.id != null ? String(legacy.id) : '',
+        user_id: legacy.user_id != null ? String(legacy.user_id) : '',
         role: 'doctor',
         full_name: dadosProfissionais.nome || '',
         email: dadosProfissionais.email || '',
@@ -319,15 +319,15 @@ export function convertLegacyToV2Profile(legacy: PatientLegacy | DoctorLegacy): 
   } catch (error) {
     return {
       v2: {
-        id: legacy.id || '',
-        user_id: legacy.user_id || '',
+        id: legacy.id != null ? String(legacy.id) : '',
+        user_id: legacy.user_id != null ? String(legacy.user_id) : '',
         role: 'patient',
         full_name: '',
         email: '',
         onboarding_completed: false,
         onboarding_status: 'pending',
         created_at: legacy.created_at || '',
-        updated_at: legacy.created_at || ''
+        updated_at: legacy.updated_at || legacy.created_at || ''
       },
       source: isLegacyPatient(legacy) ? 'legacy_patient' : 'legacy_doctor',
       converted: false

@@ -19,7 +19,7 @@ export interface ProfileV2 {
   onboarding_completed: boolean;
   onboarding_status: OnboardingStatus;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 // Legacy profile types (from pacientes/medicos tables)
