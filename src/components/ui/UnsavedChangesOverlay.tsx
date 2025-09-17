@@ -38,9 +38,15 @@ export const UnsavedChangesOverlay = ({
   };
 
   return (
-    <div className={cn("fixed inset-0 z-50 flex items-center justify-center", className)} role="alertdialog" aria-modal="true">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-md mx-4 space-y-4 rounded-xl border bg-card p-6 shadow-2xl">
+    <div
+      className={cn(
+        "fixed inset-x-0 top-4 z-50 flex justify-center px-4 pointer-events-none",
+        className
+      )}
+      role="alert"
+      aria-live="assertive"
+    >
+      <div className="pointer-events-auto w-full max-w-md space-y-4 rounded-xl border bg-card p-6 shadow-2xl">
         <div className="flex items-center justify-center gap-2 text-lg font-semibold">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
           {title}
