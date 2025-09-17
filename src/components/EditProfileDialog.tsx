@@ -26,9 +26,11 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
   const { toast } = useToast();
 
   const handleFormNext = (tabKey: string, data: any) => {
+    const stateKey = tabKey === "dados-profissionais" ? "dadosProfissionais" : tabKey;
+
     setFormData(prev => ({
       ...prev,
-      [tabKey]: data
+      [stateKey]: data
     }));
 
     // Move to next tab or save if it's the last tab
@@ -47,11 +49,9 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
       
       if (formData.dadosProfissionais) {
         const dadosProf = formData.dadosProfissionais as any;
-        if (dadosProf.telefone) {
-          // We can update display_name if nomeCompleto is provided in dados profissionais
-          if (dadosProf.dadosProfissionais?.nomeCompleto) {
-            profileUpdates.display_name = dadosProf.dadosProfissionais.nomeCompleto;
-          }
+
+        if (dadosProf?.dadosProfissionais?.nomeCompleto) {
+          profileUpdates.display_name = dadosProf.dadosProfissionais.nomeCompleto;
         }
       }
 
@@ -69,11 +69,24 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
       
       if (formData.dadosProfissionais) {
         const dadosProf = formData.dadosProfissionais as any;
-        if (dadosProf.crm) medicosUpdates.crm = dadosProf.crm;
-        if (dadosProf.especialidades) medicosUpdates.especialidades = dadosProf.especialidades;
-        if (dadosProf.telefone) medicosUpdates.telefone = dadosProf.telefone;
-        if (dadosProf.whatsapp) medicosUpdates.whatsapp = dadosProf.whatsapp;
-        if (dadosProf.dadosProfissionais) {
+
+        if (dadosProf && 'crm' in dadosProf) {
+          medicosUpdates.crm = dadosProf.crm;
+        }
+
+        if (dadosProf && 'especialidades' in dadosProf) {
+          medicosUpdates.especialidades = dadosProf.especialidades;
+        }
+
+        if (dadosProf && 'telefone' in dadosProf) {
+          medicosUpdates.telefone = dadosProf.telefone;
+        }
+
+        if (dadosProf && 'whatsapp' in dadosProf) {
+          medicosUpdates.whatsapp = dadosProf.whatsapp;
+        }
+
+        if (dadosProf?.dadosProfissionais) {
           medicosUpdates.dados_profissionais = dadosProf.dadosProfissionais;
         }
       }
