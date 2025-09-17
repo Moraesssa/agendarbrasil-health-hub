@@ -4,6 +4,7 @@ import { User } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseAuthActionsProps {
   user: User | null;
@@ -59,6 +60,78 @@ export const useAuthActions = ({
         description: "Não foi possível fazer logout. Tente novamente.",
         variant: "destructive",
       });
+    }
+  };
+
+  const refreshUserData = async (): Promise<void> => {
+    if (!user) {
+      logger.warn('Tentativa de atualizar dados sem usuário autenticado', 'useAuthActions');
+      return;
+    }
+
+    try {
+      logger.debug('Atualizando dados do usuário', 'useAuthActions', { userId: user.id });
+
+      const { profile, error } = await authService.loadUserProfile(user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      if (!profile) {
+        throw new Error('Perfil do usuário não encontrado');
+      }
+
+      let roleData: Partial<BaseUser> = {};
+
+      if (profile.user_type === 'medico') {
+        roleData = {
+          especialidades: userData?.especialidades,
+          crm: userData?.crm
+        };
+
+        const { data: medicoData, error: medicoError } = await supabase
+          .from('medicos')
+          .select('especialidades, crm')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!medicoError && medicoData) {
+          roleData = {
+            especialidades: Array.isArray(medicoData.especialidades)
+              ? medicoData.especialidades
+              : [],
+            crm: medicoData.crm ?? undefined
+          };
+        } else if (medicoError) {
+          logger.error('Erro ao carregar dados do médico', 'useAuthActions', medicoError);
+        }
+      }
+
+      const updatedUserData: BaseUser = {
+        uid: profile.id,
+        email: profile.email,
+        displayName: profile.display_name || '',
+        photoURL: profile.photo_url || '',
+        userType: profile.user_type,
+        onboardingCompleted: profile.onboarding_completed,
+        createdAt: new Date(profile.created_at),
+        lastLogin: profile.last_login ? new Date(profile.last_login) : new Date(),
+        isActive: profile.is_active,
+        preferences: {
+          notifications: true,
+          theme: 'light',
+          language: 'pt-BR',
+          ...profile.preferences,
+        },
+        ...roleData
+      };
+
+      setUserData(updatedUserData);
+      logger.info('Dados do usuário atualizados com sucesso', 'useAuthActions', { userId: user.id });
+    } catch (error) {
+      logger.error('Erro ao atualizar dados do usuário', 'useAuthActions', error);
+      throw error;
     }
   };
 
@@ -194,6 +267,7 @@ export const useAuthActions = ({
   return {
     signInWithGoogle,
     logout,
+    refreshUserData,
     setUserType,
     updateOnboardingStep,
     completeOnboarding

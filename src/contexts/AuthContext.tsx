@@ -58,6 +58,7 @@ const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
     onboardingStatus,
     authActions.signInWithGoogle,
     authActions.logout,
+    authActions.refreshUserData,
     authActions.setUserType,
     authActions.updateOnboardingStep,
     authActions.completeOnboarding

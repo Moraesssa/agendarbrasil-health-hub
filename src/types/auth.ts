@@ -13,6 +13,7 @@ export interface AuthContextType {
   setUserType: (type: 'medico' | 'paciente') => Promise<void>;
   updateOnboardingStep: (step: number) => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
 export interface AuthProviderProps {

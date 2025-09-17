@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
@@ -15,9 +15,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
 const PerfilMedico = () => {
-  const { userData, user, loading, logout } = useAuth();
+  const { userData, user, loading, logout, refreshUserData } = useAuth();
   const navigate = useNavigate();
-  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (loading) return;
@@ -40,10 +39,8 @@ const PerfilMedico = () => {
 
   const handleLogout = () => utilHandleLogout(navigate, logout);
 
-  const handleProfileUpdate = () => {
-    // Force re-render to update displayed data
-    setRefreshKey(prev => prev + 1);
-    // In a real app, you might want to refetch user data here
+  const handleProfileUpdate = async () => {
+    await refreshUserData();
   };
 
   if (loading || !userData) {

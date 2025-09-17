@@ -12,7 +12,7 @@ import { BaseUser } from "@/types/user";
 
 interface EditProfileDialogProps {
   userData: BaseUser;
-  onProfileUpdate: () => void;
+  onProfileUpdate: () => Promise<void>;
 }
 
 export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDialogProps) => {
@@ -91,6 +91,8 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
         if (medicoError) throw medicoError;
       }
 
+      await onProfileUpdate();
+
       toast({
         title: "Perfil atualizado",
         description: "Suas informações foram atualizadas com sucesso.",
@@ -99,7 +101,6 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
       setOpen(false);
       setActiveTab("dados-profissionais");
       setFormData({ dadosProfissionais: {}, endereco: {} });
-      onProfileUpdate();
 
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
