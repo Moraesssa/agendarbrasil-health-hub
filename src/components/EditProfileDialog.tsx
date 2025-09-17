@@ -3,12 +3,38 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Edit, Save, Loader2 } from "lucide-react";
+import { Edit, Loader2 } from "lucide-react";
 import { DadosProfissionaisForm } from "@/components/onboarding/forms/DadosProfissionaisForm";
 import { EnderecoForm } from "@/components/onboarding/forms/EnderecoForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BaseUser } from "@/types/user";
+
+type DadosProfissionaisState = Partial<{
+  crm: string;
+  especialidades: string[];
+  telefone: string;
+  whatsapp: string | null;
+  dadosProfissionais: {
+    nomeCompleto?: string;
+    [key: string]: unknown;
+  };
+}> & Record<string, unknown>;
+
+type EnderecoState = Partial<{
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+}> & Record<string, unknown>;
+
+type FormState = {
+  dadosProfissionais: DadosProfissionaisState;
+  endereco: EnderecoState;
+};
 
 interface EditProfileDialogProps {
   userData: BaseUser;
@@ -19,36 +45,46 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("dados-profissionais");
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormState>({
     dadosProfissionais: {},
     endereco: {}
   });
   const { toast } = useToast();
 
-  const handleFormNext = (tabKey: string, data: any) => {
-    const stateKey = tabKey === "dados-profissionais" ? "dadosProfissionais" : tabKey;
+  const handleFormNext = (
+    tabKey: "dados-profissionais" | "endereco",
+    data: DadosProfissionaisState | { endereco: EnderecoState }
+  ) => {
+    if (tabKey === "dados-profissionais") {
+      setFormData(prev => ({
+        ...prev,
+        dadosProfissionais: data as DadosProfissionaisState
+      }));
+      setActiveTab("endereco");
+      return;
+    }
+
+    const enderecoData = "endereco" in data ? data.endereco : (data as EnderecoState);
 
     setFormData(prev => ({
       ...prev,
-      [stateKey]: data
+      endereco: enderecoData
     }));
 
-    // Move to next tab or save if it's the last tab
-    if (tabKey === "dados-profissionais") {
-      setActiveTab("endereco");
-    } else if (tabKey === "endereco") {
-      handleSave();
-    }
+    handleSave({ endereco: enderecoData });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (overrideData?: Partial<FormState>) => {
     setIsLoading(true);
     try {
+      const currentDadosProfissionais = overrideData?.dadosProfissionais ?? formData.dadosProfissionais;
+      const currentEndereco = overrideData?.endereco ?? formData.endereco;
+
       // Update profiles table
       const profileUpdates: any = {};
-      
-      if (formData.dadosProfissionais) {
-        const dadosProf = formData.dadosProfissionais as any;
+
+      if (currentDadosProfissionais) {
+        const dadosProf = currentDadosProfissionais as any;
 
         if (dadosProf?.dadosProfissionais?.nomeCompleto) {
           profileUpdates.display_name = dadosProf.dadosProfissionais.nomeCompleto;
@@ -67,8 +103,8 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
       // Update medicos table
       const medicosUpdates: any = {};
       
-      if (formData.dadosProfissionais) {
-        const dadosProf = formData.dadosProfissionais as any;
+      if (currentDadosProfissionais) {
+        const dadosProf = currentDadosProfissionais as any;
 
         if (dadosProf && 'crm' in dadosProf) {
           medicosUpdates.crm = dadosProf.crm;
@@ -91,8 +127,8 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
         }
       }
 
-      if (formData.endereco) {
-        medicosUpdates.endereco = formData.endereco;
+      if (currentEndereco && Object.keys(currentEndereco).length > 0) {
+        medicosUpdates.endereco = currentEndereco;
       }
 
       if (Object.keys(medicosUpdates).length > 0) {
