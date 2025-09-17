@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import { ScheduleManagement } from '@/components/doctor/ScheduleManagement';
+import { medicoService } from '@/services/medicoService';
 
 vi.mock('@/integrations/supabase/client', () => {
   const mockLocationsResponse = [
@@ -70,9 +71,11 @@ vi.mock('@/integrations/supabase/client', () => {
   };
 });
 
+const mockUser = { id: 'user-123' };
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'user-123' }
+    user: mockUser
   })
 }));
 
@@ -92,7 +95,7 @@ vi.mock('@/components/ui/select', () => {
   );
 
   const SelectTrigger = ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+    <button type="button">{children}</button>
   );
 
   const SelectValue = ({ placeholder }: { placeholder?: string }) => (
@@ -154,13 +157,41 @@ describe('ScheduleManagement', () => {
     render(<ScheduleManagement />);
 
     const addButtons = await screen.findAllByRole('button', { name: 'Adicionar Horário' });
-
     fireEvent.click(addButtons[0]);
 
-    await screen.findByText('Adicionar Horário');
+    await screen.findByLabelText('Horário de Início');
 
     const selectPlaceholder = await screen.findByText('Aplicar a todos os locais');
     const selectTrigger = selectPlaceholder.closest('button');
     expect(selectTrigger).toBeTruthy();
+  });
+
+  it('allows adding a block and saving without being blocked by the unsaved changes notice', async () => {
+    render(<ScheduleManagement />);
+
+    const addButtons = await screen.findAllByRole('button', { name: 'Adicionar Horário' });
+    fireEvent.click(addButtons[0]);
+
+    const startInput = await screen.findByLabelText('Horário de Início');
+    const endInput = screen.getByLabelText('Horário de Fim');
+
+    fireEvent.change(startInput, { target: { value: '09:00' } });
+    fireEvent.change(endInput, { target: { value: '18:00' } });
+
+    const addDialogButton = screen.getByRole('button', { name: /^Adicionar$/ });
+    fireEvent.click(addDialogButton);
+
+    await screen.findByText('Salve ou desfazer as alterações para continuar gerenciando seus horários.');
+
+    const saveButtons = screen.getAllByRole('button', { name: 'Salvar Configurações' });
+    const primarySaveButton = saveButtons.find(button => !button.closest('[role="alert"]'));
+    expect(primarySaveButton).toBeDefined();
+    expect(primarySaveButton).toBeEnabled();
+
+    fireEvent.click(primarySaveButton!);
+
+    await waitFor(() => {
+      expect(medicoService.saveMedicoData).toHaveBeenCalledTimes(1);
+    });
   });
 });
