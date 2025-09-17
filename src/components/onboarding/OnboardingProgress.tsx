@@ -13,6 +13,7 @@ export const OnboardingProgress = ({ currentStep, totalSteps, userType }: Onboar
       const titles = [
         'Dados Profissionais',
         'Endereço',
+        'Local de Atendimento',
         'Configurações',
         'Finalização'
       ];

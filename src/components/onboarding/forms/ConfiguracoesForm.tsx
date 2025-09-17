@@ -199,7 +199,7 @@ export const ConfiguracoesForm = ({ onNext, initialData }: ConfiguracoesFormProp
               </div>
             </div>
 
-            <Button type="submit" className="w-full" data-testid="form-step-3-next">Próximo</Button>
+            <Button type="submit" className="w-full" data-testid="form-step-4-next">Próximo</Button>
           </form>
         </Form>
       </CardContent>

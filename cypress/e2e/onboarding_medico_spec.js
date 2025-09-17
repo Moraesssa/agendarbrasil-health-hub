@@ -39,6 +39,8 @@ describe('Onboarding de Médico', () => {
     }).as('supabaseGetUser');
 
     // Mock da chamada de finalização do onboarding
+    let savedLocation;
+
     cy.intercept('POST', '**/rest/v1/medicos?on_conflict=user_id', (req) => {
       req.reply({
         statusCode: 201,
@@ -46,12 +48,26 @@ describe('Onboarding de Médico', () => {
       });
     }).as('finishOnboarding');
 
-    cy.intercept('POST', '**/rest/v1/enderecos', (req) => {
+    cy.intercept('POST', '**/rest/v1/locais_atendimento', (req) => {
+      savedLocation = {
+        id: 1,
+        medico_id: newUser.id,
+        ativo: true,
+        ...req.body,
+      };
+
       req.reply({
         statusCode: 201,
-        body: [{ ...req.body }],
+        body: [savedLocation],
       });
-    }).as('finishOnboarding');
+    }).as('addLocation');
+
+    cy.intercept('GET', '**/rest/v1/locais_atendimento*', (req) => {
+      req.reply({
+        statusCode: 200,
+        body: savedLocation ? [savedLocation] : [],
+      });
+    }).as('getLocations');
 
     // Visitar a página de login para iniciar o fluxo
     cy.visit('/login');
@@ -82,21 +98,35 @@ describe('Onboarding de Médico', () => {
     cy.get('[data-testid="uf-input"]').should('have.value', 'SP');
     cy.get('[data-testid="form-step-2-next"]').click();
 
-    // Passo 3: Configurações
+    // Passo 3: Local de Atendimento
+    cy.get('[data-testid="nome-local-input"]').type('Clínica Central');
+    cy.get('[data-testid="cep-local-input"]').should('have.value', '01001000');
+    cy.get('[data-testid="logradouro-local-input"]').should('have.value', 'Praça da Sé');
+    cy.get('[data-testid="numero-local-input"]').should('have.value', '100');
+    cy.get('[data-testid="bairro-local-input"]').should('have.value', 'Sé');
+    cy.get('[data-testid="cidade-local-input"]').should('have.value', 'São Paulo');
+    cy.get('[data-testid="uf-local-input"]').should('have.value', 'SP');
+    cy.get('[data-testid="form-step-3-next"]').click();
+    cy.wait('@addLocation');
+
+    // Passo 4: Configurações
     cy.get('[data-testid="valor-consulta-input"]').type('30000');
     cy.get('[data-testid="duracao-consulta-select"]').click();
     cy.get('[data-testid="select-item-30"]').click();
-    cy.get('[data-testid="form-step-3-next"]').click();
+    cy.get('[data-testid="form-step-4-next"]').click();
 
-    // Passo 4: Finalização
+    // Passo 5: Finalização
     cy.contains('h1', 'Finalização').should('be.visible');
     cy.get('[data-testid="finish-onboarding-button"]').click();
 
     // Verificar se o onboarding foi finalizado com sucesso
     cy.wait('@finishOnboarding');
 
+    // Verificar que os locais foram carregados no perfil
+    cy.wait('@getLocations');
+
     // Verificar redirecionamento para o perfil do médico
     cy.url().should('include', '/perfil-medico');
-    cy.contains('h1', 'Perfil do Médico').should('be.visible');
+    cy.contains('Clínica Central').should('be.visible');
   });
 });
