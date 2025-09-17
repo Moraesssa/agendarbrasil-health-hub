@@ -2,7 +2,7 @@
 import { Tables } from '@/integrations/supabase/types';
 
 // Core extended types with all properties that components expect
-export interface Doctor extends Partial<Tables<'medicos'>> {
+export type Doctor = Omit<Partial<Tables<'medicos'>>, 'id'> & {
   id: string;
   display_name?: string;
   nome?: string;
@@ -17,14 +17,14 @@ export interface Doctor extends Partial<Tables<'medicos'>> {
   crm?: string;
   uf_crm?: string;
   email?: string;
-}
+};
 
-export interface Patient extends Partial<Tables<'pacientes'>> {
+export type Patient = Omit<Partial<Tables<'pacientes'>>, 'id'> & {
   id: string;
   display_name?: string;
   nome?: string;
   usuario_id?: string;
-}
+};
 
 export interface Profile extends Tables<'profiles'> {
   avatar_url?: string;
@@ -104,31 +104,69 @@ export const safeToNumber = (value: any): number => {
 };
 
 // Safe data conversion functions for components
-export const convertDatabaseDoctor = (doctor: any): Doctor => ({
-  id: String(doctor?.id || doctor?.user_id || ''),
-  display_name: doctor?.display_name || doctor?.nome,
-  nome: doctor?.nome || doctor?.display_name,
-  foto_perfil_url: doctor?.foto_perfil_url || doctor?.photo_url,
-  rating: doctor?.rating || 0,
-  total_avaliacoes: doctor?.total_avaliacoes || 0,
-  bio_perfil: doctor?.bio_perfil,
-  usuario_id: doctor?.usuario_id || doctor?.user_id,
-  duracao_consulta_inicial: doctor?.duracao_consulta_inicial || 30,
-  especialidades: doctor?.especialidades || [],
-  especialidade: doctor?.especialidade,
-  crm: doctor?.crm,
-  uf_crm: doctor?.uf_crm,
-  email: doctor?.email,
-  ...doctor
-});
+export const convertDatabaseDoctor = (doctor: any): Doctor => {
+  const rawDoctor = doctor ?? {};
+  const parsedId = toStringId(rawDoctor.id ?? rawDoctor.user_id ?? '');
+  const parsedUserId =
+    rawDoctor.user_id != null ? toStringId(rawDoctor.user_id) : undefined;
+  const parsedUsuarioId =
+    rawDoctor.usuario_id != null
+      ? toStringId(rawDoctor.usuario_id)
+      : parsedUserId;
+  const parsedRating = rawDoctor.rating ?? 0;
+  const parsedTotalAvaliacoes = rawDoctor.total_avaliacoes ?? 0;
+  const parsedDuracao = rawDoctor.duracao_consulta_inicial ?? 30;
 
-export const convertDatabasePatient = (patient: any): Patient => ({
-  id: String(patient?.id || patient?.user_id || ''),
-  display_name: patient?.display_name || patient?.nome,
-  nome: patient?.nome || patient?.display_name,
-  usuario_id: patient?.usuario_id || patient?.user_id,
-  ...patient
-});
+  return {
+    ...rawDoctor,
+    id: parsedId,
+    user_id: parsedUserId,
+    display_name: rawDoctor.display_name ?? rawDoctor.nome,
+    nome: rawDoctor.nome ?? rawDoctor.display_name,
+    foto_perfil_url: rawDoctor.foto_perfil_url ?? rawDoctor.photo_url,
+    rating:
+      typeof parsedRating === 'number'
+        ? parsedRating
+        : Number(parsedRating) || 0,
+    total_avaliacoes:
+      typeof parsedTotalAvaliacoes === 'number'
+        ? parsedTotalAvaliacoes
+        : Number(parsedTotalAvaliacoes) || 0,
+    bio_perfil: rawDoctor.bio_perfil,
+    usuario_id: parsedUsuarioId,
+    duracao_consulta_inicial:
+      typeof parsedDuracao === 'number'
+        ? parsedDuracao
+        : Number(parsedDuracao) || 30,
+    especialidades: Array.isArray(rawDoctor.especialidades)
+      ? rawDoctor.especialidades
+      : [],
+    especialidade: rawDoctor.especialidade,
+    crm: rawDoctor.crm,
+    uf_crm: rawDoctor.uf_crm,
+    email: rawDoctor.email
+  };
+};
+
+export const convertDatabasePatient = (patient: any): Patient => {
+  const rawPatient = patient ?? {};
+  const parsedId = toStringId(rawPatient.id ?? rawPatient.user_id ?? '');
+  const parsedUserId =
+    rawPatient.user_id != null ? toStringId(rawPatient.user_id) : undefined;
+  const parsedUsuarioId =
+    rawPatient.usuario_id != null
+      ? toStringId(rawPatient.usuario_id)
+      : parsedUserId;
+
+  return {
+    ...rawPatient,
+    id: parsedId,
+    user_id: parsedUserId,
+    display_name: rawPatient.display_name ?? rawPatient.nome,
+    nome: rawPatient.nome ?? rawPatient.display_name,
+    usuario_id: parsedUsuarioId
+  };
+};
 
 export const convertDatabaseAppointment = (appointment: any): Appointment => ({
   id: String(appointment?.id || ''),
