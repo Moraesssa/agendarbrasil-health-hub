@@ -44,6 +44,22 @@ const DAYS_OF_WEEK = [
   { key: 'domingo', name: 'Domingo' }
 ];
 
+const ALL_LOCATIONS_VALUE = 'all-locations';
+
+const normalizeLocalIdForForm = (localId?: string | null) => {
+  if (!localId || localId === ALL_LOCATIONS_VALUE) {
+    return ALL_LOCATIONS_VALUE;
+  }
+  return localId;
+};
+
+const denormalizeLocalIdForPersist = (localId?: string | null) => {
+  if (!localId || localId === ALL_LOCATIONS_VALUE) {
+    return '';
+  }
+  return localId;
+};
+
 export const ScheduleManagement: React.FC = () => {
   const { user } = useAuth();
   const [schedule, setSchedule] = useState<DaySchedule[]>([]);
@@ -61,7 +77,7 @@ export const ScheduleManagement: React.FC = () => {
     ativo: true,
     inicioAlmoco: '',
     fimAlmoco: '',
-    local_id: ''
+    local_id: ALL_LOCATIONS_VALUE
   });
 
   useEffect(() => {
@@ -162,7 +178,7 @@ export const ScheduleManagement: React.FC = () => {
       ativo: true,
       inicioAlmoco: '',
       fimAlmoco: '',
-      local_id: ''
+      local_id: ALL_LOCATIONS_VALUE
     });
     setIsDialogOpen(true);
   };
@@ -170,7 +186,10 @@ export const ScheduleManagement: React.FC = () => {
   const handleEditBlock = (dayKey: string, block: WorkingHoursBlock, blockIndex: number) => {
     setEditingDay(dayKey);
     setEditingBlock({ ...block, id: blockIndex.toString() });
-    setBlockForm({ ...block });
+    setBlockForm({
+      ...block,
+      local_id: normalizeLocalIdForForm(block.local_id)
+    });
     setIsDialogOpen(true);
   };
 
@@ -182,8 +201,12 @@ export const ScheduleManagement: React.FC = () => {
         const newBlocos = [...day.blocos];
         const blockToSave: WorkingHoursBlock = {
           ...blockForm,
-          local_id: blockForm.local_id ?? editingBlock?.local_id ?? ''
+          local_id: denormalizeLocalIdForPersist(blockForm.local_id ?? editingBlock?.local_id)
         };
+
+        if (!blockToSave.local_id) {
+          delete blockToSave.local_id;
+        }
 
         if (editingBlock) {
           // Editing existing block
@@ -357,10 +380,20 @@ export const ScheduleManagement: React.FC = () => {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditBlock(day.dia, block, blockIndex)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Editar horário"
+                          onClick={() => handleEditBlock(day.dia, block, blockIndex)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteBlock(day.dia, blockIndex)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Excluir horário"
+                          onClick={() => handleDeleteBlock(day.dia, blockIndex)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -430,12 +463,20 @@ export const ScheduleManagement: React.FC = () => {
             {locations.length > 0 && (
               <div>
                 <Label htmlFor="local_id">Local Específico (opcional)</Label>
-                <Select value={blockForm.local_id || ''} onValueChange={(value) => setBlockForm(prev => ({ ...prev, local_id: value }))}>
+                <Select
+                  value={normalizeLocalIdForForm(blockForm.local_id)}
+                  onValueChange={(value) =>
+                    setBlockForm(prev => ({
+                      ...prev,
+                      local_id: normalizeLocalIdForForm(value)
+                    }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Aplicar a todos os locais" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os locais</SelectItem>
+                    <SelectItem value={ALL_LOCATIONS_VALUE}>Todos os locais</SelectItem>
                     {locations.map(location => (
                       <SelectItem key={location.id} value={location.id}>
                         {location.nome_local}
