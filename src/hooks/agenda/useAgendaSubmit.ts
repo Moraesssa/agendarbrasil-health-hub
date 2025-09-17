@@ -12,20 +12,35 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const normalizeHorarios = (horarios: AgendaFormData["horarios"]) => {
+        return diasDaSemana.reduce((acc, dia) => {
+            const blocos = Array.isArray(horarios[dia.key]) ? horarios[dia.key] : [];
+            acc[dia.key] = blocos.map(bloco => ({
+                ...bloco,
+                local_id: bloco.local_id === null || bloco.local_id === ""
+                    ? bloco.local_id
+                    : String(bloco.local_id),
+            }));
+            return acc;
+        }, {} as AgendaFormData["horarios"]);
+    };
+
     const onSubmit = async (data: AgendaFormData) => {
         console.log("🔥 onSubmit called with data:", data);
-        
+
         if (!user?.id) {
             console.log("❌ No user ID");
             return;
         }
-        
+
+        const normalizedHorarios = normalizeHorarios(data.horarios);
+
         // Custom validation for active blocks only
         let hasValidActiveBlocks = false;
         const incompleteBlocks = [];
-        
+
         for (const dia of diasDaSemana) {
-            const blocosDoDia = data.horarios[dia.key];
+            const blocosDoDia = normalizedHorarios[dia.key];
             if (Array.isArray(blocosDoDia)) {
                 for (let i = 0; i < blocosDoDia.length; i++) {
                     const bloco = blocosDoDia[i];
@@ -79,16 +94,16 @@ export const useAgendaSubmit = (reset: UseFormReset<AgendaFormData>) => {
                 }
             }
 
-            const newConfiguracoes = { 
-                ...existingConfig, 
-                horarioAtendimento: data.horarios 
+            const newConfiguracoes = {
+                ...existingConfig,
+                horarioAtendimento: normalizedHorarios
             };
-            
+
             await supabase.from('medicos').update({ configuracoes: newConfiguracoes }).eq('user_id', user.id).throwOnError();
 
             console.log("✅ Dados salvos com sucesso!");
             toast({ title: "Agenda atualizada com sucesso!" });
-            reset(data);
+            reset({ horarios: normalizedHorarios });
         } catch (error) {
             console.log("❌ Erro ao salvar:", error);
             logger.error("Erro ao salvar agenda", "GerenciarAgenda", error);

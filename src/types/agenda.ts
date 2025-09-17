@@ -11,12 +11,28 @@ export const diasDaSemana = [
   { key: "domingo", label: "Domingo" },
 ] as const;
 
+const localIdSchema = z.preprocess((value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "number" || typeof value === "string") {
+    const stringValue = String(value);
+    return stringValue.length > 0 ? stringValue : "";
+  }
+
+  return value;
+}, z.string().nullable());
+
 export const horarioSchema = z.object({
   ativo: z.boolean(),
   inicio: z.string(),
   fim: z.string(),
-  local_id: z.string().uuid().nullable(),
-}).refine(data => {
+  local_id: localIdSchema,
+}).transform((data) => ({
+  ...data,
+  local_id: data.local_id === null || data.local_id === "" ? data.local_id : String(data.local_id),
+})).refine(data => {
     if (!data.ativo) return true;
     return !!data.local_id && !!data.inicio && !!data.fim && data.inicio < data.fim;
 }, {

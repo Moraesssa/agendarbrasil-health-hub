@@ -28,7 +28,11 @@ export const DayScheduleControl = ({ dia, control, locais }: DayScheduleControlP
       <CardContent className="space-y-4">
         {fields.length === 0 && <p className="text-sm text-gray-500">Nenhum bloco de horário para este dia.</p>}
         {fields.map((item, index) => (
-          <div key={item.id} className="p-4 border rounded-lg space-y-3 bg-slate-50 relative">
+          <div
+            key={item.id}
+            className="p-4 border rounded-lg space-y-3 bg-slate-50 relative"
+            data-testid={`schedule-block-${dia.key}-${index}`}
+          >
             <Controller
               control={control}
               name={`horarios.${dia.key}.${index}`}
@@ -46,16 +50,26 @@ export const DayScheduleControl = ({ dia, control, locais }: DayScheduleControlP
                   <div className={`grid md:grid-cols-3 gap-4 ${!value?.ativo ? 'opacity-50 pointer-events-none' : ''}`}>
                     <FormItem>
                       <Label>Início</Label>
-                      <Input type="time" value={value?.inicio || ''} onChange={e => onChange({...value, inicio: e.target.value})} />
+                      <Input
+                        data-testid={`schedule-start-${dia.key}-${index}`}
+                        type="time"
+                        value={value?.inicio || ''}
+                        onChange={e => onChange({...value, inicio: e.target.value})}
+                      />
                     </FormItem>
                     <FormItem>
                       <Label>Fim</Label>
-                      <Input type="time" value={value?.fim || ''} onChange={e => onChange({...value, fim: e.target.value})} />
+                      <Input
+                        data-testid={`schedule-end-${dia.key}-${index}`}
+                        type="time"
+                        value={value?.fim || ''}
+                        onChange={e => onChange({...value, fim: e.target.value})}
+                      />
                     </FormItem>
                     <FormItem>
                       <Label>Local</Label>
                       <Select onValueChange={val => onChange({...value, local_id: val})} value={value?.local_id || undefined}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectTrigger data-testid={`schedule-local-select-${dia.key}-${index}`}><SelectValue placeholder="Selecione..." /></SelectTrigger>
                         <SelectContent>
                           {locais.map((local: LocalAtendimento) => <SelectItem key={local.id} value={local.id}>{local.nome_local}</SelectItem>)}
                         </SelectContent>
