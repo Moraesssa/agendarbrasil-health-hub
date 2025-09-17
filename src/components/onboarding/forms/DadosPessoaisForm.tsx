@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { validateCPF, validatePhone, validateCRM, sanitizeInput, validateDate } from "@/utils/validation";
+import { validateCPF, validatePhone, validateCRM, sanitizeInput, validateDate, normalizeCRM } from "@/utils/validation";
 import { useToast } from "@/hooks/use-toast";
+import { verifyCRMWithExternalService } from "@/services/crmValidationService";
 
 interface DadosPessoaisFormProps {
   onNext: (data: any) => void;
@@ -25,8 +26,9 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
       especialidades: Array.isArray(initialData?.especialidades) ? initialData.especialidades : ['']
     })
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isVerifyingCRM, setIsVerifyingCRM] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -55,7 +57,7 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
     
     // Validate CRM for doctors
     if (isMedico && !validateCRM(formData.crm)) {
-      newErrors.crm = "CRM inválido";
+      newErrors.crm = "CRM deve seguir o formato numérico/UF (ex: 12345/SP)";
     }
     
     // Validate specialties for doctors
@@ -71,9 +73,9 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast({
         title: "Erro na validação",
@@ -82,7 +84,7 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
       });
       return;
     }
-    
+
     // Sanitize inputs
     const sanitizedData = {
       nomeCompleto: sanitizeInput(formData.nomeCompleto),
@@ -90,17 +92,43 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
       dataNascimento: formData.dataNascimento,
       telefone: formData.telefone.replace(/[^\d]/g, ''),
       ...(isMedico && {
-        crm: sanitizeInput(formData.crm),
-        especialidades: Array.isArray(formData.especialidades) 
+        crm: normalizeCRM(formData.crm),
+        especialidades: Array.isArray(formData.especialidades)
           ? formData.especialidades.map(e => sanitizeInput(e)).filter(e => e.trim())
           : []
       })
     };
-    
+
     if (isMedico) {
+      const normalizedCRM = sanitizedData.crm!;
+      const especialidades = sanitizedData.especialidades ?? [];
+      setErrors(prev => {
+        if (!prev.crm) return prev;
+        const { crm: _removed, ...rest } = prev;
+        return rest;
+      });
+      try {
+        setIsVerifyingCRM(true);
+        const verification = await verifyCRMWithExternalService(normalizedCRM);
+        if (verification && verification.status !== "valid") {
+          const message = verification.message || (verification.status === "invalid"
+            ? "CRM não encontrado na base oficial"
+            : "Não foi possível validar o CRM na base oficial");
+          setErrors(prev => ({ ...prev, crm: message }));
+          toast({
+            title: "Validação de CRM",
+            description: message,
+            variant: "destructive",
+          });
+          return;
+        }
+      } finally {
+        setIsVerifyingCRM(false);
+      }
+
       onNext({
-        crm: sanitizedData.crm,
-        especialidades: sanitizedData.especialidades,
+        crm: normalizedCRM,
+        especialidades,
         telefone: sanitizedData.telefone,
         dadosProfissionais: {
           nomeCompleto: sanitizedData.nomeCompleto,
@@ -108,18 +136,19 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
           dataNascimento: new Date(sanitizedData.dataNascimento)
         }
       });
-    } else {
-      onNext({
-        dadosPessoais: {
-          nomeCompleto: sanitizedData.nomeCompleto,
-          cpf: sanitizedData.cpf,
-          dataNascimento: new Date(sanitizedData.dataNascimento)
-        },
-        contato: {
-          telefone: sanitizedData.telefone
-        }
-      });
+      return;
     }
+
+    onNext({
+      dadosPessoais: {
+        nomeCompleto: sanitizedData.nomeCompleto,
+        cpf: sanitizedData.cpf,
+        dataNascimento: new Date(sanitizedData.dataNascimento)
+      },
+      contato: {
+        telefone: sanitizedData.telefone
+      }
+    });
   };
 
   const handleEspecialidadeChange = (index: number, value: string) => {
@@ -217,9 +246,23 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
                 <Input
                   id="crm"
                   value={formData.crm}
-                  onChange={(e) => setFormData({ ...formData, crm: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, crm: e.target.value });
+                    if (errors.crm) {
+                      setErrors(prev => {
+                        if (!prev.crm) return prev;
+                        const { crm: _removed, ...rest } = prev;
+                        return rest;
+                      });
+                    }
+                  }}
+                  className={errors.crm ? "border-destructive" : ""}
+                  placeholder="12345/UF"
                   required
                 />
+                {errors.crm && (
+                  <p className="text-sm text-destructive">{errors.crm}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -244,8 +287,8 @@ export const DadosPessoaisForm = ({ onNext, initialData, isMedico = false }: Dad
             </>
           )}
 
-          <Button type="submit" className="w-full">
-            Próximo
+          <Button type="submit" className="w-full" disabled={isMedico && isVerifyingCRM}>
+            {isMedico && isVerifyingCRM ? "Validando CRM..." : "Próximo"}
           </Button>
         </form>
       </CardContent>
