@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, Calendar, Settings, Plus, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { medicoService } from '@/services/medicoService';
+import { UnsavedChangesOverlay } from '@/components/ui/UnsavedChangesOverlay';
 
 interface WorkingHoursBlock {
   id?: string;
@@ -67,6 +68,17 @@ export const ScheduleManagement: React.FC = () => {
   const [consultationDuration, setConsultationDuration] = useState(30);
   const [bufferMinutes, setBufferMinutes] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [initialConfig, setInitialConfig] = useState<{
+    schedule: DaySchedule[];
+    consultationDuration: number;
+    bufferMinutes: number;
+  }>({
+    schedule: [],
+    consultationDuration: 30,
+    bufferMinutes: 0,
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDay, setEditingDay] = useState<string | null>(null);
   const [editingBlock, setEditingBlock] = useState<WorkingHoursBlock | null>(null);
@@ -116,18 +128,29 @@ export const ScheduleManagement: React.FC = () => {
       setLocations(convertedLocations);
 
       const config = (medicoData?.configuracoes as any) || {};
-      setConsultationDuration(config.duracaoConsulta || 30);
-      setBufferMinutes(config.bufferMinutos || 0);
-      
+      const nextConsultationDuration = config.duracaoConsulta || 30;
+      const nextBufferMinutes = config.bufferMinutos || 0;
+      setConsultationDuration(nextConsultationDuration);
+      setBufferMinutes(nextBufferMinutes);
+
       // Initialize schedule
       const horarioAtendimento = config.horarioAtendimento || {};
       const initialSchedule = DAYS_OF_WEEK.map(day => ({
         dia: day.key,
         diaNome: day.name,
-        blocos: horarioAtendimento[day.key] || []
+        blocos: (horarioAtendimento[day.key] || []).map((block: WorkingHoursBlock) => ({ ...block }))
       }));
-      
+
       setSchedule(initialSchedule);
+      setInitialConfig({
+        schedule: initialSchedule.map(day => ({
+          ...day,
+          blocos: day.blocos.map(block => ({ ...block })),
+        })),
+        consultationDuration: nextConsultationDuration,
+        bufferMinutes: nextBufferMinutes,
+      });
+      setHasPendingChanges(false);
     } catch (error) {
       console.error('Error loading schedule data:', error);
       toast({
@@ -141,6 +164,7 @@ export const ScheduleManagement: React.FC = () => {
   };
 
   const saveConfiguration = async () => {
+    setIsSaving(true);
     try {
       const horarioAtendimento: Record<string, WorkingHoursBlock[]> = {};
       schedule.forEach(day => {
@@ -155,6 +179,16 @@ export const ScheduleManagement: React.FC = () => {
 
       await medicoService.saveMedicoData({ configuracoes });
 
+      setInitialConfig({
+        schedule: schedule.map(day => ({
+          ...day,
+          blocos: day.blocos.map(block => ({ ...block })),
+        })),
+        consultationDuration,
+        bufferMinutes,
+      });
+      setHasPendingChanges(false);
+
       toast({
         title: "Configurações salvas",
         description: "Sua agenda foi atualizada com sucesso.",
@@ -166,8 +200,25 @@ export const ScheduleManagement: React.FC = () => {
         description: "Não foi possível salvar as configurações.",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  const handleUndoChanges = () => {
+    setSchedule(initialConfig.schedule.map(day => ({
+      ...day,
+      blocos: day.blocos.map(block => ({ ...block })),
+    })));
+    setConsultationDuration(initialConfig.consultationDuration);
+    setBufferMinutes(initialConfig.bufferMinutes);
+    setHasPendingChanges(false);
+    setIsDialogOpen(false);
+    setEditingDay(null);
+    setEditingBlock(null);
+  };
+
+  const showOverlay = hasPendingChanges && !isSaving;
 
   const handleAddBlock = (dayKey: string) => {
     setEditingDay(dayKey);
@@ -224,9 +275,7 @@ export const ScheduleManagement: React.FC = () => {
 
     setSchedule(updatedSchedule);
     setIsDialogOpen(false);
-    
-    // Auto-save
-    setTimeout(saveConfiguration, 500);
+    setHasPendingChanges(true);
   };
 
   const handleDeleteBlock = (dayKey: string, blockIndex: number) => {
@@ -241,9 +290,7 @@ export const ScheduleManagement: React.FC = () => {
     });
 
     setSchedule(updatedSchedule);
-    
-    // Auto-save
-    setTimeout(saveConfiguration, 500);
+    setHasPendingChanges(true);
   };
 
   const formatTime = (time: string) => {
@@ -272,14 +319,25 @@ export const ScheduleManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gerenciar Horários</h2>
-        <Button onClick={saveConfiguration}>
-          <Settings className="w-4 h-4 mr-2" />
-          Salvar Configurações
-        </Button>
-      </div>
+    <>
+      <UnsavedChangesOverlay
+        isDirty={showOverlay}
+        canSave={hasPendingChanges}
+        isSubmitting={isSaving}
+        onUndo={handleUndoChanges}
+        onSave={saveConfiguration}
+        description="Salve ou desfazer as alterações para continuar gerenciando seus horários."
+        saveLabel="Salvar configurações"
+        undoLabel="Desfazer alterações"
+      />
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Gerenciar Horários</h2>
+          <Button onClick={saveConfiguration} disabled={!hasPendingChanges || isSaving}>
+            <Settings className="w-4 h-4 mr-2" />
+            Salvar Configurações
+          </Button>
+        </div>
 
       {/* Global Settings */}
       <Card>
@@ -293,7 +351,13 @@ export const ScheduleManagement: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="consultation-duration">Duração da Consulta (minutos)</Label>
-              <Select value={consultationDuration.toString()} onValueChange={(value) => setConsultationDuration(parseInt(value))}>
+              <Select
+                value={consultationDuration.toString()}
+                onValueChange={(value) => {
+                  setConsultationDuration(parseInt(value));
+                  setHasPendingChanges(true);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -309,7 +373,13 @@ export const ScheduleManagement: React.FC = () => {
             
             <div>
               <Label htmlFor="buffer-minutes">Intervalo entre consultas (minutos)</Label>
-              <Select value={bufferMinutes.toString()} onValueChange={(value) => setBufferMinutes(parseInt(value))}>
+              <Select
+                value={bufferMinutes.toString()}
+                onValueChange={(value) => {
+                  setBufferMinutes(parseInt(value));
+                  setHasPendingChanges(true);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -516,6 +586,8 @@ export const ScheduleManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 };
+
