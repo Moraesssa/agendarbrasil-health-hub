@@ -22,13 +22,15 @@ export const useAgendaManagement = () => {
     const { loading, locais, error, fetchInitialData } = useAgendaData(reset);
     const { onSubmit, isSubmitting } = useAgendaSubmit(reset);
 
-    const canSave = hasAnyFilledBlocks();
+    const hasFilledBlocks = hasAnyFilledBlocks();
+    const canSave = isDirty || hasFilledBlocks;
     const hasCompleteBlocks = hasValidCompleteBlocks();
-    
-    logger.debug('Estado atual da agenda', 'useAgendaManagement', { 
-        canSave, 
-        hasCompleteBlocks, 
-        isDirty, 
+
+    logger.debug('Estado atual da agenda', 'useAgendaManagement', {
+        canSave,
+        hasFilledBlocks,
+        hasCompleteBlocks,
+        isDirty,
         loading,
         hasError: !!error,
         errorType: error?.type
