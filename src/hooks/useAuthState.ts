@@ -154,19 +154,28 @@ export const useAuthState = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.expires_at) {
             const expiresAtMs = session.expires_at * 1000;
-            const timeDiff = Math.abs(Date.now() - expiresAtMs);
-            if (timeDiff > CLOCK_DRIFT_TOLERANCE_MS) {
-                const msg = '⚠️ Diferença de horário detectada. Ajuste o relógio do dispositivo e tente novamente.';
-                console.error(msg, {
-                  localTime: new Date(Date.now()).toISOString(),
-                  expiresAt: new Date(expiresAtMs).toISOString(),
-                  diffMs: timeDiff,
-                });
-                if (typeof window !== 'undefined') {
-                    alert(msg);
+            const expiresInSeconds = session?.expires_in;
+
+            if (typeof expiresInSeconds === 'number') {
+                const expectedExpiryMs = Date.now() + expiresInSeconds * 1000;
+                const timeDiff = Math.abs(expiresAtMs - expectedExpiryMs);
+
+                if (timeDiff > CLOCK_DRIFT_TOLERANCE_MS) {
+                    const msg = '⚠️ Diferença de horário detectada. Ajuste o relógio do dispositivo e tente novamente.';
+                    console.error(msg, {
+                      localTime: new Date(Date.now()).toISOString(),
+                      expiresAt: new Date(expiresAtMs).toISOString(),
+                      expectedExpiry: new Date(expectedExpiryMs).toISOString(),
+                      diffMs: timeDiff,
+                    });
+                    if (typeof window !== 'undefined') {
+                        alert(msg);
+                    }
+                    setLoading(false);
+                    return;
                 }
-                setLoading(false);
-                return;
+            } else {
+                console.warn('⏱️ Não foi possível verificar drift de horário: expires_in ausente.');
             }
         }
 
