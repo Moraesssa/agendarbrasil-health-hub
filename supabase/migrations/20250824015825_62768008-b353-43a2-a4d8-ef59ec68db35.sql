@@ -57,22 +57,60 @@ SELECT * FROM get_doctors_by_location_and_specialty(null, null, null);
 DROP FUNCTION IF EXISTS public.get_available_states();
 
 CREATE OR REPLACE FUNCTION public.get_available_states()
-RETURNS TABLE(uf text, nome text)
+RETURNS TABLE(
+    uf text,
+    nome text,
+    doctor_count bigint,
+    city_count bigint,
+    avg_wait_minutes numeric
+)
 LANGUAGE sql
 STABLE SECURITY DEFINER
 SET search_path = 'public'
 AS $$
-    SELECT DISTINCT 
-        la.estado as uf,
-        la.estado as nome
-    FROM public.locais_atendimento la
-    JOIN public.medicos m ON m.user_id = la.medico_id
-    JOIN public.profiles p ON p.id = m.user_id
-    WHERE la.ativo = true 
-        AND la.status = 'ativo'
-        AND p.user_type = 'medico'
-        AND p.is_active = true
-    ORDER BY la.estado;
+    WITH active_locations AS (
+        SELECT
+            la.id,
+            UPPER(la.estado) AS estado,
+            la.cidade,
+            la.medico_id
+        FROM public.locais_atendimento la
+        JOIN public.medicos m ON m.user_id = la.medico_id
+        JOIN public.profiles p ON p.id = m.user_id
+        WHERE la.ativo = true
+            AND la.status = 'ativo'
+            AND p.user_type = 'medico'
+            AND p.is_active = true
+    ),
+    state_stats AS (
+        SELECT
+            al.estado AS uf,
+            COUNT(DISTINCT al.medico_id) AS doctor_count,
+            COUNT(DISTINCT al.cidade) AS city_count
+        FROM active_locations al
+        GROUP BY al.estado
+    ),
+    wait_times AS (
+        SELECT
+            al.estado AS uf,
+            AVG(EXTRACT(EPOCH FROM (c.consultation_date - c.created_at)) / 60.0) AS avg_wait_minutes
+        FROM public.consultas c
+        JOIN active_locations al ON al.id = c.local_id
+        WHERE c.consultation_date IS NOT NULL
+            AND c.created_at IS NOT NULL
+            AND c.consultation_date >= c.created_at
+            AND (c.status IS NULL OR c.status NOT IN ('cancelada', 'cancelado', 'cancelled'))
+        GROUP BY al.estado
+    )
+    SELECT
+        ss.uf,
+        ss.uf AS nome,
+        ss.doctor_count,
+        ss.city_count,
+        wt.avg_wait_minutes
+    FROM state_stats ss
+    LEFT JOIN wait_times wt ON wt.uf = ss.uf
+    ORDER BY ss.uf;
 $$;
 
 -- Testar a função de estados

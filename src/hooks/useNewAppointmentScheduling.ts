@@ -8,7 +8,13 @@ import schedulingService, { LocalComHorarios, Medico } from "@/services/scheduli
 import { logger } from "@/utils/logger";
 import { safeArrayAccess, isValidArray } from "@/utils/arrayUtils";
 
-interface StateInfo { uf: string; }
+interface StateInfo {
+  uf: string;
+  nome?: string | null;
+  doctor_count?: number | null;
+  city_count?: number | null;
+  avg_wait_minutes?: number | null;
+}
 interface CityInfo { cidade: string; }
 
 // Interface for granular loading states

@@ -9,7 +9,13 @@ import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
 import { safeArrayAccess, safeArrayLength } from "@/utils/arrayUtils";
 
-interface StateInfo { uf: string; }
+interface StateInfo {
+  uf: string;
+  nome?: string | null;
+  doctor_count?: number | null;
+  city_count?: number | null;
+  avg_wait_minutes?: number | null;
+}
 interface CityInfo { cidade: string; }
 
 export const useAppointmentScheduling = () => {
