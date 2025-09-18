@@ -20,7 +20,7 @@ const GerenciarAgenda = () => {
         loading,
         isSubmitting,
         locais,
-        isDirty,
+        hasChanges,
         canSave,
         hasCompleteBlocks,
         error,
@@ -52,9 +52,9 @@ const GerenciarAgenda = () => {
             <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-green-50">
                 <AppSidebar />
                 <SidebarInset className="flex-1">
-                    <AgendaPageHeader 
-                        canSave={canSave} 
-                        isDirty={isDirty} 
+                    <AgendaPageHeader
+                        canSave={canSave}
+                        hasChanges={hasChanges}
                         hasCompleteBlocks={hasCompleteBlocks}
                     />
                     <main className="p-6">
@@ -63,8 +63,8 @@ const GerenciarAgenda = () => {
                                 {diasDaSemana.map((dia) => (
                                     <DayScheduleControl key={dia.key} dia={dia} control={control} locais={locais} />
                                 ))}
-                                <AgendaFormActions 
-                                    isDirty={isDirty}
+                                <AgendaFormActions
+                                    hasChanges={hasChanges}
                                     canSave={canSave}
                                     isSubmitting={isSubmitting}
                                     onUndo={fetchInitialData}

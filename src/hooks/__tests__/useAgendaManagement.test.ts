@@ -27,7 +27,7 @@ describe('useAgendaManagement', () => {
     vi.clearAllMocks();
   });
 
-  it('permite salvar uma agenda limpa quando o formulário está sujo', async () => {
+  it('permite salvar uma agenda limpa quando o último bloco é removido', async () => {
     const { result } = renderHook(() => useAgendaManagement());
 
     const initialHorarios = diasDaSemana.reduce((acc, dia) => {
@@ -42,12 +42,19 @@ describe('useAgendaManagement', () => {
     });
 
     await act(async () => {
-      result.current.form.setValue('horarios.segunda', [], { shouldDirty: true });
+      result.current.form.setValue('horarios.segunda', []);
     });
 
     await waitFor(() => {
-      expect(result.current.isDirty).toBe(true);
+      expect(result.current.isDirty).toBe(false);
+      expect(result.current.hasChanges).toBe(true);
       expect(result.current.canSave).toBe(true);
     });
+
+    await act(async () => {
+      await result.current.handleSubmit(result.current.onSubmit)();
+    });
+
+    expect(mockOnSubmit).toHaveBeenCalledTimes(1);
   });
 });
