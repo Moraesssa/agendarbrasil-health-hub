@@ -462,7 +462,6 @@ const AgendaMedicoIntegrada: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
-                  </Card>
                 );
               })}
             </div>
