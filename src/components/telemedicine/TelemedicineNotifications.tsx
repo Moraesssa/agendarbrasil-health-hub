@@ -25,7 +25,7 @@ interface Notification {
   type: 'reminder' | 'tech_check' | 'connection_test' | 'pre_consultation';
   title: string;
   message: string;
-  appointment_id?: string;
+  appointment_id?: number;
   scheduled_time: string;
   read: boolean;
   action_required?: boolean;

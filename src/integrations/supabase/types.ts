@@ -2108,7 +2108,7 @@ export type Database = {
           p_specialty: string
         }
         Returns: {
-          appointment_id: string
+          appointment_id: number
           message: string
           success: boolean
         }[]
@@ -2122,7 +2122,7 @@ export type Database = {
           p_specialty?: string
         }
         Returns: {
-          appointment_id: string
+          appointment_id: number
           message: string
           success: boolean
         }[]
