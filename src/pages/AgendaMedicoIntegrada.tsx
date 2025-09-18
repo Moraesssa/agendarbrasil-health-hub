@@ -56,92 +56,25 @@ const AgendaMedicoIntegrada: React.FC = () => {
 
     try {
       setLoading(true);
-      
-      // Por enquanto, vamos usar dados simulados
-      // const doctorAppointments = await SchedulingService.getDoctorAppointments(user.id, selectedDate);
-      
-      // Dados simulados para demonstração
-      const mockAppointments: Appointment[] = [
-        {
-          id: '1',
-          medico_id: user.id,
-          paciente_id: 'p1',
-          data_hora_agendada: new Date(`${selectedDate}T09:00:00`).toISOString(),
-          duracao_estimada: 30,
-          tipo: 'presencial',
-          prioridade: 'normal',
-          status: 'confirmada',
-          valor_consulta: 200,
-          motivo_consulta: 'Consulta de rotina - hipertensão',
-          buffer_antes: 5,
-          buffer_depois: 5,
-          permite_reagendamento: true,
-          agendado_por: 'p1',
-          paciente: {
-            id: 'p1',
-            usuario_id: 'u1',
-            nome: 'Maria Silva',
-            email: 'maria.silva@email.com',
-            data_nascimento: '1980-05-15',
-            telefone: '(11) 99999-9999'
-          }
-        },
-        {
-          id: '2',
-          medico_id: user.id,
-          paciente_id: 'p2',
-          data_hora_agendada: new Date(`${selectedDate}T10:00:00`).toISOString(),
-          duracao_estimada: 45,
-          tipo: 'teleconsulta',
-          prioridade: 'alta',
-          status: 'agendada',
-          valor_consulta: 150,
-          motivo_consulta: 'Primeira consulta - dor no peito',
-          buffer_antes: 10,
-          buffer_depois: 5,
-          permite_reagendamento: true,
-          agendado_por: 'p2',
-          paciente: {
-            id: 'p2',
-            usuario_id: 'u2',
-            nome: 'João Santos',
-            email: 'joao.santos@email.com',
-            data_nascimento: '1975-08-22',
-            telefone: '(11) 88888-8888'
-          }
-        },
-        {
-          id: '3',
-          medico_id: user.id,
-          paciente_id: 'p3',
-          data_hora_agendada: new Date(`${selectedDate}T14:00:00`).toISOString(),
-          duracao_estimada: 30,
-          tipo: 'presencial',
-          prioridade: 'normal',
-          status: 'agendada',
-          valor_consulta: 200,
-          motivo_consulta: 'Retorno - resultados de exames',
-          buffer_antes: 5,
-          buffer_depois: 5,
-          permite_reagendamento: true,
-          agendado_por: 'p3',
-          paciente: {
-            id: 'p3',
-            usuario_id: 'u3',
-            nome: 'Ana Costa',
-            email: 'ana.costa@email.com',
-            data_nascimento: '1990-12-03',
-            telefone: '(11) 77777-7777'
-          }
-        }
-      ];
 
-      setAppointments(mockAppointments);
+      const startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      const doctorAppointments = await SchedulingService.getDoctorAppointments(
+        user.id,
+        startDate.toISOString(),
+        endDate.toISOString()
+      );
+
+      setAppointments(doctorAppointments);
     } catch (error) {
       console.error('Erro ao carregar agenda:', error);
+      setAppointments([]);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar sua agenda.",
+        description: error instanceof Error ? error.message : "Não foi possível carregar sua agenda.",
         variant: "destructive"
       });
     } finally {
@@ -151,12 +84,12 @@ const AgendaMedicoIntegrada: React.FC = () => {
 
   const handleStatusUpdate = async (appointmentId: string, newStatus: Appointment['status']) => {
     try {
-      // await SchedulingService.updateAppointmentStatus(appointmentId, newStatus);
-      
-      setAppointments(prev => prev.map(apt => 
-        apt.id === appointmentId ? { ...apt, status: newStatus } : apt
+      const updatedAppointment = await SchedulingService.updateAppointmentStatus(appointmentId, newStatus);
+
+      setAppointments(prev => prev.map(apt =>
+        apt.id === appointmentId ? updatedAppointment : apt
       ));
-      
+
       toast({
         title: "Status atualizado",
         description: `Consulta marcada como ${newStatus}.`,
@@ -165,7 +98,7 @@ const AgendaMedicoIntegrada: React.FC = () => {
       console.error('Erro ao atualizar status:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o status da consulta.",
+        description: error instanceof Error ? error.message : "Não foi possível atualizar o status da consulta.",
         variant: "destructive"
       });
     }
