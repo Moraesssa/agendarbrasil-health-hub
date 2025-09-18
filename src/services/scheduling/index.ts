@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 
 export interface Doctor {
   id: string;
@@ -130,7 +131,20 @@ async function createAppointment(params: {
       logger.error('Erro ao agendar consulta', 'schedulingService.createAppointment', error);
       throw new Error(error.message || 'Erro ao agendar consulta');
     }
-    return data;
+    const normalized = (data ?? []).map(result => {
+      const appointmentId = normalizeAppointmentId(result.appointment_id);
+
+      if (result.success && appointmentId === null) {
+        throw new Error('Erro ao processar o identificador da consulta criada');
+      }
+
+      return {
+        ...result,
+        appointment_id: appointmentId
+      };
+    });
+
+    return normalized;
   } catch (err) {
     logger.error('Erro inesperado ao agendar consulta', 'schedulingService.createAppointment', err);
     throw err;

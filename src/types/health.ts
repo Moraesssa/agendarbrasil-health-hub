@@ -11,7 +11,7 @@ export interface HealthMetric {
   unit: string;
   recorded_at: string;
   created_at: string;
-  appointment_id?: string;
+  appointment_id?: number;
 }
 
 export interface CreateHealthMetricData {
@@ -20,7 +20,7 @@ export interface CreateHealthMetricData {
   value: HealthMetric['value'];
   unit: string;
   recorded_at?: string;
-  appointment_id?: string;
+  appointment_id?: number;
 }
 
 export interface HealthMetricDisplay {

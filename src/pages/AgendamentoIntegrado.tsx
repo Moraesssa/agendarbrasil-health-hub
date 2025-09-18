@@ -18,6 +18,7 @@ import { AppointmentConfirmation } from '@/components/scheduling/AppointmentConf
 
 // Serviços
 import schedulingService, { Doctor, TimeSlot } from '@/services/scheduling';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 
 type Step = 'search' | 'availability' | 'confirmation';
 
@@ -28,7 +29,7 @@ const AgendamentoIntegrado: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<Step>('search');
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
-  const [appointmentId, setAppointmentId] = useState<string | null>(null);
+  const [appointmentId, setAppointmentId] = useState<number | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -78,8 +79,12 @@ const AgendamentoIntegrado: React.FC = () => {
         local_consulta_texto: ''
       });
 
-      const appointmentIdResult = (result && (result as any)[0]?.appointment_id) || (result as any)?.appointment_id;
-      if (appointmentIdResult) {
+      const rawAppointmentId = Array.isArray(result)
+        ? result[0]?.appointment_id
+        : (result as any)?.appointment_id;
+      const appointmentIdResult = normalizeAppointmentId(rawAppointmentId);
+
+      if (appointmentIdResult !== null) {
         setAppointmentId(appointmentIdResult);
         setCurrentStep('confirmation');
         toast({ title: "Consulta agendada!" });
@@ -174,7 +179,7 @@ const AgendamentoIntegrado: React.FC = () => {
       case 'confirmation':
         return appointmentId ? (
           <AppointmentConfirmation
-            appointmentId={appointmentId}
+            appointmentId={appointmentId.toString()}
             onNewAppointment={handleNewAppointment}
             onViewAppointments={() => navigate('/agenda-paciente')}
           />

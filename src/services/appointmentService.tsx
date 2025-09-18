@@ -11,6 +11,7 @@ import {
 } from '@/utils/timeSlotUtils';
 import { logger } from '@/utils/logger';
 import { checkAuthentication } from '@/utils/authUtils';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 
 export interface Medico {
   id: string;
@@ -186,8 +187,14 @@ export const appointmentService = {
         }
 
         if (data && data.length > 0 && data[0].success) {
+          const appointmentId = normalizeAppointmentId(data[0].appointment_id);
+
+          if (appointmentId === null) {
+            throw new Error("Não foi possível identificar o ID da consulta criada");
+          }
+
           logger.info("Appointment scheduled via v2 RPC", "AppointmentService");
-          return { success: true, appointmentId: data[0].appointment_id };
+          return { success: true, appointmentId };
         } else {
           const message = data?.[0]?.message || "Falha ao agendar";
           throw new Error(message);

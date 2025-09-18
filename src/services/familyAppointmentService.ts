@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 
 export const familyAppointmentService = {
   async scheduleFamilyAppointment(appointmentData: {
@@ -47,11 +48,17 @@ export const familyAppointmentService = {
         throw new Error(reserveResult?.message || "Não foi possível reservar o horário");
       }
 
+      const appointmentId = normalizeAppointmentId(reserveResult.appointment_id);
+
+      if (appointmentId === null) {
+        throw new Error("Erro ao processar o identificador da consulta");
+      }
+
       // Buscar a consulta criada para retornar
       const { data: appointment, error: fetchError } = await supabase
         .from('consultas')
         .select('*')
-        .eq('id', reserveResult.appointment_id)
+        .eq('id', appointmentId)
         .single();
 
       if (fetchError) {

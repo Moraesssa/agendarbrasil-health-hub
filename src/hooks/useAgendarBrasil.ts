@@ -2,6 +2,7 @@ import { useErrorHandling } from '@/hooks/useErrorHandling';
 import { useSystemMonitoring } from '@/hooks/useSystemMonitoring';
 import { isValidUUID, sanitizeUUID } from '@/utils/uuidValidation';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 
 /**
  * Hook principal para operações do AgendarBrasil
@@ -84,7 +85,13 @@ export const useAgendarBrasil = () => {
         throw new Error(result?.message || 'Erro ao reservar horário');
       }
 
-      return result;
+      const appointmentId = normalizeAppointmentId(result.appointment_id);
+
+      if (appointmentId === null) {
+        throw new Error('Erro ao processar o identificador da consulta');
+      }
+
+      return { ...result, appointment_id: appointmentId };
     }, 'Reserva de consulta', {
       showSuccessToast: true,
       successMessage: 'Consulta agendada com sucesso!'

@@ -25,6 +25,7 @@ import {
 import schedulingService from '@/services/scheduling';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 
 interface Doctor {
   id: string;
@@ -45,7 +46,7 @@ interface DoctorAvailabilityProps {
   doctor: Doctor;
   patientId?: string;
   onBack: () => void;
-  onAppointmentCreated?: (appointmentId: string) => void;
+  onAppointmentCreated?: (appointmentId: number) => void;
 }
 
 export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
@@ -145,8 +146,12 @@ export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
         description: "Consulta agendada com sucesso.",
       });
 
-      const appointmentId = (result && (result as any)[0]?.appointment_id) || (result as any)?.appointment_id;
-      if (appointmentId) {
+      const potentialId = Array.isArray(result)
+        ? result[0]?.appointment_id
+        : (result as any)?.appointment_id;
+      const appointmentId = normalizeAppointmentId(potentialId);
+
+      if (appointmentId !== null) {
         onAppointmentCreated?.(appointmentId);
       }
       

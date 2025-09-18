@@ -1,6 +1,7 @@
 import { IAppointmentService } from '@/types/appointmentService';
 import { Medico, LocalComHorarios } from '@/services/scheduling';
 import { logger } from '@/utils/logger';
+import { normalizeAppointmentId } from '@/utils/appointment-id';
 import { supabase } from '@/integrations/supabase/client';
 import { specialtyService } from '@/services/specialtyService';
 
@@ -301,11 +302,17 @@ export class RealAppointmentService implements IAppointmentService {
         }
 
         if (data && data.length > 0 && data[0].success) {
+          const appointmentId = normalizeAppointmentId(data[0].appointment_id);
+
+          if (appointmentId === null) {
+            throw new Error('Erro ao processar o identificador da consulta criada');
+          }
+
           logger.info("Appointment scheduled successfully via v2 RPC", "RealAppointmentService");
-          return { 
-            success: true, 
-            data: { id: data[0].appointment_id },
-            appointmentId: data[0].appointment_id
+          return {
+            success: true,
+            data: { id: appointmentId },
+            appointmentId
           };
         } else {
           const message = data?.[0]?.message || "Falha ao agendar consulta";
