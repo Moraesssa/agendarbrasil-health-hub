@@ -8,7 +8,7 @@ import { getDefaultWorkingHours } from '@/utils/timeSlotUtils';
 import { medicoService } from '@/services/medicoService';
 
 export const useOnboarding = () => {
-  const { user, userData, updateOnboardingStep, completeOnboarding } = useAuth();
+  const { user, userData, updateOnboardingStep, completeOnboarding, refreshUserData } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -49,6 +49,7 @@ export const useOnboarding = () => {
       };
 
       await medicoService.saveMedicoData(medicoData);
+      await refreshUserData();
       return true;
     } catch (error) {
       console.error('Erro ao salvar dados do médico:', error);
