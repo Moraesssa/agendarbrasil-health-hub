@@ -161,9 +161,10 @@ const AgendaMedicoIntegrada: React.FC = () => {
     setSelectedDate(newDate.toISOString().split('T')[0]);
   };
 
-  const filteredAppointments = appointments.filter(apt =>
-    apt.paciente?.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAppointments = appointments.filter((apt) => {
+    const patientName = apt.paciente?.nome?.toLowerCase() ?? '';
+    return patientName.includes(searchTerm.toLowerCase());
+  });
 
   const todayStats = {
     total: appointments.length,
@@ -316,36 +317,47 @@ const AgendaMedicoIntegrada: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredAppointments.map((appointment) => (
-                <Card key={appointment.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                      {/* Informações do Paciente */}
-                      <div className="flex items-start gap-4 flex-1">
-                        <Avatar className="w-12 h-12">
-                          <AvatarFallback>
-                            {appointment.paciente?.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h3 className="text-lg font-semibold">{appointment.paciente?.nome}</h3>
-                              <p className="text-sm text-muted-foreground">{appointment.paciente?.telefone}</p>
+              {filteredAppointments.map((appointment) => {
+                const patientName = appointment.paciente?.nome;
+                const nameParts = patientName?.split(' ').filter(Boolean) ?? [];
+                const initialsSource = nameParts.length > 0 ? nameParts : ['?'];
+                const initials =
+                  initialsSource
+                    .map((part) => part[0]?.toUpperCase() ?? '')
+                    .join('')
+                    .slice(0, 2) || '?';
+                const displayName = patientName ?? 'Paciente sem cadastro';
+
+                return (
+                  <Card key={appointment.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        {/* Informações do Paciente */}
+                        <div className="flex items-start gap-4 flex-1">
+                          <Avatar className="w-12 h-12">
+                            <AvatarFallback>
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="text-lg font-semibold">{displayName}</h3>
+                                <p className="text-sm text-muted-foreground">{appointment.paciente?.telefone}</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(appointment.status)}
+                                <Badge className={getStatusColor(appointment.status)}>
+                                  {appointment.status === 'agendada' && 'Agendada'}
+                                  {appointment.status === 'confirmada' && 'Confirmada'}
+                                  {appointment.status === 'em_andamento' && 'Em Andamento'}
+                                  {appointment.status === 'realizada' && 'Realizada'}
+                                  {appointment.status === 'cancelada' && 'Cancelada'}
+                                </Badge>
+                              </div>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(appointment.status)}
-                              <Badge className={getStatusColor(appointment.status)}>
-                                {appointment.status === 'agendada' && 'Agendada'}
-                                {appointment.status === 'confirmada' && 'Confirmada'}
-                                {appointment.status === 'em_andamento' && 'Em Andamento'}
-                                {appointment.status === 'realizada' && 'Realizada'}
-                                {appointment.status === 'cancelada' && 'Cancelada'}
-                              </Badge>
-                            </div>
-                          </div>
 
                           {/* Detalhes da Consulta */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -442,7 +454,9 @@ const AgendaMedicoIntegrada: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
