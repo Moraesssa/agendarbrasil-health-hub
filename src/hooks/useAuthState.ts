@@ -168,11 +168,7 @@ export const useAuthState = () => {
                       expectedExpiry: new Date(expectedExpiryMs).toISOString(),
                       diffMs: timeDiff,
                     });
-                    if (typeof window !== 'undefined') {
-                        alert(msg);
-                    }
-                    setLoading(false);
-                    return;
+                    console.warn('Continuando inicialização da sessão apesar da diferença de horário detectada.');
                 }
             } else {
                 console.warn('⏱️ Não foi possível verificar drift de horário: expires_in ausente.');
