@@ -1,18 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Search, Users, Building2, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { safeArrayAccess, safeArrayLength, safeArrayMap } from '@/utils/arrayUtils';
+import { safeArrayAccess, safeArrayLength } from '@/utils/arrayUtils';
 
 interface StateInfo {
   uf: string;
-  nome?: string;
-  doctorCount?: number;
-  cityCount?: number;
-  avgWaitTime?: string;
+  nome?: string | null;
+  doctor_count?: number | null;
+  city_count?: number | null;
+  avg_wait_minutes?: number | null;
+}
+
+interface EnhancedStateInfo {
+  uf: string;
+  nome: string;
+  doctorCount: number | null;
+  cityCount: number | null;
+  avgWaitMinutes: number | null;
 }
 
 interface EnhancedStateSelectProps {
@@ -20,7 +28,7 @@ interface EnhancedStateSelectProps {
   states: StateInfo[];
   isLoading: boolean;
   onChange: (value: string) => void;
-  onStateInfo?: (info: StateInfo) => void;
+  onStateInfo?: (info: EnhancedStateInfo) => void;
 }
 
 const STATE_NAMES: Record<string, string> = {
@@ -46,24 +54,76 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
   const [showAll, setShowAll] = useState(false);
 
   // Enhanced states with names and actual statistics
-  const enhancedStates = useMemo(() => {
+  const enhancedStates = useMemo<EnhancedStateInfo[]>(() => {
     const safeStates = safeArrayAccess(states);
-    return safeArrayMap(safeStates, (state) => ({
-      ...state,
-      nome: STATE_NAMES[state.uf] || state.uf,
-      doctorCount: state.doctorCount || 0,
-      cityCount: state.cityCount || Math.floor(Math.random() * 100) + 10,
-      avgWaitTime: state.avgWaitTime || `${Math.floor(Math.random() * 14) + 1} dias`
-    }));
+
+    const normalized = safeStates
+      .map((state): EnhancedStateInfo | null => {
+        const uf = typeof state.uf === 'string' ? state.uf.toUpperCase() : '';
+        if (!uf) {
+          return null;
+        }
+
+        const doctorCount =
+          typeof state.doctor_count === 'number' && Number.isFinite(state.doctor_count)
+            ? state.doctor_count
+            : null;
+        const cityCount =
+          typeof state.city_count === 'number' && Number.isFinite(state.city_count)
+            ? state.city_count
+            : null;
+        const avgWaitMinutes =
+          typeof state.avg_wait_minutes === 'number' && Number.isFinite(state.avg_wait_minutes)
+            ? state.avg_wait_minutes
+            : null;
+
+        const providedName = typeof state.nome === 'string' ? state.nome.trim() : '';
+        const nome = providedName || STATE_NAMES[uf] || uf;
+
+        return {
+          uf,
+          nome,
+          doctorCount,
+          cityCount,
+          avgWaitMinutes
+        };
+      })
+      .filter((state): state is EnhancedStateInfo => state !== null);
+
+    return safeArrayAccess(normalized);
   }, [states]);
+
+  const formatAvgWait = useCallback((avgWaitMinutes: number | null) => {
+    if (avgWaitMinutes === null || Number.isNaN(avgWaitMinutes)) {
+      return '–';
+    }
+
+    const rounded = Math.round(avgWaitMinutes);
+    if (rounded <= 0) {
+      return '–';
+    }
+
+    const hours = Math.floor(rounded / 60);
+    const minutes = rounded % 60;
+
+    if (hours === 0) {
+      return `${rounded} min`;
+    }
+
+    if (minutes === 0) {
+      return `${hours}h`;
+    }
+
+    return `${hours}h ${minutes}min`;
+  }, []);
 
   // Filter states based on search
   const filteredStates = useMemo(() => {
     const safeEnhanced = safeArrayAccess(enhancedStates);
     if (!searchTerm) return safeEnhanced;
-    
+
     const term = searchTerm.toLowerCase();
-    return safeEnhanced.filter(state => 
+    return safeEnhanced.filter(state =>
       state.uf.toLowerCase().includes(term) ||
       state.nome.toLowerCase().includes(term)
     );
@@ -88,7 +148,7 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
     };
   }, [filteredStates, showAll]);
 
-  const handleStateSelect = (state: StateInfo) => {
+  const handleStateSelect = (state: EnhancedStateInfo) => {
     onChange(state.uf);
     onStateInfo?.(state);
   };
@@ -188,19 +248,33 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
                   </div>
                   
                   <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Users className="w-3 h-3" />
-                      <span>{state.doctorCount} médicos</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Building2 className="w-3 h-3" />
-                      <span>{state.cityCount} cidades</span>
-                    </div>
-                    
+                    {state.doctorCount !== null && state.doctorCount >= 0 ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        <span>{state.doctorCount} médicos</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        <span>–</span>
+                      </div>
+                    )}
+
+                    {state.cityCount !== null && state.cityCount >= 0 ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Building2 className="w-3 h-3" />
+                        <span>{state.cityCount} cidades</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Building2 className="w-3 h-3" />
+                        <span>–</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="w-3 h-3" />
-                      <span>Espera: {state.avgWaitTime}</span>
+                      <span>Espera: {formatAvgWait(state.avgWaitMinutes)}</span>
                     </div>
                   </div>
                 </CardContent>
