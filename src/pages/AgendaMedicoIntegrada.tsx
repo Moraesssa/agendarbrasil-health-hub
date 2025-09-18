@@ -10,9 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Calendar, 
-  Clock, 
+import {
+  Calendar,
+  Clock,
   MapPin, 
   Video, 
   Plus,
@@ -34,6 +34,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SchedulingService, { Appointment } from '@/services/schedulingService';
 import { toast } from '@/components/ui/use-toast';
+import { format } from 'date-fns';
 
 const AgendaMedicoIntegrada: React.FC = () => {
   const { user } = useAuth();
@@ -41,7 +42,14 @@ const AgendaMedicoIntegrada: React.FC = () => {
   
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+
+  const parseLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString
+      .split('-')
+      .map((part) => Number.parseInt(part, 10));
+    return new Date(year, (month || 1) - 1, day || 1);
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('agenda');
 
@@ -57,9 +65,9 @@ const AgendaMedicoIntegrada: React.FC = () => {
     try {
       setLoading(true);
 
-      const startDate = new Date(selectedDate);
+      const startDate = parseLocalDate(selectedDate);
       startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(selectedDate);
+      const endDate = parseLocalDate(selectedDate);
       endDate.setHours(23, 59, 59, 999);
 
       const doctorAppointments = await SchedulingService.getDoctorAppointments(
@@ -155,10 +163,10 @@ const AgendaMedicoIntegrada: React.FC = () => {
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
-    const currentDate = new Date(selectedDate);
+    const currentDate = parseLocalDate(selectedDate);
     const newDate = new Date(currentDate);
     newDate.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
-    setSelectedDate(newDate.toISOString().split('T')[0]);
+    setSelectedDate(format(newDate, 'yyyy-MM-dd'));
   };
 
   const filteredAppointments = appointments.filter((apt) => {
