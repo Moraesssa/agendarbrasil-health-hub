@@ -43,7 +43,13 @@ export const DayScheduleControl = ({ dia, control, locais }: DayScheduleControlP
                       <Switch checked={value?.ativo || false} onCheckedChange={(checked) => onChange({ ...value, ativo: checked })} />
                       <Label>Atendimento neste bloco</Label>
                     </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(index)}
+                      data-testid={`remove-schedule-block-${dia.key}-${index}`}
+                    >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
