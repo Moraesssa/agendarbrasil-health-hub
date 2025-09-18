@@ -26,6 +26,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  ArrowLeft,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -202,7 +203,13 @@ const AgendaMedicoIntegrada: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agenda Médica</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-900">Agenda Médica</h1>
+          </div>
           <p className="text-gray-600 mt-1">Gerencie suas consultas e horários</p>
         </div>
         
