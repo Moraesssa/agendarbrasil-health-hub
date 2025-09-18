@@ -3,14 +3,14 @@ import { UnsavedChangesOverlay } from "@/components/ui/UnsavedChangesOverlay";
 import { Loader2, Save, Undo2 } from "lucide-react";
 
 interface AgendaFormActionsProps {
-  isDirty: boolean;
+  hasChanges: boolean;
   canSave: boolean;
   isSubmitting: boolean;
   onUndo: () => void;
 }
 
-export const AgendaFormActions = ({ isDirty, canSave, isSubmitting, onUndo }: AgendaFormActionsProps) => {
-  const showOverlay = isDirty && !isSubmitting;
+export const AgendaFormActions = ({ hasChanges, canSave, isSubmitting, onUndo }: AgendaFormActionsProps) => {
+  const showOverlay = hasChanges && !isSubmitting;
 
   return (
     <div className="relative">
@@ -23,7 +23,7 @@ export const AgendaFormActions = ({ isDirty, canSave, isSubmitting, onUndo }: Ag
         saveLabel="Salvar alterações"
       />
       <div className="flex items-center justify-end gap-4 pt-4 mt-6 border-t">
-        {isDirty && (
+        {hasChanges && (
           <Button type="button" variant="ghost" onClick={onUndo} disabled={isSubmitting}>
             <Undo2 className="w-4 h-4 mr-2" /> Desfazer
           </Button>

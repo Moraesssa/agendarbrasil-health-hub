@@ -3,24 +3,24 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface AgendaPageHeaderProps {
   canSave: boolean;
-  isDirty: boolean;
+  hasChanges: boolean;
   hasCompleteBlocks?: boolean;
 }
 
-export const AgendaPageHeader = ({ canSave, isDirty, hasCompleteBlocks }: AgendaPageHeaderProps) => {
+export const AgendaPageHeader = ({ canSave, hasChanges, hasCompleteBlocks }: AgendaPageHeaderProps) => {
   const getStatusMessage = () => {
     if (!canSave) {
-      return "• Preencha pelo menos um campo de qualquer bloco para habilitar o salvamento";
+      return "• Nenhuma alteração pendente";
     }
-    
-    if (isDirty && canSave && hasCompleteBlocks) {
+
+    if (hasChanges && canSave && hasCompleteBlocks) {
       return "• Pronto para salvar";
     }
-    
-    if (isDirty && canSave && !hasCompleteBlocks) {
-      return "• Ative e complete pelo menos um bloco para salvar com sucesso";
+
+    if (hasChanges && canSave && !hasCompleteBlocks) {
+      return "• Revise os blocos ativos antes de salvar";
     }
-    
+
     return "";
   };
 
