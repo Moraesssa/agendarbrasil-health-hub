@@ -3,15 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Search, Users, MapPin, Star } from 'lucide-react';
+import { Building2, Search, Users, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { safeArrayAccess, safeArrayLength, safeArrayMap } from '@/utils/arrayUtils';
 
 interface CityInfo {
   cidade: string;
-  doctorCount?: number;
-  specialtyCount?: number;
-  rating?: number;
+  doctorCount?: number | null;
+  total_medicos?: number | null;
   isCapital?: boolean;
 }
 
@@ -38,13 +37,21 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
   // Enhanced cities with actual data or defaults
   const enhancedCities = useMemo(() => {
     const safeCities = safeArrayAccess(cities);
-    return safeArrayMap(safeCities, (city) => ({
-      ...city,
-      doctorCount: city.doctorCount || 0,
-      specialtyCount: city.specialtyCount || 0,
-      rating: city.rating || 4.0,
-      isCapital: city.isCapital || isCapitalCity(city.cidade, selectedState)
-    }));
+    return safeArrayMap(safeCities, (city) => {
+      const normalizedTotal =
+        typeof city.total_medicos === 'number'
+          ? city.total_medicos
+          : typeof city.doctorCount === 'number'
+            ? city.doctorCount
+            : null;
+
+      return {
+        ...city,
+        doctorCount: normalizedTotal,
+        total_medicos: normalizedTotal,
+        isCapital: city.isCapital ?? isCapitalCity(city.cidade, selectedState)
+      };
+    });
   }, [cities, selectedState]);
 
   // Filter cities based on search
@@ -61,13 +68,16 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
   // Organize cities: capitals and major cities first
   const organizedCities = useMemo(() => {
     const safeFiltered = safeArrayAccess(filteredCities);
+    const getDoctorCount = (city: CityInfo) =>
+      typeof city.doctorCount === 'number' ? city.doctorCount : 0;
+
     const capitals = safeFiltered.filter(city => city.isCapital);
-    const major = safeFiltered.filter(city => !city.isCapital && city.doctorCount! > 50);
-    const others = safeFiltered.filter(city => !city.isCapital && city.doctorCount! <= 50);
-    
+    const major = safeFiltered.filter(city => !city.isCapital && getDoctorCount(city) > 50);
+    const others = safeFiltered.filter(city => !city.isCapital && getDoctorCount(city) <= 50);
+
     // Sort each group
-    capitals.sort((a, b) => b.doctorCount! - a.doctorCount!);
-    major.sort((a, b) => b.doctorCount! - a.doctorCount!);
+    capitals.sort((a, b) => getDoctorCount(b) - getDoctorCount(a));
+    major.sort((a, b) => getDoctorCount(b) - getDoctorCount(a));
     others.sort((a, b) => a.cidade.localeCompare(b.cidade));
     
     const display = showAll ? [...capitals, ...major, ...others] : [...capitals, ...major.slice(0, 6)];
@@ -204,46 +214,27 @@ export const EnhancedCitySelect: React.FC<EnhancedCitySelectProps> = ({
                         {city.cidade}
                         {city.isCapital && <Star className="w-3 h-3 text-yellow-500" />}
                       </h3>
-                      <div className="flex items-center gap-1 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${
-                              i < Math.floor(city.rating!)
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                        <span className="text-xs text-muted-foreground ml-1">
-                          {city.rating}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <Users className="w-3 h-3" />
+                        <span>
+                          {typeof city.doctorCount === 'number'
+                            ? `${city.doctorCount} ${city.doctorCount === 1 ? 'médico disponível' : 'médicos disponíveis'}`
+                            : 'Disponibilidade em atualização'}
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col items-end gap-1">
                       {city.isCapital && (
                         <Badge variant="default" className="text-xs">
                           Capital
                         </Badge>
                       )}
-                      {city.doctorCount! > 100 && (
+                      {typeof city.doctorCount === 'number' && city.doctorCount > 100 && (
                         <Badge variant="secondary" className="text-xs">
                           +100 médicos
                         </Badge>
                       )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Users className="w-3 h-3" />
-                      <span>{city.doctorCount} médicos</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3" />
-                      <span>{city.specialtyCount} especialidades</span>
                     </div>
                   </div>
                 </CardContent>
