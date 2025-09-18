@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import schedulingService, { LocalComHorarios, Medico } from "@/services/scheduling";
 import { logger } from "@/utils/logger";
 import { getSupabaseConfig } from "@/utils/supabaseCheck";
-import { safeArrayAccess, safeArrayLength } from "@/utils/arrayUtils";
+import { safeArrayAccess, safeArrayLength, safeArrayMap } from "@/utils/arrayUtils";
 
 interface StateInfo {
   uf: string;
@@ -16,7 +16,12 @@ interface StateInfo {
   city_count?: number | null;
   avg_wait_minutes?: number | null;
 }
-interface CityInfo { cidade: string; }
+interface CityInfo {
+  cidade: string;
+  total_medicos?: number | null;
+  doctorCount?: number | null;
+  isCapital?: boolean;
+}
 
 export const useAppointmentScheduling = () => {
   const { user } = useAuth();
@@ -117,7 +122,21 @@ export const useAppointmentScheduling = () => {
       try {
         const { data } = await supabase.rpc('get_available_cities', { state_uf: selectedState });
         const safeCities = safeArrayAccess(data);
-        setCities(safeCities);
+        const mappedCities = safeArrayMap(safeCities, (city) => {
+          const normalizedTotal =
+            typeof city.total_medicos === 'number'
+              ? city.total_medicos
+              : typeof city.doctorCount === 'number'
+                ? city.doctorCount
+                : null;
+
+          return {
+            ...city,
+            total_medicos: normalizedTotal,
+            doctorCount: normalizedTotal
+          };
+        });
+        setCities(mappedCities as CityInfo[]);
       } catch (error) {
         logger.error('Erro ao carregar cidades', 'useAppointmentScheduling', error);
         setCities([]);
