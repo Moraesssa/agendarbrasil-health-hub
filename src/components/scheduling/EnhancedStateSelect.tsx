@@ -78,7 +78,11 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
             : null;
 
         const providedName = typeof state.nome === 'string' ? state.nome.trim() : '';
-        const nome = providedName || STATE_NAMES[uf] || uf;
+        const isTwoLetterName =
+          providedName.length === 2 && /^(?:\p{L}{2})$/u.test(providedName);
+        const matchesUf = providedName ? providedName.toUpperCase() === uf : false;
+        const hasValidName = Boolean(providedName) && !isTwoLetterName && !matchesUf;
+        const nome = hasValidName ? providedName : STATE_NAMES[uf] || uf;
 
         return {
           uf,
