@@ -228,62 +228,79 @@ export const EnhancedStateSelect: React.FC<EnhancedStateSelectProps> = ({
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {organizedStates.display.map(state => (
-              <Card
-                key={state.uf}
-                className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 ${
-                  selectedState === state.uf
-                    ? 'ring-2 ring-primary bg-primary/5'
-                    : 'hover:bg-muted/50'
-                }`}
-                onClick={() => handleStateSelect(state)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-semibold text-sm">{state.nome}</h3>
-                      <p className="text-xs text-muted-foreground">{state.uf}</p>
-                    </div>
-                    {POPULAR_STATES.includes(state.uf) && (
-                      <Badge variant="secondary" className="text-xs">
-                        Popular
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    {state.doctorCount !== null && state.doctorCount >= 0 ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Users className="w-3 h-3" />
-                        <span>{state.doctorCount} médicos</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Users className="w-3 h-3" />
-                        <span>–</span>
-                      </div>
-                    )}
+            {organizedStates.display.map((state) => {
+              const hasDoctorCount =
+                typeof state.doctorCount === 'number' && Number.isFinite(state.doctorCount) && state.doctorCount > 0;
+              const hasCityCount =
+                typeof state.cityCount === 'number' && Number.isFinite(state.cityCount) && state.cityCount > 0;
+              const hasAvgWait =
+                typeof state.avgWaitMinutes === 'number' &&
+                Number.isFinite(state.avgWaitMinutes) &&
+                state.avgWaitMinutes > 0;
 
-                    {state.cityCount !== null && state.cityCount >= 0 ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Building2 className="w-3 h-3" />
-                        <span>{state.cityCount} cidades</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Building2 className="w-3 h-3" />
-                        <span>–</span>
-                      </div>
-                    )}
+              const metrics: React.ReactNode[] = [];
 
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>Espera: {formatAvgWait(state.avgWaitMinutes)}</span>
-                    </div>
+              if (hasDoctorCount) {
+                metrics.push(
+                  <div key="doctor" className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Users className="w-3 h-3" />
+                    <span>{state.doctorCount} médicos</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                );
+              }
+
+              if (hasCityCount) {
+                metrics.push(
+                  <div key="city" className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Building2 className="w-3 h-3" />
+                    <span>{state.cityCount} cidades</span>
+                  </div>
+                );
+              }
+
+              if (hasAvgWait) {
+                metrics.push(
+                  <div key="wait" className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>Espera: {formatAvgWait(state.avgWaitMinutes)}</span>
+                  </div>
+                );
+              }
+
+              return (
+                <Card
+                  key={state.uf}
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 ${
+                    selectedState === state.uf
+                      ? 'ring-2 ring-primary bg-primary/5'
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => handleStateSelect(state)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-sm">{state.nome}</h3>
+                        <p className="text-xs text-muted-foreground">{state.uf}</p>
+                      </div>
+                      {POPULAR_STATES.includes(state.uf) && (
+                        <Badge variant="secondary" className="text-xs">
+                          Popular
+                        </Badge>
+                      )}
+                    </div>
+
+                    {metrics.length > 0 ? (
+                      <div className="space-y-1.5">{metrics}</div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        Dados de disponibilidade indisponíveis
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
           
           {organizedStates.hasMore && (
