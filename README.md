@@ -42,13 +42,17 @@ A engrenagem por trás de tudo, responsável pela lógica de negócio, seguranç
     -   **Estrutura:** O código está organizado em `routes`, `controllers`, `middlewares`, `config` e `models` para manter a clareza e a manutenibilidade.
 -   **Configuração do Supabase:**
     1. Crie uma conta no [Supabase](https://supabase.com/) e um novo projeto.
-    2. Copie o arquivo `.env.example` para `.env` e preencha com suas credenciais do Supabase:
+    2. No diretório `backend/`, copie o arquivo `.env.example` para `.env`:
+       ```bash
+       cp .env.example .env
        ```
-       SUPABASE_URL=sua_url_do_supabase
-       SUPABASE_KEY=sua_chave_do_supabase
-       SUPABASE_SERVICE_KEY=sua_chave_de_servico_do_supabase
-       VITE_FHIR_BASE_URL=https://sua_url_do_supabase/functions/v1
+       Em seguida, informe as credenciais fornecidas pelo Supabase (apenas em um ambiente seguro):
        ```
+       SUPABASE_URL=https://seu-projeto-ref.supabase.co
+       SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+       SUPABASE_SERVICE_KEY=sua_chave_service_role_do_supabase
+       ```
+       Assegure-se de manter o `.env` fora do controle de versão e nunca commitar chaves reais no repositório. Em produção, configure essas variáveis diretamente nas variáveis de ambiente do provedor de hospedagem ou no gerenciador de segredos do seu pipeline CI/CD.
     3. Execute o script de inicialização do banco de dados:
        ```bash
        node src/scripts/init-database.js
