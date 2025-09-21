@@ -203,9 +203,9 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
           {/* Informações do Médico */}
           <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={appointment.medico?.foto_perfil_url} />
+              <AvatarImage src={appointment.medico?.foto_perfil_url || ''} />
               <AvatarFallback>
-                {appointment.medico?.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                {appointment.medico?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'DR'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -223,7 +223,7 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
                   </span>
                 ))}
                 <span className="text-sm text-muted-foreground ml-1">
-                  ({appointment.medico?.total_avaliacoes} avaliações)
+                  ({appointment.medico?.total_avaliacoes || 0} avaliações)
                 </span>
               </div>
             </div>

@@ -672,11 +672,15 @@ export type Database = {
           created_at: string | null
           endereco: Json | null
           estado: string | null
+          facilidades: Json | null
           horario_funcionamento: Json | null
           id: number
+          instrucoes_acesso: string | null
           medico_id: string
           nome_local: string | null
+          status: string | null
           telefone: string | null
+          website: string | null
         }
         Insert: {
           ativo?: boolean | null
@@ -685,11 +689,15 @@ export type Database = {
           created_at?: string | null
           endereco?: Json | null
           estado?: string | null
+          facilidades?: Json | null
           horario_funcionamento?: Json | null
           id?: number
+          instrucoes_acesso?: string | null
           medico_id: string
           nome_local?: string | null
+          status?: string | null
           telefone?: string | null
+          website?: string | null
         }
         Update: {
           ativo?: boolean | null
@@ -698,11 +706,15 @@ export type Database = {
           created_at?: string | null
           endereco?: Json | null
           estado?: string | null
+          facilidades?: Json | null
           horario_funcionamento?: Json | null
           id?: number
+          instrucoes_acesso?: string | null
           medico_id?: string
           nome_local?: string | null
+          status?: string | null
           telefone?: string | null
+          website?: string | null
         }
         Relationships: [
           {
@@ -1706,6 +1718,30 @@ export type Database = {
           },
         ]
       }
+      usuarios: {
+        Row: {
+          email: string | null
+          id: string
+          nome: string | null
+          telefone: string | null
+          tipo: string | null
+        }
+        Insert: {
+          email?: string | null
+          id: string
+          nome?: string | null
+          telefone?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          nome?: string | null
+          telefone?: string | null
+          tipo?: string | null
+        }
+        Relationships: []
+      }
       Usuarios: {
         Row: {
           cpf: string
@@ -1958,14 +1994,14 @@ export type Database = {
         }[]
       }
       get_doctor_schedule_data: {
-        Args: { p_doctor_id: string; p_date: string }
+        Args: { p_doctor_id: string }
         Returns: {
           doctor_config: Json
           locations: Json
         }[]
       }
       get_doctor_schedule_v2: {
-        Args: { p_doctor_id: string; p_date: string }
+        Args: { p_doctor_id: string }
         Returns: {
           doctor_config: Json
           locations: Json
@@ -2108,7 +2144,7 @@ export type Database = {
           p_specialty: string
         }
         Returns: {
-          appointment_id: number
+          appointment_id: string
           message: string
           success: boolean
         }[]
@@ -2118,11 +2154,10 @@ export type Database = {
           p_appointment_datetime: string
           p_doctor_id: string
           p_family_member_id?: string
-          p_local_id?: string
           p_specialty?: string
         }
         Returns: {
-          appointment_id: number
+          appointment_id: string
           message: string
           success: boolean
         }[]
@@ -2130,6 +2165,10 @@ export type Database = {
       safe_uuid_check: {
         Args: { input_text: string }
         Returns: boolean
+      }
+      safe_uuid_or_null: {
+        Args: { input_text: string }
+        Returns: string
       }
       search_locations: {
         Args: {
