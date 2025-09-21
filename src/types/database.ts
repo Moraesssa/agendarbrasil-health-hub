@@ -11,12 +11,17 @@ export type Doctor = Omit<Partial<Tables<'medicos'>>, 'id'> & {
   total_avaliacoes?: number;
   bio_perfil?: string;
   usuario_id?: string;
+  user_id?: string;
   duracao_consulta_inicial?: number;
   especialidades?: string[];
   especialidade?: string;
   crm?: string;
   uf_crm?: string;
   email?: string;
+  aceita_consulta_presencial?: boolean;
+  aceita_teleconsulta?: boolean;
+  valor_consulta_presencial?: number;
+  valor_consulta_teleconsulta?: number;
 };
 
 export type Patient = Omit<Partial<Tables<'pacientes'>>, 'id'> & {
@@ -24,6 +29,7 @@ export type Patient = Omit<Partial<Tables<'pacientes'>>, 'id'> & {
   display_name?: string;
   nome?: string;
   usuario_id?: string;
+  user_id?: string;
 };
 
 export interface Profile extends Tables<'profiles'> {
@@ -81,14 +87,30 @@ export interface RecentAppointment {
   patient_profile?: any;
 }
 
+// UUID validation function to prevent "undefined" errors
+export const isValidUUID = (uuid: any): boolean => {
+  if (!uuid || typeof uuid !== 'string') return false;
+  if (uuid === 'undefined' || uuid === 'null') return false;
+  
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
+// Safe UUID getter with validation
+export const safeUUID = (value: any): string | null => {
+  return isValidUUID(value) ? value : null;
+};
+
 // Utility function to convert number IDs to strings
 export const toStringId = (id: number | string): string => {
-  return typeof id === 'number' ? id.toString() : id;
+  if (id === null || id === undefined || id === 'undefined' || id === 'null') return '';
+  return typeof id === 'number' ? id.toString() : String(id);
 };
 
 // Utility function to convert string IDs to numbers (when needed)
 export const toNumberId = (id: string | number): number => {
-  return typeof id === 'string' ? parseInt(id, 10) : id;
+  if (id === null || id === undefined || id === 'undefined' || id === 'null') return 0;
+  return typeof id === 'string' ? parseInt(id, 10) || 0 : Number(id) || 0;
 };
 
 // Safe conversion functions
@@ -107,12 +129,8 @@ export const safeToNumber = (value: any): number => {
 export const convertDatabaseDoctor = (doctor: any): Doctor => {
   const rawDoctor = doctor ?? {};
   const parsedId = toStringId(rawDoctor.id ?? rawDoctor.user_id ?? '');
-  const parsedUserId =
-    rawDoctor.user_id != null ? toStringId(rawDoctor.user_id) : undefined;
-  const parsedUsuarioId =
-    rawDoctor.usuario_id != null
-      ? toStringId(rawDoctor.usuario_id)
-      : parsedUserId;
+  const parsedUserId = rawDoctor.user_id != null ? toStringId(rawDoctor.user_id) : undefined;
+  const parsedUsuarioId = rawDoctor.usuario_id != null ? toStringId(rawDoctor.usuario_id) : parsedUserId;
   const parsedRating = rawDoctor.rating ?? 0;
   const parsedTotalAvaliacoes = rawDoctor.total_avaliacoes ?? 0;
   const parsedDuracao = rawDoctor.duracao_consulta_inicial ?? 30;
@@ -124,39 +142,28 @@ export const convertDatabaseDoctor = (doctor: any): Doctor => {
     display_name: rawDoctor.display_name ?? rawDoctor.nome,
     nome: rawDoctor.nome ?? rawDoctor.display_name,
     foto_perfil_url: rawDoctor.foto_perfil_url ?? rawDoctor.photo_url,
-    rating:
-      typeof parsedRating === 'number'
-        ? parsedRating
-        : Number(parsedRating) || 0,
-    total_avaliacoes:
-      typeof parsedTotalAvaliacoes === 'number'
-        ? parsedTotalAvaliacoes
-        : Number(parsedTotalAvaliacoes) || 0,
+    rating: typeof parsedRating === 'number' ? parsedRating : Number(parsedRating) || 0,
+    total_avaliacoes: typeof parsedTotalAvaliacoes === 'number' ? parsedTotalAvaliacoes : Number(parsedTotalAvaliacoes) || 0,
     bio_perfil: rawDoctor.bio_perfil,
     usuario_id: parsedUsuarioId,
-    duracao_consulta_inicial:
-      typeof parsedDuracao === 'number'
-        ? parsedDuracao
-        : Number(parsedDuracao) || 30,
-    especialidades: Array.isArray(rawDoctor.especialidades)
-      ? rawDoctor.especialidades
-      : [],
+    duracao_consulta_inicial: typeof parsedDuracao === 'number' ? parsedDuracao : Number(parsedDuracao) || 30,
+    especialidades: Array.isArray(rawDoctor.especialidades) ? rawDoctor.especialidades : [],
     especialidade: rawDoctor.especialidade,
     crm: rawDoctor.crm,
     uf_crm: rawDoctor.uf_crm,
-    email: rawDoctor.email
+    email: rawDoctor.email,
+    aceita_consulta_presencial: rawDoctor.aceita_consulta_presencial ?? true,
+    aceita_teleconsulta: rawDoctor.aceita_teleconsulta ?? true,
+    valor_consulta_presencial: rawDoctor.valor_consulta_presencial,
+    valor_consulta_teleconsulta: rawDoctor.valor_consulta_teleconsulta
   };
 };
 
 export const convertDatabasePatient = (patient: any): Patient => {
   const rawPatient = patient ?? {};
   const parsedId = toStringId(rawPatient.id ?? rawPatient.user_id ?? '');
-  const parsedUserId =
-    rawPatient.user_id != null ? toStringId(rawPatient.user_id) : undefined;
-  const parsedUsuarioId =
-    rawPatient.usuario_id != null
-      ? toStringId(rawPatient.usuario_id)
-      : parsedUserId;
+  const parsedUserId = rawPatient.user_id != null ? toStringId(rawPatient.user_id) : undefined;
+  const parsedUsuarioId = rawPatient.usuario_id != null ? toStringId(rawPatient.usuario_id) : parsedUserId;
 
   return {
     ...rawPatient,

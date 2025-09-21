@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { ScheduleManagement } from '@/components/doctor/ScheduleManagement';
 import { medicoService } from '@/services/medicoService';
