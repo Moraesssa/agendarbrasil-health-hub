@@ -7,6 +7,8 @@ const app = express();
 // Middlewares
 app.use(express.json()); // Para parsear JSON no corpo das requisições
 
+const authMiddleware = require('./api/middleware/auth');
+
 // Rotas da API
 const authRoutes = require('./api/routes/auth');
 const medicosRoutes = require('./api/routes/medicos');
@@ -21,7 +23,7 @@ app.get('/', (req, res) => {
 // Registrar as rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/medicos', medicosRoutes);
-app.use('/api/consultas', consultasRoutes);
-app.use('/api/documentos', documentosRoutes);
+app.use('/api/consultas', authMiddleware, consultasRoutes);
+app.use('/api/documentos', authMiddleware, documentosRoutes);
 
 module.exports = app;
