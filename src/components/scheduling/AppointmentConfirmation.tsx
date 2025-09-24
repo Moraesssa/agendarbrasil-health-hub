@@ -24,7 +24,7 @@ import {
 
 import SchedulingService, { Appointment } from '@/services/schedulingService';
 import { toast } from '@/components/ui/use-toast';
-import { fixDoctorType } from '@/utils/temporaryFixes';
+import { convertDatabaseAppointment, convertDatabaseDoctor } from '@/types/database';
 
 interface AppointmentConfirmationProps {
   appointmentId: string;
@@ -54,14 +54,15 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
       // setAppointment(appointmentDetails);
       
       // Dados simulados para demonstração
-      const mockAppointment: Appointment = {
+      const mockAppointment: any = convertDatabaseAppointment({
         id: appointmentId,
         medico_id: 'dr1',
         paciente_id: 'p1',
-        data_hora_agendada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Amanhã
+        data_hora_agendada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         duracao_estimada: 30,
-        tipo: 'teleconsulta',
-        prioridade: appointment.prioridade || 'normal',
+        consultation_type: 'teleconsulta',
+        agendado_por: 'p1',
+        prioridade: 'normal',
         status: 'agendada',
         valor_consulta: 150,
         motivo_consulta: 'Consulta de rotina',
@@ -69,7 +70,7 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
         buffer_depois: 5,
         permite_reagendamento: true,
         agendado_por: 'p1',
-        medico: fixDoctorType({
+        medico: convertDatabaseDoctor({
           id: 'dr1',
           nome: 'Dr. Carlos Silva',
           email: 'carlos.silva@email.com',
@@ -88,7 +89,7 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
           total_avaliacoes: 127,
           foto_perfil_url: ''
         })
-      };
+      });
       
       setAppointment(mockAppointment);
     } catch (error) {
@@ -204,27 +205,27 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
           {/* Informações do Médico */}
           <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={appointment.medico?.foto_perfil_url || ''} />
+              <AvatarImage src={convertDatabaseDoctor(appointment.medico || {}).foto_perfil_url || ''} />
               <AvatarFallback>
-                {(appointment.medico?.nome || 'DR').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                {(convertDatabaseDoctor(appointment.medico || {}).nome || 'DR').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold">{appointment.medico?.nome}</h3>
-              <p className="text-muted-foreground">{appointment.medico?.especialidade}</p>
-              <p className="text-sm text-muted-foreground">CRM: {appointment.medico?.crm}/{appointment.medico?.uf_crm}</p>
+              <h3 className="text-lg font-semibold">{convertDatabaseDoctor(appointment.medico || {}).nome}</h3>
+              <p className="text-muted-foreground">{convertDatabaseDoctor(appointment.medico || {}).especialidade}</p>
+              <p className="text-sm text-muted-foreground">CRM: {convertDatabaseDoctor(appointment.medico || {}).crm}/{convertDatabaseDoctor(appointment.medico || {}).uf_crm}</p>
               
               {/* Rating */}
               <div className="flex items-center gap-1 mt-2">
                 {Array.from({ length: 5 }, (_, i) => (
                   <span key={i} className={`text-sm ${
-                    i < Math.floor(appointment.medico?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'
+                    i < Math.floor(convertDatabaseDoctor(appointment.medico || {}).rating || 0) ? 'text-yellow-400' : 'text-gray-300'
                   }`}>
                     ★
                   </span>
                 ))}
                 <span className="text-sm text-muted-foreground ml-1">
-                  ({appointment.medico?.total_avaliacoes || 0} avaliações)
+                  ({convertDatabaseDoctor(appointment.medico || {}).total_avaliacoes || 0} avaliações)
                 </span>
               </div>
             </div>

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { fixDoctorType } from '@/utils/temporaryFixes';
+import { convertDatabaseDoctor } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -179,7 +179,7 @@ export const DoctorSearch: React.FC<DoctorSearchProps> = ({
               </SelectContent>
             </Select>
 
-            <Select onValueChange={(value) => handleFilterChange('rating_minimo', parseFloat(value))}>
+            <Select onValueChange={(value) => handleFilterChange('rating_minimo' as any, parseFloat(value))}>
               <SelectTrigger>
                 <SelectValue placeholder="Avaliação Mínima" />
               </SelectTrigger>
@@ -245,7 +245,7 @@ export const DoctorSearch: React.FC<DoctorSearchProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {doctors.map((rawDoctor) => {
-                    const doctor = fixDoctorType(rawDoctor);
+                    const doctor = convertDatabaseDoctor(rawDoctor);
                     return (
               <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader className="pb-3">

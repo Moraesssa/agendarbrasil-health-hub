@@ -26,7 +26,7 @@ import schedulingService from '@/services/scheduling';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { normalizeAppointmentId } from '@/utils/appointment-id';
-import { fixDoctorType } from '@/utils/temporaryFixes';
+import { convertDatabaseDoctor } from '@/types/database';
 
 interface Doctor {
   id: string;

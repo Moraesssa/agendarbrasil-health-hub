@@ -20,15 +20,16 @@ export interface DoctorAppointment {
   id: string;
   patientName: string;
   type: string;
-  start: string;
+  start: Date | string;
+  end?: Date | string;
   location?: string;
   notes?: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'completed' | 'cancelled' | 'confirmada' | 'pendente' | 'cancelada';
 }
 
 export interface DoctorNotification {
   id: string;
-  type: 'appointment' | 'system' | 'message';
+  type: 'appointment' | 'system' | 'message' | 'info' | 'warning' | 'success';
   title: string;
   description: string;
   time: string;
@@ -55,5 +56,5 @@ export interface DoctorStat {
 
 export interface DoctorStatusBadge {
   label: string;
-  variant: 'default' | 'secondary' | 'outline';
+  variant: 'default' | 'secondary' | 'outline' | 'destructive';
 }

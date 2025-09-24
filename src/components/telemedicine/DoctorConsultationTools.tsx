@@ -89,7 +89,7 @@ export const DoctorConsultationTools: React.FC<DoctorConsultationToolsProps> = (
           diagnosis: diagnosis,
           status: 'concluida'
         })
-        .eq('id', appointmentId);
+        .eq('id', parseInt(appointmentId) || 0);
 
       if (consultError) throw consultError;
 
