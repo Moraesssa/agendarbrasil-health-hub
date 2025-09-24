@@ -1,50 +1,67 @@
-
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Users, BarChart3, Settings } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LucideIcon } from "lucide-react";
 
-interface StatCard {
-  icon: React.ComponentType<{ className?: string }>;
+export interface ProfileMetricCard {
+  id: string;
+  icon: LucideIcon;
   value: string | number;
   label: string;
-  color: string;
+  helperText?: string;
+  tone?: "blue" | "green" | "purple" | "orange" | "emerald" | "slate";
 }
 
-const stats: StatCard[] = [
-  {
-    icon: Calendar,
-    value: 24,
-    label: "Consultas este mês",
-    color: "text-blue-600"
-  },
-  {
-    icon: Users,
-    value: 156,
-    label: "Pacientes ativos",
-    color: "text-green-600"
-  },
-  {
-    icon: BarChart3,
-    value: "4.8",
-    label: "Avaliação média",
-    color: "text-purple-600"
-  },
-  {
-    icon: Settings,
-    value: "85%",
-    label: "Taxa de ocupação",
-    color: "text-orange-600"
-  }
-];
+interface StatsCardsProps {
+  metrics: ProfileMetricCard[];
+  loading?: boolean;
+  emptyMessage?: string;
+}
 
-export const StatsCards = () => {
+const toneClassMap: Record<NonNullable<ProfileMetricCard["tone"]>, string> = {
+  blue: "text-blue-600",
+  green: "text-green-600",
+  purple: "text-purple-600",
+  orange: "text-orange-600",
+  emerald: "text-emerald-600",
+  slate: "text-slate-600",
+};
+
+export const StatsCards = ({ metrics, loading, emptyMessage }: StatsCardsProps) => {
+  if (!loading && metrics.length === 0) {
+    return emptyMessage ? (
+      <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-6 text-center text-sm text-slate-600">
+        {emptyMessage}
+      </div>
+    ) : null;
+  }
+
+  const items = loading ? Array.from({ length: metrics.length || 4 }) : metrics;
+
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, index) => (
-        <Card key={index} className="shadow-lg">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((metric, index) => (
+        <Card key={(metric as ProfileMetricCard)?.id ?? index} className="shadow-lg">
           <CardContent className="p-6 text-center">
-            <stat.icon className={`w-8 h-8 ${stat.color} mx-auto mb-2`} />
-            <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
-            <p className="text-sm text-gray-600">{stat.label}</p>
+            {loading ? (
+              <Skeleton className="mx-auto mb-2 h-8 w-8 rounded-full" />
+            ) : (
+              <metric.icon
+                className={`mx-auto mb-2 h-8 w-8 ${toneClassMap[metric.tone ?? "blue"]}`}
+              />
+            )}
+            {loading ? (
+              <Skeleton className="mx-auto mb-2 h-7 w-20" />
+            ) : (
+              <h3 className="text-2xl font-bold text-gray-900">{metric.value}</h3>
+            )}
+            {loading ? (
+              <Skeleton className="mx-auto h-4 w-32" />
+            ) : (
+              <p className="text-sm text-gray-600">{metric.label}</p>
+            )}
+            {!loading && metric.helperText ? (
+              <p className="mt-2 text-xs text-muted-foreground">{metric.helperText}</p>
+            ) : null}
           </CardContent>
         </Card>
       ))}
