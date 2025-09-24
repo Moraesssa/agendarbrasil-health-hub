@@ -5,6 +5,7 @@ import { authService } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
+import { mapMedicoDataToUser } from '@/utils/doctorProfile';
 
 interface UseAuthActionsProps {
   user: User | null;
@@ -85,26 +86,33 @@ export const useAuthActions = ({
       let roleData: Partial<BaseUser> = {};
 
       if (profile.user_type === 'medico') {
-        roleData = {
-          especialidades: userData?.especialidades,
-          crm: userData?.crm
-        };
-
         const { data: medicoData, error: medicoError } = await supabase
           .from('medicos')
-          .select('especialidades, crm')
+          .select(
+            'especialidades, crm, telefone, whatsapp, dados_profissionais, configuracoes, verificacao, endereco'
+          )
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (!medicoError && medicoData) {
-          roleData = {
-            especialidades: Array.isArray(medicoData.especialidades)
-              ? medicoData.especialidades
-              : [],
-            crm: medicoData.crm ?? undefined
-          };
-        } else if (medicoError) {
+        if (medicoError && medicoError.code !== 'PGRST116') {
           logger.error('Erro ao carregar dados do médico', 'useAuthActions', medicoError);
+        }
+
+        if (medicoData) {
+          roleData = {
+            ...mapMedicoDataToUser(medicoData),
+          };
+        } else if (userData?.userType === 'medico') {
+          roleData = {
+            crm: userData.crm,
+            especialidades: userData.especialidades,
+            telefone: userData.telefone,
+            whatsapp: userData.whatsapp,
+            dadosProfissionais: userData.dadosProfissionais,
+            configuracoes: userData.configuracoes,
+            verificacao: userData.verificacao,
+            endereco: userData.endereco,
+          };
         }
       }
 

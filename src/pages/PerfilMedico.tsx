@@ -82,6 +82,14 @@ const PerfilMedico = () => {
         label: userData.crm ? `CRM ${userData.crm}` : "CRM não informado",
         variant: userData.crm ? "secondary" : "outline",
       },
+      {
+        label: userData.verificacao?.aprovado
+          ? "Perfil verificado"
+          : userData.verificacao?.documentosEnviados
+            ? "Verificação em análise"
+            : "Verificação pendente",
+        variant: userData.verificacao?.aprovado ? "secondary" : "outline",
+      },
     ];
   }, [userData]);
 
