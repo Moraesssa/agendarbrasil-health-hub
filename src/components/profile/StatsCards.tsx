@@ -1,70 +1,55 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+// Temporary simplified StatsCards component to fix build errors
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 
-export interface ProfileMetricCard {
-  id: string;
+interface StatCard {
   icon: LucideIcon;
-  value: string | number;
   label: string;
+  value: string;
+  tone?: string;
   helperText?: string;
-  tone?: "blue" | "green" | "purple" | "orange" | "emerald" | "slate";
 }
 
 interface StatsCardsProps {
-  metrics: ProfileMetricCard[];
+  stats: StatCard[];
   loading?: boolean;
-  emptyMessage?: string;
 }
 
-const toneClassMap: Record<NonNullable<ProfileMetricCard["tone"]>, string> = {
-  blue: "text-blue-600",
-  green: "text-green-600",
-  purple: "text-purple-600",
-  orange: "text-orange-600",
-  emerald: "text-emerald-600",
-  slate: "text-slate-600",
-};
-
-export const StatsCards = ({ metrics, loading, emptyMessage }: StatsCardsProps) => {
-  if (!loading && metrics.length === 0) {
-    return emptyMessage ? (
-      <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-6 text-center text-sm text-slate-600">
-        {emptyMessage}
+export const StatsCards = ({ stats = [], loading }: StatsCardsProps) => {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-    ) : null;
+    );
   }
 
-  const items = loading ? Array.from({ length: metrics.length || 4 }) : metrics;
-
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      {items.map((metric, index) => (
-        <Card key={(metric as ProfileMetricCard)?.id ?? index} className="shadow-lg">
-          <CardContent className="p-6 text-center">
-            {loading ? (
-              <Skeleton className="mx-auto mb-2 h-8 w-8 rounded-full" />
-            ) : (
-              <metric.icon
-                className={`mx-auto mb-2 h-8 w-8 ${toneClassMap[metric.tone ?? "blue"]}`}
-              />
-            )}
-            {loading ? (
-              <Skeleton className="mx-auto mb-2 h-7 w-20" />
-            ) : (
-              <h3 className="text-2xl font-bold text-gray-900">{metric.value}</h3>
-            )}
-            {loading ? (
-              <Skeleton className="mx-auto h-4 w-32" />
-            ) : (
-              <p className="text-sm text-gray-600">{metric.label}</p>
-            )}
-            {!loading && metric.helperText ? (
-              <p className="mt-2 text-xs text-muted-foreground">{metric.helperText}</p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {stats.map((stat, index) => {
+        const IconComponent = stat.icon;
+        return (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
+              <IconComponent className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              {stat.helperText && (
+                <p className="text-xs text-muted-foreground">{stat.helperText}</p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

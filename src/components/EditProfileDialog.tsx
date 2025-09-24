@@ -64,7 +64,7 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
       return;
     }
 
-    const enderecoData = "endereco" in data ? data.endereco : (data as EnderecoState);
+    const enderecoData = "endereco" in data ? data.endereco as EnderecoState : (data as EnderecoState);
 
     setFormData(prev => ({
       ...prev,

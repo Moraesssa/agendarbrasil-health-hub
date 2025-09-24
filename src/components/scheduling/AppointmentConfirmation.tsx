@@ -24,6 +24,7 @@ import {
 
 import SchedulingService, { Appointment } from '@/services/schedulingService';
 import { toast } from '@/components/ui/use-toast';
+import { fixDoctorType } from '@/utils/temporaryFixes';
 
 interface AppointmentConfirmationProps {
   appointmentId: string;
@@ -60,7 +61,7 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
         data_hora_agendada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Amanhã
         duracao_estimada: 30,
         tipo: 'teleconsulta',
-        prioridade: 'normal',
+        prioridade: appointment.prioridade || 'normal',
         status: 'agendada',
         valor_consulta: 150,
         motivo_consulta: 'Consulta de rotina',
@@ -68,9 +69,8 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
         buffer_depois: 5,
         permite_reagendamento: true,
         agendado_por: 'p1',
-        medico: {
+        medico: fixDoctorType({
           id: 'dr1',
-          usuario_id: 'u1',
           nome: 'Dr. Carlos Silva',
           email: 'carlos.silva@email.com',
           crm: '12345',
@@ -85,8 +85,9 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
           aceita_teleconsulta: true,
           aceita_consulta_presencial: true,
           rating: 4.8,
-          total_avaliacoes: 127
-        }
+          total_avaliacoes: 127,
+          foto_perfil_url: ''
+        })
       };
       
       setAppointment(mockAppointment);
@@ -203,27 +204,27 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
           {/* Informações do Médico */}
           <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={safe(appointment.medico, 'foto_perfil_url', '')} />
+              <AvatarImage src={appointment.medico?.foto_perfil_url || ''} />
               <AvatarFallback>
-                {safe(appointment.medico, 'nome', 'DR').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                {(appointment.medico?.nome || 'DR').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold">{safe(appointment.medico, 'nome')}</h3>
-              <p className="text-muted-foreground">{safe(appointment.medico, 'especialidade')}</p>
-              <p className="text-sm text-muted-foreground">CRM: {safe(appointment.medico, 'crm')}/{safe(appointment.medico, 'uf_crm')}</p>
+              <h3 className="text-lg font-semibold">{appointment.medico?.nome}</h3>
+              <p className="text-muted-foreground">{appointment.medico?.especialidade}</p>
+              <p className="text-sm text-muted-foreground">CRM: {appointment.medico?.crm}/{appointment.medico?.uf_crm}</p>
               
               {/* Rating */}
               <div className="flex items-center gap-1 mt-2">
                 {Array.from({ length: 5 }, (_, i) => (
                   <span key={i} className={`text-sm ${
-                    i < Math.floor(safe(appointment.medico, 'rating', 0)) ? 'text-yellow-400' : 'text-gray-300'
+                    i < Math.floor(appointment.medico?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'
                   }`}>
                     ★
                   </span>
                 ))}
                 <span className="text-sm text-muted-foreground ml-1">
-                  ({safe(appointment.medico, 'total_avaliacoes', 0)} avaliações)
+                  ({appointment.medico?.total_avaliacoes || 0} avaliações)
                 </span>
               </div>
             </div>

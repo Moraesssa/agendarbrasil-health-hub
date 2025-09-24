@@ -26,12 +26,19 @@ import schedulingService from '@/services/scheduling';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { normalizeAppointmentId } from '@/utils/appointment-id';
+import { fixDoctorType } from '@/utils/temporaryFixes';
 
 interface Doctor {
   id: string;
   nome: string;
   valor_consulta_presencial?: number;
   valor_consulta_teleconsulta?: number;
+  foto_perfil_url?: string;
+  especialidade?: string;
+  rating?: number;
+  total_avaliacoes?: number;
+  aceita_consulta_presencial?: boolean;
+  aceita_teleconsulta?: boolean;
 }
 
 interface AvailableSlot {
@@ -50,11 +57,12 @@ interface DoctorAvailabilityProps {
 }
 
 export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
-  doctor,
+  doctor: rawDoctor,
   patientId,
   onBack,
   onAppointmentCreated
 }) => {
+  const doctor = fixDoctorType(rawDoctor);
   const { user } = useAuth();
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(false);

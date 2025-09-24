@@ -1,4 +1,4 @@
-import { Lifebuoy, Mail, MessageSquare } from "lucide-react";
+import { LifeBuoy, Mail, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +17,7 @@ export const SupportCard = ({ loading }: SupportCardProps) => {
     <Card className="border-blue-100/80 bg-gradient-to-br from-blue-50 via-white to-emerald-50 shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-900">
-          <Lifebuoy className="h-5 w-5 text-blue-500" />
+          <LifeBuoy className="h-5 w-5 text-blue-500" />
           Suporte dedicado
         </CardTitle>
         <CardDescription>

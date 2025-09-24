@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { fixDoctorType } from '@/utils/temporaryFixes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -243,7 +244,9 @@ export const DoctorSearch: React.FC<DoctorSearchProps> = ({
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {doctors.map((doctor) => (
+                  {doctors.map((rawDoctor) => {
+                    const doctor = fixDoctorType(rawDoctor);
+                    return (
               <Card key={doctor.id} className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-3">
@@ -337,11 +340,12 @@ export const DoctorSearch: React.FC<DoctorSearchProps> = ({
                     className="w-full"
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    Ver Disponibilidade
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                      Ver Disponibilidade
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
