@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart3,
@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DoctorHero } from "@/components/doctor/profile/DoctorHero";
 import { DoctorStatsGrid } from "@/components/doctor/profile/DoctorStatsGrid";
 import { UpcomingAppointmentsList } from "@/components/doctor/profile/UpcomingAppointmentsList";
@@ -22,9 +23,8 @@ import { DoctorProfileTabs } from "@/components/doctor/profile/DoctorProfileTabs
 import { DoctorCalendar } from "@/components/doctor/profile/DoctorCalendar";
 import { DoctorQuickLinks } from "@/components/doctor/profile/DoctorQuickLinks";
 import { SupportCard } from "@/components/doctor/profile/SupportCard";
+import { useDoctorProfileData } from "@/hooks/useDoctorProfileData";
 import {
-  DoctorAppointment,
-  DoctorNotification,
   DoctorQuickLink,
   DoctorStat,
   DoctorStatusBadge,
@@ -32,8 +32,18 @@ import {
 
 const PerfilMedico = () => {
   const { userData, user, loading, logout, refreshUserData } = useAuth();
+  const {
+    metrics: doctorMetrics,
+    upcomingAppointments,
+    calendarAppointments,
+    notifications: profileNotifications,
+    loading: dataLoading,
+    error: dataError,
+    refetch: refetchProfileData,
+  } = useDoctorProfileData();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const hasInitializedDate = useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -62,7 +72,8 @@ const PerfilMedico = () => {
     await refreshUserData();
   };
 
-  const isLoading = loading || !userData;
+  const isAuthLoading = loading || !userData;
+  const isProfileLoading = isAuthLoading || dataLoading;
 
   const statusBadges: DoctorStatusBadge[] = useMemo(() => {
     if (!userData) {
@@ -98,147 +109,84 @@ const PerfilMedico = () => {
       return [];
     }
 
-    const isActive = userData.isActive;
-    const specialtiesCount = userData.especialidades?.length ?? 0;
+    const todaysConsultations = doctorMetrics.todaysConsultations ?? 0;
+    const upcomingCount = doctorMetrics.upcomingConsultations ?? 0;
+    const uniquePatients = doctorMetrics.uniquePatients ?? 0;
+    const totalConsultations = doctorMetrics.totalConsultations ?? 0;
+    const satisfactionRate = Number.isFinite(doctorMetrics.satisfactionRate)
+      ? doctorMetrics.satisfactionRate
+      : 0;
+    const occupancyRate = Number.isFinite(doctorMetrics.occupancyRate)
+      ? doctorMetrics.occupancyRate
+      : 0;
 
     return [
       {
         label: "Atendimentos hoje",
-        value: isActive ? "4" : "0",
-        description: isActive
+        value: String(todaysConsultations),
+        description: todaysConsultations
           ? "Consultas confirmadas para o dia"
-          : "Ative sua agenda para receber pacientes",
+          : "Sem atendimentos confirmados hoje",
         icon: CalendarCheck,
-        trend: isActive
+        trend: upcomingCount
           ? {
-              value: "+1 consulta",
+              value: `${upcomingCount} próximas`,
               isPositive: true,
-              label: "vs. ontem",
+              label: "próximos 7 dias",
             }
           : undefined,
       },
       {
         label: "Pacientes ativos",
-        value: isActive ? "28" : "0",
-        description: isActive
-          ? "Pacientes acompanhados nos últimos 30 dias"
-          : "Nenhum paciente em acompanhamento",
+        value: String(uniquePatients),
+        description: uniquePatients
+          ? "Pacientes únicos acompanhados nos últimos 30 dias"
+          : "Nenhum paciente atendido no período",
         icon: Users,
-        trend: isActive
+        trend: uniquePatients
           ? {
-              value: "+12%",
+              value: `${totalConsultations} consultas`,
               isPositive: true,
-              label: "mês anterior",
+              label: "30 dias",
             }
           : undefined,
       },
       {
-        label: "Avaliação média",
-        value: isActive ? "4,8" : "—",
-        description: "Baseada no feedback dos pacientes",
+        label: "Índice de satisfação",
+        value: `${satisfactionRate}%`,
+        description: "Estimativa com base nos atendimentos recentes",
         icon: Star,
-        trend: isActive
+        trend: {
+          value: satisfactionRate >= 85 ? "Excelente" : "Ajuste necessário",
+          isPositive: satisfactionRate >= 85,
+        },
+      },
+      {
+        label: "Taxa de ocupação",
+        value: `${occupancyRate}%`,
+        description: "Ocupação da agenda para os próximos 7 dias",
+        icon: Activity,
+        trend: upcomingCount
           ? {
-              value: "98% satisfação",
-              isPositive: true,
+              value: `${upcomingCount} consultas agendadas`,
+              isPositive: occupancyRate >= 70,
+              label: "próximos 7 dias",
             }
           : undefined,
       },
-      {
-        label: "Especialidades",
-        value: `${specialtiesCount}`,
-        description: specialtiesCount
-          ? "Especialidades cadastradas"
-          : "Cadastre suas especialidades",
-        icon: Activity,
-      },
     ];
-  }, [userData]);
+  }, [doctorMetrics, userData]);
 
-  const upcomingAppointments: DoctorAppointment[] = useMemo(() => {
-    const today = new Date();
-    const first = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 30);
-    const second = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const third = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 15, 30);
-
-    return [
-      {
-        id: "appointment-1",
-        patientName: "João Pereira",
-        type: "Retorno pós-operatório",
-        status: "confirmada",
-        start: first,
-        location: "Clínica Central - Sala 3",
-      },
-      {
-        id: "appointment-2",
-        patientName: "Ana Souza",
-        type: "Avaliação cardiológica",
-        status: "pendente",
-        start: second,
-        location: "Teleconsulta",
-        notes: "Paciente aguardando confirmação de exames",
-      },
-      {
-        id: "appointment-3",
-        patientName: "Marcos Lima",
-        type: "Consulta de rotina",
-        status: "confirmada",
-        start: third,
-        location: "Clínica Central - Sala 1",
-      },
-    ];
-  }, []);
-
-  const notifications: DoctorNotification[] = useMemo(() => {
-    if (!userData) {
-      return [];
+  useEffect(() => {
+    if (hasInitializedDate.current) {
+      return;
     }
 
-    const items: DoctorNotification[] = [
-      userData.crm
-        ? {
-            id: "crm-status",
-            title: "CRM verificado",
-            description: "Seu número de CRM está atualizado e validado na plataforma.",
-            time: "Atualizado recentemente",
-            type: "success",
-          }
-        : {
-            id: "crm-pending",
-            title: "Informe seu CRM",
-            description: "Adicione seu CRM para liberar todos os recursos da plataforma.",
-            time: "Requer atenção",
-            type: "warning",
-          },
-      {
-        id: "agenda-review",
-        title: "Revise a agenda do dia",
-        description: "Confirme as consultas e verifique se há pedidos de reagendamento.",
-        time: "Hoje às 07h30",
-        type: "info",
-      },
-      userData.preferences?.notifications
-        ? {
-            id: "notifications-enabled",
-            title: "Notificações ativadas",
-            description: "Você receberá alertas de novos agendamentos em tempo real.",
-            time: "Configurado",
-            type: "success",
-          }
-        : {
-            id: "notifications-disabled",
-            title: "Ative as notificações",
-            description: "Ative os avisos para não perder solicitações de pacientes.",
-            time: "Sugestão",
-            type: "warning",
-          },
-    ];
-
-    return items;
-  }, [userData]);
+    if (calendarAppointments.length > 0) {
+      setSelectedDate(calendarAppointments[0].start);
+      hasInitializedDate.current = true;
+    }
+  }, [calendarAppointments]);
 
   const quickLinks: DoctorQuickLink[] = useMemo(() => {
     return [
@@ -280,7 +228,7 @@ const PerfilMedico = () => {
     ];
   }, [navigate, handleLogout]);
 
-  if (!isLoading && (!user || !userData || userData.userType !== "medico")) {
+  if (!isAuthLoading && (!user || !userData || userData.userType !== "medico")) {
     return null;
   }
 
@@ -333,7 +281,7 @@ const PerfilMedico = () => {
             specialties={userData?.especialidades}
             avatarUrl={userData?.photoURL}
             statusBadges={statusBadges}
-            loading={isLoading}
+            loading={isProfileLoading}
             primaryAction={{
               label: "Abrir agenda",
               onClick: () => navigate("/agenda-medico"),
@@ -355,38 +303,53 @@ const PerfilMedico = () => {
             }
           />
 
-          <DoctorStatsGrid stats={stats} loading={isLoading} />
+          {dataError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Erro ao carregar dados</AlertTitle>
+              <AlertDescription className="flex flex-col gap-2">
+                <span>{dataError}</span>
+                <Button size="sm" variant="outline" onClick={refetchProfileData}>
+                  Tentar novamente
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          <DoctorStatsGrid stats={stats} loading={isProfileLoading} />
         </section>
 
         <section id="consultas" className="grid gap-6 xl:grid-cols-3">
           <div className="space-y-6 xl:col-span-2">
             <UpcomingAppointmentsList
               appointments={upcomingAppointments}
-              loading={isLoading}
+              loading={isProfileLoading}
               onViewAll={() => navigate("/agenda-medico")}
             />
           </div>
           <div className="space-y-6">
-            <NotificationsPanel notifications={notifications} loading={isLoading} />
+            <NotificationsPanel
+              notifications={profileNotifications}
+              loading={isProfileLoading}
+            />
           </div>
         </section>
 
         <section>
-          <DoctorProfileTabs doctor={userData ?? null} loading={isLoading} />
+          <DoctorProfileTabs doctor={userData ?? null} loading={isProfileLoading} />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">
             <DoctorCalendar
-              appointments={upcomingAppointments}
+              appointments={calendarAppointments}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
-              loading={isLoading}
+              loading={isProfileLoading}
             />
           </div>
           <div className="space-y-6">
-            <DoctorQuickLinks links={quickLinks} loading={isLoading} />
-            <SupportCard loading={isLoading} />
+            <DoctorQuickLinks links={quickLinks} loading={isProfileLoading} />
+            <SupportCard loading={isProfileLoading} />
           </div>
         </section>
       </main>
