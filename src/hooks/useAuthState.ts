@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { BaseUser, OnboardingStatus } from '@/types/user';
 import { authService } from '@/services/authService';
+import { mapMedicoDataToUser } from '@/utils/doctorProfile';
 // Mock services removed for production
 
 // Temporarily increase clock drift tolerance while investigating Supabase time differences
@@ -60,18 +61,23 @@ export const useAuthState = () => {
         return;
       }
 
-      let roleData = {};
+      let roleData: Partial<BaseUser> = {};
       if (profile.user_type === 'medico') {
         const { data: medicoData, error: medicoError } = await supabase
           .from('medicos')
-          .select('especialidades, crm')
+          .select(
+            'especialidades, crm, telefone, whatsapp, dados_profissionais, configuracoes, verificacao, endereco'
+          )
           .eq('user_id', uid)
-          .single();
-        
-        if (!medicoError && medicoData) {
+          .maybeSingle();
+
+        if (medicoError && medicoError.code !== 'PGRST116') {
+          console.error('Erro ao carregar dados do médico', medicoError);
+        }
+
+        if (medicoData) {
           roleData = {
-            ...medicoData,
-            especialidades: Array.isArray(medicoData.especialidades) ? medicoData.especialidades : []
+            ...mapMedicoDataToUser(medicoData),
           };
         }
       }

@@ -191,8 +191,8 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
               initialData={{
                 crm: userData.crm,
                 especialidades: Array.isArray(userData.especialidades) ? userData.especialidades : [],
-                telefone: "", // Will be loaded from medicos table
-                whatsapp: ""   // Will be loaded from medicos table
+                telefone: userData.telefone ?? "",
+                whatsapp: userData.whatsapp ?? ""
               }}
             />
           </TabsContent>
@@ -200,7 +200,7 @@ export const EditProfileDialog = ({ userData, onProfileUpdate }: EditProfileDial
           <TabsContent value="endereco" className="mt-6">
             <EnderecoForm
               onNext={(data) => handleFormNext("endereco", data)}
-              initialData={{}}
+              initialData={userData.endereco ?? {}}
             />
           </TabsContent>
         </Tabs>

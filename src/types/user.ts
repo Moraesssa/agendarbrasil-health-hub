@@ -1,5 +1,4 @@
-import { ProfileV2, PatientProfile, DoctorProfile, FamilyMemberProfile } from '@/types/profiles';
-import { Tables } from '@/integrations/supabase/types';
+import { ProfileV2 } from '@/types/profiles';
 
 // ============= Legacy User Types (for backward compatibility) =============
 export type UserType = 'paciente' | 'medico';
@@ -10,7 +9,66 @@ export interface UserPreferences {
   language: 'pt-BR';
 }
 
-export interface BaseUser {
+export interface Endereco {
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+}
+
+export interface DoctorScheduleDay {
+  inicio?: string | null;
+  fim?: string | null;
+  ativo?: boolean;
+  intervalo?: string | null;
+  pausas?: { inicio?: string | null; fim?: string | null }[];
+  [key: string]: unknown;
+}
+
+export interface DoctorScheduleSettings {
+  duracaoConsulta?: number;
+  valorConsulta?: number;
+  aceitaConvenio?: boolean;
+  conveniosAceitos?: string[];
+  horarioAtendimento?: Record<string, DoctorScheduleDay>;
+  [key: string]: unknown;
+}
+
+export interface DoctorVerificationStatus {
+  crmVerificado?: boolean;
+  documentosEnviados?: boolean;
+  aprovado?: boolean;
+  dataAprovacao?: string | Date | null;
+  [key: string]: unknown;
+}
+
+export interface DoctorProfessionalData {
+  nomeCompleto?: string;
+  nome?: string;
+  cpf?: string;
+  dataNascimento?: string;
+  formacao?: string;
+  instituicao?: string;
+  anoFormacao?: number;
+  biografia?: string;
+  especialidadePrincipal?: string;
+  registroProfissional?: string;
+  [key: string]: unknown;
+}
+
+export interface DoctorProfileDetails {
+  telefone?: string | null;
+  whatsapp?: string | null;
+  dadosProfissionais?: DoctorProfessionalData | null;
+  configuracoes?: DoctorScheduleSettings | null;
+  verificacao?: DoctorVerificationStatus | null;
+  endereco?: Endereco | null;
+}
+
+export interface BaseUser extends DoctorProfileDetails {
   uid: string;
   email: string;
   displayName: string;
@@ -77,16 +135,6 @@ export interface OnboardingStatus {
   totalSteps: number;
   canProceed: boolean;
   errors: string[];
-}
-
-export interface Endereco {
-  cep: string;
-  logradouro: string;
-  numero: string;
-  complemento: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
 }
 
 export interface Medico {
