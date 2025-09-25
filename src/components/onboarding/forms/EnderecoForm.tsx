@@ -10,9 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 interface EnderecoFormProps {
   onNext: (data: any) => void;
   initialData?: any;
+  submitLabel?: string;
 }
 
-export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
+export const EnderecoForm = ({ onNext, initialData, submitLabel = "Próximo" }: EnderecoFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     cep: initialData?.cep || '',
@@ -227,7 +228,7 @@ export const EnderecoForm = ({ onNext, initialData }: EnderecoFormProps) => {
           </div>
 
           <Button type="submit" className="w-full" data-testid="form-step-2-next">
-            Próximo
+            {submitLabel}
           </Button>
         </form>
       </CardContent>
