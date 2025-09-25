@@ -203,8 +203,8 @@ export const useDoctorProfileData = (): UseDoctorProfileDataResult => {
       const doctorAppointments = processedConsultations.map<DoctorAppointment>((consulta) => ({
         id: consulta.id,
         patientName: consulta.patientName,
-        start: consulta.start.toISOString(),
-        end: addMinutes(consulta.start, appointmentDuration).toISOString(),
+        start: consulta.start,
+        end: addMinutes(consulta.start, appointmentDuration),
         type: consulta.consultationType,
         status: normalizeStatus(consulta.status),
         notes: consulta.notes ?? undefined,
@@ -214,13 +214,13 @@ export const useDoctorProfileData = (): UseDoctorProfileDataResult => {
       }));
 
       const upcomingList = doctorAppointments
-        .filter((appointment) => isAfter(parseISO(appointment.start), now) || isSameDay(parseISO(appointment.start), now))
-        .sort((a, b) => parseISO(a.start).getTime() - parseISO(b.start).getTime());
+        .filter((appointment) => isAfter(appointment.start, now) || isSameDay(appointment.start, now))
+        .sort((a, b) => a.start.getTime() - b.start.getTime());
 
       const nextAppointments = upcomingList.slice(0, 5);
 
       const nextSevenDaysCount = upcomingList.filter((appointment) => {
-        const diff = differenceInCalendarDays(parseISO(appointment.start), now);
+        const diff = differenceInCalendarDays(appointment.start, now);
         return diff >= 0 && diff <= 6;
       }).length;
 
@@ -261,7 +261,7 @@ export const useDoctorProfileData = (): UseDoctorProfileDataResult => {
         notificationsData.push({
           id: 'next-appointment',
           title: 'Próxima consulta',
-          description: `Atendimento com ${nextAppointment.patientName} em ${format(parseISO(nextAppointment.start), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}.`,
+          description: `Atendimento com ${nextAppointment.patientName} em ${format(nextAppointment.start, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}.`,
           time: 'Atualizado agora',
           type: 'info',
         });
