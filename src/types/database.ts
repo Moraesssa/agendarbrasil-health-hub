@@ -54,6 +54,15 @@ export interface Appointment {
   updated_at?: string;
 }
 
+export interface SearchFiltersExtended {
+  specialty?: string;
+  city?: string;
+  state?: string;
+  rating_minimo?: number;
+  available_today?: boolean;
+  accepts_insurance?: boolean;
+}
+
 export interface AppointmentWithDoctor extends Appointment {
   doctor_profile?: Doctor;
   patient_profile?: Patient;
@@ -67,6 +76,7 @@ export interface SearchFilters {
   rating_minimo?: number;
   available_today?: boolean;
   accepts_insurance?: boolean;
+  [key: string]: any;
 }
 
 // Location types
