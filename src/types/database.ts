@@ -55,13 +55,32 @@ export interface Appointment {
   created_at?: string;
   updated_at?: string;
   duracao_estimada?: number;
+  duracao_real?: number;
   valor_consulta?: number;
   motivo_consulta?: string;
   buffer_antes?: number;
   buffer_depois?: number;
   permite_reagendamento?: boolean;
   agendado_por?: string;
-  medico?: any;
+  medico?: {
+    id: string;
+    user_id?: string;
+    nome?: string;
+    email?: string;
+    crm?: string;
+    uf_crm?: string;
+    especialidade?: string;
+    foto_perfil_url?: string;
+    valor_consulta_presencial?: number;
+    valor_consulta_teleconsulta?: number;
+    duracao_consulta_padrao?: number;
+    duracao_consulta_inicial?: number;
+    duracao_teleconsulta?: number;
+    aceita_teleconsulta?: boolean;
+    aceita_consulta_presencial?: boolean;
+    rating?: number;
+    total_avaliacoes?: number;
+  };
 }
 
 export interface SearchFiltersExtended {

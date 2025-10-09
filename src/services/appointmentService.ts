@@ -318,8 +318,7 @@ export const getHorarios = async (doctorId: string, date: string): Promise<Local
     const normalizedDate = date.split('T')[0];
 
     const { data, error } = await supabase.rpc('get_doctor_schedule_data', {
-      p_doctor_id: doctorId,
-      p_date: normalizedDate
+      p_doctor_id: doctorId
     });
 
     if (error) {

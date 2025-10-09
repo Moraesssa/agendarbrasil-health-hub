@@ -1,7 +1,7 @@
 // Shared types for scheduling system
 export interface Doctor {
   id: string;
-  display_name?: string;
+  display_name: string;
   nome?: string;
   especialidades?: string[];
   crm?: string;
@@ -18,6 +18,8 @@ export interface Doctor {
   valor_consulta_presencial?: number;
   valor_consulta_teleconsulta?: number;
   duracao_consulta_inicial?: number;
+  user_id?: string;
+  email?: string;
 }
 
 export interface TimeSlot {
@@ -31,6 +33,6 @@ export interface TimeSlot {
 export interface LocalComHorarios {
   id: string;
   nome_local: string;
-  endereco?: any;
+  endereco: any;
   horarios_disponiveis: Array<{ time: string; available: boolean }>;
 }
