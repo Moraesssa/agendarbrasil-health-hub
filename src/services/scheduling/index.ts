@@ -1,28 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { normalizeAppointmentId } from '@/utils/appointment-id';
-
-export interface Doctor {
-  id: string;
-  display_name: string;
-  especialidades?: string[];
-  crm?: string;
-}
-
-export interface TimeSlot {
-  time: string;
-  type: 'presencial' | 'teleconsulta';
-  location_id?: string;
-  estimated_duration?: number;
-  confidence_score?: number;
-}
-
-export interface LocalComHorarios {
-  id: string;
-  nome_local: string;
-  endereco?: any;
-  horarios_disponiveis: Array<{ time: string; available: boolean }>;
-}
+import type { Doctor, TimeSlot, LocalComHorarios } from './types';
 
 async function searchDoctors(
   specialty: string,
@@ -66,8 +45,7 @@ async function getAvailableSlots(
   }
   try {
     const { data, error } = await supabase.rpc('get_doctor_schedule_v2', {
-      p_doctor_id: doctorId,
-      p_date: date
+      p_doctor_id: doctorId
     });
     if (error) {
       logger.error('Erro ao buscar horários', 'schedulingService.getAvailableSlots', error);
@@ -76,7 +54,12 @@ async function getAvailableSlots(
     const response = Array.isArray(data) ? data[0] : data;
     const locations = response?.locations || [];
     const dateOnly = date.split('T')[0];
-    return (locations || [])
+    
+    if (!Array.isArray(locations)) {
+      return [];
+    }
+    
+    return locations
       .map((loc: any) => {
         const horarios = Array.isArray(loc.horarios_disponiveis)
           ? loc.horarios_disponiveis
@@ -124,8 +107,7 @@ async function createAppointment(params: {
       p_doctor_id: params.medico_id,
       p_appointment_datetime: params.consultation_date,
       p_specialty: params.consultation_type,
-      p_family_member_id: null,
-      p_local_id: params.local_id ?? null
+      p_family_member_id: null
     });
     if (error) {
       logger.error('Erro ao agendar consulta', 'schedulingService.createAppointment', error);
@@ -173,4 +155,5 @@ export const schedulingService = {
 };
 
 export default schedulingService;
-export type { Doctor as Medico, LocalComHorarios };
+export type { Doctor, TimeSlot, LocalComHorarios } from './types';
+export type { Doctor as Medico } from './types';

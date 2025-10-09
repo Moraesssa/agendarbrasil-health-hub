@@ -325,12 +325,8 @@ export const DoctorSearch: React.FC<DoctorSearchProps> = ({
                   {/* Durações */}
                   <div className="text-xs text-muted-foreground space-y-1">
                     <div className="flex justify-between">
-                      <span>Consulta padrão:</span>
-                      <span>{doctor.duracao_consulta_padrao}min</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Primeira consulta:</span>
-                      <span>{doctor.duracao_consulta_inicial}min</span>
+                      <span>Duração consulta:</span>
+                      <span>{doctor.duracao_consulta_inicial || 30}min</span>
                     </div>
                   </div>
 
@@ -340,8 +336,8 @@ export const DoctorSearch: React.FC<DoctorSearchProps> = ({
                     className="w-full"
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                      Ver Disponibilidade
-                    </Button>
+                    Ver Disponibilidade
+                  </Button>
                   </CardContent>
                 </Card>
               );

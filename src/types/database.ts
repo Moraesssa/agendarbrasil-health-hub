@@ -42,7 +42,9 @@ export interface Appointment {
   medico_id?: string;
   paciente_id?: string;
   consultation_date?: string;
+  data_hora_agendada?: string;
   consultation_type?: string;
+  tipo?: string;
   status?: string;
   status_pagamento?: string;
   patient_name?: string;
@@ -52,6 +54,14 @@ export interface Appointment {
   observacoes_medico?: string;
   created_at?: string;
   updated_at?: string;
+  duracao_estimada?: number;
+  valor_consulta?: number;
+  motivo_consulta?: string;
+  buffer_antes?: number;
+  buffer_depois?: number;
+  permite_reagendamento?: boolean;
+  agendado_por?: string;
+  medico?: any;
 }
 
 export interface SearchFiltersExtended {

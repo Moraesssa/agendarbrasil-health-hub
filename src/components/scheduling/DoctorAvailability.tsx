@@ -57,12 +57,11 @@ interface DoctorAvailabilityProps {
 }
 
 export const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({
-  doctor: rawDoctor,
+  doctor,
   patientId,
   onBack,
   onAppointmentCreated
 }) => {
-  const doctor = fixDoctorType(rawDoctor);
   const { user } = useAuth();
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(false);
