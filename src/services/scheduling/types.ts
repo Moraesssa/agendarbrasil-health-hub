@@ -1,25 +1,29 @@
 // Shared types for scheduling system
 export interface Doctor {
   id: string;
+  user_id: string;
   display_name: string;
-  nome?: string;
-  especialidades?: string[];
+  nome: string;
+  email: string;
   crm?: string;
-  duracao_consulta_padrao?: number;
-  ativo?: boolean;
+  uf_crm?: string;
+  especialidade?: string;
+  especialidades?: string[];
   foto_perfil_url?: string;
+  bio_perfil?: string;
   rating?: number;
   total_avaliacoes?: number;
-  especialidade?: string;
-  uf_crm?: string;
-  bio_perfil?: string;
-  aceita_consulta_presencial?: boolean;
-  aceita_teleconsulta?: boolean;
+  telefone?: string;
   valor_consulta_presencial?: number;
   valor_consulta_teleconsulta?: number;
+  duracao_consulta_padrao?: number;
   duracao_consulta_inicial?: number;
-  user_id?: string;
-  email?: string;
+  aceita_teleconsulta?: boolean;
+  aceita_consulta_presencial?: boolean;
+  ativo?: boolean;
+  cidade?: string;
+  estado?: string;
+  created_at?: string;
 }
 
 export interface TimeSlot {

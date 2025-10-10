@@ -10,19 +10,28 @@ import { supabase } from '@/integrations/supabase/client';
 export interface Doctor {
   id: string;
   user_id: string;
-  crm: string;
-  uf_crm: string;
-  especialidade: string;
+  crm?: string;
+  uf_crm?: string;
+  especialidade?: string;
   nome: string;
   email: string;
+  display_name?: string;
   telefone?: string;
+  foto_perfil_url?: string;
+  bio_perfil?: string;
+  rating?: number;
+  total_avaliacoes?: number;
+  especialidades?: string[];
   valor_consulta_presencial?: number;
   valor_consulta_teleconsulta?: number;
-  duracao_consulta_padrao: number;
-  aceita_teleconsulta: boolean;
-  aceita_consulta_presencial: boolean;
-  ativo: boolean;
-  created_at: string;
+  duracao_consulta_padrao?: number;
+  duracao_consulta_inicial?: number;
+  aceita_teleconsulta?: boolean;
+  aceita_consulta_presencial?: boolean;
+  ativo?: boolean;
+  created_at?: string;
+  cidade?: string;
+  estado?: string;
 }
 
 export interface Patient {
@@ -72,12 +81,18 @@ export interface Appointment {
   local_id?: string;
   data_hora_agendada: string;
   duracao_estimada: number;
+  duracao_real?: number;
   tipo: 'presencial' | 'teleconsulta';
   status: 'agendada' | 'confirmada' | 'em_andamento' | 'realizada' | 'cancelada' | 'nao_compareceu' | 'reagendada';
+  prioridade?: string;
   valor_consulta?: number;
   motivo_consulta?: string;
+  observacoes_medico?: string;
+  buffer_antes?: number;
+  buffer_depois?: number;
+  permite_reagendamento?: boolean;
   agendado_por: string;
-  created_at: string;
+  created_at?: string;
   
   // Dados relacionados (joins)
   medico?: Doctor;
@@ -110,64 +125,108 @@ export class SchedulingService {
   // ========= BUSCA DE MÉDICOS =========
   
   static async searchDoctors(filters: SearchFilters = {}): Promise<Doctor[]> {
-    let query = supabase
-      .from('medicos')
-      .select('*')
-      .eq('ativo', true);
-
-    // Aplicar filtros
-    if (filters.especialidade) {
-      query = query.ilike('especialidade', `%${filters.especialidade}%`);
-    }
-
-    if (filters.cidade) {
-      // Buscar médicos que atendem na cidade através dos locais
-      const { data: locais } = await supabase
-        .from('locais_atendimento')
-        .select('medico_id')
-        .ilike('cidade', `%${filters.cidade}%`)
-        .eq('ativo', true);
+    try {
+      console.log('🔍 Buscando médicos com filtros:', filters);
       
-      if (locais && locais.length > 0) {
-        const medicoIds = locais.map(l => l.medico_id);
-        query = query.in('id', medicoIds);
+      let query = supabase
+        .from('medicos')
+        .select(`
+          *,
+          profiles:user_id (
+            display_name,
+            email
+          )
+        `)
+        .eq('is_active', true);
+
+      // Aplicar filtros
+      if (filters.especialidade) {
+        // Buscar em especialidades (array) ou especialidade (string)
+        query = query.or(`especialidades.cs.{${filters.especialidade}},especialidade.ilike.%${filters.especialidade}%`);
       }
-    }
 
-    if (filters.estado) {
-      const { data: locais } = await supabase
-        .from('locais_atendimento')
-        .select('medico_id')
-        .eq('estado', filters.estado)
-        .eq('ativo', true);
-      
-      if (locais && locais.length > 0) {
-        const medicoIds = locais.map(l => l.medico_id);
-        query = query.in('id', medicoIds);
+      if (filters.cidade || filters.estado) {
+        // Buscar médicos que atendem na cidade/estado através dos locais
+        let locaisQuery = supabase
+          .from('locais_atendimento')
+          .select('medico_id')
+          .eq('ativo', true);
+        
+        if (filters.cidade) {
+          locaisQuery = locaisQuery.ilike('cidade', `%${filters.cidade}%`);
+        }
+        
+        if (filters.estado) {
+          locaisQuery = locaisQuery.eq('estado', filters.estado);
+        }
+        
+        const { data: locais } = await locaisQuery;
+        
+        if (locais && locais.length > 0) {
+          const medicoIds = locais.map(l => String(l.medico_id));
+          query = query.in('user_id', medicoIds);
+        } else {
+          console.log('⚠️ Nenhum local encontrado para os filtros especificados');
+          return [];
+        }
       }
-    }
 
-    if (filters.tipo_consulta === 'teleconsulta') {
-      query = query.eq('aceita_teleconsulta', true);
-    } else if (filters.tipo_consulta === 'presencial') {
-      query = query.eq('aceita_consulta_presencial', true);
-    }
-
-    if (filters.valor_maximo) {
       if (filters.tipo_consulta === 'teleconsulta') {
-        query = query.lte('valor_consulta_teleconsulta', filters.valor_maximo);
-      } else {
-        query = query.lte('valor_consulta_presencial', filters.valor_maximo);
+        query = query.eq('aceita_teleconsulta', true);
+      } else if (filters.tipo_consulta === 'presencial') {
+        query = query.eq('aceita_consulta_presencial', true);
       }
+
+      if (filters.valor_maximo) {
+        if (filters.tipo_consulta === 'teleconsulta') {
+          query = query.lte('valor_consulta_teleconsulta', filters.valor_maximo);
+        } else {
+          query = query.lte('valor_consulta_presencial', filters.valor_maximo);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Erro ao buscar médicos:', error);
+        throw new Error(`Erro ao buscar médicos: ${error.message}`);
+      }
+
+      console.log(`✅ Encontrados ${data?.length || 0} médicos`);
+      
+      // Mapear dados para o formato esperado
+      const doctors: Doctor[] = (data || []).map((m: any) => ({
+        id: String(m.id || m.user_id),
+        user_id: String(m.user_id),
+        nome: m.profiles?.display_name || 'Médico',
+        display_name: m.profiles?.display_name || 'Médico',
+        email: m.profiles?.email || '',
+        crm: m.crm,
+        uf_crm: m.estado,
+        especialidade: Array.isArray(m.especialidades) ? m.especialidades[0] : m.especialidade,
+        especialidades: Array.isArray(m.especialidades) ? m.especialidades : [m.especialidade].filter(Boolean),
+        foto_perfil_url: m.foto_perfil_url,
+        bio_perfil: m.bio_perfil,
+        rating: m.rating || 0,
+        total_avaliacoes: m.total_avaliacoes || 0,
+        telefone: m.telefone,
+        valor_consulta_presencial: m.valor_consulta_presencial,
+        valor_consulta_teleconsulta: m.valor_consulta_teleconsulta,
+        duracao_consulta_padrao: m.duracao_consulta_inicial || 30,
+        duracao_consulta_inicial: m.duracao_consulta_inicial,
+        aceita_teleconsulta: m.aceita_teleconsulta,
+        aceita_consulta_presencial: m.aceita_consulta_presencial,
+        ativo: m.is_active,
+        cidade: m.cidade,
+        estado: m.estado,
+        created_at: m.created_at
+      }));
+
+      return doctors;
+    } catch (error: any) {
+      console.error('❌ Erro fatal na busca de médicos:', error);
+      throw error;
     }
-
-    const { data, error } = await query.order('nome');
-
-    if (error) {
-      throw new Error(`Erro ao buscar médicos: ${error.message}`);
-    }
-
-    return data || [];
   }
 
   // ========= BUSCA DE HORÁRIOS DISPONÍVEIS =========
