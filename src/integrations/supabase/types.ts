@@ -643,6 +643,69 @@ export type Database = {
           },
         ]
       }
+      horarios_disponibilidade: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          intervalo_minutos: number
+          local_id: number | null
+          medico_id: string
+          tipo_consulta: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          intervalo_minutos?: number
+          local_id?: number | null
+          medico_id: string
+          tipo_consulta: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dia_semana?: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          intervalo_minutos?: number
+          local_id?: number | null
+          medico_id?: string
+          tipo_consulta?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horarios_disponibilidade_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_atendimento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horarios_disponibilidade_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       integration_logs: {
         Row: {
           created_at: string | null
@@ -1151,7 +1214,7 @@ export type Database = {
           {
             foreignKeyName: "medicos_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1975,6 +2038,16 @@ export type Database = {
           uf: string
         }[]
       }
+      get_available_time_slots: {
+        Args: {
+          p_date: string
+          p_doctor_id: string
+          p_end_hour?: number
+          p_interval_minutes?: number
+          p_start_hour?: number
+        }
+        Returns: Json
+      }
       get_doctor_basic_info: {
         Args: { doctor_ids?: string[] }
         Returns: {
@@ -2001,11 +2074,8 @@ export type Database = {
         }[]
       }
       get_doctor_schedule_v2: {
-        Args: { p_doctor_id: string }
-        Returns: {
-          doctor_config: Json
-          locations: Json
-        }[]
+        Args: { p_date: string; p_doctor_id: string } | { p_doctor_id: string }
+        Returns: Json
       }
       get_doctor_scheduling_info: {
         Args: { p_city?: string; p_specialty?: string; p_state?: string }
@@ -2019,10 +2089,17 @@ export type Database = {
       get_doctors_by_location_and_specialty: {
         Args: { p_city: string; p_specialty: string; p_state: string }
         Returns: {
+          aceita_consulta_presencial: boolean
+          aceita_teleconsulta: boolean
           crm: string
           display_name: string
           especialidades: Json
+          foto_perfil_url: string
           id: string
+          rating: number
+          total_avaliacoes: number
+          valor_consulta_presencial: number
+          valor_consulta_teleconsulta: number
         }[]
       }
       get_doctors_for_scheduling: {
@@ -2150,12 +2227,20 @@ export type Database = {
         }[]
       }
       reserve_appointment_v2: {
-        Args: {
-          p_appointment_datetime: string
-          p_doctor_id: string
-          p_family_member_id?: string
-          p_specialty?: string
-        }
+        Args:
+          | {
+              p_appointment_datetime: string
+              p_doctor_id: string
+              p_family_member_id?: string
+              p_local_id?: string
+              p_specialty: string
+            }
+          | {
+              p_appointment_datetime: string
+              p_doctor_id: string
+              p_family_member_id?: string
+              p_specialty?: string
+            }
         Returns: {
           appointment_id: string
           message: string
