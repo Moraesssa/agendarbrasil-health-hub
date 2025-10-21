@@ -32,8 +32,18 @@ export type Patient = Omit<Partial<Tables<'pacientes'>>, 'id'> & {
   user_id?: string;
 };
 
-export interface Profile extends Tables<'profiles'> {
+export interface Profile {
+  id: string;
   avatar_url?: string;
+  created_at: string;
+  display_name: string;
+  email: string;
+  is_active: boolean;
+  last_login: string;
+  onboarding_completed: boolean;
+  photo_url: string;
+  updated_at: string;
+  user_type: string;
 }
 
 // Appointment types with all extended fields

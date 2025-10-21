@@ -125,7 +125,7 @@ const UpcomingAppointments = () => {
       isOpen: true,
       appointment: {
         ...appointment,
-        video_room_id: roomResult.roomId
+        video_room_id: (roomResult as any).roomId
       }
     });
   };
