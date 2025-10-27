@@ -31,6 +31,12 @@ export interface LocalAtendimento {
   horarios_disponiveis: HorarioDisponivel[];
 }
 
+// Alias for backward compatibility
+export type LocalComHorarios = LocalAtendimento & {
+  id: string;
+  horarios: HorarioDisponivel[];
+};
+
 export interface HorarioDisponivel {
   time: string;
   available: boolean;

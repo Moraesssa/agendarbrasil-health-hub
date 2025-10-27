@@ -47,7 +47,7 @@ export const useWaitingList = () => {
       // Buscar posição na fila para cada entrada
       const entriesWithPosition = await Promise.all(
         (data || []).map(async (entry) => {
-          const position = await enhancedAppointmentService.getWaitingListPosition(entry.id);
+          const position = await enhancedAppointmentService.getWaitingListPosition(entry.paciente_id || '', entry.medico_id || '');
           return { ...entry, position };
         })
       );

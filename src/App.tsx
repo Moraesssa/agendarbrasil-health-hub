@@ -26,7 +26,7 @@ import GerenciarAgenda from '@/pages/GerenciarAgenda';
 import GerenciarLocaisV2 from '@/pages/GerenciarLocaisV2';
 import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
-import AgendamentoV2 from '@/pages/AgendamentoV2';
+import Agendamento from '@/pages/Agendamento';
 import Historico from '@/pages/Historico';
 import NotFound from '@/pages/NotFound';
 import GerenciarFamilia from '@/pages/GerenciarFamilia';
@@ -152,7 +152,7 @@ function App() {
                     <Route path="/gerenciar-locais" element={<GerenciarLocaisV2 />} />
                     <Route path="/pacientes-medico" element={<PacientesMedico />} />
                     <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                    <Route path="/agendamento" element={<AgendamentoV2 />} />
+                    <Route path="/agendamento" element={<Agendamento />} />
                     <Route path="/historico" element={<Historico />} />
                     <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
                     <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
