@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { agendamentoService } from '@/services/agendamento';
@@ -6,15 +6,18 @@ import { FiltroBusca } from '@/components/agendamento/FiltroBusca';
 import { ListaMedicos } from '@/components/agendamento/ListaMedicos';
 import { SeletorHorarios } from '@/components/agendamento/SeletorHorarios';
 import { ConfirmacaoAgendamento } from '@/components/agendamento/ConfirmacaoAgendamento';
+import { ProgressStepper } from '@/components/agendamento/ProgressStepper';
+import { DoctorCardSkeleton } from '@/components/agendamento/LoadingSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import type { Medico, LocalAtendimento } from '@/services/agendamento/types';
 
 type Etapa = 'busca' | 'medicos' | 'horarios' | 'confirmacao';
 
-export default function AgendamentoV2() {
+export default function Agendamento() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -142,47 +145,108 @@ export default function AgendamentoV2() {
     }
   };
 
+  const handleHome = () => {
+    navigate('/');
+  };
+
+  // Progress stepper configuration
+  const steps = useMemo(() => [
+    {
+      id: 1,
+      label: 'Busca',
+      completed: ['medicos', 'horarios', 'confirmacao'].includes(etapa),
+      current: etapa === 'busca'
+    },
+    {
+      id: 2,
+      label: 'Médico',
+      completed: ['horarios', 'confirmacao'].includes(etapa),
+      current: etapa === 'medicos'
+    },
+    {
+      id: 3,
+      label: 'Horário',
+      completed: etapa === 'confirmacao',
+      current: etapa === 'horarios'
+    },
+    {
+      id: 4,
+      label: 'Confirmação',
+      completed: false,
+      current: etapa === 'confirmacao'
+    }
+  ], [etapa]);
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          {etapa !== 'busca' && etapa !== 'confirmacao' && (
-            <Button variant="ghost" size="icon" onClick={handleVoltar}>
-              <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+        {/* Header with Navigation */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {etapa !== 'busca' && etapa !== 'confirmacao' && (
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleVoltar}
+                  className="hover:bg-muted"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              )}
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  Agendar Consulta
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {etapa === 'busca' && 'Encontre o médico ideal para você'}
+                  {etapa === 'medicos' && 'Selecione um médico disponível'}
+                  {etapa === 'horarios' && 'Escolha o melhor horário'}
+                  {etapa === 'confirmacao' && 'Consulta confirmada com sucesso!'}
+                </p>
+              </div>
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={handleHome}
+              className="hidden sm:flex gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Início
             </Button>
-          )}
-          <div>
-            <h1 className="text-3xl font-bold">Agendar Consulta</h1>
-            <p className="text-muted-foreground">
-              {etapa === 'busca' && 'Encontre o médico ideal para você'}
-              {etapa === 'medicos' && 'Selecione um médico'}
-              {etapa === 'horarios' && 'Escolha a data e horário'}
-              {etapa === 'confirmacao' && 'Consulta confirmada!'}
-            </p>
           </div>
+
+          {/* Progress Stepper */}
+          {etapa !== 'confirmacao' && (
+            <ProgressStepper steps={steps} className="max-w-2xl mx-auto" />
+          )}
         </div>
 
-        {/* Conteúdo */}
+        {/* Content */}
         {loading ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">Carregando...</p>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <DoctorCardSkeleton />
+            <DoctorCardSkeleton />
+            <DoctorCardSkeleton />
+          </div>
         ) : (
-          <>
+          <div className={cn(
+            "transition-all duration-300",
+            etapa === 'confirmacao' ? "animate-fade-in" : ""
+          )}>
             {etapa === 'busca' && (
-              <FiltroBusca
-                especialidade={especialidade}
-                estado={estado}
-                cidade={cidade}
-                onEspecialidadeChange={setEspecialidade}
-                onEstadoChange={setEstado}
-                onCidadeChange={setCidade}
-                onBuscar={handleBuscar}
-              />
+              <div className="max-w-3xl mx-auto">
+                <FiltroBusca
+                  especialidade={especialidade}
+                  estado={estado}
+                  cidade={cidade}
+                  onEspecialidadeChange={setEspecialidade}
+                  onEstadoChange={setEstado}
+                  onCidadeChange={setCidade}
+                  onBuscar={handleBuscar}
+                />
+              </div>
             )}
 
             {etapa === 'medicos' && (
@@ -212,7 +276,7 @@ export default function AgendamentoV2() {
                 onVerAgenda={handleVerAgenda}
               />
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
