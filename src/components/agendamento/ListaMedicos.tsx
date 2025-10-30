@@ -26,11 +26,24 @@ export function ListaMedicos({
   if (medicos.length === 0) {
     return (
       <Card className="border-2 border-dashed">
-        <CardContent>
+        <CardContent className="p-8">
           <EmptyState
             icon={Calendar}
             title="Nenhum médico encontrado"
-            description={`Não encontramos médicos de ${especialidade} em ${cidade}/${estado}. Tente ajustar os filtros de busca para encontrar médicos disponíveis em outras cidades próximas ou especialidades relacionadas.`}
+            description={
+              <div className="space-y-3 text-left">
+                <p>Não encontramos médicos de <strong>{especialidade}</strong> em <strong>{cidade}/{estado}</strong>.</p>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <p className="font-semibold text-sm">💡 Sugestões:</p>
+                  <ul className="text-sm space-y-1.5 list-disc list-inside">
+                    <li>Tente buscar em <strong>cidades próximas</strong> da sua região</li>
+                    <li>Experimente uma <strong>especialidade relacionada</strong> (ex: Clínico Geral)</li>
+                    <li>Verifique se a <strong>cidade e estado</strong> estão corretos</li>
+                    <li>Considere médicos que atendem por <strong>teleconsulta</strong></li>
+                  </ul>
+                </div>
+              </div>
+            }
           />
         </CardContent>
       </Card>
