@@ -11,9 +11,18 @@ import type { Medico } from '@/services/agendamento/types';
 interface ListaMedicosProps {
   medicos: Medico[];
   onSelecionar: (medico: Medico) => void;
+  especialidade?: string;
+  cidade?: string;
+  estado?: string;
 }
 
-export function ListaMedicos({ medicos, onSelecionar }: ListaMedicosProps) {
+export function ListaMedicos({ 
+  medicos, 
+  onSelecionar,
+  especialidade = 'especialidade',
+  cidade = 'cidade',
+  estado = 'estado'
+}: ListaMedicosProps) {
   if (medicos.length === 0) {
     return (
       <Card className="border-2 border-dashed">
@@ -21,7 +30,7 @@ export function ListaMedicos({ medicos, onSelecionar }: ListaMedicosProps) {
           <EmptyState
             icon={Calendar}
             title="Nenhum médico encontrado"
-            description="Tente ajustar seus filtros de busca para encontrar médicos disponíveis na sua região."
+            description={`Não encontramos médicos de ${especialidade} em ${cidade}/${estado}. Tente ajustar os filtros de busca para encontrar médicos disponíveis em outras cidades próximas ou especialidades relacionadas.`}
           />
         </CardContent>
       </Card>

@@ -253,6 +253,9 @@ export default function Agendamento() {
               <ListaMedicos
                 medicos={medicos}
                 onSelecionar={handleSelecionarMedico}
+                especialidade={especialidade}
+                cidade={cidade}
+                estado={estado}
               />
             )}
 

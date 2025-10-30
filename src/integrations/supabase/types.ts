@@ -363,7 +363,7 @@ export type Database = {
           document_id: string
           document_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           validation_code: string
         }
@@ -373,7 +373,7 @@ export type Database = {
           document_id: string
           document_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           validation_code: string
         }
@@ -383,7 +383,7 @@ export type Database = {
           document_id?: string
           document_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           validation_code?: string
         }
@@ -1628,7 +1628,7 @@ export type Database = {
           changed_data: Json | null
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation: string
           table_name: string
           user_agent: string | null
@@ -1638,7 +1638,7 @@ export type Database = {
           changed_data?: Json | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation: string
           table_name: string
           user_agent?: string | null
@@ -1648,7 +1648,7 @@ export type Database = {
           changed_data?: Json | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation?: string
           table_name?: string
           user_agent?: string | null
@@ -1737,7 +1737,7 @@ export type Database = {
           created_at: string
           granted_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           patient_id: string
           revoked_at: string | null
           source_id: string
@@ -1750,7 +1750,7 @@ export type Database = {
           created_at?: string
           granted_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           patient_id: string
           revoked_at?: string | null
           source_id: string
@@ -1763,7 +1763,7 @@ export type Database = {
           created_at?: string
           granted_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           patient_id?: string
           revoked_at?: string | null
           source_id?: string
@@ -1981,18 +1981,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_payment_access: {
-        Args: { payment_id: string }
-        Returns: boolean
-      }
-      check_rls_enabled: {
-        Args: { table_name: string }
-        Returns: boolean
-      }
-      cleanup_old_client_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      check_payment_access: { Args: { payment_id: string }; Returns: boolean }
+      check_rls_enabled: { Args: { table_name: string }; Returns: boolean }
+      cleanup_old_client_logs: { Args: never; Returns: number }
       confirm_appointment_payment: {
         Args: { p_appointment_id: string; p_payment_intent_id: string }
         Returns: {
@@ -2032,7 +2023,7 @@ export type Database = {
         }[]
       }
       get_available_states: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           nome: string
           uf: string
@@ -2073,10 +2064,15 @@ export type Database = {
           locations: Json
         }[]
       }
-      get_doctor_schedule_v2: {
-        Args: { p_date: string; p_doctor_id: string } | { p_doctor_id: string }
-        Returns: Json
-      }
+      get_doctor_schedule_v2:
+        | { Args: { p_date: string; p_doctor_id: string }; Returns: Json }
+        | {
+            Args: { p_doctor_id: string }
+            Returns: {
+              doctor_config: Json
+              locations: Json
+            }[]
+          }
       get_doctor_scheduling_info: {
         Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
@@ -2087,19 +2083,17 @@ export type Database = {
         }[]
       }
       get_doctors_by_location_and_specialty: {
-        Args: { p_city: string; p_specialty: string; p_state: string }
+        Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
-          aceita_consulta_presencial: boolean
-          aceita_teleconsulta: boolean
           crm: string
           display_name: string
           especialidades: Json
-          foto_perfil_url: string
           id: string
-          rating: number
-          total_avaliacoes: number
-          valor_consulta_presencial: number
-          valor_consulta_teleconsulta: number
+          local_cidade: string
+          local_endereco: Json
+          local_estado: string
+          local_nome: string
+          local_telefone: string
         }[]
       }
       get_doctors_for_scheduling: {
@@ -2147,7 +2141,7 @@ export type Database = {
         }[]
       }
       get_external_data_sources_public: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           data_types: string[]
@@ -2192,10 +2186,7 @@ export type Database = {
           id: string
         }[]
       }
-      get_specialties: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
+      get_specialties: { Args: never; Returns: string[] }
       get_table_policies: {
         Args: { table_name: string }
         Returns: {
@@ -2207,10 +2198,7 @@ export type Database = {
           with_check: string
         }[]
       }
-      is_valid_uuid: {
-        Args: { input_text: string }
-        Returns: boolean
-      }
+      is_valid_uuid: { Args: { input_text: string }; Returns: boolean }
       reserve_appointment_slot: {
         Args: {
           p_appointment_datetime: string
@@ -2226,35 +2214,36 @@ export type Database = {
           success: boolean
         }[]
       }
-      reserve_appointment_v2: {
-        Args:
-          | {
+      reserve_appointment_v2:
+        | {
+            Args: {
               p_appointment_datetime: string
               p_doctor_id: string
               p_family_member_id?: string
               p_local_id?: string
               p_specialty: string
             }
-          | {
+            Returns: {
+              appointment_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
               p_appointment_datetime: string
               p_doctor_id: string
               p_family_member_id?: string
               p_specialty?: string
             }
-        Returns: {
-          appointment_id: string
-          message: string
-          success: boolean
-        }[]
-      }
-      safe_uuid_check: {
-        Args: { input_text: string }
-        Returns: boolean
-      }
-      safe_uuid_or_null: {
-        Args: { input_text: string }
-        Returns: string
-      }
+            Returns: {
+              appointment_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+      safe_uuid_check: { Args: { input_text: string }; Returns: boolean }
+      safe_uuid_or_null: { Args: { input_text: string }; Returns: string }
       search_locations: {
         Args: {
           filter_bairro?: string
@@ -2281,7 +2270,7 @@ export type Database = {
         }[]
       }
       system_health_check: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           checked_at: string
           component: string
@@ -2294,7 +2283,7 @@ export type Database = {
         Returns: boolean
       }
       validate_payment_table_security: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           check_name: string
           details: string

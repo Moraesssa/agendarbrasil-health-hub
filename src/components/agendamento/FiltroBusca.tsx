@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search, Stethoscope, MapPin, Building2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { agendamentoService } from '@/services/agendamento';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ export function FiltroBusca({
   onCidadeChange,
   onBuscar
 }: FiltroBuscaProps) {
+  const { toast } = useToast();
   const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [estados, setEstados] = useState<Array<{ uf: string; nome: string }>>([]);
   const [cidades, setCidades] = useState<Array<{ cidade: string }>>([]);
@@ -156,7 +158,17 @@ export function FiltroBusca({
 
         {/* Botão de Busca */}
         <Button 
-          onClick={onBuscar} 
+          onClick={() => {
+            if (!especialidade || !estado || !cidade) {
+              toast({
+                title: "Preencha todos os filtros",
+                description: "Por favor, selecione especialidade, estado e cidade para continuar.",
+                variant: "default"
+              });
+              return;
+            }
+            onBuscar();
+          }} 
           disabled={!podeBuscar} 
           className={cn(
             "w-full h-12 text-base font-semibold shadow-lg",
