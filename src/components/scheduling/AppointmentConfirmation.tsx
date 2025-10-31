@@ -61,7 +61,6 @@ export const AppointmentConfirmation: React.FC<AppointmentConfirmationProps> = (
         data_hora_agendada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         duracao_estimada: 30,
         consultation_type: 'teleconsulta',
-        agendado_por: 'p1',
         prioridade: 'normal',
         status: 'agendada',
         valor_consulta: 150,

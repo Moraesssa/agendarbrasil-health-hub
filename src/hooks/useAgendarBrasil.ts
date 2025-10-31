@@ -42,8 +42,7 @@ export const useAgendarBrasil = () => {
 
     return await errorHandler.handleAsyncOperation(async () => {
       const { data, error } = await supabase.rpc('get_doctor_schedule_data', {
-        p_doctor_id: validDoctorId,
-        p_date: targetDate
+        p_doctor_id: validDoctorId
       });
 
       if (error) throw error;

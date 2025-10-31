@@ -1,6 +1,40 @@
-import { Medico, LocalComHorarios } from '@/services/scheduling';
 import { AppointmentV2, AppointmentType, AppointmentStatus } from '@/types/appointments';
 import { UnifiedAppointment } from '@/types/appointments';
+
+// Import types directly to avoid circular dependencies
+export interface Medico {
+  id: string;
+  display_name: string;
+  especialidades?: string[];
+  crm?: string;
+}
+
+export interface LocalComHorarios {
+  id: string;
+  nome_local: string;
+  endereco: {
+    logradouro: string;
+    numero: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+  };
+  horarios: Array<{
+    id: string;
+    hora: string;
+    disponivel: boolean;
+    time: string;
+    available: boolean;
+  }>;
+  horarios_disponiveis: Array<{
+    id: string;
+    hora: string;
+    disponivel: boolean;
+    time: string;
+    available: boolean;
+  }>;
+}
 
 /**
  * Unified contract for appointment services (v2 with backward compatibility)

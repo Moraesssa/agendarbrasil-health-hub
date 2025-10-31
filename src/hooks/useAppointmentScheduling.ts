@@ -126,9 +126,7 @@ export const useAppointmentScheduling = () => {
           const normalizedTotal =
             typeof city.total_medicos === 'number'
               ? city.total_medicos
-              : typeof city.doctorCount === 'number'
-                ? city.doctorCount
-                : null;
+              : null;
 
           return {
             ...city,

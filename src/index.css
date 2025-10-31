@@ -42,6 +42,12 @@
 
     --radius: 0.5rem;
 
+    /* Scheduling specific colors */
+    --scheduling-primary: 217.2 91.2% 59.8%;
+    --scheduling-success: 142 71% 45%;
+    --scheduling-accent: 262.1 83.3% 57.8%;
+    --scheduling-highlight: 47.9 95.8% 53.1%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;

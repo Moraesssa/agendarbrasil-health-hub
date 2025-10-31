@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { logger } from '@/utils/logger';
 import { IAppointmentService, AppointmentServiceEnvironment } from '@/types/appointmentService';
-import { RealAppointmentService } from '@/services/realAppointmentService';
+import { agendamentoService } from '@/services/agendamento';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppointmentServiceContextValue {
   appointmentService: IAppointmentService;
@@ -31,12 +32,37 @@ function determineEnvironment(forceEnvironment?: AppointmentServiceEnvironment):
 
 /**
  * Creates the appropriate service instance based on environment
- * NOTE: Mocks removed — sempre retorna o serviço real.
+ * Returns a compatible service wrapper
  */
 function createAppointmentService(environment: AppointmentServiceEnvironment): IAppointmentService {
-  logger.debug(`🏥 AppointmentServiceProvider: instantiating RealAppointmentService (env=${environment})`);
-  // Instancia a implementação real exportada como RealAppointmentService
-  return new RealAppointmentService();
+  logger.debug(`🏥 AppointmentServiceProvider: using agendamentoService (env=${environment})`);
+  
+  // Return a compatible wrapper
+  return {
+    getSpecialties: async () => {
+      const { data } = await supabase.rpc('get_specialties');
+      return data || [];
+    },
+    getDoctorsByLocationAndSpecialty: async (specialty: string, city: string, state: string) => {
+      return agendamentoService.buscarMedicos(specialty, state, city) as any;
+    },
+    getAvailableSlotsByDoctor: async (doctorId: string, date: string) => {
+      const locais = await agendamentoService.buscarHorarios(doctorId, date);
+      return locais.map(local => ({
+        ...local,
+        id: local.id.toString(),
+        horarios: local.horarios_disponiveis
+      })) as any;
+    },
+    createTemporaryReservation: async () => {
+      throw new Error('Not implemented');
+    },
+    cleanupTemporaryReservation: async () => {},
+    extendReservation: async () => null,
+    scheduleAppointment: async (appointmentData: any) => {
+      return agendamentoService.criarConsulta(appointmentData);
+    }
+  } as IAppointmentService;
 }
 
 export const AppointmentServiceProvider: React.FC<AppointmentServiceProviderProps> = ({ 

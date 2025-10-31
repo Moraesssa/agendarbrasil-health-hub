@@ -363,7 +363,7 @@ export type Database = {
           document_id: string
           document_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           validation_code: string
         }
@@ -373,7 +373,7 @@ export type Database = {
           document_id: string
           document_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           validation_code: string
         }
@@ -383,7 +383,7 @@ export type Database = {
           document_id?: string
           document_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           validation_code?: string
         }
@@ -640,6 +640,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      horarios_disponibilidade: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          intervalo_minutos: number
+          local_id: number | null
+          medico_id: string
+          tipo_consulta: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          intervalo_minutos?: number
+          local_id?: number | null
+          medico_id: string
+          tipo_consulta: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dia_semana?: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          intervalo_minutos?: number
+          local_id?: number | null
+          medico_id?: string
+          tipo_consulta?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horarios_disponibilidade_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_atendimento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horarios_disponibilidade_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1151,7 +1214,7 @@ export type Database = {
           {
             foreignKeyName: "medicos_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1565,7 +1628,7 @@ export type Database = {
           changed_data: Json | null
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation: string
           table_name: string
           user_agent: string | null
@@ -1575,7 +1638,7 @@ export type Database = {
           changed_data?: Json | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation: string
           table_name: string
           user_agent?: string | null
@@ -1585,7 +1648,7 @@ export type Database = {
           changed_data?: Json | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation?: string
           table_name?: string
           user_agent?: string | null
@@ -1674,7 +1737,7 @@ export type Database = {
           created_at: string
           granted_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           patient_id: string
           revoked_at: string | null
           source_id: string
@@ -1687,7 +1750,7 @@ export type Database = {
           created_at?: string
           granted_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           patient_id: string
           revoked_at?: string | null
           source_id: string
@@ -1700,7 +1763,7 @@ export type Database = {
           created_at?: string
           granted_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           patient_id?: string
           revoked_at?: string | null
           source_id?: string
@@ -1918,18 +1981,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_payment_access: {
-        Args: { payment_id: string }
-        Returns: boolean
-      }
-      check_rls_enabled: {
-        Args: { table_name: string }
-        Returns: boolean
-      }
-      cleanup_old_client_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      check_payment_access: { Args: { payment_id: string }; Returns: boolean }
+      check_rls_enabled: { Args: { table_name: string }; Returns: boolean }
+      cleanup_old_client_logs: { Args: never; Returns: number }
       confirm_appointment_payment: {
         Args: { p_appointment_id: string; p_payment_intent_id: string }
         Returns: {
@@ -1969,11 +2023,21 @@ export type Database = {
         }[]
       }
       get_available_states: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           nome: string
           uf: string
         }[]
+      }
+      get_available_time_slots: {
+        Args: {
+          p_date: string
+          p_doctor_id: string
+          p_end_hour?: number
+          p_interval_minutes?: number
+          p_start_hour?: number
+        }
+        Returns: Json
       }
       get_doctor_basic_info: {
         Args: { doctor_ids?: string[] }
@@ -2000,13 +2064,15 @@ export type Database = {
           locations: Json
         }[]
       }
-      get_doctor_schedule_v2: {
-        Args: { p_doctor_id: string }
-        Returns: {
-          doctor_config: Json
-          locations: Json
-        }[]
-      }
+      get_doctor_schedule_v2:
+        | { Args: { p_date: string; p_doctor_id: string }; Returns: Json }
+        | {
+            Args: { p_doctor_id: string }
+            Returns: {
+              doctor_config: Json
+              locations: Json
+            }[]
+          }
       get_doctor_scheduling_info: {
         Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
@@ -2017,12 +2083,17 @@ export type Database = {
         }[]
       }
       get_doctors_by_location_and_specialty: {
-        Args: { p_city: string; p_specialty: string; p_state: string }
+        Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
           crm: string
           display_name: string
           especialidades: Json
           id: string
+          local_cidade: string
+          local_endereco: Json
+          local_estado: string
+          local_nome: string
+          local_telefone: string
         }[]
       }
       get_doctors_for_scheduling: {
@@ -2070,7 +2141,7 @@ export type Database = {
         }[]
       }
       get_external_data_sources_public: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           data_types: string[]
@@ -2115,10 +2186,7 @@ export type Database = {
           id: string
         }[]
       }
-      get_specialties: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
+      get_specialties: { Args: never; Returns: string[] }
       get_table_policies: {
         Args: { table_name: string }
         Returns: {
@@ -2130,10 +2198,7 @@ export type Database = {
           with_check: string
         }[]
       }
-      is_valid_uuid: {
-        Args: { input_text: string }
-        Returns: boolean
-      }
+      is_valid_uuid: { Args: { input_text: string }; Returns: boolean }
       reserve_appointment_slot: {
         Args: {
           p_appointment_datetime: string
@@ -2149,27 +2214,36 @@ export type Database = {
           success: boolean
         }[]
       }
-      reserve_appointment_v2: {
-        Args: {
-          p_appointment_datetime: string
-          p_doctor_id: string
-          p_family_member_id?: string
-          p_specialty?: string
-        }
-        Returns: {
-          appointment_id: string
-          message: string
-          success: boolean
-        }[]
-      }
-      safe_uuid_check: {
-        Args: { input_text: string }
-        Returns: boolean
-      }
-      safe_uuid_or_null: {
-        Args: { input_text: string }
-        Returns: string
-      }
+      reserve_appointment_v2:
+        | {
+            Args: {
+              p_appointment_datetime: string
+              p_doctor_id: string
+              p_family_member_id?: string
+              p_local_id?: string
+              p_specialty: string
+            }
+            Returns: {
+              appointment_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_appointment_datetime: string
+              p_doctor_id: string
+              p_family_member_id?: string
+              p_specialty?: string
+            }
+            Returns: {
+              appointment_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+      safe_uuid_check: { Args: { input_text: string }; Returns: boolean }
+      safe_uuid_or_null: { Args: { input_text: string }; Returns: string }
       search_locations: {
         Args: {
           filter_bairro?: string
@@ -2196,7 +2270,7 @@ export type Database = {
         }[]
       }
       system_health_check: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           checked_at: string
           component: string
@@ -2209,7 +2283,7 @@ export type Database = {
         Returns: boolean
       }
       validate_payment_table_security: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           check_name: string
           details: string
