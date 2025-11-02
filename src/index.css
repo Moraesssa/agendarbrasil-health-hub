@@ -1,6 +1,9 @@
 /* Import accessibility enhancements */
 @import './styles/accessibility.css';
 
+/* Import dashboard v3 styles */
+@import './styles/dashboard-v3.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

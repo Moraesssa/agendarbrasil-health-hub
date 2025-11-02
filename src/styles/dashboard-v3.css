@@ -1,0 +1,207 @@
+/**
+ * Dashboard Médico V3 - Custom Styles
+ * 
+ * Variáveis CSS e estilos específicos para o novo dashboard
+ */
+
+:root {
+  /* Dashboard specific colors */
+  --dashboard-bg-gradient-from: #f9fafb;
+  --dashboard-bg-gradient-to: #eff6ff;
+  
+  /* Metric card gradients */
+  --metric-blue-from: #3b82f6;
+  --metric-blue-to: #2563eb;
+  --metric-green-from: #10b981;
+  --metric-green-to: #059669;
+  --metric-purple-from: #a855f7;
+  --metric-purple-to: #9333ea;
+  --metric-orange-from: #f97316;
+  --metric-orange-to: #ea580c;
+  
+  /* Animation durations */
+  --dashboard-transition-fast: 150ms;
+  --dashboard-transition-normal: 300ms;
+  --dashboard-transition-slow: 500ms;
+  
+  /* Spacing */
+  --dashboard-gap-sm: 1rem;
+  --dashboard-gap-md: 1.5rem;
+  --dashboard-gap-lg: 2rem;
+  
+  /* Border radius */
+  --dashboard-radius-sm: 0.5rem;
+  --dashboard-radius-md: 0.75rem;
+  --dashboard-radius-lg: 1rem;
+  
+  /* Shadows */
+  --dashboard-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --dashboard-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --dashboard-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --dashboard-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+/* Dashboard container */
+.dashboard-v3-container {
+  min-height: 100vh;
+  background: linear-gradient(
+    to bottom right,
+    var(--dashboard-bg-gradient-from),
+    var(--dashboard-bg-gradient-to)
+  );
+}
+
+/* Metric card animations */
+.metric-card {
+  transition: all var(--dashboard-transition-normal) ease-in-out;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--dashboard-shadow-xl);
+}
+
+/* Chart container */
+.chart-container {
+  transition: opacity var(--dashboard-transition-normal);
+}
+
+.chart-container.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Skeleton loader animation */
+@keyframes dashboard-skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.dashboard-skeleton {
+  animation: dashboard-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 0%,
+    #e5e7eb 50%,
+    #f3f4f6 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Responsive grid utilities */
+.dashboard-grid {
+  display: grid;
+  gap: var(--dashboard-gap-md);
+}
+
+@media (min-width: 640px) {
+  .dashboard-grid {
+    gap: var(--dashboard-gap-lg);
+  }
+}
+
+/* Widget fade-in animation */
+@keyframes dashboard-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-widget {
+  animation: dashboard-fade-in var(--dashboard-transition-slow) ease-out;
+}
+
+/* Stagger animation for multiple widgets */
+.dashboard-widget:nth-child(1) { animation-delay: 0ms; }
+.dashboard-widget:nth-child(2) { animation-delay: 50ms; }
+.dashboard-widget:nth-child(3) { animation-delay: 100ms; }
+.dashboard-widget:nth-child(4) { animation-delay: 150ms; }
+.dashboard-widget:nth-child(5) { animation-delay: 200ms; }
+.dashboard-widget:nth-child(6) { animation-delay: 250ms; }
+
+/* Smooth scroll behavior */
+.dashboard-scroll-container {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Focus styles for accessibility */
+.dashboard-focusable:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: var(--dashboard-radius-sm);
+}
+
+/* Loading spinner */
+@keyframes dashboard-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dashboard-spinner {
+  animation: dashboard-spin 1s linear infinite;
+}
+
+/* Responsive utilities */
+@media (max-width: 639px) {
+  .dashboard-hide-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .dashboard-hide-tablet {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-hide-desktop {
+    display: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .dashboard-no-print {
+    display: none !important;
+  }
+  
+  .dashboard-v3-container {
+    background: white;
+  }
+  
+  .metric-card {
+    break-inside: avoid;
+  }
+}

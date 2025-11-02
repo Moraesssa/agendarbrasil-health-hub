@@ -20,6 +20,7 @@ import CadastroPaciente from '@/pages/CadastroPaciente';
 import UserTypeSelection from '@/pages/UserTypeSelection';
 import Onboarding from '@/pages/Onboarding';
 import DashboardMedicoV2 from '@/pages/DashboardMedicoV2';
+import DashboardMedicoV3 from '@/pages/DashboardMedicoV3';
 import Perfil from '@/pages/Perfil';
 import PerfilMedico from '@/pages/PerfilMedico';
 import GerenciarAgenda from '@/pages/GerenciarAgenda';
@@ -146,6 +147,7 @@ function App() {
                     <Route path="/user-type" element={<UserTypeSelection />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/dashboard-medico" element={<DashboardMedicoV2 />} />
+                    <Route path="/dashboard-medico-v3" element={<DashboardMedicoV3 />} />
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="/perfil-medico" element={<PerfilMedico />} />
                     <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
