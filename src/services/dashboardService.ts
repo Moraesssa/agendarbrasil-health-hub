@@ -66,20 +66,20 @@ export async function fetchDashboardMetrics(
     // Fetch current period consultations
     const { data: currentConsultas, error: currentError } = await supabase
       .from('consultas')
-      .select('id, data_consulta, tipo_consulta, status, valor, paciente_id')
+      .select('id, consultation_date, consultation_type, status, paciente_id')
       .eq('medico_id', userId)
-      .gte('data_consulta', startDate.toISOString())
-      .lte('data_consulta', endDate.toISOString());
+      .gte('consultation_date', startDate.toISOString())
+      .lte('consultation_date', endDate.toISOString());
 
     if (currentError) throw currentError;
 
     // Fetch previous period consultations for comparison
     const { data: prevConsultas, error: prevError } = await supabase
       .from('consultas')
-      .select('id, data_consulta, tipo_consulta, status, valor, paciente_id')
+      .select('id, consultation_date, consultation_type, status, paciente_id')
       .eq('medico_id', userId)
-      .gte('data_consulta', prevStartDate.toISOString())
-      .lte('data_consulta', prevEndDate.toISOString());
+      .gte('consultation_date', prevStartDate.toISOString())
+      .lte('consultation_date', prevEndDate.toISOString());
 
     if (prevError) throw prevError;
 
@@ -88,9 +88,10 @@ export async function fetchDashboardMetrics(
     const prevTotalConsultas = prevConsultas?.length || 0;
     const consultasChange = calculatePercentageChange(totalConsultas, prevTotalConsultas);
 
-    const receitaTotal = currentConsultas?.reduce((sum, c) => sum + (Number(c.valor) || 0), 0) || 0;
-    const prevReceitaTotal = prevConsultas?.reduce((sum, c) => sum + (Number(c.valor) || 0), 0) || 0;
-    const receitaChange = calculatePercentageChange(receitaTotal, prevReceitaTotal);
+    // Note: consultas table doesn't have valor column, using placeholder
+    const receitaTotal = 0;
+    const prevReceitaTotal = 0;
+    const receitaChange = 0;
 
     const pacientesUnicos = new Set(currentConsultas?.map(c => c.paciente_id)).size;
     const prevPacientesUnicos = new Set(prevConsultas?.map(c => c.paciente_id)).size;
@@ -132,35 +133,31 @@ export async function fetchUpcomingAppointments(
       .from('consultas')
       .select(`
         id,
-        data_consulta,
-        tipo_consulta,
+        consultation_date,
+        consultation_type,
         status,
         paciente_id,
-        profiles:profiles!consultas_paciente_id_fkey (
-          display_name,
-          avatar_url
-        )
+        patient_name
       `)
       .eq('medico_id', userId)
-      .gte('data_consulta', now.toISOString())
-      .lte('data_consulta', endOfToday.toISOString())
+      .gte('consultation_date', now.toISOString())
+      .lte('consultation_date', endOfToday.toISOString())
       .in('status', ['agendada', 'confirmada', 'confirmed', 'pending'])
-      .order('data_consulta', { ascending: true })
+      .order('consultation_date', { ascending: true })
       .limit(limit);
 
     if (error) throw error;
 
     return (data || []).map(appointment => {
-      const scheduledTime = new Date(appointment.data_consulta);
+      const scheduledTime = new Date(appointment.consultation_date);
       const minutesUntil = Math.floor((scheduledTime.getTime() - now.getTime()) / (1000 * 60));
-      const profile = Array.isArray(appointment.profiles) ? appointment.profiles[0] : appointment.profiles;
 
       return {
-        id: appointment.id,
-        patientName: profile?.display_name || 'Paciente',
-        patientAvatar: profile?.avatar_url,
+        id: String(appointment.id),
+        patientName: appointment.patient_name || 'Paciente',
+        patientAvatar: undefined,
         scheduledTime,
-        type: appointment.tipo_consulta === 'teleconsulta' ? 'teleconsulta' : 'presencial',
+        type: appointment.consultation_type === 'teleconsulta' ? 'teleconsulta' : 'presencial',
         status: appointment.status === 'confirmada' || appointment.status === 'confirmed' ? 'confirmed' : 'pending',
         isUrgent: minutesUntil <= 15 && minutesUntil >= 0,
         pacienteId: appointment.paciente_id,
@@ -185,7 +182,7 @@ export async function fetchDashboardAlerts(userId: string): Promise<DashboardAle
       .select('id')
       .eq('medico_id', userId)
       .eq('status_pagamento', 'pendente')
-      .gte('data_consulta', new Date().toISOString());
+      .gte('consultation_date', new Date().toISOString());
 
     if (!paymentError && pendingPayments && pendingPayments.length > 0) {
       alerts.push({
@@ -205,7 +202,7 @@ export async function fetchDashboardAlerts(userId: string): Promise<DashboardAle
       .select('id')
       .eq('medico_id', userId)
       .eq('status', 'pending')
-      .gte('data_consulta', new Date().toISOString());
+      .gte('consultation_date', new Date().toISOString());
 
     if (!unconfirmedError && unconfirmed && unconfirmed.length > 0) {
       alerts.push({
@@ -239,10 +236,10 @@ export async function fetchConsultasChartData(
 
     const { data, error } = await supabase
       .from('consultas')
-      .select('data_consulta')
+      .select('consultation_date')
       .eq('medico_id', userId)
-      .gte('data_consulta', startOfDay(startDate).toISOString())
-      .lte('data_consulta', endOfDay(endDate).toISOString());
+      .gte('consultation_date', startOfDay(startDate).toISOString())
+      .lte('consultation_date', endOfDay(endDate).toISOString());
 
     if (error) throw error;
 
@@ -258,7 +255,7 @@ export async function fetchConsultasChartData(
 
     // Count consultations per date
     data?.forEach(consulta => {
-      const dateStr = consulta.data_consulta.split('T')[0];
+      const dateStr = consulta.consultation_date.split('T')[0];
       dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
     });
 
@@ -286,15 +283,15 @@ export async function fetchConsultationTypeData(
 
     const { data, error } = await supabase
       .from('consultas')
-      .select('tipo_consulta')
+      .select('consultation_type')
       .eq('medico_id', userId)
-      .gte('data_consulta', startDate.toISOString())
-      .lte('data_consulta', endDate.toISOString());
+      .gte('consultation_date', startDate.toISOString())
+      .lte('consultation_date', endDate.toISOString());
 
     if (error) throw error;
 
     const total = data?.length || 0;
-    const presencialCount = data?.filter(c => c.tipo_consulta === 'presencial').length || 0;
+    const presencialCount = data?.filter(c => c.consultation_type === 'presencial').length || 0;
     const teleconsultaCount = total - presencialCount;
 
     return [

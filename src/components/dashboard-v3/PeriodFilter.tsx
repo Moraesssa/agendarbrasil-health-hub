@@ -16,7 +16,7 @@ import { Calendar } from 'lucide-react';
  * Integrates with DashboardContext to update global filter state
  */
 export const PeriodFilter: React.FC = () => {
-  const { filters, setPeriod } = useDashboard();
+  const { period, setPeriod } = useDashboard();
 
   const periodLabels: Record<DashboardPeriod, string> = {
     today: 'Hoje',
@@ -28,7 +28,7 @@ export const PeriodFilter: React.FC = () => {
   return (
     <div className="flex items-center gap-2">
       <Calendar className="h-4 w-4 text-gray-500" />
-      <Select value={filters.period} onValueChange={(value) => setPeriod(value as DashboardPeriod)}>
+      <Select value={period} onValueChange={(value) => setPeriod(value as DashboardPeriod)}>
         <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Selecione o período" />
         </SelectTrigger>
