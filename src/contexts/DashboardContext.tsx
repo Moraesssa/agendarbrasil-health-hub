@@ -103,9 +103,10 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
       if (data?.preferences) {
         // Merge with defaults to ensure all fields exist
+        const loadedPrefs = data.preferences as unknown as DashboardPreferences;
         setPreferences({
           ...DEFAULT_PREFERENCES,
-          ...data.preferences,
+          ...loadedPrefs,
         });
       }
     } catch (error) {
@@ -132,9 +133,9 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         .upsert({
           user_id: user.id,
           preference_type: 'dashboard',
-          preferences: newPreferences,
+          preferences: newPreferences as unknown as Record<string, unknown>,
           updated_at: new Date().toISOString(),
-        }, {
+        } as never, {
           onConflict: 'user_id,preference_type',
         });
 

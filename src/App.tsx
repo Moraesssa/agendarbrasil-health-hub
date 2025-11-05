@@ -146,8 +146,7 @@ function App() {
                     <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
                     <Route path="/user-type" element={<UserTypeSelection />} />
                     <Route path="/onboarding" element={<Onboarding />} />
-                    <Route path="/dashboard-medico" element={<DashboardMedicoV2 />} />
-                    <Route path="/dashboard-medico-v3" element={<DashboardMedicoV3 />} />
+                    <Route path="/dashboard-medico" element={<DashboardMedicoV3 />} />
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="/perfil-medico" element={<PerfilMedico />} />
                     <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
