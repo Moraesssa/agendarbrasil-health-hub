@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart3,
@@ -9,26 +9,31 @@ import {
   Users,
   Activity,
   Video,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { handleLogout as utilHandleLogout } from "@/utils/authUtils";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import { DoctorHero } from "@/components/doctor/profile/DoctorHero";
 import { DoctorStatsGrid } from "@/components/doctor/profile/DoctorStatsGrid";
 import { UpcomingAppointmentsList } from "@/components/doctor/profile/UpcomingAppointmentsList";
 import { NotificationsPanel } from "@/components/doctor/profile/NotificationsPanel";
 import { DoctorProfileTabs } from "@/components/doctor/profile/DoctorProfileTabs";
-import { DoctorCalendar } from "@/components/doctor/profile/DoctorCalendar";
 import { DoctorQuickLinks } from "@/components/doctor/profile/DoctorQuickLinks";
 import { SupportCard } from "@/components/doctor/profile/SupportCard";
 import { useDoctorProfileData } from "@/hooks/useDoctorProfileData";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DoctorQuickLink,
   DoctorStat,
   DoctorStatusBadge,
 } from "@/components/doctor/profile/types";
+
+// Lazy load do calendário para melhor performance inicial
+const DoctorCalendar = lazy(() => import("@/components/doctor/profile/DoctorCalendar").then(m => ({ default: m.DoctorCalendar })));
 
 const PerfilMedico = () => {
   const { userData, user, loading, logout, refreshUserData } = useAuth();
@@ -40,9 +45,11 @@ const PerfilMedico = () => {
     loading: dataLoading,
     error: dataError,
     refetch: refetchProfileData,
-  } = useDoctorProfileData();
+  } = useDoctorProfileData(userData?.id);
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const hasInitializedDate = useRef(false);
 
   useEffect(() => {
@@ -70,7 +77,36 @@ const PerfilMedico = () => {
 
   const handleProfileUpdate = async () => {
     await refreshUserData();
+    await refetchProfileData();
   };
+
+  const handleManualRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchProfileData();
+      toast({
+        title: "Dados atualizados",
+        description: "Suas informações foram atualizadas com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar os dados. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchProfileData, toast]);
+
+  // Auto-refresh a cada 5 minutos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchProfileData();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [refetchProfileData]);
 
   const isAuthLoading = loading || !userData;
   const isProfileLoading = isAuthLoading || dataLoading;
@@ -105,7 +141,7 @@ const PerfilMedico = () => {
   }, [userData]);
 
   const stats: DoctorStat[] = useMemo(() => {
-    if (!userData) {
+    if (!userData || !doctorMetrics) {
       return [];
     }
 
@@ -261,6 +297,15 @@ const PerfilMedico = () => {
           </nav>
           <div className="flex items-center gap-3">
             <Button
+              variant="ghost"
+              size="icon"
+              className="text-slate-600 hover:text-blue-600"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
               variant="outline"
               className="border-blue-200 text-blue-700 hover:bg-blue-50"
               onClick={handleLogout}
@@ -338,14 +383,20 @@ const PerfilMedico = () => {
           <DoctorProfileTabs doctor={userData ?? null} loading={isProfileLoading} />
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-3">
+        <section id="calendario" className="grid gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <DoctorCalendar
-              appointments={calendarAppointments}
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-              loading={isProfileLoading}
-            />
+            <Suspense fallback={
+              <div className="rounded-lg border border-blue-100/80 bg-white/80 p-6 shadow-sm">
+                <Skeleton className="h-[400px] w-full" />
+              </div>
+            }>
+              <DoctorCalendar
+                appointments={calendarAppointments}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+                loading={isProfileLoading}
+              />
+            </Suspense>
           </div>
           <div className="space-y-6">
             <DoctorQuickLinks links={quickLinks} loading={isProfileLoading} />
