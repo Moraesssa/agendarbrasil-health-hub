@@ -45,7 +45,7 @@ const PerfilMedico = () => {
     loading: dataLoading,
     error: dataError,
     refetch: refetchProfileData,
-  } = useDoctorProfileData(userData?.id);
+  } = useDoctorProfileData(user?.id);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());

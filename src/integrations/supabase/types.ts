@@ -1125,6 +1125,47 @@ export type Database = {
         }
         Relationships: []
       }
+      medico_notifications: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          medico_id: string
+          read: boolean | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          medico_id: string
+          read?: boolean | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          medico_id?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medico_notifications_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicos: {
         Row: {
           aceita_consulta_presencial: boolean | null

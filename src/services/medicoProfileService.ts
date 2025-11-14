@@ -10,20 +10,20 @@ export interface MedicoMetrics {
 }
 
 export interface UpcomingAppointment {
-  id: number;
+  id: string;
   patientName: string;
   type: string;
   start: Date;
-  status: string;
+  status: 'pendente' | 'confirmada' | 'cancelada' | 'scheduled' | 'cancelled' | 'completed';
   location: string;
 }
 
 export interface CalendarAppointment {
-  id: number;
+  id: string;
   patientName: string;
   type: string;
   start: Date;
-  status: string;
+  status: 'pendente' | 'confirmada' | 'cancelada' | 'scheduled' | 'cancelled' | 'completed';
 }
 
 export interface MedicoNotification {
@@ -125,11 +125,11 @@ export const medicoProfileService = {
     if (error) throw error;
     
     return (data || []).map(consulta => ({
-      id: consulta.id,
+      id: String(consulta.id),
       patientName: consulta.patient_name || 'Paciente sem nome',
       type: consulta.consultation_type || 'presencial',
       start: new Date(consulta.consultation_date),
-      status: consulta.status || 'agendada',
+      status: (consulta.status || 'pendente') as any,
       location: consulta.consultation_type === 'telemedicina' ? 'Online' : 'Consultório'
     }));
   },
@@ -151,11 +151,11 @@ export const medicoProfileService = {
     if (error) throw error;
     
     return (data || []).map(consulta => ({
-      id: consulta.id,
+      id: String(consulta.id),
       patientName: consulta.patient_name || 'Paciente',
       type: consulta.consultation_type || 'presencial',
       start: new Date(consulta.consultation_date),
-      status: consulta.status || 'agendada'
+      status: (consulta.status || 'pendente') as any
     }));
   },
   
@@ -221,37 +221,40 @@ export const medicoProfileService = {
       });
     });
     
-    // Verificar tabela de notificações se existir
+    // Verificar tabela de notificações se existir (aguardando regeneração de types)
     try {
-      const { data: dbNotifications } = await supabase
-        .from('medico_notifications')
+      const { data: dbNotifications, error: notifError } = await supabase
+        .from('medico_notifications' as any)
         .select('*')
         .eq('medico_id', medicoId)
         .eq('read', false)
         .order('created_at', { ascending: false })
         .limit(5);
       
-      dbNotifications?.forEach(notif => {
-        const createdDate = new Date(notif.created_at);
-        const diffMinutes = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60));
-        
-        let timeText = 'Agora';
-        if (diffMinutes > 60) {
-          timeText = `${Math.floor(diffMinutes / 60)}h`;
-        } else if (diffMinutes > 0) {
-          timeText = `${diffMinutes}min`;
-        }
-        
-        notifications.push({
-          id: notif.id,
-          type: notif.type as any,
-          title: notif.title,
-          description: notif.description,
-          time: timeText
+      if (!notifError && dbNotifications) {
+        (dbNotifications as any[]).forEach((notif: any) => {
+          const createdDate = new Date(notif.created_at);
+          const diffMinutes = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60));
+          
+          let timeText = 'Agora';
+          if (diffMinutes > 60) {
+            timeText = `${Math.floor(diffMinutes / 60)}h`;
+          } else if (diffMinutes > 0) {
+            timeText = `${diffMinutes}min`;
+          }
+          
+          notifications.push({
+            id: notif.id,
+            type: notif.type,
+            title: notif.title,
+            description: notif.description,
+            time: timeText
+          });
         });
-      });
+      }
     } catch (error) {
-      // Tabela não existe ainda, ignorar
+      // Tabela pode não existir ainda ou types não regenerados
+      console.debug('medico_notifications table not available yet');
     }
     
     return notifications.slice(0, 10);
