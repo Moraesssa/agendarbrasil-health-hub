@@ -129,9 +129,9 @@ export const medicoProfileService = {
       patientName: consulta.patient_name || 'Paciente sem nome',
       type: consulta.consultation_type || 'presencial',
       start: new Date(consulta.consultation_date),
-      status: (consulta.status || 'pendente') as any,
+      status: (consulta.status || 'pendente') as 'pendente' | 'confirmada' | 'cancelada' | 'scheduled' | 'cancelled' | 'completed',
       location: consulta.consultation_type === 'telemedicina' ? 'Online' : 'Consultório'
-    }));
+    } as UpcomingAppointment));
   },
   
   async getConsultasByMonth(medicoId: string, month: Date): Promise<CalendarAppointment[]> {
@@ -155,8 +155,8 @@ export const medicoProfileService = {
       patientName: consulta.patient_name || 'Paciente',
       type: consulta.consultation_type || 'presencial',
       start: new Date(consulta.consultation_date),
-      status: (consulta.status || 'pendente') as any
-    }));
+      status: (consulta.status || 'pendente') as 'pendente' | 'confirmada' | 'cancelada' | 'scheduled' | 'cancelled' | 'completed'
+    } as CalendarAppointment));
   },
   
   async getMedicoNotifications(medicoId: string): Promise<MedicoNotification[]> {
@@ -221,10 +221,10 @@ export const medicoProfileService = {
       });
     });
     
-    // Verificar tabela de notificações se existir (aguardando regeneração de types)
+    // Verificar tabela de notificações se existir
     try {
       const { data: dbNotifications, error: notifError } = await supabase
-        .from('medico_notifications' as any)
+        .from('medico_notifications')
         .select('*')
         .eq('medico_id', medicoId)
         .eq('read', false)
@@ -232,8 +232,8 @@ export const medicoProfileService = {
         .limit(5);
       
       if (!notifError && dbNotifications) {
-        (dbNotifications as any[]).forEach((notif: any) => {
-          const createdDate = new Date(notif.created_at);
+        dbNotifications.forEach((notif) => {
+          const createdDate = new Date(notif.created_at || new Date());
           const diffMinutes = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60));
           
           let timeText = 'Agora';
@@ -245,7 +245,7 @@ export const medicoProfileService = {
           
           notifications.push({
             id: notif.id,
-            type: notif.type,
+            type: notif.type as 'appointment' | 'system' | 'message' | 'info' | 'warning' | 'success',
             title: notif.title,
             description: notif.description,
             time: timeText
@@ -253,8 +253,7 @@ export const medicoProfileService = {
         });
       }
     } catch (error) {
-      // Tabela pode não existir ainda ou types não regenerados
-      console.debug('medico_notifications table not available yet');
+      console.debug('Error fetching medico_notifications:', error);
     }
     
     return notifications.slice(0, 10);
