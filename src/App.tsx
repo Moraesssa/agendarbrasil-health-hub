@@ -27,6 +27,7 @@ import GerenciarAgenda from '@/pages/GerenciarAgenda';
 import GerenciarLocaisV2 from '@/pages/GerenciarLocaisV2';
 import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
+import AgendaMedico from '@/pages/AgendaMedico';
 import Agendamento from '@/pages/Agendamento';
 import Historico from '@/pages/Historico';
 import NotFound from '@/pages/NotFound';
@@ -67,7 +68,7 @@ class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error for debugging
     console.error('Error caught by boundary:', error, errorInfo);
-    
+
     // Use the error logger if available
     if (errorLogger?.logError) {
       errorLogger.logError(error, 'generic', {
@@ -89,11 +90,11 @@ class ErrorBoundary extends React.Component<
             <div className="w-16 h-16 mx-auto mb-4 text-red-500">
               ❌
             </div>
-            
+
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Algo deu errado
             </h2>
-            
+
             <p className="text-gray-600 mb-4">
               Ocorreu um erro inesperado. Por favor, recarregue a página.
             </p>
@@ -138,30 +139,31 @@ function App() {
                   <NotificationProvider>
                     <AppointmentServiceProvider>
                       <AuthRedirectController>
-                      <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/cadastrar" element={<Cadastrar />} />
-                    <Route path="/cadastro-medico" element={<CadastroMedico />} />
-                    <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
-                    <Route path="/user-type" element={<UserTypeSelection />} />
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    <Route path="/dashboard-medico" element={<DashboardMedicoV3 />} />
-                    <Route path="/perfil" element={<Perfil />} />
-                    <Route path="/perfil-medico" element={<PerfilMedico />} />
-                    <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
-                    <Route path="/gerenciar-locais" element={<GerenciarLocaisV2 />} />
-                    <Route path="/pacientes-medico" element={<PacientesMedico />} />
-                    <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
-                    <Route path="/agendamento" element={<Agendamento />} />
-                    <Route path="/historico" element={<Historico />} />
-                    <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
-                    <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
-                    <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
-                    <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
-                    <Route path="/debug" element={<Debug />} />
-                      <Route path="*" element={<NotFound />} />
-                      </Routes>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/cadastrar" element={<Cadastrar />} />
+                          <Route path="/cadastro-medico" element={<CadastroMedico />} />
+                          <Route path="/cadastro-paciente" element={<CadastroPaciente />} />
+                          <Route path="/user-type" element={<UserTypeSelection />} />
+                          <Route path="/onboarding" element={<Onboarding />} />
+                          <Route path="/dashboard-medico" element={<DashboardMedicoV3 />} />
+                          <Route path="/agenda-medico" element={<AgendaMedico />} />
+                          <Route path="/perfil" element={<Perfil />} />
+                          <Route path="/perfil-medico" element={<PerfilMedico />} />
+                          <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
+                          <Route path="/gerenciar-locais" element={<GerenciarLocaisV2 />} />
+                          <Route path="/pacientes-medico" element={<PacientesMedico />} />
+                          <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
+                          <Route path="/agendamento" element={<Agendamento />} />
+                          <Route path="/historico" element={<Historico />} />
+                          <Route path="/gerenciar-familia" element={<GerenciarFamilia />} />
+                          <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
+                          <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
+                          <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
+                          <Route path="/debug" element={<Debug />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
                       </AuthRedirectController>
                     </AppointmentServiceProvider>
                   </NotificationProvider>

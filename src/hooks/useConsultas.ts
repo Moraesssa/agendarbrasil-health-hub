@@ -22,8 +22,8 @@ export const useConsultas = (filters?: any) => {
         .from('consultas')
         .select(`
           *,
-          doctor_profile:medicos(display_name, especialidades),
-          patient_profile:pacientes(nome_completo)
+          medico:profiles!medico_id(display_name, medicos(especialidades)),
+          paciente:profiles!paciente_id(display_name)
         `)
         .eq('paciente_id', user.id)
         .order('consultation_date', { ascending: false });
