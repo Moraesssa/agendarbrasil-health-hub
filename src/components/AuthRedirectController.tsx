@@ -9,7 +9,7 @@ import { ArrowLeft, Home } from "lucide-react";
 export const AuthRedirectController = ({ children }: { children: ReactNode }) => {
   // Check if we're within an AuthProvider by checking the context directly
   const context = useContext(AuthContext);
-  
+
   // If no context is available, render children without auth logic
   if (!context) {
     console.warn('⚠️ AuthRedirectController: No AuthContext found. Rendering children without auth logic.');
@@ -36,7 +36,7 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
   useEffect(() => {
     if (loading) return;
 
-    const publicRoutes = ['/', '/login'];
+    const publicRoutes = ['/', '/login', '/cadastrar', '/cadastro-paciente', '/cadastro-medico'];
     const isOnboardingRoute = location.pathname.startsWith('/user-type') || location.pathname.startsWith('/onboarding');
     const isPublicRoute = publicRoutes.includes(location.pathname);
 
@@ -46,7 +46,7 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
         if (location.pathname !== '/user-type') navigate('/user-type');
         return;
       }
-      
+
       // Se não completou onboarding, vai para onboarding
       if (!onboardingCompleted) {
         if (location.pathname !== '/onboarding') navigate('/onboarding');
@@ -67,10 +67,10 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
           return;
         }
       }
-      
+
       // Authenticated users with completed onboarding can access any other protected route
       // No additional redirects needed for routes like /debug, /perfil, etc.
-    } 
+    }
     else if (!user && !isPublicRoute && !isOnboardingRoute) {
       // Se não está logado e tenta acessar rota protegida, vai para login
       navigate('/login');
@@ -83,13 +83,13 @@ export const AuthRedirectController = ({ children }: { children: ReactNode }) =>
         <div className="text-center max-w-md mx-auto p-6">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Carregando...</h3>
-          
+
           {showLoadingMessage && (
             <div className="space-y-4">
               <p className="text-gray-600">
                 Estamos verificando seus dados e preparando tudo para você.
               </p>
-              
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-left">
                 <h4 className="font-semibold text-blue-900 mb-2">O que está acontecendo:</h4>
                 <ul className="text-blue-800 space-y-1">

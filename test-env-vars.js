@@ -1,7 +1,8 @@
 /**
  * Test environment variables configuration
  */
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 console.log('🔍 Verificando variáveis de ambiente...\n');
 

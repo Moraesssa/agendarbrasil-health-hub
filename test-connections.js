@@ -1,15 +1,16 @@
 /**
  * Test database and external service connections
  */
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 async function testConnections() {
   console.log('🔍 Testando conexões...\n');
 
   // Test Supabase connection
   console.log('1. Testando conexão com Supabase...');
-  
+
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -20,7 +21,7 @@ async function testConnections() {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
+
     // Simple health check
     const { data, error } = await supabase
       .from('profiles')
