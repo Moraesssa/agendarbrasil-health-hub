@@ -2151,17 +2151,14 @@ export type Database = {
         }[]
       }
       get_doctors_by_location_and_specialty: {
-        Args: { p_city?: string; p_specialty?: string; p_state?: string }
+        Args: { p_city: string; p_specialty: string; p_state: string }
         Returns: {
+          city: string
           crm: string
           display_name: string
           especialidades: Json
           id: string
-          local_cidade: string
-          local_endereco: Json
-          local_estado: string
-          local_nome: string
-          local_telefone: string
+          state: string
         }[]
       }
       get_doctors_for_scheduling: {
