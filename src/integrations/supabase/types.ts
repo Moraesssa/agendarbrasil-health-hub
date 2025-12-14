@@ -2133,7 +2133,6 @@ export type Database = {
         }[]
       }
       get_doctor_schedule_v2:
-        | { Args: { p_date: string; p_doctor_id: string }; Returns: Json }
         | {
             Args: { p_doctor_id: string }
             Returns: {
@@ -2141,6 +2140,7 @@ export type Database = {
               locations: Json
             }[]
           }
+        | { Args: { p_date: string; p_doctor_id: string }; Returns: Json }
       get_doctor_scheduling_info: {
         Args: { p_city?: string; p_specialty?: string; p_state?: string }
         Returns: {
@@ -2285,8 +2285,7 @@ export type Database = {
               p_appointment_datetime: string
               p_doctor_id: string
               p_family_member_id?: string
-              p_local_id?: string
-              p_specialty: string
+              p_specialty?: string
             }
             Returns: {
               appointment_id: string
@@ -2299,7 +2298,8 @@ export type Database = {
               p_appointment_datetime: string
               p_doctor_id: string
               p_family_member_id?: string
-              p_specialty?: string
+              p_local_id?: string
+              p_specialty: string
             }
             Returns: {
               appointment_id: string
