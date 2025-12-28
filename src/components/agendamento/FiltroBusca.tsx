@@ -78,10 +78,13 @@ export function FiltroBusca({
             Especialidade
           </label>
           <Select value={especialidade} onValueChange={onEspecialidadeChange}>
-            <SelectTrigger className={cn(
-              "h-12 hover:border-primary/50 transition-colors",
-              especialidade && "border-primary"
-            )}>
+            <SelectTrigger 
+              data-testid="specialty-select"
+              className={cn(
+                "h-12 hover:border-primary/50 transition-colors",
+                especialidade && "border-primary"
+              )}
+            >
               <SelectValue placeholder="Selecione uma especialidade" />
             </SelectTrigger>
             <SelectContent className="bg-popover">
@@ -100,10 +103,13 @@ export function FiltroBusca({
               Estado
             </label>
             <Select value={estado} onValueChange={onEstadoChange}>
-              <SelectTrigger className={cn(
-                "h-12 hover:border-primary/50 transition-colors",
-                estado && "border-primary"
-              )}>
+              <SelectTrigger 
+                data-testid="state-select"
+                className={cn(
+                  "h-12 hover:border-primary/50 transition-colors",
+                  estado && "border-primary"
+                )}
+              >
                 <SelectValue placeholder="Selecione o estado" />
               </SelectTrigger>
               <SelectContent className="bg-popover">
@@ -120,10 +126,13 @@ export function FiltroBusca({
               Cidade
             </label>
             <Select value={cidade} onValueChange={onCidadeChange} disabled={!estado || loading}>
-              <SelectTrigger className={cn(
-                "h-12 hover:border-primary/50 transition-colors",
-                cidade && "border-primary"
-              )}>
+              <SelectTrigger 
+                data-testid="city-select"
+                className={cn(
+                  "h-12 hover:border-primary/50 transition-colors",
+                  cidade && "border-primary"
+                )}
+              >
                 <SelectValue placeholder={loading ? "Carregando..." : "Selecione a cidade"} />
               </SelectTrigger>
               <SelectContent className="bg-popover">
@@ -158,6 +167,7 @@ export function FiltroBusca({
 
         {/* Botão de Busca */}
         <Button 
+          data-testid="search-button"
           onClick={() => {
             if (!especialidade || !estado || !cidade) {
               toast({

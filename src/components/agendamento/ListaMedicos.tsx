@@ -51,10 +51,11 @@ export function ListaMedicos({
   }
 
   return (
-    <div className="grid gap-6 animate-fade-in">
+    <div className="grid gap-6 animate-fade-in" data-testid="doctor-list">
       {medicos.map((medico, index) => (
         <Card 
-          key={medico.id} 
+          key={medico.id}
+          data-testid="doctor-card"
           className={cn(
             "group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1",
             "border-2 hover:border-primary/50"
@@ -65,7 +66,7 @@ export function ListaMedicos({
             <div className="flex flex-col md:flex-row md:items-start gap-6">
               {/* Avatar */}
               <Avatar className="w-20 h-20 border-4 border-primary/20 group-hover:border-primary/40 transition-all">
-                <AvatarImage src={medico.foto_perfil_url} />
+                <AvatarImage src={medico.foto_perfil_url} data-testid="doctor-photo" />
                 <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-primary/20 to-primary/10">
                   {medico.display_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </AvatarFallback>
@@ -74,7 +75,7 @@ export function ListaMedicos({
               <div className="flex-1 space-y-3">
                 {/* Nome e CRM */}
                 <div>
-                  <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+                  <h3 data-testid="doctor-name" className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
                     {medico.display_name}
                   </h3>
                   {medico.crm && (
@@ -85,7 +86,7 @@ export function ListaMedicos({
                 </div>
 
                 {/* Especialidades */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2" data-testid="doctor-specialty">
                   {medico.especialidades?.map((esp, idx) => (
                     <Badge 
                       key={esp} 
@@ -150,6 +151,7 @@ export function ListaMedicos({
 
               {/* Botão Agendar */}
               <Button 
+                data-testid="select-doctor-button"
                 onClick={() => onSelecionar(medico)}
                 className={cn(
                   "md:self-start h-12 px-6 font-semibold shadow-lg",
