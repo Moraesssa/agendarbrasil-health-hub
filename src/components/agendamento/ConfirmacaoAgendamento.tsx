@@ -41,7 +41,7 @@ export function ConfirmacaoAgendamento({
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="confirmation-success">
       {/* Success Animation */}
       <Card className="border-2 border-success/20 bg-gradient-to-br from-success/5 to-emerald-50/30 dark:to-emerald-950/20 shadow-2xl">
         <CardContent className="p-12">
@@ -64,10 +64,13 @@ export function ConfirmacaoAgendamento({
             </div>
 
             {/* Success Message */}
-            <div className={cn(
-              "transition-all duration-500 delay-200",
-              showAnimation ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            )}>
+            <div 
+              data-testid="success-message"
+              className={cn(
+                "transition-all duration-500 delay-200",
+                showAnimation ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              )}
+            >
               <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-success to-emerald-600 bg-clip-text text-transparent">
                 🎉 Consulta Agendada com Sucesso!
               </h2>
@@ -77,7 +80,7 @@ export function ConfirmacaoAgendamento({
             </div>
 
             {/* Appointment Summary */}
-            <Card className="bg-card/50 backdrop-blur border-2 shadow-lg max-w-md mx-auto">
+            <Card className="bg-card/50 backdrop-blur border-2 shadow-lg max-w-md mx-auto" data-testid="appointment-details">
               <CardContent className="p-6 space-y-4">
                 {medico && (
                   <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/30">
@@ -137,6 +140,7 @@ export function ConfirmacaoAgendamento({
             {/* Main Actions */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
               <Button 
+                data-testid="new-appointment-button"
                 variant="outline" 
                 onClick={onNovaConsulta}
                 size="lg"

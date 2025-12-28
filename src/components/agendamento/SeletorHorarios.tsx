@@ -63,6 +63,7 @@ export function SeletorHorarios({
               "rounded-md border p-3 pointer-events-auto",
               "w-full"
             )}
+            data-testid="date-calendar"
           />
         </CardContent>
       </Card>
@@ -92,7 +93,8 @@ export function SeletorHorarios({
         ) : (
           locais.map(local => (
             <Card 
-              key={local.id} 
+              key={local.id}
+              data-testid="local-card"
               className="shadow-lg hover:shadow-xl transition-shadow"
             >
               <CardHeader className="space-y-2 pb-4">
@@ -120,16 +122,17 @@ export function SeletorHorarios({
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {local.horarios_disponiveis.map(horario => (
-                    <TimeSlotButton
-                      key={horario.time}
-                      time={horario.time}
-                      available={horario.available}
-                      selected={
-                        selectedSlot?.time === horario.time && 
-                        selectedSlot?.localId === local.id
-                      }
-                      onClick={() => handleSlotClick(horario.time, local.id, horario.available)}
-                    />
+                    <div key={horario.time} data-testid="time-slot">
+                      <TimeSlotButton
+                        time={horario.time}
+                        available={horario.available}
+                        selected={
+                          selectedSlot?.time === horario.time && 
+                          selectedSlot?.localId === local.id
+                        }
+                        onClick={() => handleSlotClick(horario.time, local.id, horario.available)}
+                      />
+                    </div>
                   ))}
                 </div>
               </CardContent>
