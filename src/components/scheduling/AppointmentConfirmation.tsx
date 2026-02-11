@@ -22,7 +22,7 @@ import {
   Bell
 } from 'lucide-react';
 
-import SchedulingService, { Appointment } from '@/services/schedulingService';
+import type { Appointment } from '@/types/database';
 import { toast } from '@/components/ui/use-toast';
 import { convertDatabaseAppointment, convertDatabaseDoctor } from '@/types/database';
 
