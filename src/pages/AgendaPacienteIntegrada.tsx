@@ -27,7 +27,7 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import SchedulingService, { Appointment } from '@/services/schedulingService';
+import type { Appointment } from '@/types/database';
 import { toast } from '@/components/ui/use-toast';
 
 const AgendaPacienteIntegrada: React.FC = () => {
