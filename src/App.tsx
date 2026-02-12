@@ -35,6 +35,9 @@ import GerenciarFamilia from '@/pages/GerenciarFamilia';
 import DashboardFamiliar from '@/pages/DashboardFamiliar';
 import GerenciarConexoes from '@/pages/GerenciarConexoes';
 import GestaoMedicamentos from '@/pages/GestaoMedicamentos';
+import AgendaPacienteIntegrada from '@/pages/AgendaPacienteIntegrada';
+import Financeiro from '@/pages/Financeiro';
+import SchedulerDemo from '@/pages/SchedulerDemo';
 import Debug from '@/pages/Debug';
 
 
@@ -161,6 +164,9 @@ function App() {
                           <Route path="/dashboard-familiar" element={<DashboardFamiliar />} />
                           <Route path="/gerenciar-conexoes" element={<GerenciarConexoes />} />
                           <Route path="/gestao-medicamentos" element={<GestaoMedicamentos />} />
+                          <Route path="/agenda-paciente" element={<AgendaPacienteIntegrada />} />
+                          <Route path="/financeiro" element={<Financeiro />} />
+                          <Route path="/scheduler-demo" element={<SchedulerDemo />} />
                           <Route path="/debug" element={<Debug />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
