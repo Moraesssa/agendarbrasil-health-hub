@@ -25,6 +25,7 @@ import Perfil from '@/pages/Perfil';
 import PerfilMedico from '@/pages/PerfilMedico';
 import GerenciarAgenda from '@/pages/GerenciarAgenda';
 import GerenciarLocaisV2 from '@/pages/GerenciarLocaisV2';
+import Telemedicina from '@/pages/Telemedicina';
 import PacientesMedico from '@/pages/PacientesMedico';
 import EncaminhamentosMedico from '@/pages/EncaminhamentosMedico';
 import AgendaMedico from '@/pages/AgendaMedico';
@@ -156,6 +157,7 @@ function App() {
                           <Route path="/perfil-medico" element={<PerfilMedico />} />
                           <Route path="/gerenciar-agenda" element={<GerenciarAgenda />} />
                           <Route path="/gerenciar-locais" element={<GerenciarLocaisV2 />} />
+                          <Route path="/telemedicina" element={<Telemedicina />} />
                           <Route path="/pacientes-medico" element={<PacientesMedico />} />
                           <Route path="/encaminhamentos-medico" element={<EncaminhamentosMedico />} />
                           <Route path="/agendamento" element={<Agendamento />} />
