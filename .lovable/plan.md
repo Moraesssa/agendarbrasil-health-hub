@@ -1,126 +1,71 @@
 
 
-## Diagnóstico Completo dos Testes E2E
+## Revisão Completa de Rotas e Páginas 404
 
-### Problemas Identificados
+### Problemas Encontrados
 
-Após análise detalhada de todos os 9 arquivos de teste Cypress e dos componentes reais da aplicação, identifiquei problemas graves e sistêmicos que tornam a maioria dos testes E2E não-funcionais.
+1. **Rota inexistente → 404 real**: `/telemedicina` é referenciada em `PerfilMedico.tsx` (link "Teleconsulta") mas não existe no router nem como arquivo de página.
 
----
+2. **4 arquivos legacy mortos** (não têm rota, mas ocupam espaço e confundem):
+   - `AgendaMedicoIntegrada.tsx` → retorna `null`
+   - `AgendaPaciente.tsx` → "Página em manutenção"
+   - `DashboardMedico.tsx` → "Página em manutenção"
+   - `GerenciarLocais.tsx` → "Página em manutenção"
 
-### 1. Arquivos Completamente Quebrados (Referências a comandos/seletores inexistentes)
+3. **2 páginas "em desenvolvimento"** (roteadas mas sem conteúdo funcional):
+   - `DashboardMedicoV2.tsx` → placeholder
+   - `GerenciarLocaisV2.tsx` → placeholder
 
-**`enhanced_scheduling_flow_spec.js`** - 100% quebrado
-- Usa comandos inexistentes: `cy.interceptAdvancedSchedulingCalls()`, `cy.waitForPageLoad()`, `cy.clickNext()`, `cy.completeSchedulingSteps()`
-- Referencia seletores que não existem na UI: `smart-recommendations`, `progress-indicator`, `enhanced-state-select`, `state-search-input`, `recovery-modal`, `reservation-timer`
-- Testa funcionalidades que não existem: comparação de médicos, favoritos, virtual scrolling, axe accessibility plugin
-
-**`doctor_management_spec.js`** - 100% quebrado
-- Usa comandos inexistentes: `cy.loginAsDoctor()`, `cy.interceptDoctorManagementCalls()`, `cy.configureBasicSchedule()`
-- Todos os seletores são fictícios (não existem na UI)
-
-**`realistic_data_scenarios_spec.js`** - 100% quebrado
-- Usa comandos inexistentes: `cy.loadRealisticMockData()`, `cy.interceptRealisticAPIs()`, `cy.clickNext()`, `cy.completeSchedulingSteps()`, `cy.mockTimeOfWeek()`, `cy.mockSeason()`, `cy.setPatientProfile()`
-- Testa cenários totalmente hipotéticos
-
-**`agendamento_edge_cases_spec.js`** - 100% quebrado
-- Usa comando inexistente: `cy.searchSpecialist()`, `cy.selectFirstAvailableSlot()`
-- Referencia seletores da página Index que não existem: `search-specialty-input`, `search-location-input`
-- Referencia rotas inexistentes: `/busca`
-
-**`search_flow_spec.js`** - 95% quebrado
-- Usa `select()` em componentes Radix `[role="combobox"]` (incompatível)
-- Usa `.or()` que não é uma API Cypress válida
-- Referencia rotas inexistentes: `/perfil/dr-exemplo-123`
-- Intercepta APIs `/api/doctors` que não existem (usa Supabase RPC)
-
-**`onboarding_medico_spec.js`** - 95% quebrado
-- A página de Login usa Google OAuth exclusivamente, não há `input[name="email"]` ou `input[name="password"]`
-- Todos os seletores `data-testid` referenciados não existem nos componentes de onboarding
-
-**`homepage_spec.js`** - 60% quebrado
-- Login: espera `input[type="email"]` e `input[type="password"]` que não existem (Google OAuth)
-- Cadastro: espera botão "Criar Conta Grátis" que pode não existir
-- Busca: espera fluxo de etapas numeradas ("Etapa 1", "Etapa 2") que não existem
-- Usa `.tab()` que requer plugin `cypress-plugin-tab`
-- `cy.injectAxe()` requer plugin `cypress-axe`
-
-### 2. Arquivos Parcialmente Funcionais
-
-**`agendamento_spec.js`** - 40% funcional
-- Testes de filtro (busca) estão corretos com `data-testid` reais
-- Testes de horários/confirmação falham porque visitam `/agendamento` e esperam ver calendário/confirmação sem navegar até essas etapas
-
-**`gerenciar_agenda_spec.js`** - Potencialmente funcional
-- Testes com mocks de sessão e interceptors detalhados
-- Mais alinhado com a arquitetura real (Supabase, Radix)
-
-### 3. Problema no `cypress/support/commands.js`
-
-- Comandos definidos: `selectSpecialty`, `selectState`, `selectCity`, `clickSearch`, `selectDoctor`, `selectTimeSlot`, `fillPatientData`, `waitForLoading`, `verifyDoctorCard`, `verifySuccessMessage`, `cleanTestData`, `interceptSupabaseApi`, `checkBasicAccessibility`, `waitForElement`, `completeSchedulingFlow`, `mockAuth`
-- Comandos usados mas **NÃO definidos**: `interceptAdvancedSchedulingCalls`, `waitForPageLoad`, `clickNext`, `completeSchedulingSteps`, `loginAsDoctor`, `interceptDoctorManagementCalls`, `configureBasicSchedule`, `loadRealisticMockData`, `interceptRealisticAPIs`, `searchSpecialist`, `selectFirstAvailableSlot`, `mockTimeOfWeek`, `mockSeason`, `setPatientProfile`
+4. **NotFound.tsx** está em inglês e sem design consistente com o app.
 
 ---
 
 ### Plano de Implementação
 
-#### Fase 1: Limpar testes irrecuperáveis
-Deletar os 5 arquivos de teste que são 100% fictícios e não refletem nenhuma funcionalidade real:
-- `enhanced_scheduling_flow_spec.js`
-- `doctor_management_spec.js`
-- `realistic_data_scenarios_spec.js`
-- `agendamento_edge_cases_spec.js`
-- `search_flow_spec.js`
+#### 1. Redesenhar `NotFound.tsx`
+Reescrever com design profissional usando shadcn/ui, em português, com:
+- Ilustração/ícone grande
+- Mensagem amigável em PT-BR
+- Botão "Voltar ao Início" estilizado
+- Link contextual baseado no tipo de usuário (se logado)
+- Consistente com o design system da plataforma
 
-#### Fase 2: Reescrever `homepage_spec.js`
-Testes realistas para a página inicial (`/`):
-- Verificar carregamento do header e conteúdo principal
-- Verificar botão "Entrar" navega para `/login`
-- Verificar botão "Agendar Consulta" redireciona para `/login` (não autenticado)
-- Verificar botão "Emergência" mostra toast com SAMU 192
-- Verificar responsividade mobile (viewport 375x667)
-- Remover testes que dependem de plugins inexistentes (`tab`, `axe`)
-- Remover testes que esperam formulário de login email/password
+#### 2. Criar página `/telemedicina` (Coming Soon)
+Criar `src/pages/Telemedicina.tsx` com uma página "Em Breve" profissional:
+- Header com ícone de vídeo
+- Descrição das funcionalidades futuras (videochamada, sala de espera virtual, compartilhamento de tela)
+- Botão para voltar ao perfil
+- Registrar a rota em `App.tsx`
 
-#### Fase 3: Reescrever `agendamento_spec.js`
-Corrigir testes para que reflitam o fluxo real:
-- Etapa busca: testar filtros com mocks Supabase RPC
-- Remover testes que esperam calendário/confirmação na carga inicial (requerem navegação por etapas)
-- Adicionar testes de fluxo completo com mocks
-- Manter testes de responsividade mobile
+#### 3. Melhorar páginas placeholder existentes
+Atualizar `DashboardMedicoV2.tsx` e `GerenciarLocaisV2.tsx` para exibir "Em Breve" com design profissional em vez de texto genérico, incluindo:
+- Descrição do que a funcionalidade fará
+- Botão de navegação de volta
 
-#### Fase 4: Reescrever `onboarding_medico_spec.js`
-- Remover tentativa de login com email/password
-- Criar testes que mockam a sessão do Supabase diretamente
-- Testar apenas componentes acessíveis após mock de autenticação
+#### 4. Deletar 4 arquivos legacy
+Remover os stubs que não têm rota e não servem propósito:
+- `AgendaMedicoIntegrada.tsx`
+- `AgendaPaciente.tsx`
+- `DashboardMedico.tsx`
+- `GerenciarLocais.tsx`
 
-#### Fase 5: Manter `gerenciar_agenda_spec.js`
-- Este arquivo já usa mocks realistas e está mais alinhado com a arquitetura
-
-#### Fase 6: Criar teste Vitest unitário
-Criar `src/test/components.test.tsx` com testes unitários básicos para validar que componentes renderizam sem erros:
-- FiltroBusca
-- Index page rendering
-
-#### Fase 7: Limpar `cypress/support/commands.js`
-Remover comandos não utilizados e manter apenas os que são realmente referenciados pelos testes restantes.
+#### 5. Criar componente reutilizável `ComingSoonPage`
+Para padronizar páginas "em breve", criar `src/components/ComingSoonPage.tsx` que aceita props: `title`, `description`, `icon`, `backPath`, `features[]`. Usar em Telemedicina, DashboardMedicoV2 e GerenciarLocaisV2.
 
 ---
 
-### Resumo de Arquivos
+### Resumo de Alterações
 
-| Ação | Arquivo |
-|------|---------|
-| **Deletar** | `cypress/e2e/enhanced_scheduling_flow_spec.js` |
-| **Deletar** | `cypress/e2e/doctor_management_spec.js` |
-| **Deletar** | `cypress/e2e/realistic_data_scenarios_spec.js` |
-| **Deletar** | `cypress/e2e/agendamento_edge_cases_spec.js` |
-| **Deletar** | `cypress/e2e/search_flow_spec.js` |
-| **Reescrever** | `cypress/e2e/homepage_spec.js` |
-| **Reescrever** | `cypress/e2e/agendamento_spec.js` |
-| **Reescrever** | `cypress/e2e/onboarding_medico_spec.js` |
-| **Manter** | `cypress/e2e/gerenciar_agenda_spec.js` |
-| **Atualizar** | `cypress/support/commands.js` |
-| **Criar** | `src/test/components.test.tsx` |
-| **Atualizar** | `src/test/setup.ts` (adicionar matchMedia mock) |
+| Arquivo | Ação |
+|---------|------|
+| `src/pages/NotFound.tsx` | Redesenhar (PT-BR, shadcn/ui) |
+| `src/components/ComingSoonPage.tsx` | Criar componente reutilizável |
+| `src/pages/Telemedicina.tsx` | Criar (Coming Soon) |
+| `src/App.tsx` | Adicionar rota `/telemedicina` |
+| `src/pages/DashboardMedicoV2.tsx` | Atualizar com ComingSoonPage |
+| `src/pages/GerenciarLocaisV2.tsx` | Atualizar com ComingSoonPage |
+| `src/pages/AgendaMedicoIntegrada.tsx` | Deletar |
+| `src/pages/AgendaPaciente.tsx` | Deletar |
+| `src/pages/DashboardMedico.tsx` | Deletar |
+| `src/pages/GerenciarLocais.tsx` | Deletar |
 
