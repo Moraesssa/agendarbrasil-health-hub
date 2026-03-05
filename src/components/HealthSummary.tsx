@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useHealthMetrics } from "@/hooks/useHealthMetrics";
+import { usePatientSummaryStats } from "@/hooks/usePatientSummaryStats";
 import { AddHealthMetricModal } from "@/components/health/AddHealthMetricModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 const HealthSummary = () => {
   const { displayMetrics, healthScore, loading, isSubmitting, createMetric } = useHealthMetrics();
+  const patientStats = usePatientSummaryStats();
 
   const getStatusClasses = (status: string): string => {
     switch (status) {
@@ -36,20 +38,20 @@ const HealthSummary = () => {
 
   const primaryColor = '#2563EB'; // Cor azul para o ícone e bullets
 
-  // Métricas específicas solicitadas pelo usuário
+  // Métricas reais do paciente
   const specificMetrics = [
     {
       icon: Calendar,
       label: "Consultas este mês",
-      value: "3",
+      value: patientStats.loading ? "..." : String(patientStats.consultasEsteMes),
       unit: "",
-      status: "normal",
+      status: patientStats.consultasEsteMes > 0 ? "normal" : "attention",
       color: "from-blue-500 to-blue-600"
     },
     {
       icon: Pill,
       label: "Medicamentos ativos",
-      value: "2",
+      value: patientStats.loading ? "..." : String(patientStats.medicamentosAtivos),
       unit: "",
       status: "normal",
       color: "from-green-500 to-green-600"
@@ -57,9 +59,9 @@ const HealthSummary = () => {
     {
       icon: FileText,
       label: "Próximos exames",
-      value: "1",
+      value: patientStats.loading ? "..." : String(patientStats.proximosExames),
       unit: "",
-      status: "attention",
+      status: patientStats.proximosExames > 0 ? "attention" : "normal",
       color: "from-purple-500 to-purple-600"
     }
   ];

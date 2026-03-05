@@ -66,24 +66,18 @@ const UpcomingAppointments = () => {
   };
 
   const handleViewDetails = (appointment: any) => {
-    if (appointment.consultation_type === 'Online') {
-      toast({
-        title: "Link da consulta",
-        description: "O link será enviado por SMS e email 30 minutos antes da consulta",
-      });
-    } else {
-      toast({
-        title: "Detalhes da consulta",
-        description: `${appointment.doctor_profile?.display_name} - ${appointment.local_consulta}`,
-      });
-    }
+    sessionStorage.setItem('navigation-intent', 'true');
+    navigate("/agenda-paciente");
   };
 
   const handleGetDirections = (appointment: any) => {
-    if (appointment.consultation_type !== 'Online') {
+    if (appointment.consultation_type !== 'Online' && appointment.local_consulta) {
+      const query = encodeURIComponent(appointment.local_consulta);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
+    } else {
       toast({
-        title: "Abrindo mapa",
-        description: `Direções para ${appointment.local_consulta}`,
+        title: "Sem localização",
+        description: "Esta consulta é online ou não possui endereço cadastrado.",
       });
     }
   };
