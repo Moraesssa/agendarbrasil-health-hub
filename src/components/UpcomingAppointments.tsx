@@ -22,13 +22,11 @@ const UpcomingAppointments = () => {
   const { toast } = useToast();
   const { user, userData } = useAuth();
   
-  // Stabilize filters to prevent infinite re-renders
+  // Fetch recent consultas (both future and recent past for fallback)
   const consultasFilters = useMemo(() => ({
-    futureOnly: true,
     limit: 10
   }), []);
   
-  // Busca consultas recentes e futuras
   const { consultas, loading, error, refetch, updateConsultaStatus } = useConsultas(consultasFilters);
 
   const [videoCallModal, setVideoCallModal] = useState<{
