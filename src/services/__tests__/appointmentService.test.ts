@@ -1,12 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockRpc = vi.fn();
-const mockFrom = vi.fn();
-
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    rpc: mockRpc,
-    from: mockFrom,
+    rpc: vi.fn(),
+    from: vi.fn(),
   },
 }));
 
@@ -19,6 +16,7 @@ vi.mock('@/services/agendamento', () => ({
 }));
 
 import { getSpecialties, getStates, getCities, appointmentService } from '@/services/appointmentService';
+import { supabase } from '@/integrations/supabase/client';
 import { agendamentoService } from '@/services/agendamento';
 
 beforeEach(() => {
@@ -28,25 +26,22 @@ beforeEach(() => {
 describe('getSpecialties', () => {
   it('returns specialties from RPC', async () => {
     const specialties = ['Cardiologia', 'Dermatologia'];
-    mockRpc.mockResolvedValue({ data: specialties, error: null });
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: specialties, error: null } as any);
 
     const result = await getSpecialties();
 
-    expect(mockRpc).toHaveBeenCalledWith('get_specialties');
+    expect(supabase.rpc).toHaveBeenCalledWith('get_specialties');
     expect(result).toEqual(specialties);
   });
 
   it('returns empty array when data is null', async () => {
-    mockRpc.mockResolvedValue({ data: null, error: null });
-
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
     const result = await getSpecialties();
-
     expect(result).toEqual([]);
   });
 
   it('throws on error', async () => {
-    mockRpc.mockResolvedValue({ data: null, error: new Error('RPC failed') });
-
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: new Error('RPC failed') } as any);
     await expect(getSpecialties()).rejects.toThrow('RPC failed');
   });
 });
@@ -54,11 +49,11 @@ describe('getSpecialties', () => {
 describe('getStates', () => {
   it('returns states from RPC', async () => {
     const states = [{ uf: 'SP', nome: 'SP' }];
-    mockRpc.mockResolvedValue({ data: states, error: null });
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: states, error: null } as any);
 
     const result = await getStates();
 
-    expect(mockRpc).toHaveBeenCalledWith('get_available_states');
+    expect(supabase.rpc).toHaveBeenCalledWith('get_available_states');
     expect(result).toEqual(states);
   });
 });
@@ -66,11 +61,11 @@ describe('getStates', () => {
 describe('getCities', () => {
   it('passes state UF parameter', async () => {
     const cities = [{ cidade: 'São Paulo', estado: 'SP', total_medicos: 5 }];
-    mockRpc.mockResolvedValue({ data: cities, error: null });
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: cities, error: null } as any);
 
     const result = await getCities('SP');
 
-    expect(mockRpc).toHaveBeenCalledWith('get_available_cities', { state_uf: 'SP' });
+    expect(supabase.rpc).toHaveBeenCalledWith('get_available_cities', { state_uf: 'SP' });
     expect(result).toEqual(cities);
   });
 });
