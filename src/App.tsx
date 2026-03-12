@@ -19,7 +19,6 @@ import CadastroMedico from '@/pages/CadastroMedico';
 import CadastroPaciente from '@/pages/CadastroPaciente';
 import UserTypeSelection from '@/pages/UserTypeSelection';
 import Onboarding from '@/pages/Onboarding';
-import DashboardMedicoV2 from '@/pages/DashboardMedicoV2';
 import DashboardMedicoV3 from '@/pages/DashboardMedicoV3';
 import Perfil from '@/pages/Perfil';
 import PerfilMedico from '@/pages/PerfilMedico';
