@@ -171,8 +171,7 @@ function App() {
                           <Route path="/scheduler-demo" element={<SchedulerDemo />} />
                           <Route path="/suporte" element={<Suporte />} />
                           <Route path="/debug" element={<Debug />} />
-                          <Route path="*" element={<NotFound />} />
-                          <Route path="*" element={<NotFound />} />
+                        <Route path="*" element={<NotFound />} />
                         </Routes>
                       </AuthRedirectController>
                     </AppointmentServiceProvider>
