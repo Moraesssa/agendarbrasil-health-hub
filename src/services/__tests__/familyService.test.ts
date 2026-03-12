@@ -91,7 +91,7 @@ describe('familyService', () => {
       await expect(familyService.addFamilyMember({
         email: 'test@test.com',
         relationship: 'spouse',
-        permission_level: 'full',
+        permission_level: 'admin',
         can_schedule: true,
         can_view_history: true,
         can_cancel: false,
