@@ -124,7 +124,7 @@ describe('familyService', () => {
       await familyService.addFamilyMember({
         email: 'member@test.com',
         relationship: 'parent',
-        permission_level: 'full',
+        permission_level: 'admin',
         can_schedule: true,
         can_view_history: true,
         can_cancel: true,
@@ -134,7 +134,7 @@ describe('familyService', () => {
         user_id: 'user-abc',
         family_member_id: 'target-user',
         relationship: 'parent',
-        permission_level: 'full',
+        permission_level: 'admin',
         can_schedule: true,
         can_view_history: true,
         can_cancel: true,
