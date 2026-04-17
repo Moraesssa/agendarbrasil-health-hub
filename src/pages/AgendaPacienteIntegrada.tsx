@@ -1,216 +1,96 @@
 /**
- * Agenda do Paciente Integrada
- * Nova versão com sistema de agendamento otimizado
+ * Agenda do Paciente — "Minhas Consultas"
+ * Versão de produção: dados reais via useConsultas + cancelamento real.
  */
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Video, 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Video,
   Plus,
-  Filter,
-  Search,
-  Phone,
-  MessageCircle,
-  Star,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import type { Appointment } from '@/types/database';
 import { toast } from '@/components/ui/use-toast';
+import { useConsultas, type ConsultaWithDoctor } from '@/hooks/useConsultas';
+
+const STATUS_LABEL: Record<string, string> = {
+  agendada: 'Agendada',
+  confirmada: 'Confirmada',
+  realizada: 'Realizada',
+  cancelada: 'Cancelada',
+  pendente: 'Pendente',
+};
 
 const AgendaPacienteIntegrada: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { consultas, loading, cancelConsulta, refetch } = useConsultas();
   const [activeTab, setActiveTab] = useState('upcoming');
-  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadAppointments();
-    }
-  }, [user, activeTab]);
+  const handleCancel = async () => {
+    if (confirmCancelId == null) return;
+    setCancelling(true);
+    const result = await cancelConsulta(confirmCancelId);
+    setCancelling(false);
+    setConfirmCancelId(null);
 
-  const loadAppointments = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      
-      // Por enquanto, vamos usar dados simulados
-      // const userAppointments = await SchedulingService.getPatientAppointments(user.id);
-      
-      // Dados simulados para demonstração
-      const mockAppointments: Appointment[] = [
-        {
-          id: '1',
-          medico_id: 'dr1',
-          paciente_id: user.id,
-          data_hora_agendada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Amanhã
-          duracao_estimada: 30,
-          tipo: 'teleconsulta',
-          prioridade: 'normal',
-          status: 'confirmada',
-          valor_consulta: 150,
-          motivo_consulta: 'Consulta de rotina - acompanhamento',
-          buffer_antes: 5,
-          buffer_depois: 5,
-          permite_reagendamento: true,
-          agendado_por: user.id,
-          medico: {
-            id: 'dr1',
-            user_id: 'u1',
-            nome: 'Dr. Carlos Silva',
-            email: 'carlos.silva@email.com',
-            crm: '12345',
-            uf_crm: 'SP',
-            especialidade: 'Cardiologia',
-            valor_consulta_presencial: 200,
-            valor_consulta_teleconsulta: 150,
-            duracao_consulta_padrao: 30,
-            aceita_teleconsulta: true,
-            aceita_consulta_presencial: true,
-            rating: 4.8,
-            total_avaliacoes: 127
-          }
-        },
-        {
-          id: '2',
-          medico_id: 'dr2',
-          paciente_id: user.id,
-          data_hora_agendada: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Próxima semana
-          duracao_estimada: 45,
-          tipo: 'presencial',
-          prioridade: 'alta',
-          status: 'agendada',
-          valor_consulta: 200,
-          motivo_consulta: 'Primeira consulta - avaliação geral',
-          buffer_antes: 10,
-          buffer_depois: 5,
-          permite_reagendamento: true,
-          agendado_por: user.id,
-          medico: {
-            id: 'dr2',
-            user_id: 'u2',
-            nome: 'Dra. Ana Santos',
-            email: 'ana.santos@email.com',
-            crm: '67890',
-            uf_crm: 'RJ',
-            especialidade: 'Pediatria',
-            valor_consulta_presencial: 200,
-            valor_consulta_teleconsulta: 150,
-            duracao_consulta_padrao: 30,
-            aceita_teleconsulta: true,
-            aceita_consulta_presencial: true,
-            rating: 4.9,
-            total_avaliacoes: 89
-          }
-        },
-        {
-          id: '3',
-          medico_id: 'dr1',
-          paciente_id: user.id,
-          data_hora_agendada: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // Semana passada
-          duracao_estimada: 30,
-          duracao_real: 35,
-          tipo: 'teleconsulta',
-          prioridade: 'normal',
-          status: 'realizada',
-          valor_consulta: 150,
-          motivo_consulta: 'Retorno - resultados de exames',
-          observacoes_medico: 'Paciente apresentou melhora significativa. Manter medicação atual.',
-          buffer_antes: 5,
-          buffer_depois: 5,
-          permite_reagendamento: false,
-          agendado_por: user.id,
-          medico: {
-            id: 'dr1',
-            user_id: 'u1',
-            nome: 'Dr. Carlos Silva',
-            email: 'carlos.silva@email.com',
-            crm: '12345',
-            uf_crm: 'SP',
-            especialidade: 'Cardiologia',
-            valor_consulta_presencial: 200,
-            valor_consulta_teleconsulta: 150,
-            duracao_consulta_padrao: 30,
-            aceita_teleconsulta: true,
-            aceita_consulta_presencial: true,
-            rating: 4.8,
-            total_avaliacoes: 127
-          }
-        }
-      ];
-
-      setAppointments(mockAppointments);
-    } catch (error) {
-      console.error('Erro ao carregar consultas:', error);
+    if (result.success) {
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar suas consultas.",
-        variant: "destructive"
+        title: 'Consulta cancelada',
+        description: 'Sua consulta foi cancelada com sucesso.',
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReschedule = async (appointmentId: string) => {
-    try {
-      // Implementar reagendamento
+      refetch();
+    } else {
       toast({
-        title: "Reagendamento",
-        description: "Funcionalidade de reagendamento será implementada em breve.",
-      });
-    } catch (error) {
-      console.error('Erro ao reagendar:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível reagendar a consulta.",
-        variant: "destructive"
+        title: 'Erro ao cancelar',
+        description: 'Não foi possível cancelar a consulta. Tente novamente.',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleCancel = async (appointmentId: string) => {
-    try {
-      // Implementar cancelamento
-      toast({
-        title: "Cancelamento",
-        description: "Funcionalidade de cancelamento será implementada em breve.",
-      });
-    } catch (error) {
-      console.error('Erro ao cancelar:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível cancelar a consulta.",
-        variant: "destructive"
-      });
-    }
+  const handleReschedule = () => {
+    toast({
+      title: 'Reagendar consulta',
+      description: 'Cancele esta consulta e agende uma nova com o mesmo médico.',
+    });
+    navigate('/agendamento');
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'confirmada':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'agendada':
+      case 'pendente':
         return <Clock className="w-4 h-4 text-blue-500" />;
       case 'realizada':
-        return <CheckCircle className="w-4 h-4 text-gray-500" />;
+        return <CheckCircle className="w-4 h-4 text-muted-foreground" />;
       case 'cancelada':
         return <XCircle className="w-4 h-4 text-red-500" />;
       default:
@@ -218,14 +98,15 @@ const AgendaPacienteIntegrada: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'confirmada':
         return 'bg-green-100 text-green-800';
       case 'agendada':
+      case 'pendente':
         return 'bg-blue-100 text-blue-800';
       case 'realizada':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
       case 'cancelada':
         return 'bg-red-100 text-red-800';
       default:
@@ -233,67 +114,44 @@ const AgendaPacienteIntegrada: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('pt-BR', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
-  };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('pt-BR', {
+  const formatTime = (dateString: string) =>
+    new Date(dateString).toLocaleTimeString('pt-BR', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
-  };
 
-  const formatCurrency = (value?: number) => {
-    if (!value) return 'Gratuito';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-3 h-3 ${
-          i < Math.floor(rating) 
-            ? 'text-yellow-400 fill-current' 
-            : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
-
-  const filterAppointments = (appointments: Appointment[]) => {
+  const filterAppointments = (items: ConsultaWithDoctor[]) => {
     const now = new Date();
-    
     switch (activeTab) {
       case 'upcoming':
-        return appointments.filter(apt => 
-          new Date(apt.data_hora_agendada) > now && 
-          apt.status !== 'cancelada'
+        return items.filter(
+          (c) =>
+            new Date(c.consultation_date) > now &&
+            c.status !== 'cancelada' &&
+            c.status !== 'realizada',
         );
       case 'past':
-        return appointments.filter(apt => 
-          new Date(apt.data_hora_agendada) < now || 
-          apt.status === 'realizada'
+        return items.filter(
+          (c) =>
+            (new Date(c.consultation_date) < now && c.status !== 'cancelada') ||
+            c.status === 'realizada',
         );
       case 'cancelled':
-        return appointments.filter(apt => apt.status === 'cancelada');
+        return items.filter((c) => c.status === 'cancelada');
       default:
-        return appointments;
+        return items;
     }
   };
 
-  const filteredAppointments = filterAppointments(appointments);
+  const filtered = filterAppointments(consultas);
 
   if (!user) {
     return (
@@ -310,22 +168,34 @@ const AgendaPacienteIntegrada: React.FC = () => {
     );
   }
 
+  const isTeleconsulta = (c: ConsultaWithDoctor) =>
+    (c.consultation_type || '').toLowerCase() === 'online' ||
+    (c.consultation_type || '').toLowerCase() === 'teleconsulta';
+
+  const initials = (name?: string | null) =>
+    (name || 'M')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Minhas Consultas</h1>
-          <p className="text-gray-600 mt-1">Gerencie seus agendamentos e histórico médico</p>
+          <h1 className="text-3xl font-bold text-foreground">Minhas Consultas</h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie seus agendamentos e histórico médico
+          </p>
         </div>
-        
+
         <Button onClick={() => navigate('/agendamento')} className="flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Nova Consulta
         </Button>
       </div>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upcoming">Próximas</TabsTrigger>
@@ -341,27 +211,27 @@ const AgendaPacienteIntegrada: React.FC = () => {
                   <CardContent className="p-6">
                     <div className="animate-pulse space-y-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                        <div className="w-12 h-12 bg-muted rounded-full" />
                         <div className="space-y-2 flex-1">
-                          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-4 bg-muted rounded w-1/4" />
+                          <div className="h-3 bg-muted rounded w-1/3" />
                         </div>
                       </div>
-                      <div className="h-3 bg-gray-200 rounded w-full"></div>
-                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                      <div className="h-3 bg-muted rounded w-full" />
+                      <div className="h-3 bg-muted rounded w-2/3" />
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          ) : filteredAppointments.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">
+                <Calendar className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   Nenhuma consulta encontrada
                 </h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-muted-foreground mb-4">
                   {activeTab === 'upcoming' && 'Você não tem consultas agendadas.'}
                   {activeTab === 'past' && 'Você ainda não realizou nenhuma consulta.'}
                   {activeTab === 'cancelled' && 'Você não tem consultas canceladas.'}
@@ -375,145 +245,156 @@ const AgendaPacienteIntegrada: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredAppointments.map((appointment) => (
-                <Card key={appointment.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                      {/* Informações do Médico */}
-                      <div className="flex items-start gap-4 flex-1">
-                        <Avatar className="w-16 h-16">
-                          <AvatarImage src={appointment.medico?.foto_perfil_url} />
-                          <AvatarFallback>
-                            {appointment.medico?.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h3 className="text-lg font-semibold">{appointment.medico?.nome}</h3>
-                              <p className="text-muted-foreground">{appointment.medico?.especialidade}</p>
-                              <p className="text-sm text-muted-foreground">
-                                CRM: {appointment.medico?.crm}/{appointment.medico?.uf_crm}
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(appointment.status)}
-                              <Badge className={getStatusColor(appointment.status)}>
-                                {appointment.status === 'agendada' && 'Agendada'}
-                                {appointment.status === 'confirmada' && 'Confirmada'}
-                                {appointment.status === 'realizada' && 'Realizada'}
-                                {appointment.status === 'cancelada' && 'Cancelada'}
-                              </Badge>
-                            </div>
-                          </div>
+              {filtered.map((c) => {
+                const tele = isTeleconsulta(c);
+                const isUpcoming =
+                  new Date(c.consultation_date) > new Date() &&
+                  c.status !== 'cancelada' &&
+                  c.status !== 'realizada';
 
-                          {/* Rating */}
-                          <div className="flex items-center gap-1 mb-3">
-                            {renderStars(appointment.medico?.rating || 0)}
-                            <span className="text-sm text-muted-foreground ml-1">
-                              ({appointment.medico?.total_avaliacoes})
-                            </span>
-                          </div>
+                return (
+                  <Card key={c.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex items-start gap-4 flex-1">
+                          <Avatar className="w-16 h-16">
+                            <AvatarFallback>
+                              {initials(c.doctor_profile?.display_name)}
+                            </AvatarFallback>
+                          </Avatar>
 
-                          {/* Detalhes da Consulta */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm">{formatDate(appointment.data_hora_agendada)}</span>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="text-lg font-semibold">
+                                  {c.doctor_profile?.display_name || 'Médico'}
+                                </h3>
+                                {c.doctor_profile?.especialidades?.length ? (
+                                  <p className="text-muted-foreground">
+                                    {c.doctor_profile.especialidades.join(', ')}
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(c.status)}
+                                <Badge className={getStatusColor(c.status)}>
+                                  {STATUS_LABEL[c.status || ''] || c.status || 'Agendada'}
+                                </Badge>
+                              </div>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                {formatTime(appointment.data_hora_agendada)} ({appointment.duracao_estimada}min)
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              {appointment.tipo === 'teleconsulta' ? (
-                                <Video className="w-4 h-4 text-muted-foreground" />
-                              ) : (
-                                <MapPin className="w-4 h-4 text-muted-foreground" />
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm">{formatDate(c.consultation_date)}</span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm">{formatTime(c.consultation_date)}</span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {tele ? (
+                                  <Video className="w-4 h-4 text-muted-foreground" />
+                                ) : (
+                                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                                )}
+                                <span className="text-sm">
+                                  {tele ? 'Teleconsulta' : c.local_consulta || 'Presencial'}
+                                </span>
+                              </div>
+
+                              {c.status_pagamento && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Pagamento:</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {c.status_pagamento}
+                                  </Badge>
+                                </div>
                               )}
-                              <span className="text-sm capitalize">{appointment.tipo}</span>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">
-                                {formatCurrency(appointment.valor_consulta)}
-                              </span>
-                            </div>
-                          </div>
 
-                          {/* Motivo */}
-                          <div className="mb-4">
-                            <p className="text-sm font-medium mb-1">Motivo:</p>
-                            <p className="text-sm text-muted-foreground">{appointment.motivo_consulta}</p>
+                            {c.notes && (
+                              <div className="mb-4">
+                                <p className="text-sm font-medium mb-1">Observações:</p>
+                                <p className="text-sm text-muted-foreground">{c.notes}</p>
+                              </div>
+                            )}
                           </div>
+                        </div>
 
-                          {/* Observações do médico (se houver) */}
-                          {appointment.observacoes_medico && (
-                            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                              <p className="text-sm font-medium mb-1">Observações do médico:</p>
-                              <p className="text-sm text-blue-800">{appointment.observacoes_medico}</p>
-                            </div>
+                        <div className="flex flex-col gap-2 lg:min-w-[200px]">
+                          {c.status === 'confirmada' && tele && (
+                            <Button
+                              className="w-full"
+                              onClick={() => navigate('/telemedicina')}
+                            >
+                              <Video className="w-4 h-4 mr-2" />
+                              Entrar na Consulta
+                            </Button>
+                          )}
+
+                          {isUpcoming && (
+                            <>
+                              <Button
+                                variant="outline"
+                                onClick={handleReschedule}
+                                className="w-full"
+                              >
+                                <Calendar className="w-4 h-4 mr-2" />
+                                Reagendar
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                onClick={() => setConfirmCancelId(c.id)}
+                                className="w-full text-red-600 hover:text-red-700"
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Cancelar
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
-
-                      {/* Ações */}
-                      <div className="flex flex-col gap-2 min-w-[200px]">
-                        {appointment.status === 'confirmada' && appointment.tipo === 'teleconsulta' && (
-                          <Button className="w-full">
-                            <Video className="w-4 h-4 mr-2" />
-                            Entrar na Consulta
-                          </Button>
-                        )}
-                        
-                        {(appointment.status === 'agendada' || appointment.status === 'confirmada') && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              onClick={() => handleReschedule(appointment.id)}
-                              className="w-full"
-                            >
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Reagendar
-                            </Button>
-                            
-                            <Button 
-                              variant="outline" 
-                              onClick={() => handleCancel(appointment.id)}
-                              className="w-full text-red-600 hover:text-red-700"
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Cancelar
-                            </Button>
-                          </>
-                        )}
-                        
-                        <Button variant="outline" className="w-full">
-                          <Phone className="w-4 h-4 mr-2" />
-                          Contatar Médico
-                        </Button>
-                        
-                        {appointment.status === 'realizada' && (
-                          <Button variant="outline" className="w-full">
-                            <Star className="w-4 h-4 mr-2" />
-                            Avaliar Consulta
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog
+        open={confirmCancelId !== null}
+        onOpenChange={(open) => !open && setConfirmCancelId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar consulta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Caso já tenha pago, o reembolso seguirá a política
+              da clínica.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Manter</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancel();
+              }}
+              disabled={cancelling}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {cancelling ? 'Cancelando...' : 'Sim, cancelar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
