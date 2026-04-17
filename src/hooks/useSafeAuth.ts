@@ -7,9 +7,10 @@ export const useSafeAuth = (): AuthContextType => {
     return useAuth();
   } catch (error) {
     console.error('❌ useSafeAuth error:', error);
-    
+
+    const message = error instanceof Error ? error.message : String(error);
     // If useAuth is not defined, it means there's a module loading issue
-    if (error.message.includes('useAuth is not defined')) {
+    if (message.includes('useAuth is not defined')) {
       console.error('🔥 Critical: useAuth hook is not defined. This is a module loading issue.');
       
       // Force a page reload to fix module loading issues
